@@ -339,6 +339,16 @@ def main():
             "PCREMaxFileSize 32G",
             "StreamMaxLength 32G",
         ]
+    # The manual wire oracle is a raw ingress/offset test.  The protocol
+    # fixture has mail-like headers, so leave the ordinary milter cases on
+    # the normal mail-parser path but keep this exact-boundary case on one
+    # root scan.  Otherwise the marker is detected in a child mail layer,
+    # where a root-message offset is intentionally unavailable and the
+    # child bytes are correctly added to logical work a second time.
+    manual_wire_clamd_lines = ["ScanMail no", "Debug yes"] if manual_wire else []
+    expected_max_scan_size = (
+        400 * 1024 * 1024 if development_legacy_limits else CERTIFIED_MAX_SCAN_SIZE
+    )
     test_root = os.environ.get("MILTER_TEST_ROOT", "/tmp")
     Path(test_root).mkdir(parents=True, exist_ok=True)
     root = Path(tempfile.mkdtemp(prefix="clamav-milter-", dir=test_root))
@@ -390,6 +400,7 @@ def main():
                 "CommandReadTimeout {}".format(command_read_timeout),
                 "MaxScanTime {}".format(max_scan_time_ms),
             ]
+            + manual_wire_clamd_lines
             + clamd_limit_lines
             + [
                 "MaxMatcherWork 256G",
@@ -480,7 +491,8 @@ def main():
             clamd_text = clamd_log.read_text(errors="replace")
             milter_text = milter_log.read_text(errors="replace")
             signature_matches = re.findall(
-                r"signature Milter\.Protocol\.Test matched at ([0-9]+)", clamd_text
+                r"signature Milter\.Protocol\.Test(?:\.UNOFFICIAL)? matched at ([0-9]+)",
+                clamd_text,
             )
             if signature_matches != [str(expected_offset)]:
                 raise RuntimeError(
@@ -488,9 +500,9 @@ def main():
                 )
             report_metadata = re.search(
                 r"Structured clamd report: completion=DETECTION_TERMINATED "
-                r"root_size={} logical_bytes=(\d+) max_scan_size=68719476736 "
+                r"root_size={} logical_bytes=(\d+) max_scan_size={} "
                 r"skipped_operations=(\d+) last_alert_offset={}".format(
-                    message_size, expected_offset
+                    message_size, expected_max_scan_size, expected_offset
                 ),
                 milter_text,
             )
@@ -507,7 +519,7 @@ def main():
             if "MailMaterialization" in milter_text or "Limits.Exceeded" in milter_text:
                 raise RuntimeError("milter exact-edge result was accompanied by a limit/materialization heuristic")
             print(
-                "milter manual wire: body_bytes={} message_bytes={} limit_bytes={} result={} signature={} offset={} sha256={} completion=DETECTION_TERMINATED root_size={} logical_bytes={} max_scan_size=68719476736 skipped_operations={} last_alert_offset={} (extra database: {})".format(
+                "milter manual wire: body_bytes={} message_bytes={} limit_bytes={} result={} signature={} offset={} sha256={} completion=DETECTION_TERMINATED root_size={} logical_bytes={} max_scan_size={} skipped_operations={} last_alert_offset={} (extra database: {})".format(
                     sent,
                     message_size,
                     max_file_size,
@@ -517,6 +529,7 @@ def main():
                     stream_sha256,
                     message_size,
                     logical_bytes,
+                    expected_max_scan_size,
                     skipped_operations,
                     expected_offset,
                     extra_database or "none",

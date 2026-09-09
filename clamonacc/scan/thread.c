@@ -45,6 +45,9 @@
 #include "../misc/utils.h"
 #include "../client/client.h"
 #include "thread.h"
+#if defined(HAVE_SYS_FANOTIFY_H)
+#include "../fanotif/fanotif.h"
+#endif
 
 static pthread_mutex_t onas_scan_lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -156,6 +159,16 @@ static cl_error_t onas_scan_thread_scanfile(struct onas_scan_event *event_data, 
 #if defined(HAVE_SYS_FANOTIFY_H)
     b_fanotify = event_data->bool_opts & ONAS_SCTH_B_FANOTIFY ? 1 : 0;
     if (b_fanotify) {
+        if (NULL == event_data->fmd || event_data->fmd->fd < 0 || event_data->fan_fd < 0) {
+            *err      = 1;
+            *ret_code = CL_EARG;
+            logg(LOGG_ERROR, "ClamWorker: scan failed (invalid fanotify event context)\n");
+            if (event_data->fmd != NULL && event_data->fmd->fd >= 0) {
+                (void)onas_release_failed_event(event_data->fan_fd, event_data->fmd);
+                event_data->fmd->fd = -1;
+            }
+            return CL_EARG;
+        }
         res.fd       = event_data->fmd->fd;
         res.response = FAN_ALLOW;
     }
@@ -183,14 +196,27 @@ static cl_error_t onas_scan_thread_scanfile(struct onas_scan_event *event_data, 
 #if defined(HAVE_SYS_FANOTIFY_H)
     if (b_fanotify) {
         if (event_data->fmd->mask & FAN_ALL_PERM_EVENTS) {
-            ret = write(event_data->fan_fd, &res, sizeof(res));
-            if (ret == -1) {
-                logg(LOGG_ERROR, "ClamWorker: internal error (can't write to fanotify)\n");
-                if (errno == ENOENT) {
+            ssize_t written;
+
+            do {
+                written = write(event_data->fan_fd, &res, sizeof(res));
+            } while (written == -1 && errno == EINTR);
+
+            if (written != (ssize_t)sizeof(res)) {
+                int response_errno = written < 0 ? errno : EIO;
+
+                logg(LOGG_ERROR, "ClamWorker: internal error (can't write complete response to fanotify): %s\n",
+                     strerror(response_errno));
+                if (response_errno == ENOENT) {
                     logg(LOGG_DEBUG, "ClamWorker: permission event has already been written ... recovering ...\n");
-                } else {
-                    ret = CL_EWRITE;
                 }
+                /* An allow response that was not accepted must not become an
+                 * implicit allow when the metadata descriptor is released.
+                 * Try the shared denial-and-close path, then mark the copied
+                 * descriptor closed so cleanup does not issue a second close. */
+                (void)onas_release_failed_event(event_data->fan_fd, event_data->fmd);
+                event_data->fmd->fd = -1;
+                ret                = CL_EWRITE;
             }
         }
     }
@@ -200,7 +226,7 @@ static cl_error_t onas_scan_thread_scanfile(struct onas_scan_event *event_data, 
 #ifdef ONAS_DEBUG
         logg(LOGG_DEBUG, "ClamWorker: closing fd, %d)\n", event_data->fmd->fd);
 #endif
-        if (-1 == close(event_data->fmd->fd)) {
+        if (event_data->fmd->fd >= 0 && -1 == close(event_data->fmd->fd)) {
 
             logg(LOGG_ERROR, "ClamWorker: internal error (can't close fanotify meta fd, %d)\n", event_data->fmd->fd);
             if (errno == EBADF) {
@@ -417,6 +443,11 @@ void *onas_scan_worker(void *arg)
         logg(LOGG_INFO, "ClamWorker: invalid worker arguments for scanning thread\n");
         if (event_data) {
             logg(LOGG_INFO, "ClamWorker: pathname is null\n");
+#if defined(HAVE_SYS_FANOTIFY_H)
+            if (event_data->fmd) {
+                onas_release_failed_event(event_data->fan_fd, event_data->fmd);
+            }
+#endif
         }
         goto done;
     }
@@ -458,7 +489,7 @@ void *onas_scan_worker(void *arg)
          * then move to cleanup */
         if (event_data->fmd) {
             if (event_data->fmd->fd >= 0) {
-                close(event_data->fmd->fd);
+                onas_release_failed_event(event_data->fan_fd, event_data->fmd);
                 goto done;
             }
         }

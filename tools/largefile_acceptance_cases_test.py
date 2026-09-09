@@ -42,6 +42,25 @@ class AcceptanceCaseTests(unittest.TestCase):
         records.write_text("\t".join(cases.RECORD_HEADER) + "\n", encoding="utf-8")
         self.assertEqual(cases.validate_records(records, cases.validate_map(self.manifest, self.mapping)), 0)
 
+    def test_record_schema_rejects_rows_with_wrong_column_count(self):
+        records = self.root / "records.tsv"
+        header = "\t".join(cases.RECORD_HEADER)
+        valid_width = "\t".join("0" for _ in cases.RECORD_HEADER)
+        for malformed in (valid_width + "\textra", "\t".join("0" for _ in cases.RECORD_HEADER[:-1])):
+            records.write_text(f"{header}\n{malformed}\n", encoding="utf-8")
+            with self.subTest(column_count=malformed.count("\t") + 1):
+                with self.assertRaisesRegex(ValueError, "columns at line 2"):
+                    cases.validate_records(records, cases.validate_map(self.manifest, self.mapping))
+
+    def test_tsv_reader_rejects_malformed_quoting(self):
+        malformed = self.root / "malformed.tsv"
+        malformed.write_text(
+            "\t".join(cases.RECORD_HEADER) + "\n\"unterminated\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ValueError, "malformed TSV"):
+            cases.read_tsv(malformed, cases.RECORD_HEADER)
+
     def test_record_outcome_and_case_binding_are_fail_closed(self):
         records = self.root / "records.tsv"
         row = {field: "0" for field in cases.RECORD_HEADER}
@@ -93,6 +112,51 @@ class AcceptanceCaseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "does not match its case contract"):
             cases.validate_records(records, mapping)
 
+    def test_generic_complete_case_rejects_noncomplete_outcome(self):
+        mapping = [{
+            "kind": "library",
+            "id": "generic-reader",
+            "required_case_ids": "library:generic-reader:complete",
+        }]
+        records = self.root / "records.tsv"
+        row = {field: "0" for field in cases.RECORD_HEADER}
+        row.update({
+            "kind": "library", "id": "generic-reader",
+            "case_id": "library:generic-reader:complete",
+            "source_manifest_sha256": "a" * 64, "build_identity_sha256": "b" * 64,
+            "config_sha256": "c" * 64, "platform": "linux-x86_64", "fixture_role": "complete",
+            "fixture_sha256": "d" * 64, "oracle_sha256": "e" * 64, "database_sha256": "f" * 64,
+            "exit_code": "1", "verdict": "DETECTED", "completion": "DETECTION_TERMINATED",
+            "reason": "contradictory generic completion", "alert_signature": "Test.Signature",
+            "alert_offset": "7", "sanitizer": "release", "resource_phase": "bounded",
+            "health": "pass", "cleanup": "pass", "artifacts": "logs/scan.txt",
+        })
+        with records.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=cases.RECORD_HEADER,
+                                    delimiter="\t", lineterminator="\n")
+            writer.writeheader()
+            writer.writerow(row)
+        with self.assertRaisesRegex(ValueError, "does not match its case contract"):
+            cases.validate_records(records, mapping)
+
+    def test_all_generated_case_suffixes_have_completion_contracts(self):
+        generated = set()
+        for kind, identifier in (
+            ("library", "generic-reader"), ("library", "path"),
+            ("matcher", "pcre"), ("feature", "ENABLE_TESTS"),
+            ("parser", "CL_TYPE_ZIP"), ("clamscan", "file"),
+            ("clamd", "SCAN"), ("milter", "message"),
+            ("on-access", "permission"), ("unsupported", "first-release"),
+        ):
+            generated.update(cases.case_suffixes(kind, identifier))
+        for kind, identifier in cases.R09_REQUIRED_CAPABILITIES:
+            generated.update(cases.case_suffixes(kind, identifier))
+        missing = {
+            suffix for suffix in generated
+            if cases.case_completion_contract(f"test:test:{suffix}") is None
+        }
+        self.assertEqual(missing, set())
+
     def test_standalone_fixture_binding_requires_retained_artifact(self):
         records = self.root / "records.tsv"
         evidence = self.root / "evidence"
@@ -132,6 +196,17 @@ class AcceptanceCaseTests(unittest.TestCase):
         mapping = cases.validate_map(self.manifest, self.mapping)
         self.assertEqual(cases.validate_records(records, mapping, evidence_root=evidence), 1)
 
+        (evidence / "scan-link.log").symlink_to(evidence / "scan.log")
+        row["artifacts"] = row["artifacts"].replace("scan.log", "scan-link.log")
+        with records.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=cases.RECORD_HEADER,
+                                    delimiter="\t", lineterminator="\n")
+            writer.writeheader()
+            writer.writerow(row)
+        with self.assertRaisesRegex(ValueError, "is symlinked"):
+            cases.validate_records(records, mapping, evidence_root=evidence)
+
+        row["artifacts"] = row["artifacts"].replace("scan-link.log", "scan.log")
         row["fixture_sha256"] = "f" * 64
         with records.open("w", newline="", encoding="utf-8") as stream:
             writer = csv.DictWriter(stream, fieldnames=cases.RECORD_HEADER,
@@ -196,6 +271,45 @@ class AcceptanceCaseTests(unittest.TestCase):
             writer.writeheader()
             writer.writerow(row)
         self.assertEqual(cases.validate_records(records, mapping, evidence_root=evidence), 1)
+
+        lifecycle = provenance / "service-lifecycle-detection.tsv"
+        lifecycle.write_text(
+            "event\tresult\n"
+            "ping_before_cases\tpass\n"
+            "ping_after_cases\tpass\n"
+            "pidfile_present_after_start\tyes\n"
+            "daemon_running_before_stop\tyes\n"
+            "daemon_exited_after_stop\tyes\n"
+            "socket_absent_after_stop\tyes\n"
+            "pidfile_absent_after_stop\tyes\n",
+            encoding="utf-8",
+        )
+        row["resource_phase"] = (
+            "bounded;daemon-health=ping-before-and-after;cleanup=lifecycle-verified"
+        )
+        row["artifacts"] += ",provenance/service-lifecycle-detection.tsv"
+        with records.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=cases.RECORD_HEADER,
+                                    delimiter="\t", lineterminator="\n")
+            writer.writeheader()
+            writer.writerow(row)
+        self.assertEqual(cases.validate_records(records, mapping, evidence_root=evidence), 1)
+
+        lifecycle.write_text(
+            lifecycle.read_text(encoding="utf-8").replace(
+                "socket_absent_after_stop\tyes", "socket_absent_after_stop\tno",
+            ),
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ValueError, "complete daemon lifecycle contract"):
+            cases.validate_records(records, mapping, evidence_root=evidence)
+
+        lifecycle.write_text(
+            lifecycle.read_text(encoding="utf-8").replace(
+                "socket_absent_after_stop\tno", "socket_absent_after_stop\tyes",
+            ),
+            encoding="utf-8",
+        )
 
         (provenance / "service-inputs-before.json").write_text("[]\n", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "service input identity evidence is malformed"):

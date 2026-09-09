@@ -229,11 +229,21 @@ int16_t ping_clamd(const struct optstruct *opts)
                 closesocket(sockd);
                 sockd = -1;
             } else {
-                if (!optget(opts, "wait")->enabled) {
-                    logg(LOGG_INFO, "PONG\n");
+                char *response = NULL;
+                int response_length = recvln(&rcv, &response, NULL);
+
+                if (response_length < 0 || response == NULL || response_length != (int)sizeof("PONG") ||
+                    memcmp(response, "PONG\0", sizeof("PONG")) != 0) {
+                    logg(LOGG_DEBUG, "PING failed: unexpected response from clamd\n");
+                    closesocket(sockd);
+                    sockd = -1;
+                } else {
+                    if (!optget(opts, "wait")->enabled) {
+                        logg(LOGG_INFO, "PONG\n");
+                    }
+                    ret = 0;
+                    goto done;
                 }
-                ret = 0;
-                goto done;
             }
         }
 

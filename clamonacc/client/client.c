@@ -98,6 +98,23 @@ static uint64_t onas_effective_file_limit(uint64_t maxstream, uint64_t sizelimit
     return (maxstream < sizelimit) ? maxstream : sizelimit;
 }
 
+static int onas_expect_pong(CURL *curl, int64_t timeout)
+{
+    struct onas_rcvln rcv;
+    char *response = NULL;
+    int response_length;
+
+    onas_recvlninit(&rcv, curl, 0);
+    response_length = onas_recvln(&rcv, &response, NULL, timeout);
+    if (response_length != (int)sizeof("PONG") || response == NULL ||
+        memcmp(response, "PONG\0", sizeof("PONG")) != 0) {
+        logg(LOGG_DEBUG, "ClamClient: unexpected response from clamd to PING\n");
+        return -1;
+    }
+
+    return 0;
+}
+
 void onas_print_server_version(struct onas_context **ctx)
 {
     if (onas_get_clamd_version(ctx)) {
@@ -171,7 +188,8 @@ int onas_check_remote(struct onas_context **ctx, cl_error_t *err)
         }
 
 #ifndef ONAS_DEBUG
-        if (onas_sendln(curl, zPING, sizeof(zPING), timeout, NULL)) {
+        if (onas_sendln(curl, zPING, sizeof(zPING), timeout, NULL) ||
+            onas_expect_pong(curl, timeout)) {
             logg(LOGG_ERROR, "ClamClient: could not ping clamd, %s\n", curl_easy_strerror(curlcode));
             *err = CL_EARG;
             curl_easy_cleanup(curl);
@@ -266,7 +284,8 @@ int16_t onas_ping_clamd(struct onas_context **ctx)
         curlcode = curl_easy_perform(curl);
         if (CURLE_OK != curlcode) {
             logg(LOGG_DEBUG, "ClamClient: could not connect to clamd, %s\n", curl_easy_strerror(curlcode));
-        } else if (CURLE_OK == onas_sendln(curl, zPING, sizeof(zPING), timeout, NULL)) {
+        } else if (CURLE_OK == onas_sendln(curl, zPING, sizeof(zPING), timeout, NULL) &&
+                   onas_expect_pong(curl, timeout) == 0) {
 
             if (!optget((*ctx)->opts, "wait")->enabled) {
                 logg(LOGG_INFO, "PONG\n");

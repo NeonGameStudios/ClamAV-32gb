@@ -21,6 +21,10 @@
 #ifndef __ONAS_FAN_H
 #define __ONAS_FAN_H
 
+#if defined(HAVE_SYS_FANOTIFY_H)
+#include <sys/fanotify.h>
+#endif
+
 // libclamav
 #include "clamav.h"
 
@@ -29,5 +33,8 @@
 // void *onas_fan_th(void *arg);
 cl_error_t onas_setup_fanotif(struct onas_context **ctx);
 int onas_fan_eloop(struct onas_context **ctx);
+#if defined(HAVE_SYS_FANOTIFY_H)
+int onas_release_failed_event(int fan_fd, const struct fanotify_event_metadata *fmd);
+#endif
 
 #endif

@@ -84,6 +84,31 @@ class DevelopmentServiceCaptureTests(unittest.TestCase):
             {"fdpass": "fdpass", "stream": "stream"},
         )
 
+    def test_service_lifecycle_artifact_binds_health_and_cleanup(self):
+        with tempfile.TemporaryDirectory(prefix="largefile-lifecycle-") as temp:
+            lifecycle = Path(temp) / "provenance/service-lifecycle-clean.tsv"
+            capture.write_service_lifecycle(
+                lifecycle,
+                "pass",
+                {
+                    "running_before_stop": "yes",
+                    "exited_after_stop": "yes",
+                    "socket_absent_after_stop": "yes",
+                    "pidfile_absent_after_stop": "yes",
+                },
+            )
+            self.assertEqual(
+                lifecycle.read_text(encoding="utf-8"),
+                "event\tresult\n"
+                "ping_before_cases\tpass\n"
+                "ping_after_cases\tpass\n"
+                "pidfile_present_after_start\tyes\n"
+                "daemon_running_before_stop\tyes\n"
+                "daemon_exited_after_stop\tyes\n"
+                "socket_absent_after_stop\tyes\n"
+                "pidfile_absent_after_stop\tyes\n",
+            )
+
     def test_client_record_uses_client_capability_binding(self):
         with tempfile.TemporaryDirectory(prefix="largefile-client-capture-") as temp:
             root = Path(temp)
@@ -131,6 +156,22 @@ class DevelopmentServiceCaptureTests(unittest.TestCase):
                 "logs/client-fdpass-detection.log",
                 "reports/client-fdpass-detection.jsonl",
             ])
+
+    def test_path_absent_observes_stale_socket_or_pidfile(self):
+        with tempfile.TemporaryDirectory(prefix="largefile-lifecycle-path-") as temp:
+            root = Path(temp)
+            retained = root / "retained"
+            retained.write_text("stale\n", encoding="utf-8")
+            dangling = root / "dangling"
+            dangling.symlink_to(root / "missing")
+
+            self.assertFalse(capture.path_absent(retained))
+            self.assertFalse(capture.path_absent(dangling))
+
+            retained.unlink()
+            dangling.unlink()
+            self.assertTrue(capture.path_absent(retained))
+            self.assertTrue(capture.path_absent(dangling))
 
 
 if __name__ == "__main__":

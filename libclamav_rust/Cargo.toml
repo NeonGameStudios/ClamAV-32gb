@@ -21,7 +21,9 @@ base64 = "0.21"
 sha1 = "0.10"
 unicode-segmentation = "1.10"
 bindgen = "0.65"
-onenote_parser = { git = "https://github.com/Cisco-Talos/onenote.rs.git", branch = "CLAM-2329-new-from-slice" }
+# Vendored from the pinned `CLAM-2329-new-from-slice` revision so the parser
+# can gain a bounded reader mode without changing the legacy slice API.
+onenote_parser = { path = "onenote_parser" }
 hex-literal = "0.4"
 bzip2-rs = "0.1"
 byteorder = "1.5"

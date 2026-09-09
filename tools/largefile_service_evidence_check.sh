@@ -63,6 +63,7 @@ runtime_component_hashes=$out/provenance/service-runtime-component-hashes-before
 runtime_component_hashes_after=$out/provenance/service-runtime-component-hashes-after.txt
 loaded_dependencies=$out/provenance/service-loaded-dependencies.txt
 parallel_profile=$out/provenance/parallel-client-clamd.conf
+lifecycle=$out/provenance/service-lifecycle.tsv
 checksum_manifest=$out/SHA256SUMS
 
 for required in "$summary" "$oracle_binding" "$qualification_oracle" "$workload_results" "$acceptance_records" \
@@ -72,6 +73,7 @@ for required in "$summary" "$oracle_binding" "$qualification_oracle" "$workload_
     "$dependency_hashes" "$dependency_hashes_after" \
     "$runtime_component_artifacts" "$runtime_component_hashes" \
     "$runtime_component_hashes_after" "$loaded_dependencies" "$parallel_profile" \
+    "$lifecycle" \
     "$checksum_manifest"; do
     [ -s "$required" ] || fail "missing service evidence: $required"
 done
@@ -90,6 +92,53 @@ grep -Fx 'service_build_identity=pass' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no build-identity pass marker'
 grep -Fx 'service_qualification=pass' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no qualification pass marker'
+grep -Fx 'service_lifecycle=pass' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence has no lifecycle pass marker'
+if ! python3 - "$lifecycle" <<'PY'
+import csv
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+expected = {
+    "ping_after_start": "pass",
+    "ping_before_stop": "pass",
+    "daemon_running_before_stop": "yes",
+    "daemon_exited_after_stop": "yes",
+    "socket_absent_after_stop": "yes",
+    "pidfile_absent_after_stop": "yes",
+}
+generations = {}
+try:
+    with path.open(newline="", encoding="utf-8") as stream:
+        reader = csv.reader(stream, delimiter="\t", strict=True)
+        if next(reader, None) != ["generation", "event", "result"]:
+            raise ValueError("invalid lifecycle header")
+        for line_number, values in enumerate(reader, start=2):
+            if len(values) != 3 or any(value == "" for value in values):
+                raise ValueError(f"malformed lifecycle row at line {line_number}")
+            generation, event, result = values
+            if not generation.isdigit() or int(generation) < 1:
+                raise ValueError(f"invalid lifecycle generation at line {line_number}")
+            if event not in expected:
+                raise ValueError(f"unknown lifecycle event at line {line_number}")
+            events = generations.setdefault(generation, {})
+            if event in events:
+                raise ValueError(f"duplicate lifecycle event at line {line_number}")
+            if result != expected[event]:
+                raise ValueError(f"lifecycle event did not pass at line {line_number}")
+            events[event] = result
+except (OSError, csv.Error, ValueError) as error:
+    raise SystemExit(str(error))
+if not generations:
+    raise SystemExit("lifecycle evidence has no service generations")
+for generation, events in generations.items():
+    if events != expected:
+        raise SystemExit(f"lifecycle generation {generation} is incomplete")
+PY
+then
+    fail 'service lifecycle evidence is incomplete or failed'
+fi
 grep -Fx 'service_resource_measurement_failed=0' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no clean resource-measurement marker'
 service_rss_budget_kb=$(awk -F= '$1 == "rss_budget_kb" { count++; value=$2 } END { if (count != 1) exit 1; print value }' "$summary") ||
@@ -212,6 +261,8 @@ interpreter_after_hashes_sha256=$(identity_field service_interpreter_records_aft
 loader_injection=$(identity_field loader_injection)
 max_scan_time_ms=$(identity_field max_scan_time_ms)
 service_timeout_s=$(identity_field service_timeout_s)
+lifecycle_reference=$(identity_field service_lifecycle)
+lifecycle_hash=$(identity_field service_lifecycle_sha256)
 
 [ "$loader_injection" = disabled ] || fail 'service evidence does not prove inherited loader injection was disabled'
 
@@ -274,6 +325,7 @@ is_hash "$runtime_component_artifacts_sha256" || fail 'service runtime-component
 is_hash "$runtime_component_hashes_sha256" || fail 'service runtime-component hash-list hash is invalid'
 is_hash "$runtime_component_hashes_after_sha256" || fail 'service after runtime-component hash-list hash is invalid'
 is_hash "$loaded_dependencies_sha256" || fail 'service loaded-dependency evidence hash is invalid'
+is_hash "$lifecycle_hash" || fail 'service lifecycle evidence hash is invalid'
 [ "$binary_reference" = provenance/service-binary-hashes-before.txt ] ||
     fail 'service build identity references the wrong binary hash list'
 [ "$dependency_reference" = provenance/service-runtime-dependency-hashes.txt ] ||
@@ -296,6 +348,8 @@ is_hash "$loaded_dependencies_sha256" || fail 'service loaded-dependency evidenc
     fail 'service build identity references the wrong interpreter record list'
 [ "$interpreter_after_reference" = provenance/service-interpreter-records-after.txt ] ||
     fail 'service build identity references the wrong after interpreter record list'
+[ "$lifecycle_reference" = provenance/service-lifecycle.tsv ] ||
+    fail 'service build identity references the wrong lifecycle evidence'
 
 cache_source=$(sed -n 's#^CMAKE_HOME_DIRECTORY:INTERNAL=##p' "$cmake_cache")
 [ "$cache_source" = "$root" ] || fail 'service CMake cache is bound to a different source root'
@@ -323,6 +377,7 @@ actual_runtime_component_artifacts_sha256=$(sha256sum "$runtime_component_artifa
 actual_runtime_component_hashes_sha256=$(sha256sum "$runtime_component_hashes" | awk '{ print $1 }')
 actual_runtime_component_hashes_after_sha256=$(sha256sum "$runtime_component_hashes_after" | awk '{ print $1 }')
 actual_loaded_dependencies_sha256=$(sha256sum "$loaded_dependencies" | awk '{ print $1 }')
+actual_lifecycle_hash=$(sha256sum "$lifecycle" | awk '{ print $1 }')
 [ "$actual_binary_hashes_sha256" = "$binary_hashes_sha256" ] ||
     fail 'service binary-list hash does not verify'
 [ "$actual_interpreter_hashes_sha256" = "$interpreter_hashes_sha256" ] ||
@@ -341,6 +396,8 @@ actual_loaded_dependencies_sha256=$(sha256sum "$loaded_dependencies" | awk '{ pr
     fail 'service after runtime-component hash-list hash does not verify'
 [ "$actual_loaded_dependencies_sha256" = "$loaded_dependencies_sha256" ] ||
     fail 'service loaded-dependency evidence hash does not verify'
+[ "$actual_lifecycle_hash" = "$lifecycle_hash" ] ||
+    fail 'service lifecycle evidence hash does not verify'
 
 cmp -s "$binary_before" "$binary_after" ||
     fail 'service executable hashes changed during qualification'

@@ -88,17 +88,39 @@ def read_metadata(path):
 
 
 def read_tsv(path, expected_header):
-    with path.open(encoding="utf-8", newline="") as stream:
-        reader = csv.DictReader(stream, delimiter="\t")
-        if reader.fieldnames != expected_header:
-            fail(f"{path.name} has an unexpected schema")
-        return list(reader)
+    try:
+        with path.open(encoding="utf-8", newline="") as stream:
+            reader = csv.reader(stream, delimiter="\t", strict=True)
+            actual = next(reader, None)
+            if actual != expected_header:
+                fail(f"{path.name} has an unexpected schema")
+            rows = []
+            for line_number, values in enumerate(reader, start=2):
+                if len(values) != len(expected_header):
+                    fail(
+                        f"{path.name} has {len(values)} columns at line {line_number}; "
+                        f"expected {len(expected_header)}"
+                    )
+                row = dict(zip(expected_header, values))
+                if any(value == "" for value in row.values()):
+                    fail(f"{path.name} has an empty field at line {line_number}")
+                rows.append(row)
+            return rows
+    except csv.Error as error:
+        fail(f"{path.name} has malformed TSV: {error}")
 
 
 def safe_evidence_path(root, relative):
-    if pathlib.PurePosixPath(relative).is_absolute() or ".." in pathlib.PurePosixPath(relative).parts:
+    relative_path = pathlib.PurePosixPath(relative)
+    if relative_path.is_absolute() or ".." in relative_path.parts:
         fail("manifest path escapes the evidence directory")
-    candidate = (root / pathlib.PurePosixPath(relative)).resolve()
+    candidate = root / relative_path
+    current = root
+    for part in relative_path.parts:
+        current /= part
+        if current.is_symlink():
+            fail("manifest path is symlinked")
+    candidate = candidate.resolve()
     if os.path.commonpath((str(root.resolve()), str(candidate))) != str(root.resolve()):
         fail("manifest path resolves outside the evidence directory")
     return candidate

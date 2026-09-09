@@ -61991,7 +61991,7 @@ static const TTest *test_ole2_missing_options_is_fail_visible;
 static const TTest *test_xar_missing_engine_is_fail_visible;
 static const TTest *test_rtf_missing_engine_is_fail_visible;
 static const TTest *test_rtf_missing_options_is_fail_visible;
-static const TTest *test_jpeg_entropy_completion_and_failures;
+static const TTest *test_jpeg_entropy_completion_and_failures; static const TTest *test_pdf_metadata_callbacks_accept_null_context; static const TTest *test_pdf_encryption_uses_crypt_filter_length;
 
 START_TEST(test_fileblob_cleanup_without_engine_is_fail_visible)
 {
@@ -62739,6 +62739,8 @@ START_TEST(test_pe_import_hash_update_failure_is_fail_visible)
 }
 END_TEST
 #endif
+
+static const TTest *test_image_fuzzy_hash_streams_encoded_source_under_contiguous_limit;
 
 static Suite *test_cl_suite(void)
 {
@@ -64788,6 +64790,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_gif, test_gif_image_data_completion_is_validated);
     tcase_add_test(tc_gif, test_gif_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_gif, test_image_fuzzy_hash_contiguous_limit_is_fail_visible);
+    tcase_add_test(tc_gif, test_image_fuzzy_hash_streams_encoded_source_under_contiguous_limit);
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_gif, test_image_fuzzy_hash_metadata_record_failure_is_fail_visible);
 #endif
@@ -64836,7 +64839,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pdf, test_pdf_crypt_decodeparms_are_unique_and_exact);
     tcase_add_test(tc_pdf, test_pdf_explicit_identity_crypt_precedes_supported_filters);
     tcase_add_test(tc_pdf, test_pdf_legacy_dictionary_length_boundary_is_fail_visible);
-    tcase_add_test(tc_pdf, test_pdf_encryption_buffer_size_is_fail_visible);
+    tcase_add_test(tc_pdf, test_pdf_encryption_buffer_size_is_fail_visible); tcase_add_test(tc_pdf, test_pdf_metadata_callbacks_accept_null_context); tcase_add_test(tc_pdf, test_pdf_encryption_uses_crypt_filter_length);
     tcase_add_test(tc_pdf, test_pdfng_string_allocation_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_flate_after_prefix_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_lzw_after_prefix_is_fail_visible);
@@ -65044,6 +65047,39 @@ START_TEST(test_cli_readint16)
         value = le_expected[j & 3];
         ck_assert_msg(cli_readint16(&data[j]) == value, "(2) data read must be little endian");
     }
+}
+END_TEST
+
+START_TEST(test_pdf_encryption_uses_crypt_filter_length)
+{
+    static char encryption_dictionary[] =
+        "<< /Filter /Standard /V 4 /Length 128 /R 4 /P 4 "
+        "/CF << /StdCF << /CFM /AESV2 >> >> "
+        "/StmF /StdCF /StrF /StdCF /EFF /StdCF /O (x) /U (y) >>";
+    static char file_id[] = "file-id";
+    struct pdf_obj encryption_object;
+    struct pdf_obj *objects[1];
+    struct pdf_struct pdf;
+
+    memset(&encryption_object, 0, sizeof(encryption_object));
+    memset(&pdf, 0, sizeof(pdf));
+    encryption_object.id    = 7U << 8;
+    encryption_object.start = 0;
+    encryption_object.size  = sizeof(encryption_dictionary) - 1U;
+    objects[0]              = &encryption_object;
+    pdf.objs                = objects;
+    pdf.nobjs               = 1;
+    pdf.enc_objid           = encryption_object.id;
+    pdf.map                 = encryption_dictionary;
+    pdf.size                = sizeof(encryption_dictionary) - 1U;
+    pdf.fileID              = file_id;
+    pdf.fileIDlen           = sizeof(file_id) - 1U;
+
+    pdf_handle_enc(&pdf);
+
+    ck_assert_int_eq(pdf.enc_method_stream, ENC_AESV2);
+    ck_assert_int_eq(pdf.enc_method_string, ENC_AESV2);
+    ck_assert_int_eq(pdf.enc_method_embeddedfile, ENC_AESV2);
 }
 END_TEST
 
@@ -66097,5 +66133,128 @@ START_TEST(test_jpeg_entropy_completion_and_failures)
                      "Heuristics.Broken.Media.JPEG.EndedBeforeEOI");
     ck_assert(map->dont_cache_flag);
     cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_pdf_metadata_callbacks_accept_null_context)
+{
+    static const char object_bytes[] =
+        "<< /Author (a) /Creator (c) /CreationDate (d) /ModDate (d) "
+        "/Producer (p) /Title (t) /Keywords (k) /Subject (s) "
+        "/Pages [1 0 R] /Count 1 >>";
+    struct pdf_struct pdf;
+    struct pdf_obj obj;
+    cli_ctx ctx;
+
+    memset(&pdf, 0, sizeof(pdf));
+    memset(&obj, 0, sizeof(obj));
+    pdf.map  = object_bytes;
+    pdf.size = sizeof(object_bytes) - 1U;
+    obj.size = sizeof(object_bytes) - 1U;
+
+    /* Metadata callbacks are reached through normal dictionary parsing. A
+     * compatibility caller may omit the scan context; metadata collection
+     * must simply be disabled rather than dereferencing absent context. */
+    pdf_parseobj(&pdf, &obj);
+
+    memset(&ctx, 0, sizeof(ctx));
+    pdf.ctx = &ctx;
+    pdf_parseobj(&pdf, &obj);
+
+    ck_assert(obj.flags & (1U << OBJ_DICT));
+}
+END_TEST
+
+START_TEST(test_image_fuzzy_hash_streams_encoded_source_under_contiguous_limit)
+{
+    static const uint8_t image_tail[] = {
+        0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+        0x02, 0x02, 0x44, 0x01, 0x00,
+        0x3b,
+    };
+    const size_t comment_data_size = 2U * 1024U * 1024U;
+    const size_t comment_block_count = (comment_data_size + 254U) / 255U;
+    const size_t image_size = 19U + 2U + comment_data_size + comment_block_count + 1U + sizeof(image_tail);
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_scan_report_t *report = NULL;
+    cl_scan_completion_t completion;
+    cl_verdict_t verdict = CL_VERDICT_STRONG_INDICATOR;
+    const char *last_alert = "stale";
+    const char *reason = NULL;
+    uint64_t scanned = UINT64_MAX;
+    fmap_t *map;
+    cl_error_t report_status;
+    cl_error_t ret;
+    uint8_t *valid_image;
+    size_t offset = 0;
+    size_t remaining = comment_data_size;
+
+    valid_image = calloc(image_size, 1);
+    ck_assert_ptr_nonnull(valid_image);
+
+    memcpy(valid_image + offset, "GIF89a", 6);
+    offset += 6;
+    valid_image[offset++] = 0x01;
+    valid_image[offset++] = 0x00;
+    valid_image[offset++] = 0x01;
+    valid_image[offset++] = 0x00;
+    valid_image[offset++] = 0x80;
+    valid_image[offset++] = 0x00;
+    valid_image[offset++] = 0x00;
+    memset(valid_image + offset, 0, 6);
+    valid_image[offset + 3] = 0xff;
+    valid_image[offset + 4] = 0xff;
+    valid_image[offset + 5] = 0xff;
+    offset += 6;
+
+    valid_image[offset++] = 0x21;
+    valid_image[offset++] = 0xfe;
+    while (remaining != 0) {
+        const size_t block_size = (remaining > 255U) ? 255U : remaining;
+
+        valid_image[offset++] = (uint8_t)block_size;
+        memset(valid_image + offset, 'A', block_size);
+        offset += block_size;
+        remaining -= block_size;
+    }
+    valid_image[offset++] = 0x00;
+    memcpy(valid_image + offset, image_tail, sizeof(image_tail));
+    offset += sizeof(image_tail);
+    ck_assert_uint_eq(offset, image_size);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_IMAGE | CL_SCAN_PARSE_IMAGE_FUZZY_HASH;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    scan_engine->dconf->other |= OTHER_CONF_IMAGE_FUZZY_HASH;
+    ck_assert_int_eq(cl_engine_set_num(scan_engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE,
+                                       3U * 1024U * 1024U / 2U),
+                      CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(valid_image, image_size);
+    ck_assert_ptr_nonnull(map);
+    ret = cl_scanmap_ex2(map, "fuzzy-streamed-source", &verdict, &last_alert,
+                         &scanned, scan_engine, &options, NULL, NULL, NULL,
+                         NULL, "CL_TYPE_GIF", NULL, &report);
+
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(!map->dont_cache_flag);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+    ck_assert_int_eq(report_status, CL_SUCCESS);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_COMPLETE);
+    ck_assert_int_eq(cl_scan_report_get_reason(report, &reason), CL_SUCCESS);
+    ck_assert_ptr_null(reason);
+
+    cl_scan_report_free(report);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(valid_image);
 }
 END_TEST

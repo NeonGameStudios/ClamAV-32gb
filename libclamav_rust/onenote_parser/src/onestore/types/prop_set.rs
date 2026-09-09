@@ -1,0 +1,51 @@
+use crate::errors::Result;
+use crate::onestore::types::property::{PropertyId, PropertyValue};
+use crate::Reader;
+use std::collections::HashMap;
+
+/// A property set.
+///
+/// See [\[MS-ONESTORE\] 2.6.7].
+///
+/// [\[MS-ONESTORE\] 2.6.7]: https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-onestore/88a64c18-f815-4ebc-8590-ddd432024ab9
+#[derive(Debug, Clone)]
+pub(crate) struct PropertySet {
+    values: HashMap<u32, (usize, PropertyValue)>,
+}
+
+impl PropertySet {
+    pub(crate) fn parse(reader: Reader) -> Result<PropertySet> {
+        let count = reader.get_u16()? as u64;
+        let count = reader.checked_collection_count::<PropertyId>(count)?;
+
+        let mut property_ids = Vec::new();
+        reader.reserve_vec(&mut property_ids, count)?;
+        for _ in 0..count {
+            property_ids.push(PropertyId::parse(reader)?);
+        }
+
+        let mut values = HashMap::new();
+        reader.reserve_map(&mut values, count)?;
+        for (idx, id) in property_ids.into_iter().enumerate() {
+            values.insert(id.id(), (idx, PropertyValue::parse(id, reader)?));
+        }
+
+        Ok(PropertySet { values })
+    }
+
+    pub(crate) fn get(&self, id: PropertyId) -> Option<&PropertyValue> {
+        self.values.get(&id.id()).map(|(_, value)| value)
+    }
+
+    pub(crate) fn index(&self, id: PropertyId) -> Option<usize> {
+        self.values.get(&id.id()).map(|(index, _)| index).copied()
+    }
+
+    pub(crate) fn values(&self) -> impl Iterator<Item = &PropertyValue> {
+        self.values.values().map(|(_, value)| value)
+    }
+
+    pub(crate) fn values_with_index(&self) -> impl Iterator<Item = &(usize, PropertyValue)> {
+        self.values.values()
+    }
+}

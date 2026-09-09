@@ -293,7 +293,13 @@ set(CVD_CERTS_DIR         ${CMAKE_SOURCE_DIR}/unit_tests/input/signing/verify)
 if(WIN32)
     file(TO_NATIVE_PATH ${CMAKE_SOURCE_DIR}                                     SOURCE)
     file(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}                                     BUILD)
-    file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}                             TMP)
+    if(CLAMAV_TEST_TMP)
+        set(TEST_TMP "${CLAMAV_TEST_TMP}")
+    else()
+        set(TEST_TMP "${CMAKE_CURRENT_BINARY_DIR}")
+    endif()
+    file(MAKE_DIRECTORY "${TEST_TMP}")
+    file(TO_NATIVE_PATH "${TEST_TMP}"                                         TMP)
 
     set(NEW_PATH "$<TARGET_FILE_DIR:check_clamav>;$ENV{PATH}")
 
@@ -350,7 +356,13 @@ else()
 
     set(SOURCE             ${CMAKE_SOURCE_DIR})
     set(BUILD              ${CMAKE_BINARY_DIR})
-    set(TMP                ${CMAKE_CURRENT_BINARY_DIR})
+    if(CLAMAV_TEST_TMP)
+        set(TEST_TMP "${CLAMAV_TEST_TMP}")
+    else()
+        set(TEST_TMP "${CMAKE_CURRENT_BINARY_DIR}")
+    endif()
+    file(MAKE_DIRECTORY "${TEST_TMP}")
+    set(TMP                "${TEST_TMP}")
 
     set(NEW_PATH "$ENV{PATH}")
 
@@ -552,7 +564,9 @@ if(ENABLE_APP AND ENABLE_MILTER AND UNIX)
     add_test(NAME clamav_milter_protocol
         COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/milter_protocol_test.py"
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-    set_property(TEST clamav_milter_protocol PROPERTY ENVIRONMENT ${ENVIRONMENT})
+    set_property(TEST clamav_milter_protocol PROPERTY ENVIRONMENT
+        ${ENVIRONMENT}
+        MILTER_DEVELOPMENT_LEGACY_LIMITS=1)
     set_tests_properties(clamav_milter_protocol PROPERTIES
         LABELS "largefile;release-controls"
         TIMEOUT 60)
@@ -569,6 +583,16 @@ set_tests_properties(
     PROPERTIES
         LABELS "largefile;release-controls"
         TIMEOUT 60)
+# These controls exercise the generated inventory, snapshot, acceptance, and
+# provenance regressions in one process.  They are deterministic but can take
+# several minutes on external storage or an emulated build host; the timeout
+# is only a test-harness allowance and does not weaken any assertion.
+set_tests_properties(
+    largefile_source_guards
+    largefile_runtime_evidence_check
+    largefile_development_acceptance_capture
+    PROPERTIES
+        TIMEOUT 300)
 if(Valgrind_FOUND)
     add_test(NAME libclamav_valgrind COMMAND ${PythonTest_COMMAND};libclamav_test.py
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
@@ -587,6 +611,27 @@ if(RUSTFLAGS MATCHES "(^| )-Zsanitizer=address($| )" AND TARGET ClamAV::libmspac
     # C dependencies in the test, but select the static archive instead.
     list(FILTER RUST_TEST_ENVIRONMENT EXCLUDE REGEX "^LIBCLAMMSPACK=")
     list(APPEND RUST_TEST_ENVIRONMENT LIBCLAMMSPACK=$<TARGET_FILE:ClamAV::libmspack_static>)
+endif()
+if(UNIX AND CMAKE_EXE_LINKER_FLAGS MATCHES "-fsanitize=address")
+    # Rust's test linker can resolve the C sanitizer runtimes while still
+    # loading libasan after another shared object.  Preload the runtimes so
+    # ASan's required initialization order is deterministic.
+    execute_process(
+        COMMAND ${CMAKE_C_COMPILER} -print-file-name=libasan.so
+        OUTPUT_VARIABLE ASAN_RUNTIME
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(
+        COMMAND ${CMAKE_C_COMPILER} -print-file-name=libubsan.so
+        OUTPUT_VARIABLE UBSAN_RUNTIME
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(EXISTS "${ASAN_RUNTIME}")
+        set(RUST_SANITIZER_PRELOAD "${ASAN_RUNTIME}")
+        if(EXISTS "${UBSAN_RUNTIME}")
+            string(APPEND RUST_SANITIZER_PRELOAD ":${UBSAN_RUNTIME}")
+        endif()
+        list(APPEND RUST_TEST_ENVIRONMENT
+            "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER=env LD_PRELOAD=${RUST_SANITIZER_PRELOAD}")
+    endif()
 endif()
 set_property(TEST libclamav_rust PROPERTY ENVIRONMENT ${RUST_TEST_ENVIRONMENT})
 

@@ -38,6 +38,7 @@ include = [
   "codesign::codesign_verifier_new",
   "codesign::codesign_verifier_free",
   "fuzzy_hash::fuzzy_hash_calculate_image",
+  "fuzzy_hash::fuzzy_hash_calculate_image_fmap",
   "fuzzy_hash::fuzzy_hash_load_subsignature",
   "fuzzy_hash::fuzzy_hash_check",
   "ffi_util::FFIError",

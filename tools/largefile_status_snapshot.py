@@ -9,14 +9,15 @@ the gate's existing --test-manifest interface through read_status directly.
 from __future__ import annotations
 
 import argparse
-import csv
 import hashlib
-import io
 import json
 from pathlib import Path
 import re
 import subprocess
 import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import largefile_acceptance_cases as acceptance_cases
 
 COUNT_KEYS = (
     "capability_total", "capability_qualified", "capability_bounded",
@@ -62,7 +63,7 @@ def read_status(repo: Path, test_manifest: Path | None = None) -> dict:
         raise RuntimeError("capability manifest changed while collecting status")
     # The gate already validated every row. These two counts only distinguish
     # enabled parser rows from required parser rows explicitly unsupported.
-    rows = list(csv.DictReader(io.StringIO(manifest_bytes.decode("utf-8")), delimiter="\t"))
+    rows = acceptance_cases.read_tsv(manifest, acceptance_cases.MANIFEST_HEADER)
     parsers = [row for row in rows if row["kind"] == "parser"]
     counts["parser_total"] = len(parsers)
     counts["parser_unsupported"] = sum(row["status"] == "unsupported" for row in parsers)

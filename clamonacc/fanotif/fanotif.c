@@ -79,6 +79,48 @@ static int onas_wait_for_fanotify(int fan_fd)
     return ret;
 }
 
+/* A permission event must receive a decision even when the event cannot be
+ * represented as a queue item. Closing its metadata fd without a response
+ * can leave the requesting task blocked or turn an operational failure into
+ * an unintended allow. Reject failed-to-queue events before releasing the
+ * kernel-owned descriptor. */
+int onas_release_failed_event(int fan_fd, const struct fanotify_event_metadata *fmd)
+{
+    int ret = 0;
+
+    if (NULL == fmd || fmd->fd < 0) {
+        return 0;
+    }
+
+    if (fmd->mask & FAN_ALL_PERM_EVENTS) {
+        struct fanotify_response response;
+        ssize_t written;
+
+        response.fd       = fmd->fd;
+        response.response = FAN_DENY;
+        do {
+            written = write(fan_fd, &response, sizeof(response));
+        } while (written == -1 && errno == EINTR);
+        if (written != (ssize_t)sizeof(response)) {
+            int response_errno = written < 0 ? errno : EIO;
+
+            logg(LOGG_ERROR, "ClamFanotif: failed to deny an unqueued permission event: %s\n", strerror(response_errno));
+            ret = -1;
+        }
+    }
+
+    if (close(fmd->fd) == -1) {
+        int close_errno = errno;
+
+        if (close_errno != EBADF) {
+            logg(LOGG_ERROR, "ClamFanotif: failed to close a failed event descriptor: %s\n", strerror(close_errno));
+            ret = -1;
+        }
+    }
+
+    return ret;
+}
+
 cl_error_t onas_setup_fanotif(struct onas_context **ctx)
 {
 
@@ -222,6 +264,7 @@ int onas_fan_eloop(struct onas_context **ctx)
         fmd = (struct fanotify_event_metadata *)buf;
         while (FAN_EVENT_OK(fmd, bread)) {
             if (fmd->vers != FANOTIFY_METADATA_VERSION) {
+                onas_release_failed_event((*ctx)->fan_fd, fmd);
                 logg(LOGG_ERROR, "ClamFanotif: Mismatch of fanotify metadata version.\n");
                 return 2;
             }
@@ -233,7 +276,7 @@ int onas_fan_eloop(struct onas_context **ctx)
                 if (len == -1) {
                     int readlink_errno = errno;
 
-                    close(fmd->fd);
+                    onas_release_failed_event((*ctx)->fan_fd, fmd);
                     logg(LOGG_ERROR, "ClamFanotif: internal error (readlink() failed), %d, %s\n", fmd->fd, strerror(readlink_errno));
                     if (readlink_errno == EBADF) {
                         logg(LOGG_INFO, "ClamWorker: fd already closed ... recovering ...\n");
@@ -257,14 +300,14 @@ int onas_fan_eloop(struct onas_context **ctx)
 
                     event_data = calloc(1, sizeof(struct onas_scan_event));
                     if (NULL == event_data) {
-                        close(fmd->fd);
+                        onas_release_failed_event((*ctx)->fan_fd, fmd);
                         logg(LOGG_ERROR, "ClamFanotif: could not allocate memory for event data struct\n");
                         return 2;
                     }
 
                     /* general mapping */
                     if (CL_SUCCESS != onas_map_context_info_to_event_data(*ctx, &event_data)) {
-                        close(fmd->fd);
+                        onas_release_failed_event((*ctx)->fan_fd, fmd);
                         free(event_data);
                         logg(LOGG_ERROR, "ClamFanotif: could not map context into event data\n");
                         return 2;
@@ -275,7 +318,7 @@ int onas_fan_eloop(struct onas_context **ctx)
                     event_data->bool_opts |= ONAS_SCTH_B_FANOTIFY;
                     event_data->fmd = malloc(sizeof(struct fanotify_event_metadata));
                     if (NULL == event_data->fmd) {
-                        close(fmd->fd);
+                        onas_release_failed_event((*ctx)->fan_fd, fmd);
                         free(event_data);
                         logg(LOGG_ERROR, "ClamFanotif: could not allocate memory for event data struct fmd\n");
                         return 2;
@@ -283,7 +326,7 @@ int onas_fan_eloop(struct onas_context **ctx)
                     memcpy(event_data->fmd, fmd, sizeof(struct fanotify_event_metadata));
                     event_data->pathname = cli_safer_strdup(fname);
                     if (NULL == event_data->pathname) {
-                        close(fmd->fd);
+                        onas_release_failed_event((*ctx)->fan_fd, fmd);
                         free(event_data->fmd);
                         free(event_data);
                         logg(LOGG_ERROR, "ClamFanotif: could not allocate memory for event data struct pathname\n");
@@ -293,6 +336,17 @@ int onas_fan_eloop(struct onas_context **ctx)
                     logg(LOGG_DEBUG, "ClamFanotif: attempting to feed consumer queue\n");
                     /* feed consumer queue */
                     if (CL_SUCCESS != onas_queue_event(event_data)) {
+                        /* A permission event cannot be retried after its
+                         * decision is written.  Deny it now because queue
+                         * admission failed before a scan could complete. */
+                        if (fmd->mask & FAN_ALL_PERM_EVENTS) {
+                            onas_release_failed_event((*ctx)->fan_fd, fmd);
+                            free(event_data->pathname);
+                            free(event_data->fmd);
+                            free(event_data);
+                            logg(LOGG_ERROR, "ClamFanotif: permission event was denied because the scan queue rejected it\n");
+                            return 2;
+                        }
                         close(fmd->fd);
                         free(event_data->pathname);
                         free(event_data->fmd);
@@ -311,12 +365,17 @@ int onas_fan_eloop(struct onas_context **ctx)
                 } else {
                     if (fmd->mask & FAN_ALL_PERM_EVENTS) {
                         struct fanotify_response res;
+                        ssize_t written;
 
                         res.fd       = fmd->fd;
                         res.response = FAN_ALLOW;
 
-                        if (-1 == write((*ctx)->fan_fd, &res, sizeof(res))) {
-                            close(fmd->fd);
+                        do {
+                            written = write((*ctx)->fan_fd, &res, sizeof(res));
+                        } while (written == -1 && errno == EINTR);
+
+                        if (written != (ssize_t)sizeof(res)) {
+                            onas_release_failed_event((*ctx)->fan_fd, fmd);
                             logg(LOGG_ERROR, "ClamFanotif: error occurred while excluding event\n");
                             return 2;
                         }

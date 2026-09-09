@@ -36,11 +36,6 @@ WORKLOAD_CAPABILITIES: dict[str, tuple[str, str]] = {
     "production_cvd_instreamreport": ("clamd", "INSTREAMREPORT"),
     "production_cvd_fildes": ("clamdscan", "fdpass"),
     "edge-clamdscan-stdin": ("clamdscan", "stream"),
-    "edge_contscan": ("clamd", "CONTSCAN"),
-    "edge_multiscan": ("clamd", "MULTISCAN"),
-    "edge_allmatchscan": ("clamd", "ALLMATCHSCAN"),
-    "edge_fildes": ("clamd", "FILDES"),
-    "edge_instream": ("clamd", "INSTREAM"),
 }
 
 REPORT_NUMERIC_FIELDS = (
@@ -76,15 +71,15 @@ def require_file(path: Path, label: str) -> Path:
 
 
 def safe_relative(out: Path, value: str, label: str) -> str:
-    if not value or value == "-" or value.startswith("/"):
+    if value == "-":
         fail(f"{label} is not a safe evidence path: {value!r}")
-    candidate = (out / value).resolve()
     try:
-        relative = candidate.relative_to(out.resolve())
+        candidate = acceptance_cases.safe_evidence_file(out, value, label)
     except ValueError as error:
-        raise ValueError(f"{label} escapes the service evidence directory") from error
-    require_file(candidate, label)
-    return relative.as_posix()
+        if "escapes evidence root" in str(error):
+            raise ValueError(f"{label} escapes the service evidence directory") from error
+        raise
+    return candidate.relative_to(out.resolve()).as_posix()
 
 
 def read_summary(out: Path) -> dict[str, str]:
@@ -130,14 +125,29 @@ def load_inputs(out: Path) -> dict[str, dict]:
 
 def load_workloads(out: Path) -> list[dict[str, str]]:
     path = require_file(out / "provenance/service-workload-results.tsv", "service workload results")
-    with path.open(newline="", encoding="utf-8") as stream:
-        rows = list(csv.DictReader(stream, delimiter="\t"))
-    if not rows and path.read_text(encoding="utf-8") != "\t".join(workload_check.WORKLOAD_HEADER) + "\n":
-        fail("service workload results have an invalid header")
-    if not rows:
-        return []
-    if list(rows[0]) != workload_check.WORKLOAD_HEADER:
-        fail("service workload results have an invalid header")
+    try:
+        rows = acceptance_cases.read_tsv(path, workload_check.WORKLOAD_HEADER)
+    except ValueError as error:
+        raise ValueError(f"service workload results are invalid: {error}") from error
+    expected = workload_check.expected_workloads()
+    seen: set[str] = set()
+    for row in rows:
+        label = row["label"]
+        if label in seen:
+            fail(f"service workload results duplicate label: {label}")
+        seen.add(label)
+        shape = expected.get(label)
+        if shape is None:
+            fail(f"service workload results contain an unknown workload label: {label}")
+        expected_kind, expected_role, expected_offset = shape
+        if (
+            row["kind"] != expected_kind
+            or row["role"] != expected_role
+            or (row["check_offset"] == "yes") != expected_offset
+        ):
+            fail(f"service workload metadata does not match the reviewed matrix: {label}")
+        if row["status"] not in {"0", "1", "2"}:
+            fail(f"service workload results have an invalid status: {label}")
     return rows
 
 
@@ -179,10 +189,17 @@ def record_from_workload(
     role = row["role"]
     if role not in workload_check.ROLES:
         fail(f"mapped workload has invalid role: {label}")
-    if row["kind"] == "oversize" or row["kind"] == "milter":
-        fail(f"mapped workload cannot use special evidence kind: {label}")
-    report_path = Path(out / row["report"])
-    log_path = Path(out / row["log"])
+    if row["kind"] not in {"cli", "service", "report"}:
+        fail(f"mapped workload has an unsupported evidence kind: {label}")
+    if row["check_offset"] not in {"yes", "no"}:
+        fail(f"mapped workload has an invalid offset check: {label}")
+    # Admit both paths before opening either file.  This keeps a malformed
+    # workload manifest from making the producer read outside its evidence
+    # root and only discover the traversal while building the artifact list.
+    report_name = safe_relative(out, row["report"], f"{label} report")
+    log_name = safe_relative(out, row["log"], f"{label} log")
+    report_path = out / report_name
+    log_path = out / log_name
     report = workload_check.load_report(report_path, label)
     oracle_row = oracle[role]
     workload_check.validate_report(report, label, oracle_row)
@@ -222,8 +239,8 @@ def record_from_workload(
     if not isinstance(fixture_hash, str) or len(fixture_hash) != 64:
         fail(f"mapped workload lacks fixture identity: {label}")
     artifacts = [
-        safe_relative(out, row["log"], f"{label} log"),
-        safe_relative(out, row["report"], f"{label} report"),
+        log_name,
+        report_name,
         "provenance/source-manifest.txt",
         "service-summary.txt",
         "provenance/service-build-identity.txt",

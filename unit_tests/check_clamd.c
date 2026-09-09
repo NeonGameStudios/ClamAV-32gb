@@ -299,8 +299,18 @@ START_TEST(test_scan_report_json_status_rejects_contradictory_reports)
         "{\"status\":1,\"verdict\":0,\"completion\":\"RESOURCE_FAILURE\"}";
     static const char invalid_incomplete[] =
         "{\"status\":999,\"verdict\":0,\"completion\":\"RESOURCE_FAILURE\"}";
+    static const char detected_unknown_completion[] =
+        "{\"status\":0,\"verdict\":2,\"completion\":\"UNKNOWN\"}";
+    static const char incomplete_unknown_completion[] =
+        "{\"status\":35,\"verdict\":0,\"completion\":\"UNKNOWN\"}";
+    static const char string_infected_unknown_completion[] =
+        "{\"status\":0,\"verdict\":\"infected\",\"completion\":\"UNKNOWN\"}";
+    static const char string_incomplete_detection_completion[] =
+        "{\"status\":35,\"verdict\":\"incomplete\",\"completion\":\"DETECTION_TERMINATED\"}";
     const char *reports[] = {nested, clean_error, clean_missing_status, clean_detection, detected_complete,
-                             clean_incomplete, detected_incomplete, invalid_incomplete};
+                             clean_incomplete, detected_incomplete, invalid_incomplete,
+                             detected_unknown_completion, incomplete_unknown_completion,
+                             string_infected_unknown_completion, string_incomplete_detection_completion};
     size_t i;
 
     for (i = 0; i < sizeof(reports) / sizeof(reports[0]); i++) {
@@ -552,6 +562,82 @@ START_TEST(test_dsreport_path_request_accepts_sendln_success)
     unlink(log_path);
     logg_file = old_logg_file;
     mprintf_disabled = old_mprintf_disabled;
+}
+END_TEST
+
+static void test_sendln_alarm_handler(int signo)
+{
+    UNUSEDPARAM(signo);
+}
+
+START_TEST(test_sendln_retries_eintr)
+{
+    int sockets[2];
+    int flags;
+    int sndbuf = 4096;
+    unsigned char filler[4096];
+    unsigned char drain[4096];
+    const char payload[] = "sendln-eintr-payload";
+    size_t filled = 0;
+    size_t drained = 0;
+    ssize_t sent;
+    ssize_t received;
+    pid_t child;
+    int child_status = 0;
+    int send_result;
+    struct sigaction action;
+    struct sigaction old_action;
+
+    memset(filler, 0xA5, sizeof(filler));
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+    ck_assert_int_eq(setsockopt(sockets[0], SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf)), 0);
+
+    flags = fcntl(sockets[0], F_GETFL, 0);
+    ck_assert_int_ge(flags, 0);
+    ck_assert_int_eq(fcntl(sockets[0], F_SETFL, flags | O_NONBLOCK), 0);
+    for (;;) {
+        sent = send(sockets[0], filler, sizeof(filler), 0);
+        if (sent > 0) {
+            filled += (size_t)sent;
+            continue;
+        }
+        ck_assert_int_eq(sent, -1);
+        ck_assert(errno == EAGAIN || errno == EWOULDBLOCK);
+        break;
+    }
+    ck_assert_uint_gt(filled, 0);
+    ck_assert_int_eq(fcntl(sockets[0], F_SETFL, flags), 0);
+
+    child = fork();
+    ck_assert_msg(child >= 0, "fork() failed: %s", strerror(errno));
+    if (child == 0) {
+        close(sockets[0]);
+        sleep(2);
+        do {
+            received = recv(sockets[1], drain, sizeof(drain), 0);
+            if (received > 0)
+                drained += (size_t)received;
+        } while (received > 0);
+        close(sockets[1]);
+        _exit(drained == filled + sizeof(payload) - 1 ? 0 : 1);
+    }
+
+    close(sockets[1]);
+    memset(&action, 0, sizeof(action));
+    sigemptyset(&action.sa_mask);
+    action.sa_handler = test_sendln_alarm_handler;
+    ck_assert_int_eq(sigaction(SIGALRM, &action, &old_action), 0);
+    alarm(1);
+    send_result = sendln(sockets[0], payload, sizeof(payload) - 1);
+    alarm(0);
+    ck_assert_int_eq(sigaction(SIGALRM, &old_action, NULL), 0);
+    shutdown(sockets[0], SHUT_WR);
+    close(sockets[0]);
+
+    ck_assert_int_eq(waitpid(child, &child_status, 0), child);
+    ck_assert(WIFEXITED(child_status));
+    ck_assert_int_eq(WEXITSTATUS(child_status), 0);
+    ck_assert_int_eq(send_result, 0);
 }
 END_TEST
 #endif
@@ -1292,6 +1378,68 @@ START_TEST(test_stream_client_rewinds_regular_input)
     close(sockets[0]);
     close(sockets[1]);
     fclose(regular);
+}
+END_TEST
+
+START_TEST(test_stream_client_rewinds_standard_input_regular)
+{
+    struct optstruct stream_limit;
+    int sockets[2];
+    FILE *regular;
+    pid_t child;
+    int child_status = 0;
+    ssize_t received;
+    const char payload[] = "stdin-stream-rewind-payload";
+    const size_t command_length = sizeof("zINSTREAM");
+    const size_t frame_length   = sizeof(payload) - 1;
+    const size_t wire_length    = command_length + sizeof(uint32_t) + frame_length + sizeof(uint32_t);
+    unsigned char wire[sizeof("zINSTREAM") + sizeof(uint32_t) + sizeof(payload) - 1 + sizeof(uint32_t)];
+    uint32_t network_length;
+
+    memset(&stream_limit, 0, sizeof(stream_limit));
+    stream_limit.name   = "StreamMaxLength";
+    stream_limit.numarg = 1024;
+
+    regular = tmpfile();
+    ck_assert_ptr_nonnull(regular);
+    ck_assert_int_eq((int)fwrite(payload, 1, frame_length, regular), (int)frame_length);
+    ck_assert_int_eq(fflush(regular), 0);
+    ck_assert_int_eq(fseek(regular, 9, SEEK_SET), 0);
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+
+    child = fork();
+    if (child == 0) {
+        int result;
+
+        close(sockets[1]);
+        if (dup2(fileno(regular), STDIN_FILENO) < 0)
+            _exit(2);
+        result = send_stream_fd(sockets[0], STDIN_FILENO, "stdin-rewind", &stream_limit);
+        close(sockets[0]);
+        fclose(regular);
+        _exit(result == 1 ? 0 : 1);
+    }
+
+    received = (child < 0) ? -1 : recv(sockets[1], wire, sizeof(wire), MSG_WAITALL);
+    if (child >= 0)
+        waitpid(child, &child_status, 0);
+    close(sockets[0]);
+    close(sockets[1]);
+    fclose(regular);
+
+    ck_assert_int_ge(child, 0);
+    ck_assert(WIFEXITED(child_status));
+    ck_assert_int_eq(WEXITSTATUS(child_status), 0);
+    ck_assert_int_eq((int)received, (int)wire_length);
+    ck_assert_mem_eq(wire, "zINSTREAM", command_length);
+
+    memcpy(&network_length, wire + command_length, sizeof(network_length));
+    ck_assert_uint_eq(ntohl(network_length), frame_length);
+    ck_assert_mem_eq(wire + command_length + sizeof(network_length), payload, frame_length);
+
+    memcpy(&network_length, wire + command_length + sizeof(network_length) + frame_length,
+           sizeof(network_length));
+    ck_assert_uint_eq(network_length, 0);
 }
 END_TEST
 
@@ -2377,7 +2525,9 @@ static Suite *test_clamd_suite(void)
 #endif
     tcase_add_test(tc_client, test_stream_client_rejects_over_limit);
     tcase_add_test(tc_client, test_dsreport_stream_preserves_over_limit_fallback);
+    tcase_add_test(tc_client, test_sendln_retries_eintr);
     tcase_add_test(tc_client, test_stream_client_rewinds_regular_input);
+    tcase_add_test(tc_client, test_stream_client_rewinds_standard_input_regular);
     tcase_add_test(tc_client, test_stream_client_uses_default_limit_without_options);
     tcase_add_test(tc_client, test_stream_client_rejects_invalid_descriptor_before_command);
     tcase_add_test(tc_client, test_stream_client_rejects_read_error_before_terminator);

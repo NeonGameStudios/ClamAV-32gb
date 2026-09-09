@@ -64,3 +64,38 @@ Runner-boundary revalidation:
   was accepted from that attempt.
 - This confirms the remaining live oversize step is runner-bound, not a reason
   to weaken the exact 32-GiB contract or relabel the ARM64 result.
+
+Materialized 32-GiB edge development run on Sonic1 (2026-09-09 UTC):
+
+- Capacity gate: Linux x86-64 host with 66,800,082,944 bytes RAM,
+  63,002,746,880 bytes available RAM, 144,445,280,256 bytes available in
+  `/tmp`, 12 CPUs, and an unlimited container memory cgroup.
+- Fixture: `/tmp/clamav-materialized-edge-20260909/32g-edge.bin`, written in
+  four bounded segments rather than fallocate-backed storage. Independent
+  verification reported `size=34359738368`, `allocated=34359742464`,
+  `first_hole=34359738368`, and the expected marker
+  `CLAMAV-LF-32G-EDGE\\x00` at offset `34359738304`.
+- Image: `clamav-32gb:dev-current`, digest
+  `sha256:c0c10e2d6e6675c201dc657276543462de64896e53ae44cb9ba725a3a12d86df`.
+  The scan used the repaired isolated build, the NDB marker oracle, and an
+  explicit empty CUD certificate directory prerequisite.
+- The named container `clamav-edge-scan-20260909` exited `1` after scanning
+  the complete fixture. Its bounded debug output reported
+  `LargeFile.POC.32g-edge.UNOFFICIAL matched at 34359738304` and the expected
+  detection line.
+- Structured report: `/tmp/clamav-materialized-edge-20260909/out/32g-edge.jsonl`,
+  SHA-256
+  `0898bbddb3df47ae3906286cb6470844cb5a47afbefe20b029b0719d8fc729fa`.
+  It records `status=1`, `verdict=2`, `completion=DETECTION_TERMINATED`,
+  `root_size=34359738368`, `logical_bytes=34359738368`,
+  `matcher_bytes=34368129024`, `elapsed_ms=109169`,
+  `last_alert=LargeFile.POC.32g-edge.UNOFFICIAL`, and
+  `last_alert_offset=34359738304`.
+- The engine debug hash for the scanned fixture was
+  `0d5226ec60cd03781106de6d2cee6ff5fcf2101f95d181c14e9abf5bed593429`.
+
+This is retained development evidence for the materialized edge case. It is
+not promoted into the R04 structured acceptance records or release readiness:
+the remote image still came from the isolated repaired-source graph rather
+than a frozen, complete current-source checkout, and the remaining family,
+FILDESREPORT, and dependency-bound checks are still outstanding.

@@ -185,4 +185,26 @@ relinking the existing C objects/static libraries with the freshly compiled
 Rust archive and existing runtime libraries; this is development evidence,
 not a coherent release build or qualification record.
 
+Follow-on current-source production CLI revalidation:
+
+- The CLI was relinked against the current `libclamav_static.a`; the version
+  smoke returned exit 0 and `ClamAV 1.5.3-largefile-devel`.
+- With the required empty `/usr/local/etc/certs` directory created inside the
+  disposable ARM64 container, `VERSION=1.5.3-largefile-devel SOURCE=/src
+  BUILD=/tmp/clamav-largefile-static-build TMP=/tmp CLAMSCAN=... python3 -m
+  unittest -v clamscan.fuzzy_img_hash_test` passed **4/4**. The real
+  `/src/logo.png` fixture produced the expected exact-match alerts, disabled
+  fuzzy-image and disabled image scans returned clean, malformed signatures
+  returned exit 2, and the one-bit hamming-distance case detected while the
+  two-bit case did not.
+- Current retained hashes for this relink are: `clamscan`
+  `e00719e21aad70e1e67c79dab7729a6da5bd125ef06a6519de31bfa43b44d8fd`,
+  `libclamav_static.a`
+  `e3f9034af8a8c571f5bcd18e128abd1f3bbccd91a47986746e704654adcdfaca`, and
+  `CMakeCache.txt`
+  `5ff75d1e193f0cc883ee9595833f608fdc43e21e8e1d7cfeb56d015f63b2897c`.
+- This strengthens development evidence for the fuzzy-image required rows;
+  the rows remain pending because the roadmap still requires certified
+  Linux x86-64, sanitizer, full-size, and capability-bound evidence.
+
 State: `development-verified`; release readiness remains blocked.

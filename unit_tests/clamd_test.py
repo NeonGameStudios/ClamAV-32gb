@@ -106,6 +106,15 @@ class TC(testcase.TestCase):
             DetectPUA yes
             ScanPDF yes
             CommandReadTimeout 1
+            # Keep the ordinary daemon regression suite on the development
+            # envelope. Large-file admission is exercised separately with
+            # explicit certified limits and must not make every small service
+            # test depend on a 48 GiB runner.
+            MaxFileSize 100M
+            MaxScanSize 400M
+            PCREMaxFileSize 100M
+            StreamMaxLength 100M
+            OnAccessMaxFileSize 5M
             MaxQueue 800
             MaxConnectionQueueLength 1024
             '''.format(pid=TC.clamd_pid, dbdir=TC.path_db)

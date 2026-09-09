@@ -164,6 +164,23 @@ class RuntimeAcceptanceCaseProducerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exact MaxFileSize reason"):
             producer.produce(self.out, self.manifest, self.mapping)
 
+    def test_oracle_schema_rejects_rows_with_wrong_column_count(self):
+        path = self.out / "provenance/runtime-acceptance-oracle.tsv"
+        path.write_text(path.read_text(encoding="utf-8").rstrip("\n") + "\textra\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "columns at line 7"):
+            producer.produce(self.out, self.manifest, self.mapping)
+
+    def test_symlinked_oracle_path_is_rejected_before_reading(self):
+        link = self.out / "reports/edge-link.jsonl"
+        link.symlink_to(self.out / "poc/reports/32g-edge.bin.jsonl")
+        path = self.out / "provenance/runtime-acceptance-oracle.tsv"
+        text = path.read_text(encoding="utf-8").replace(
+            "poc/reports/32g-edge.bin.jsonl", "reports/edge-link.jsonl", 1
+        )
+        path.write_text(text, encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "is symlinked"):
+            producer.load_oracle(self.out)
+
     def test_stdin_limit_report_may_bind_exact_staged_prefix(self):
         report = {
             "version": 1,

@@ -78,6 +78,83 @@ class InputPolicyTests(unittest.TestCase):
             checker.load_oracle(self.write_oracle(materialized_size=0))
         self.assertEqual(checker.load_oracle(self.write_oracle(materialized_size=1))["materialized"][0], 1)
 
+    def test_malformed_tsv_quoting_is_rejected(self):
+        malformed = self.root / "malformed.tsv"
+        malformed.write_text(
+            "\t".join(checker.ORACLE_HEADER) + "\n\"unterminated\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(RuntimeError, "qualification oracle has malformed TSV"):
+            checker.read_tsv(malformed, checker.ORACLE_HEADER, "qualification oracle")
+
+    def test_tsv_row_width_is_rejected_at_ingress(self):
+        malformed = self.root / "short.tsv"
+        malformed.write_text(
+            "\t".join(checker.ORACLE_HEADER) + "\nrole\t1\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(RuntimeError, "qualification oracle has 2 columns at line 2"):
+            checker.read_tsv(malformed, checker.ORACLE_HEADER, "qualification oracle")
+
+    def test_tsv_empty_field_is_rejected_at_ingress(self):
+        malformed = self.root / "empty.tsv"
+        malformed.write_text(
+            "\t".join(checker.ORACLE_HEADER) + "\n"
+            + "\t".join(("production", "1", "0" * 64, "0", "COMPLETE", "-", "-", ""))
+            + "\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(RuntimeError, "qualification oracle has an empty field at line 2"):
+            checker.read_tsv(malformed, checker.ORACLE_HEADER, "qualification oracle")
+
+    def test_symlinked_service_evidence_path_is_rejected(self):
+        logs = self.root / "logs"
+        logs.mkdir()
+        target = logs / "target.log"
+        target.write_text("target\n", encoding="utf-8")
+        (logs / "link.log").symlink_to(target)
+        with self.assertRaisesRegex(RuntimeError, "is symlinked"):
+            checker.evidence_path(self.root, "logs/link.log", "service log")
+
+    def test_legacy_edge_workloads_are_not_report_bindings(self):
+        expected = checker.expected_workloads()
+        for label in ("edge_contscan", "edge_multiscan", "edge_allmatch",
+                      "edge_fildes", "edge_instream"):
+            with self.subTest(label=label):
+                self.assertEqual(expected[label], ("legacy", "edge", False))
+        log = self.root / "legacy.log"
+        log.write_text("protocol_mode=CONTSCAN\nfixture: OK\n", encoding="utf-8")
+        edge_oracle = (
+            checker.EXACT_EDGE_BYTES, self.digest, 0, "COMPLETE", "-", "-", "CL_TYPE_DATA"
+        )
+        checker.validate_legacy_log(log, "edge_contscan", edge_oracle, "CONTSCAN")
+
+    def test_clamdscan_mode_combinations_are_report_bindings(self):
+        expected = checker.expected_workloads()
+        for label in (
+            "edge-clamdscan-multiscan",
+            "edge-clamdscan-stream-multiscan",
+            "edge-clamdscan-fdpass-multiscan",
+        ):
+            with self.subTest(label=label):
+                self.assertEqual(expected[label], ("service", "edge", False))
+
+    def test_legacy_verifier_rejects_status_that_disagrees_with_oracle(self):
+        expected = checker.expected_workloads()
+        self.assertEqual(expected["edge_contscan"], ("legacy", "edge", False))
+        edge_oracle = (
+            checker.EXACT_EDGE_BYTES, self.digest, 1, "DETECTION_TERMINATED",
+            "Legacy.Detection", "7", "CL_TYPE_DATA"
+        )
+        log = self.root / "legacy-detection.log"
+        log.write_text(
+            "protocol_mode=CONTSCAN\nfixture: Legacy.Detection.UNOFFICIAL FOUND\n",
+            encoding="utf-8",
+        )
+        checker.validate_legacy_log(log, "edge_contscan", edge_oracle, "CONTSCAN")
+        with self.assertRaisesRegex(RuntimeError, "does not match oracle"):
+            checker.validate_process_status("edge_contscan", 0, edge_oracle)
+
     def test_valid_exact_edge_with_test_local_filesystem_metadata(self):
         """Exercise real binding/hash logic while mocking only giant-file metadata."""
         info = self.metadata(st_size=checker.EXACT_EDGE_BYTES,
@@ -239,6 +316,10 @@ class InputPolicyTests(unittest.TestCase):
             writer.writerow(checker.WORKLOAD_HEADER)
             writer.writerow(("production-clamscan", "cli", "production", str(self.input),
                              "logs/production.log", "reports/production.jsonl", "0", "yes"))
+        (self.root / "logs").mkdir()
+        (self.root / "reports").mkdir()
+        (self.root / "logs/production.log").write_text("placeholder\n", encoding="utf-8")
+        (self.root / "reports/production.jsonl").write_text("{}\n", encoding="utf-8")
         (self.root / "oracle-binding.txt").write_text(
             "qualification_oracle=provenance/qualification-oracle.tsv\n"
             f"qualification_oracle_sha256={checker.sha256(oracle_path)}\n"

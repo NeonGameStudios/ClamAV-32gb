@@ -504,6 +504,7 @@ int main(int argc, char **argv)
                     if (!(pua_cats = realloc(pua_cats, i + strlen(opt->strarg) + 3))) {
                         logg(LOGG_ERROR, "Can't allocate memory for pua_cats\n");
                         cl_engine_free(engine);
+                        engine = NULL;
                         ret = 1;
                         break;
                     }
@@ -897,6 +898,10 @@ int main(int argc, char **argv)
         }
 
         ret = recvloop(lsockets, nlsockets, engine, dboptions, opts);
+        /* recvloop owns the engine for its full lifetime and releases it
+         * before returning.  Clear the pointer so the common startup-failure
+         * cleanup below cannot double-free it. */
+        engine = NULL;
 
     } while (0);
 
@@ -916,6 +921,15 @@ int main(int argc, char **argv)
                 logg(LOGG_INFO, "Socket file removed.\n");
         }
 #endif
+    }
+
+    /* Startup can fail after the engine has been built but before recvloop()
+     * takes ownership (for example, when a configured listening socket cannot
+     * be bound).  Release that engine on every such path so sanitizer runs do
+     * not turn an operational startup error into a leak report. */
+    if (engine) {
+        cl_engine_free(engine);
+        engine = NULL;
     }
 
     free(lsockets);

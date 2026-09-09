@@ -548,12 +548,15 @@ no detection is found, but the mandatory outer raw matcher now runs for them.
 The public raw-detection regression and the existing non-detecting failure
 regression cover both sides of that contract.
 
-The optional fuzzy-image matcher now charges its admitted full-image fmap
-window against `MaxContiguousSize`, releases that reservation on all exits,
-and preserves `CL_EREAD` for an in-range backing-read failure. Its individual
-1-GiB allocation/contiguous-subject restriction remains an explicit
-non-release-qualified boundary; the focused resource regression is control
-evidence, not parser-family qualification.
+The optional fuzzy-image matcher now decodes through bounded `FMapReader`
+windows instead of borrowing the encoded source as one contiguous subject.
+Only the checked decoder working set is charged to `MaxContiguousSize`, and
+that reservation is released on normal results and decoder panics. Typed
+reader, timeout, parse, and resource failures remain incomplete and
+non-cacheable. The legacy direct slice FFI retains its individual-allocation
+restriction, while the scanner-aware path is covered by a valid 2 MiB encoded
+image completing under a 1.5 MiB contiguous cap; certified image corpus,
+sanitizer, and supported-build qualification remain release gates.
 
 Explicit XAR archived and extracted checksum declarations now require a
 supported SHA-1 or MD5 style and an exact digest value. Unsupported styles

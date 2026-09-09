@@ -3323,9 +3323,20 @@ static const char *pdf_getdict(struct pdf_struct *pdf, const char *q0, int *len,
         return NULL;
     }
 
-    /* if the value is a dictionary object, include the < > brackets.*/
-    while (q > q0 && (q[-1] == '<' || q[-1] == '\n'))
-        q--;
+    /* pdf_nextobject() skips both opening '<' characters and the whitespace
+     * immediately after them. Restore the dictionary start for ordinary
+     * `/Key << ... >>` formatting without changing scalar value pointers. */
+    {
+        const char *dict_value = q;
+
+        while (dict_value > q0 && isspace((unsigned char)dict_value[-1]))
+            dict_value--;
+        if (dict_value >= q0 + 2 && dict_value[-1] == '<' && dict_value[-2] == '<')
+            q = dict_value - 2;
+        else
+            while (q > q0 && (q[-1] == '<' || q[-1] == '\n'))
+                q--;
+    }
 
     *len -= q - q0;
     return q;
@@ -4329,9 +4340,9 @@ void pdf_handle_enc(struct pdf_struct *pdf)
             cli_dbgmsg("pdf_handle_enc: EFF: %s\n", EFF);
         }
 
-        pdf->enc_method_stream       = parse_enc_method_ctx(pdf, pdf->CF, n, StmF, ENC_IDENTITY);
-        pdf->enc_method_string       = parse_enc_method_ctx(pdf, pdf->CF, n, StrF, ENC_IDENTITY);
-        pdf->enc_method_embeddedfile = parse_enc_method_ctx(pdf, pdf->CF, n, EFF, pdf->enc_method_stream);
+        pdf->enc_method_stream       = parse_enc_method_ctx(pdf, pdf->CF, (unsigned)cf_len, StmF, ENC_IDENTITY);
+        pdf->enc_method_string       = parse_enc_method_ctx(pdf, pdf->CF, (unsigned)cf_len, StrF, ENC_IDENTITY);
+        pdf->enc_method_embeddedfile = parse_enc_method_ctx(pdf, pdf->CF, (unsigned)cf_len, EFF, pdf->enc_method_stream);
 
         cli_dbgmsg("pdf_handle_enc: EncryptMetadata: %s\n", EM ? "true" : "false");
 
@@ -5405,10 +5416,9 @@ static void Author_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfnam
 
     UNUSEDPARAM(act);
 
-    if (NULL == pdf)
+    if (!(pdf) || !(ctx = pdf->ctx) || !(ctx->options) || !(obj) ||
+        !(ctx->this_layer_metadata_json))
         return;
-
-    ctx = pdf->ctx;
 
     if (!(SCAN_COLLECT_METADATA))
         return;
@@ -5433,10 +5443,9 @@ static void Creator_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfna
 
     UNUSEDPARAM(act);
 
-    if (NULL == pdf)
+    if (!(pdf) || !(ctx = pdf->ctx) || !(ctx->options) || !(obj) ||
+        !(ctx->this_layer_metadata_json))
         return;
-
-    ctx = pdf->ctx;
 
     if (!(SCAN_COLLECT_METADATA))
         return;
@@ -5461,10 +5470,9 @@ static void ModificationDate_cb(struct pdf_struct *pdf, struct pdf_obj *obj, str
 
     UNUSEDPARAM(act);
 
-    if (NULL == pdf)
+    if (!(pdf) || !(ctx = pdf->ctx) || !(ctx->options) || !(obj) ||
+        !(ctx->this_layer_metadata_json))
         return;
-
-    ctx = pdf->ctx;
 
     if (!(SCAN_COLLECT_METADATA))
         return;
@@ -5489,10 +5497,9 @@ static void CreationDate_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct 
 
     UNUSEDPARAM(act);
 
-    if (NULL == pdf)
+    if (!(pdf) || !(ctx = pdf->ctx) || !(ctx->options) || !(obj) ||
+        !(ctx->this_layer_metadata_json))
         return;
-
-    ctx = pdf->ctx;
 
     if (!(SCAN_COLLECT_METADATA))
         return;
@@ -5517,10 +5524,9 @@ static void Producer_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfn
 
     UNUSEDPARAM(act);
 
-    if (NULL == pdf)
+    if (!(pdf) || !(ctx = pdf->ctx) || !(ctx->options) || !(obj) ||
+        !(ctx->this_layer_metadata_json))
         return;
-
-    ctx = pdf->ctx;
 
     if (!(SCAN_COLLECT_METADATA))
         return;
@@ -5545,10 +5551,9 @@ static void Title_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname
 
     UNUSEDPARAM(act);
 
-    if (NULL == pdf)
+    if (!(pdf) || !(ctx = pdf->ctx) || !(ctx->options) || !(obj) ||
+        !(ctx->this_layer_metadata_json))
         return;
-
-    ctx = pdf->ctx;
 
     if (!(SCAN_COLLECT_METADATA))
         return;
@@ -5573,10 +5578,9 @@ static void Keywords_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfn
 
     UNUSEDPARAM(act);
 
-    if (NULL == pdf)
+    if (!(pdf) || !(ctx = pdf->ctx) || !(ctx->options) || !(obj) ||
+        !(ctx->this_layer_metadata_json))
         return;
-
-    ctx = pdf->ctx;
 
     if (!(SCAN_COLLECT_METADATA))
         return;
@@ -5601,10 +5605,9 @@ static void Subject_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfna
 
     UNUSEDPARAM(act);
 
-    if (NULL == pdf)
+    if (!(pdf) || !(ctx = pdf->ctx) || !(ctx->options) || !(obj) ||
+        !(ctx->this_layer_metadata_json))
         return;
-
-    ctx = pdf->ctx;
 
     if (!(SCAN_COLLECT_METADATA))
         return;
@@ -5666,8 +5669,7 @@ static void Pages_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname
 {
     cli_ctx *ctx = NULL;
     struct pdf_array *array;
-    const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-                                         : (const char *)(obj->start + pdf->map);
+    const char *objstart;
     const char *begin;
     unsigned long npages = 0, count;
     long temp_long;
@@ -5678,13 +5680,15 @@ static void Pages_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname
 
     UNUSEDPARAM(act);
 
-    if (!(pdf) || !(pdf->ctx->this_layer_metadata_json))
+    if (!(pdf) || !(ctx = pdf->ctx) || !(ctx->options) ||
+        !(ctx->this_layer_metadata_json) || !(obj))
         return;
-
-    ctx = pdf->ctx;
 
     if (!(SCAN_COLLECT_METADATA))
         return;
+
+    objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+                             : (const char *)(obj->start + pdf->map);
 
     pdfobj = cli_jsonobj(pdf->ctx->this_layer_metadata_json, "PDFStats");
     if (!(pdfobj))

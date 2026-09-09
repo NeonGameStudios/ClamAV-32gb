@@ -19,6 +19,7 @@ import stat
 import sys
 from pathlib import Path
 
+import largefile_acceptance_cases as acceptance_cases
 from largefile_service_oversize import validate_evidence as validate_oversize_evidence
 
 
@@ -58,7 +59,14 @@ REPORT_FIELDS = (
     "skipped_operations",
 )
 ROLES = {"production", "materialized", "expansion", "edge"}
-KINDS = {"cli", "service", "report", "milter", "oversize"}
+KINDS = {"cli", "service", "report", "legacy", "milter", "oversize"}
+LEGACY_MODES = {
+    "edge_contscan": "CONTSCAN",
+    "edge_multiscan": "MULTISCAN",
+    "edge_allmatch": "ALLMATCHSCAN",
+    "edge_fildes": "FILDES",
+    "edge_instream": "INSTREAM",
+}
 MAX_LOGICAL_BYTES = 64 * 1024 * 1024 * 1024
 EXACT_EDGE_BYTES = 32 * 1024 * 1024 * 1024
 INPUT_ROLES = ("production", "materialized", "expansion", "edge")
@@ -99,11 +107,29 @@ def validate_outcome(label: str, exit_code: int, completion: str, signature: str
         fail(f"{label} has contradictory exit/completion/signature results")
 
 
+def read_tsv(path: Path, header: list[str], label: str) -> list[list[str]]:
+    try:
+        with path.open(newline="", encoding="utf-8") as stream:
+            reader = csv.reader(stream, delimiter="\t", strict=True)
+            rows = []
+            for line_number, row in enumerate(reader, start=1):
+                if len(row) != len(header):
+                    fail(
+                        f"{label} has {len(row)} columns at line {line_number}; "
+                        f"expected {len(header)}"
+                    )
+                if any(value == "" for value in row):
+                    fail(f"{label} has an empty field at line {line_number}")
+                rows.append(row)
+    except csv.Error as error:
+        fail(f"{label} has malformed TSV: {error}")
+    if not rows or rows[0] != header:
+        fail(f"{label} has an invalid header")
+    return rows
+
+
 def load_oracle(path: Path) -> dict[str, tuple[int, str, int, str, str, str, str]]:
-    with path.open(newline="", encoding="utf-8") as stream:
-        rows = list(csv.reader(stream, delimiter="\t"))
-    if not rows or rows[0] != ORACLE_HEADER:
-        fail("qualification oracle has an invalid header")
+    rows = read_tsv(path, ORACLE_HEADER, "qualification oracle")
 
     result = {}
     for line_number, row in enumerate(rows[1:], start=2):
@@ -160,8 +186,21 @@ def expected_workloads() -> dict[str, tuple[str, str, bool]]:
     expected["edge-clamscan"] = ("cli", "edge", True)
     expected["edge-clamscan-stdin"] = ("cli", "edge", True)
     expected["edge-clamdscan-stdin"] = ("service", "edge", False)
-    for label in ("edge_contscan", "edge_multiscan", "edge_allmatch", "edge_fildes", "edge_instream"):
+    # Keep clamdscan's supported mode combinations distinct from direct
+    # legacy-wire probes.  The client-side flags select materially different
+    # path, stream, and fd-passing behavior and must each bind their own
+    # report-backed workload.
+    for label in (
+        "edge-clamdscan-multiscan",
+        "edge-clamdscan-stream-multiscan",
+        "edge-clamdscan-fdpass-multiscan",
+    ):
         expected[label] = ("service", "edge", False)
+    for label in ("edge_contscan", "edge_multiscan", "edge_allmatch", "edge_fildes", "edge_instream"):
+        # These labels are direct clamd legacy-wire probes.  They must not be
+        # accepted as clamdscan report-mode evidence merely because the client
+        # happens to expose similarly named options.
+        expected[label] = ("legacy", "edge", False)
     for client in (1, 2):
         expected[f"clamd-parallel-client-{client}"] = ("service", "edge", False)
     expected["milter-exact-edge"] = ("milter", "-", False)
@@ -174,12 +213,12 @@ def evidence_path(out: Path, value: str, label: str, required: bool = True) -> P
         return None
     if not value or value.startswith("/"):
         fail(f"{label} must be a relative evidence path")
-    candidate = (out / value).resolve()
     try:
-        candidate.relative_to(out.resolve())
+        return acceptance_cases.safe_evidence_file(out, value, label)
     except ValueError as error:
-        raise RuntimeError(f"{label} escapes the service evidence directory") from error
-    return candidate
+        if "escapes evidence root" in str(error):
+            raise RuntimeError(f"{label} escapes the service evidence directory") from error
+        fail(str(error))
 
 
 def validate_role_size(role: str, size: int) -> None:
@@ -346,6 +385,42 @@ def validate_log(path: Path, label: str, oracle_row: tuple, check_offset: bool) 
             fail(f"{label} text log does not contain the expected match offset")
 
 
+def validate_process_status(label: str, status: int, oracle_row: tuple) -> None:
+    expected_exit = oracle_row[2]
+    if status != expected_exit:
+        fail(f"{label} process status {status} does not match oracle {expected_exit}")
+
+
+def validate_legacy_log(
+    path: Path, label: str, oracle_row: tuple, expected_mode: str
+) -> None:
+    """Validate a direct legacy-wire reply without inventing report fields."""
+    if not path.is_file():
+        fail(f"{label} has no text log")
+    text = path.read_text(encoding="utf-8", errors="replace")
+    if re.search(rf"^protocol_mode={re.escape(expected_mode)}$", text, re.MULTILINE) is None:
+        fail(f"{label} legacy log does not bind the expected {expected_mode} wire command")
+    _, _, _, completion, _, _, _ = oracle_row
+    if completion == "DETECTION_TERMINATED":
+        validate_log(path, label, oracle_row, False)
+    elif completion == "COMPLETE":
+        if "FOUND" in text or re.search(r": OK[ \t]*$", text, re.MULTILINE) is None:
+            fail(f"{label} legacy reply does not prove a clean result")
+    elif completion == "LIMIT_INCOMPLETE":
+        limit_text = text.lower()
+        if "FOUND" in text or (
+            "maxfilesize" not in limit_text
+            and "max file size" not in limit_text
+            and "size limit exceeded" not in limit_text
+            and "exceeded max scan size" not in limit_text
+        ):
+            fail(f"{label} legacy reply does not prove the size-limit result")
+        if "ERROR" not in text:
+            fail(f"{label} legacy size-limit reply is not an error result")
+    else:
+        fail(f"{label} has unsupported legacy completion {completion}")
+
+
 def validate_binding(out: Path, oracle_path: Path, workload_path: Path) -> None:
     binding = out / "oracle-binding.txt"
     if not binding.is_file():
@@ -391,10 +466,7 @@ def main(argv: list[str]) -> int:
     validate_binding(out, oracle_path, workload_path)
     inputs = input_evidence(out)
 
-    with workload_path.open(newline="", encoding="utf-8") as stream:
-        rows = list(csv.reader(stream, delimiter="\t"))
-    if not rows or rows[0] != WORKLOAD_HEADER:
-        fail("service workload results have an invalid header")
+    rows = read_tsv(workload_path, WORKLOAD_HEADER, "service workload results")
     expected = expected_workloads()
     seen = set()
     for line_number, row in enumerate(rows[1:], start=2):
@@ -456,6 +528,18 @@ def main(argv: list[str]) -> int:
                 fail("milter workload log does not prove the exact-edge rejection")
             if exact_wire.group(5) != MILTER_EXACT_STREAM_SHA256:
                 fail("milter workload log does not prove the deterministic transmitted stream digest")
+            continue
+
+        if kind == "legacy":
+            if report_path != "-":
+                fail(f"{label} legacy workload unexpectedly has a structured report")
+            if input_binding(input_path, role, oracle) != inputs[role]:
+                fail(f"{label} input does not match its recorded allocation/content evidence")
+            expected_mode = LEGACY_MODES.get(label)
+            if expected_mode is None:
+                fail(f"{label} has no reviewed legacy wire command")
+            validate_process_status(label, status, oracle[role])
+            validate_legacy_log(log, label, oracle[role], expected_mode)
             continue
 
         if role not in ROLES:

@@ -177,6 +177,7 @@ def start_daemon(
     clamd: Path,
     config: Path,
     socket_path: Path,
+    pid_path: Path,
     log_path: Path,
 ) -> subprocess.Popen:
     with log_path.open("w", encoding="utf-8") as log:
@@ -192,6 +193,11 @@ def start_daemon(
                 fail(f"clamd exited before readiness; see {log_path}")
             try:
                 ping(socket_path)
+                if not pid_path.is_file() or pid_path.is_symlink():
+                    raise ValueError("clamd did not create a regular PID file")
+                pid_text = pid_path.read_text(encoding="utf-8").strip()
+                if not pid_text.isdigit() or int(pid_text) <= 0:
+                    raise ValueError("clamd PID file does not contain a positive PID")
                 return process
             except (OSError, ValueError):
                 time.sleep(0.2)
@@ -204,7 +210,16 @@ def start_daemon(
     fail(f"clamd did not become ready; see {log_path}")
 
 
-def stop_daemon(process: subprocess.Popen, socket_path: Path) -> None:
+def path_absent(path: Path) -> bool:
+    return not path.exists() and not path.is_symlink()
+
+
+def stop_daemon(
+    process: subprocess.Popen,
+    socket_path: Path,
+    pid_path: Path,
+) -> dict[str, str]:
+    running_before_stop = process.poll() is None
     if process.poll() is None:
         process.send_signal(signal.SIGTERM)
         try:
@@ -212,8 +227,33 @@ def stop_daemon(process: subprocess.Popen, socket_path: Path) -> None:
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait(timeout=5)
-    if socket_path.exists():
-        socket_path.unlink()
+    return {
+        "running_before_stop": "yes" if running_before_stop else "no",
+        "exited_after_stop": "yes" if process.poll() is not None else "no",
+        "socket_absent_after_stop": "yes" if path_absent(socket_path) else "no",
+        "pidfile_absent_after_stop": "yes" if path_absent(pid_path) else "no",
+    }
+
+
+def write_service_lifecycle(
+    path: Path,
+    health_after: str,
+    cleanup: dict[str, str],
+    pidfile_present_after_start: str = "yes",
+) -> None:
+    """Retain the daemon health and cleanup facts attached to each case."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "event\tresult\n"
+        "ping_before_cases\tpass\n"
+        f"ping_after_cases\t{health_after}\n"
+        f"pidfile_present_after_start\t{pidfile_present_after_start}\n"
+        f"daemon_running_before_stop\t{cleanup['running_before_stop']}\n"
+        f"daemon_exited_after_stop\t{cleanup['exited_after_stop']}\n"
+        f"socket_absent_after_stop\t{cleanup['socket_absent_after_stop']}\n"
+        f"pidfile_absent_after_stop\t{cleanup['pidfile_absent_after_stop']}\n",
+        encoding="utf-8",
+    )
 
 
 def send_request(connection: socket.socket, mode: str, fixture: Path) -> None:
@@ -516,7 +556,9 @@ def capture(
             config = output / f"provenance/clamd-{outcome}.conf"
             write_config(config, database_src.parent, socket_path, pid_path, temporary, certs, limit)
             daemon_log = output / f"logs/clamd-{outcome}.log"
-            daemon = start_daemon(clamd, config, socket_path, daemon_log)
+            daemon = start_daemon(clamd, config, socket_path, pid_path, daemon_log)
+            outcome_records: list[dict[str, str]] = []
+            health_after = "fail"
             try:
                 ping(socket_path)
                 for mode, capability in MODES.items():
@@ -526,11 +568,13 @@ def capture(
                         socket_path, fixture, oracle_path, mode, outcome,
                         report_path, log_path,
                     )
-                    records.append(make_record(
+                    record = make_record(
                         output, capability, mode, outcome, fixture, database,
                         oracle_path, config, report, source_manifest,
                         build_identity, daemon_log,
-                    ))
+                    )
+                    records.append(record)
+                    outcome_records.append(record)
                 if clamdscan is not None:
                     for mode, capability in CLIENT_MODES.items():
                         report_path = output / f"reports/client-{mode}-{outcome}.jsonl"
@@ -539,14 +583,41 @@ def capture(
                             clamdscan, config, fixture, oracle_path, mode,
                             outcome, report_path, log_path,
                         )
-                        records.append(make_record(
+                        record = make_record(
                             output, capability, mode, outcome, fixture, database,
                             oracle_path, config, report, source_manifest,
                             build_identity, daemon_log, record_kind="clamdscan",
                             record_id=capability, artifact_prefix="client-",
-                        ))
+                        )
+                        records.append(record)
+                        outcome_records.append(record)
+
+                # A successful request is not enough to prove that the
+                # daemon survived every ingress mode. Retain a final PING
+                # before shutdown and attach the lifecycle result to every
+                # case from this outcome group.
+                ping(socket_path)
+                health_after = "pass"
             finally:
-                stop_daemon(daemon, socket_path)
+                cleanup = stop_daemon(daemon, socket_path, pid_path)
+                lifecycle = output / f"provenance/service-lifecycle-{outcome}.tsv"
+                write_service_lifecycle(lifecycle, health_after, cleanup)
+                lifecycle_rel = lifecycle.relative_to(output).as_posix()
+                cleanup_ok = all(
+                    cleanup[field] == "yes"
+                    for field in (
+                        "running_before_stop",
+                        "exited_after_stop",
+                        "socket_absent_after_stop",
+                        "pidfile_absent_after_stop",
+                    )
+                )
+                for record in outcome_records:
+                    record["artifacts"] += f",{lifecycle_rel}"
+                    record["resource_phase"] += ";daemon-health=ping-before-and-after;cleanup=lifecycle-verified"
+                    if health_after != "pass" or not cleanup_ok:
+                        record["health"] = "fail"
+                        record["cleanup"] = "fail"
     finally:
         for path in native_temp.iterdir():
             if path.is_dir():

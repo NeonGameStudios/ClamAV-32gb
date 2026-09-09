@@ -206,7 +206,7 @@ int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout, cl_er
         } while (CURLE_AGAIN == curlcode);
 
         if (sent == 0) {
-            if (sent && errno == EINTR) {
+            if (errno == EINTR) {
                 continue;
             } else if (errno == EFAULT) {
                 /* Users have reported frequent "bad address" errors when files

@@ -53,3 +53,50 @@ therefore remains blocked until a certified Linux x86-64 runner produces and
 retains this proof alongside the current-source build identity.
 
 State: `development-verified`
+
+Follow-on fail-closed event-release correction (2026-09-08): fanotify
+permission events that fail before queue ownership—read-link failure, event
+allocation, context mapping, metadata-copy, metadata-version validation, or
+queue admission—now receive `FAN_DENY` before their kernel metadata descriptor
+is closed. Queue admission failures do not retry a permission event after
+replying; non-permission queue failures retain the existing retry behavior.
+The current-source ARM64 `clamonacc` target was rebuilt and linked in a
+disposable container after installing only the missing development headers
+inside that container. The target compiled successfully, including the
+changed `fanotif.c` unit; version/help startup could not be used as a runtime
+smoke because this build requires a full clamd configuration and fanotify
+startup. Real permission-event evidence remains blocked on the authorized
+Linux x86-64 runner.
+
+Follow-on worker response-boundary correction (2026-09-08): the normal
+permission-response path now retries an interrupted `write()`, rejects short
+writes as `CL_EWRITE`, and invokes the shared `FAN_DENY`/close recovery path
+when the kernel does not accept the complete response. A malformed queued
+event with no metadata descriptor or invalid fanotify descriptors now returns
+`CL_EARG` instead of dereferencing missing event state. Cleanup skips a
+descriptor already released by the fallback path. This closes a local
+fail-closed response gap; it does not create privileged fanotify evidence.
+
+The shared fallback denial helper also retries an interrupted kernel response
+write, so the worker and pre-queue recovery paths share the same `EINTR`
+handling before descriptor cleanup. This removes the remaining local response
+delivery hole; privileged Linux fanotify evidence is still unrun.
+
+The malformed-context guard was then tightened to release a still-valid
+metadata descriptor through the same denial/close helper before returning, so
+invalid fanotify channel state cannot turn validation failure into a leaked or
+blocked permission event.
+
+Follow-on excluded-event response correction (2026-09-08): the permission
+event path for excluded files now retries an interrupted `FAN_ALLOW` write and
+routes a short or failed write through the existing `FAN_DENY`/close recovery
+path. This keeps transient `EINTR` from causing an unnecessary denial while
+ensuring a partial kernel response cannot become an implicit allow. The
+source/evidence controls pass; real privileged fanotify qualification remains
+blocked on the authorized Linux x86-64 runner.
+
+The isolated current-source fanotify object compile was attempted in the
+existing disposable ARM64 build tree and stopped before compiling the changed
+translation unit because `/usr/include/openssl/ssl.h` includes the absent
+`openssl/opensslconf.h`. No dependency was installed or downloaded; the
+source/evidence controls remain the available verification for this slice.

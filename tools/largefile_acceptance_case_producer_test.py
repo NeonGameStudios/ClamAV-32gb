@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 import largefile_acceptance_cases as acceptance_cases
 import largefile_acceptance_case_producer as producer
@@ -110,8 +111,77 @@ class AcceptanceCaseProducerTests(unittest.TestCase):
     def test_unmapped_workload_is_not_relabelled(self):
         path = self.out / "provenance/service-workload-results.tsv"
         text = path.read_text(encoding="utf-8").replace("production-clamscan", "production_cvd")
+        text = text.replace("production_cvd\tcli\tproduction", "production_cvd\tservice\tproduction")
+        text = text.replace("\t1\tyes\n", "\t1\tno\n")
         path.write_text(text, encoding="utf-8")
         self.assertEqual(producer.produce(self.out, self.manifest, self.mapping), 0)
+
+    def test_unknown_workload_label_is_rejected(self):
+        path = self.out / "provenance/service-workload-results.tsv"
+        text = path.read_text(encoding="utf-8").replace(
+            "production-clamscan", "unreviewed-workload"
+        )
+        path.write_text(text, encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "unknown workload label"):
+            producer.produce(self.out, self.manifest, self.mapping)
+
+    def test_workload_schema_rejects_rows_with_wrong_column_count(self):
+        path = self.out / "provenance/service-workload-results.tsv"
+        path.write_text(path.read_text(encoding="utf-8").rstrip("\n") + "\textra\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "columns at line 2"):
+            producer.produce(self.out, self.manifest, self.mapping)
+
+    def test_workload_paths_are_admitted_before_any_file_is_read(self):
+        outside_report = self.root / "outside.jsonl"
+        outside_report.write_text("not a report\n", encoding="utf-8")
+        path = self.out / "provenance/service-workload-results.tsv"
+        path.write_text(
+            "label\tkind\trole\tinput\tlog\treport\tstatus\tcheck_offset\n"
+            f"production-clamscan\tcli\tproduction\t{self.fixture}\t"
+            f"logs/production.log\t../outside.jsonl\t1\tyes\n",
+            encoding="utf-8",
+        )
+        with mock.patch.object(
+            producer.workload_check,
+            "load_report",
+            side_effect=AssertionError("outside report was opened"),
+        ):
+            with self.assertRaisesRegex(ValueError, "escapes the service evidence directory"):
+                producer.produce(self.out, self.manifest, self.mapping)
+
+    def test_symlinked_workload_paths_are_rejected_before_any_file_is_read(self):
+        link = self.out / "reports/production-link.jsonl"
+        link.symlink_to(self.out / "reports/production.jsonl")
+        path = self.out / "provenance/service-workload-results.tsv"
+        path.write_text(
+            "label\tkind\trole\tinput\tlog\treport\tstatus\tcheck_offset\n"
+            f"production-clamscan\tcli\tproduction\t{self.fixture}\t"
+            f"logs/production.log\treports/production-link.jsonl\t1\tyes\n",
+            encoding="utf-8",
+        )
+        with mock.patch.object(
+            producer.workload_check,
+            "load_report",
+            side_effect=AssertionError("symlinked report was opened"),
+        ):
+            with self.assertRaisesRegex(ValueError, "is symlinked"):
+                producer.produce(self.out, self.manifest, self.mapping)
+
+    def test_workload_matrix_rejects_special_kind_before_report_read(self):
+        path = self.out / "provenance/service-workload-results.tsv"
+        path.write_text(
+            "label\tkind\trole\tinput\tlog\treport\tstatus\tcheck_offset\n"
+            f"production-clamscan\tlegacy\tproduction\t{self.fixture}\t"
+            "logs/production.log\treports/production.jsonl\t1\tyes\n",
+            encoding="utf-8",
+        )
+        with mock.patch.object(
+            producer.workload_check,
+            "load_report",
+            side_effect=AssertionError("special workload report was opened"),
+        ):
+            with self.assertRaisesRegex(ValueError, "reviewed matrix"):
+                producer.produce(self.out, self.manifest, self.mapping)
 
     def test_report_transport_success_binds_embedded_detection_exit(self):
         with self.manifest.open("w", newline="", encoding="utf-8") as stream:

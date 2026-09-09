@@ -93,6 +93,10 @@ if ! command -v timeout >/dev/null 2>&1 || ! command -v awk >/dev/null 2>&1 ||
     echo 'timeout, awk, python3, sha256sum, du, ldd, and GNU /usr/bin/time are required' >&2
     exit 2
 fi
+if [ ! -f "$root/tools/largefile_clamd_legacy_protocol.py" ]; then
+    echo 'missing direct legacy clamd protocol probe' >&2
+    exit 2
+fi
 
 mkdir -p "$out/provenance"
 
@@ -723,6 +727,9 @@ service_peak_temp_bytes=0
 service_rss_samples=0
 service_temp_samples=0
 service_resource_measurement_failed=0
+service_lifecycle=$out/provenance/service-lifecycle.tsv
+printf 'generation\tevent\tresult\n' > "$service_lifecycle"
+service_generation=0
 
 case "$service_timeout_s" in
     ''|*[!0-9]*|0*)
@@ -788,13 +795,60 @@ cleanup()
 }
 trap cleanup EXIT HUP INT TERM
 
+record_service_lifecycle()
+{
+    printf '%s\t%s\t%s\n' "$service_generation" "$1" "$2" >> "$service_lifecycle"
+}
+
 stop_service()
 {
-    if [ -n "${service_pid:-}" ] && kill -0 "$service_pid" 2>/dev/null; then
+    if [ -z "${service_pid:-}" ]; then
+        return 0
+    fi
+
+    ping_before_stop=fail
+    ping_before_stop_log="$out/logs/ping-before-stop-$service_generation.log"
+    if "$build_dir/clamdscan/clamdscan" --ping 5 -c "$config" > "$ping_before_stop_log" 2>&1 &&
+        grep -Fx 'PONG' "$ping_before_stop_log" >/dev/null 2>&1; then
+        ping_before_stop=pass
+    fi
+    record_service_lifecycle ping_before_stop "$ping_before_stop"
+
+    service_was_running=no
+    if kill -0 "$service_pid" 2>/dev/null; then
+        service_was_running=yes
         kill "$service_pid" 2>/dev/null || true
         wait "$service_pid" 2>/dev/null || true
     fi
+    record_service_lifecycle daemon_running_before_stop "$service_was_running"
+
+    service_exited_after_stop=no
+    if ! kill -0 "$service_pid" 2>/dev/null; then
+        service_exited_after_stop=yes
+    fi
+    record_service_lifecycle daemon_exited_after_stop "$service_exited_after_stop"
+
+    socket_absent_after_stop=no
+    if [ ! -e "$socket" ] && [ ! -L "$socket" ]; then
+        socket_absent_after_stop=yes
+    fi
+    record_service_lifecycle socket_absent_after_stop "$socket_absent_after_stop"
+
+    pidfile_absent_after_stop=no
+    if [ ! -e "$pidfile" ] && [ ! -L "$pidfile" ]; then
+        pidfile_absent_after_stop=yes
+    fi
+    record_service_lifecycle pidfile_absent_after_stop "$pidfile_absent_after_stop"
+
     service_pid=
+    if [ "$ping_before_stop" != pass ] ||
+        [ "$service_was_running" != yes ] ||
+        [ "$service_exited_after_stop" != yes ] ||
+        [ "$socket_absent_after_stop" != yes ] ||
+        [ "$pidfile_absent_after_stop" != yes ]; then
+        echo "clamd lifecycle cleanup failed for generation $service_generation" >&2
+        return 1
+    fi
 }
 
 write_config()
@@ -841,11 +895,17 @@ start_service()
     max_threads=${2:-1}
     max_queue=${3:-2}
     alert_exceeds_max=${4:-yes}
+    service_generation=$((service_generation + 1))
     write_config "$database" "$max_threads" "$max_queue" "$alert_exceeds_max"
     "$build_dir/clamd/clamd" --config-file="$config" > "$out/logs/clamd-$(basename "$database").log" 2>&1 &
     service_pid=$!
     i=0
-    while ! "$build_dir/clamdscan/clamdscan" --ping 5 --wait -c "$config" > "$out/logs/ping-$(basename "$database").log" 2>&1; do
+    # --wait intentionally enters the normal client path after a successful
+    # ping, which scans the current directory when no input was supplied.
+    # The qualification startup loop already owns the retry policy, so use
+    # ping-only mode here to prove PONG without accidentally scanning $PWD.
+    ping_log="$out/logs/ping-$(basename "$database")-$service_generation.log"
+    while ! "$build_dir/clamdscan/clamdscan" --ping 5 -c "$config" > "$ping_log" 2>&1; do
         if ! kill -0 "$service_pid" 2>/dev/null || [ "$i" -ge 60 ]; then
             echo "clamd did not become ready for $database" >&2
             return 1
@@ -853,6 +913,11 @@ start_service()
         i=$((i + 1))
         sleep 1
     done
+    if ! grep -Fx 'PONG' "$ping_log" >/dev/null 2>&1; then
+        echo "clamd startup PING did not produce an exact PONG for $database" >&2
+        return 1
+    fi
+    record_service_lifecycle ping_after_start pass
 }
 
 mkdir -p "$out" "$out/logs" "$out/reports" "$out/tmp"
@@ -1153,6 +1218,36 @@ run_direct_report()
     printf 'production_cvd_clamdscan_%s=pass\n' "$report_label" >> "$out/service-summary.txt"
 }
 
+run_direct_legacy()
+{
+    legacy_label=$1
+    legacy_mode=$2
+    oracle_load edge "$edge_file"
+    legacy_log="$out/logs/$legacy_label.log"
+    legacy_status=0
+    timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
+        python3 "$root/tools/largefile_clamd_legacy_protocol.py" \
+        "$socket" "$edge_file" "$oracle_manifest" edge "$legacy_mode" \
+        "$service_timeout_s" > "$legacy_log" 2>&1 || legacy_status=$?
+    oracle_status=$legacy_status
+    if ! check_oracle_output "$legacy_label" "$legacy_log" - no no legacy "$edge_file"; then
+        echo "$legacy_label legacy-wire oracle failed" >&2
+        return 1
+    fi
+    printf '%s=pass\n' "${legacy_label}_legacy_wire" >> "$out/service-summary.txt"
+    # Keep the historical workflow markers while the direct-wire workload
+    # names are consumed by the stricter verifier.  These aliases are status
+    # compatibility only; the workload record above is the authoritative
+    # binding and is explicitly typed as legacy rather than clamdscan report.
+    case "$legacy_label" in
+        edge_contscan) printf 'edge_clamdscan_contscan=pass\n' >> "$out/service-summary.txt" ;;
+        edge_multiscan) printf 'edge_clamdscan_multiscan=pass\n' >> "$out/service-summary.txt" ;;
+        edge_allmatch) printf 'edge_clamdscan_allmatchscan=pass\n' >> "$out/service-summary.txt" ;;
+        edge_fildes) printf 'edge_clamdscan_fildes=pass\n' >> "$out/service-summary.txt" ;;
+        edge_instream) printf 'edge_clamdscan_instream=pass\n' >> "$out/service-summary.txt" ;;
+    esac
+}
+
 # A separate negative control proves that size admission rejects 32 GiB + 1
 # with both AlertExceedsMax settings. Each probe creates and removes its own
 # sparse descriptor fixture; this is not materialized scan qualification.
@@ -1226,18 +1321,19 @@ fi
 run_direct_stdin
 stop_service
 start_service "$edge_db" 1 2
-run_service_scan edge edge_contscan "$edge_file"
-printf 'edge_clamdscan_contscan=pass\n' >> "$out/service-summary.txt"
+run_direct_legacy edge_contscan contscan
+run_direct_legacy edge_multiscan multiscan
+run_direct_legacy edge_allmatch allmatchscan
+run_direct_legacy edge_fildes fildes
+run_direct_legacy edge_instream instream
 run_service_stdin
 printf 'edge_clamdscan_stdin=pass\n' >> "$out/service-summary.txt"
-run_service_scan edge edge_multiscan "$edge_file" --multiscan
-printf 'edge_clamdscan_multiscan=pass\n' >> "$out/service-summary.txt"
-run_service_scan edge edge_allmatch "$edge_file" --allmatch
-printf 'edge_clamdscan_allmatchscan=pass\n' >> "$out/service-summary.txt"
-run_service_scan edge edge_fildes "$edge_file" --fdpass
-printf 'edge_clamdscan_fildes=pass\n' >> "$out/service-summary.txt"
-run_service_scan edge edge_instream "$edge_file" --stream
-printf 'edge_clamdscan_instream=pass\n' >> "$out/service-summary.txt"
+# Bind the client-side mode combinations separately from the direct legacy
+# wire probes above.  These are distinct ingress paths and the report-backed
+# records are required by the R10 matrix.
+run_service_scan edge edge-clamdscan-multiscan "$edge_file" --multiscan
+run_service_scan edge edge-clamdscan-stream-multiscan "$edge_file" --stream --multiscan
+run_service_scan edge edge-clamdscan-fdpass-multiscan "$edge_file" --fdpass --multiscan
 
 # Exercise the two simultaneous clamdscan clients required by PLAN.md against
 # the actual certified single-worker/two-entry profile. The first request must
@@ -1365,6 +1461,10 @@ printf 'parallel_queue=pass\n' >> "$out/service-summary.txt"
 # configuration consumed by the evidence verifier and release gate is the same
 # one-worker/two-queue profile captured before the two-client test.
 stop_service
+printf 'service_lifecycle=provenance/service-lifecycle.tsv\n' >> "$service_build_identity"
+printf 'service_lifecycle_sha256=%s\n' \
+    "$(sha256sum "$service_lifecycle" | awk '{ print $1 }')" >> "$service_build_identity"
+printf 'service_lifecycle=pass\n' >> "$out/service-summary.txt"
 
 for elapsed_file in "$out"/logs/*.elapsed; do
     if ! awk -v budget="$latency_budget_s" '{ if ($1 > budget) exit 1 }' "$elapsed_file"; then

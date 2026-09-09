@@ -22,7 +22,7 @@
 
 use std::{
     cell::Cell,
-    ffi::{c_char, CStr, CString},
+    ffi::{c_char, c_void, CStr, CString},
     io::{self, Read},
     panic,
     path::Path,
@@ -31,7 +31,6 @@ use std::{
 };
 
 use delharc::{LhaDecodeReader, LhaError};
-use libc::c_void;
 use log::{debug, error};
 
 use crate::{
@@ -137,7 +136,9 @@ fn merge_cleanup_status(status: cl_error_t, cleanup_status: cl_error_t) -> cl_er
 }
 
 fn onenote_error_status(err: &onenote::Error) -> cl_error_t {
-    if matches!(err, onenote::Error::ReadFailure(_)) {
+    if matches!(err, onenote::Error::ResourceLimit(_)) {
+        cl_error_t_CL_ERESOURCE
+    } else if matches!(err, onenote::Error::ReadFailure(_)) {
         cl_error_t_CL_EREAD
     } else if matches!(err, onenote::Error::Timeout(_)) {
         cl_error_t_CL_ETIMEOUT
@@ -701,217 +702,6 @@ impl onenote::LegacyAttachmentSink for OneNoteScanSink {
     }
 }
 
-/// Read-only view of a disk-backed parser input. The mapping is deliberately
-/// created only after the source has been copied through FMapReader and is
-/// released before the root temporary reservation is dropped.
-struct MappedInput {
-    address: *mut c_void,
-    length: usize,
-    ctx: *mut cli_ctx,
-    contiguous_reserved: u64,
-}
-
-#[cfg(not(test))]
-unsafe fn reserve_contiguous(ctx: *mut cli_ctx, bytes: u64) -> cl_error_t {
-    sys::cli_scan_reserve_contiguous(ctx, bytes)
-}
-
-#[cfg(test)]
-unsafe fn reserve_contiguous(ctx: *mut cli_ctx, bytes: u64) -> cl_error_t {
-    mapped_input_tests::test_cli_scan_reserve_contiguous(ctx, bytes)
-}
-
-#[cfg(not(test))]
-unsafe fn release_contiguous(ctx: *mut cli_ctx, bytes: u64) {
-    sys::cli_scan_release_contiguous(ctx, bytes);
-}
-
-#[cfg(test)]
-unsafe fn release_contiguous(ctx: *mut cli_ctx, bytes: u64) {
-    mapped_input_tests::test_cli_scan_release_contiguous(ctx, bytes);
-}
-
-impl MappedInput {
-    unsafe fn new(ctx: *mut cli_ctx, fd: libc::c_int, length: usize) -> Result<Self, cl_error_t> {
-        if ctx.is_null() {
-            return Err(cl_error_t_CL_ENULLARG);
-        }
-        if length == 0 {
-            return Ok(Self {
-                address: null_mut(),
-                length: 0,
-                ctx,
-                contiguous_reserved: 0,
-            });
-        }
-        if length > isize::MAX as usize {
-            return Err(cl_error_t_CL_ERESOURCE);
-        }
-        let contiguous_reserved = u64::try_from(length).map_err(|_| cl_error_t_CL_ERESOURCE)?;
-        let status = reserve_contiguous(ctx, contiguous_reserved);
-        if status != cl_error_t_CL_SUCCESS {
-            return Err(status);
-        }
-
-        let address = libc::mmap(
-            null_mut(),
-            length,
-            libc::PROT_READ,
-            libc::MAP_PRIVATE,
-            fd,
-            0,
-        );
-        if address == libc::MAP_FAILED {
-            release_contiguous(ctx, contiguous_reserved);
-            return Err(cl_error_t_CL_EMEM);
-        }
-
-        Ok(Self {
-            address,
-            length,
-            ctx,
-            contiguous_reserved,
-        })
-    }
-
-    fn as_slice(&self) -> &[u8] {
-        if self.length == 0 {
-            return &[];
-        }
-
-        unsafe { std::slice::from_raw_parts(self.address.cast(), self.length) }
-    }
-}
-
-impl Drop for MappedInput {
-    fn drop(&mut self) {
-        if self.length != 0 {
-            unsafe {
-                libc::munmap(self.address, self.length);
-            }
-        }
-        if self.contiguous_reserved != 0 {
-            unsafe {
-                release_contiguous(self.ctx, self.contiguous_reserved);
-            }
-            self.contiguous_reserved = 0;
-        }
-    }
-}
-
-#[cfg(test)]
-#[allow(non_upper_case_globals)]
-mod mapped_input_tests {
-    use super::*;
-    use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
-    use std::sync::Mutex;
-
-    static RESERVED: AtomicU64 = AtomicU64::new(0);
-    static RELEASED: AtomicU64 = AtomicU64::new(0);
-    static RESERVE_CALLS: AtomicUsize = AtomicUsize::new(0);
-    static REJECT_RESERVATION: AtomicBool = AtomicBool::new(false);
-    static TEST_LOCK: Mutex<()> = Mutex::new(());
-
-    pub(super) unsafe fn test_cli_scan_reserve_contiguous(
-        _ctx: *mut cli_ctx,
-        bytes: u64,
-    ) -> cl_error_t {
-        RESERVE_CALLS.fetch_add(1, Ordering::SeqCst);
-        if REJECT_RESERVATION.load(Ordering::SeqCst) {
-            return cl_error_t_CL_ERESOURCE;
-        }
-        RESERVED.fetch_add(bytes, Ordering::SeqCst);
-        cl_error_t_CL_SUCCESS
-    }
-
-    pub(super) unsafe fn test_cli_scan_release_contiguous(_ctx: *mut cli_ctx, bytes: u64) {
-        RELEASED.fetch_add(bytes, Ordering::SeqCst);
-    }
-
-    #[test]
-    fn mapped_input_rejects_contiguous_budget_before_mmap() {
-        let _guard = TEST_LOCK.lock().unwrap();
-        RESERVED.store(0, Ordering::SeqCst);
-        RELEASED.store(0, Ordering::SeqCst);
-        RESERVE_CALLS.store(0, Ordering::SeqCst);
-        REJECT_RESERVATION.store(true, Ordering::SeqCst);
-
-        let result = unsafe { MappedInput::new(1 as *mut cli_ctx, -1, 4096) };
-        assert!(matches!(result, Err(cl_error_t_CL_ERESOURCE)));
-        assert_eq!(RESERVE_CALLS.load(Ordering::SeqCst), 1);
-        assert_eq!(RESERVED.load(Ordering::SeqCst), 0);
-        assert_eq!(RELEASED.load(Ordering::SeqCst), 0);
-        REJECT_RESERVATION.store(false, Ordering::SeqCst);
-    }
-
-    #[test]
-    fn mapped_input_rolls_back_reservation_when_mmap_fails() {
-        let _guard = TEST_LOCK.lock().unwrap();
-        RESERVED.store(0, Ordering::SeqCst);
-        RELEASED.store(0, Ordering::SeqCst);
-        RESERVE_CALLS.store(0, Ordering::SeqCst);
-
-        let result = unsafe { MappedInput::new(1 as *mut cli_ctx, -1, 4096) };
-        assert!(matches!(result, Err(cl_error_t_CL_EMEM)));
-        assert_eq!(RESERVE_CALLS.load(Ordering::SeqCst), 1);
-        assert_eq!(RESERVED.load(Ordering::SeqCst), 4096);
-        assert_eq!(RELEASED.load(Ordering::SeqCst), 4096);
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn mapped_input_releases_reservation_when_dropped() {
-        use std::os::fd::AsRawFd;
-
-        let _guard = TEST_LOCK.lock().unwrap();
-        RESERVED.store(0, Ordering::SeqCst);
-        RELEASED.store(0, Ordering::SeqCst);
-        RESERVE_CALLS.store(0, Ordering::SeqCst);
-
-        let file = std::fs::File::open("/dev/zero").unwrap();
-        let mapped = unsafe { MappedInput::new(1 as *mut cli_ctx, file.as_raw_fd(), 4096) }.unwrap();
-        assert_eq!(RESERVE_CALLS.load(Ordering::SeqCst), 1);
-        assert_eq!(RESERVED.load(Ordering::SeqCst), 4096);
-        assert_eq!(RELEASED.load(Ordering::SeqCst), 0);
-        drop(mapped);
-        assert_eq!(RELEASED.load(Ordering::SeqCst), 4096);
-    }
-}
-
-/// Copy a source fmap through a bounded reader into a temporary file. This
-/// keeps the parser's large-input residency accounted and avoids asking the
-/// fmap layer to prefault the entire source in one operation.
-unsafe fn spool_fmap(ctx: *mut cli_ctx, fmap: &FMap) -> Result<TempSpool, cl_error_t> {
-    let expected_size = u64::try_from(fmap.len()).map_err(|_| cl_error_t_CL_ERESOURCE)?;
-    let mut spool = TempSpool::new(ctx, expected_size)?;
-    let mut reader = FMapReader::new_with_context(fmap, ctx);
-    let mut buffer = [0u8; 1024 * 1024];
-    let mut copied = 0u64;
-
-    loop {
-        let read = reader
-            .read(&mut buffer)
-            .map_err(|err| rust_reader_status(&err, cl_error_t_CL_EREAD))?;
-        if read == 0 {
-            break;
-        }
-        spool.write_all(&buffer[..read])?;
-        copied = copied
-            .checked_add(read as u64)
-            .ok_or(cl_error_t_CL_EREAD)?;
-    }
-
-    if copied != expected_size {
-        return Err(cl_error_t_CL_EREAD);
-    }
-
-    Ok(spool)
-}
-
-fn onenote_modern_parser_admitted(input_len: usize) -> bool {
-    input_len <= FMap::WHOLE_INPUT_MAX
-}
-
 /// Scan a OneNote file for attachments
 ///
 /// # Safety
@@ -1003,34 +793,10 @@ unsafe fn scan_onenote_inner(ctx: *mut cli_ctx) -> cl_error_t {
          * document. */
     }
 
-    /* The modern third-party parser still accepts only a borrowed whole-file
-     * slice. Keep that API boundary explicit: large modern documents must not
-     * be staged and mapped as though they were reader-backed. The bounded
-     * legacy extractor above remains available for legacy documents. */
-    if !onenote_modern_parser_admitted(fmap.len()) {
-        return parser_failure(
-            ctx,
-            "OneNote",
-            cl_error_t_CL_ERESOURCE,
-            "OneNote modern whole-input parser exceeds the bounded parser cap",
-        );
-    }
-
-    let mut root_spool = match spool_fmap(ctx, &fmap) {
-        Ok(spool) => spool,
-        Err(status) => return parser_failure(ctx, "OneNote", status, "root temporary spool could not be populated"),
-    };
-
-    let mapped = match MappedInput::new(ctx, root_spool.fd, fmap.len()) {
-        Ok(mapped) => mapped,
-        Err(status) => {
-            let status = parser_failure(ctx, "OneNote", status, "root temporary spool mapping failed");
-            return root_spool.finish_cleanup(status, "OneNote");
-        }
-    };
     let mut scan_result = cl_error_t_CL_SUCCESS;
+    let modern_reader = FMapReader::new_with_context(&fmap, ctx);
 
-    let parse_result = OneNote::scan_bytes(mapped.as_slice(), Path::new(fmap.name()), |name, data| {
+    let parse_result = OneNote::scan_reader(modern_reader, Path::new(fmap.name()), |name, data| {
         debug!(
             "Extracted {}-byte attachment with name: {:?}",
             data.len(),
@@ -1086,11 +852,10 @@ unsafe fn scan_onenote_inner(ctx: *mut cli_ctx) -> cl_error_t {
     } else {
         match parse_result {
             Ok(()) => cl_error_t_CL_SUCCESS,
-            Err(err) => parser_failure(ctx, "OneNote", cl_error_t_CL_EPARSE, err),
+            Err(err) => parser_failure(ctx, "OneNote", onenote_error_status(&err), err),
         }
     };
-    drop(mapped);
-    root_spool.finish_cleanup(parse_status, "OneNote")
+    parse_status
 }
 
 /// Scan the contents of a LHA or LZH archive
@@ -2000,11 +1765,4 @@ mod tests {
         );
     }
 
-    #[test]
-    fn onenote_modern_parser_rejects_inputs_above_whole_input_cap() {
-        assert!(onenote_modern_parser_admitted(FMap::WHOLE_INPUT_MAX));
-        assert!(!onenote_modern_parser_admitted(
-            FMap::WHOLE_INPUT_MAX.saturating_add(1)
-        ));
-    }
 }

@@ -259,10 +259,9 @@ impl TryFrom<*mut sys::cl_fmap_t> for FMap {
 }
 
 impl<'a> FMap {
-    /* These parsers require a borrowed slice for their third-party Rust API.
-     * Keep that requirement from turning a 32 GiB fmap into a whole-input
-     * prefault/lock operation. Larger recognized inputs fail visibly at the
-     * parser boundary and remain available to the ordinary mapped matcher. */
+    /* Keep the legacy borrowed-slice helper from turning a 32 GiB fmap into a
+     * whole-input prefault/lock operation. Reader-backed parser entry points
+     * must be used when a recognized input can exceed this helper's ceiling. */
     pub const WHOLE_INPUT_MAX: usize = 256 * 1024 * 1024;
 
     /// Simple wrapper around C FMAP module's fmap.need() method.

@@ -302,8 +302,9 @@ socket is created under the host-mounted build directory. See
    authoritative readiness now consumes the mapping and requires records when
    evidence is promoted.
 3. `R06/R07/R09` — continue the remaining modern OneNote, format-8 bytecode,
-   and fuzzy-image work. R06 is blocked by the pinned parser's missing
-   reader-backed API; its dependency audit is recorded in
+   and fuzzy-image work. R06 now has a vendored bounded-reader seam, but its
+   parser-owned payload quotas and valid beyond-cap fixture remain open; the
+   dependency audit and implementation receipt are recorded in
    `docs/largefile-task-receipts/R06-modern-onenote.md`. R07 is blocked by the
    absent compatible external format-8 compiler/artifact and authorized
    x86-64 execution runner; its repeated availability audit is recorded in
@@ -386,6 +387,33 @@ artifacts, and the new rejection control catches a forged fixture digest.
 Acceptance, runtime-producer, and full source-guard suites pass; this remains
 development verification and does not promote any capability.
 
+The R04 acceptance-record reader now validates exact TSV row widths before
+constructing records. Rows with extra or missing fields fail closed instead of
+being silently truncated or producing an indirect validation error. The R04
+schema regression suite passes 9/9, including both malformed-width cases.
+
+The same strict reader now backs the service and runtime acceptance producers'
+workload/oracle tables. Their regression suites pass 4/4 and 5/5, including
+malformed-row rejection, so producer inputs cannot silently discard evidence
+columns before capability binding.
+
+The status snapshot and PDF object-stream evidence checker now reject malformed
+TSV widths and empty fields as well. The snapshot regression suite passes 13/13
+and the focused PDF evidence-schema suite passes 4/4; the source-guarded
+evidence tooling therefore shares the same fail-closed table-input rule.
+
+The shared R04 TSV reader now also enables strict CSV parsing and converts
+malformed quoting into a hard validation error. Its regression suite passes
+10/10, while the acceptance producers and status snapshot tests remain green;
+this closes another evidence-ingress ambiguity without creating qualification
+records.
+
+The same strict-parsing rule now covers the independent PDF object-stream,
+sparse-boundary, and service workload/oracle readers. Their malformed-quoting
+regressions pass alongside the existing width/empty-field controls: PDF 5/5,
+boundary 5/5, and service workload 22 tests with 2 Linux-only skips. No
+qualification record or capability status changed.
+
 The follow-on R04 retention correction now also requires service-backed
 acceptance records to list `provenance/service-inputs-before.json` among their
 retained artifacts before using its fixture identity, and validates the
@@ -424,3 +452,680 @@ report, while the normal static UnRAR-enabled suite passes 2,834/2,834. This is
 development evidence only; certified Linux x86-64 and R04 qualification remain
 pending. See
 `docs/largefile-task-receipts/R08-recursion-evidence-asan-2026-09-07.md`.
+
+The R03 shared and mixed-sanitizer slice fixed three defects found by the
+workflow-equivalent disposable x86-64 build: the private shared-library map
+now exports `cli_scan_report_set_fallback_details()` for `clamdscan`, UDF
+switch-table emission is deterministic when C and Rust address sanitizers are
+combined, and bytecode global-array initialization uses alignment-safe
+`memcpy` stores. The exact post-fix `libclamav` CTest target passed 1/1 in
+308.12 seconds with ASan+UBSan and leak detection; the Rust target passed
+152/152. Full 17-target CTest remained non-promoting because the container
+has about 1.7 GiB rather than the required 48 GiB for daemon admission, and
+two source-control tests exceeded their short CTest budgets under emulation.
+Source guards, inventory synchronization, snapshot validation, and diff
+checks pass. See
+`docs/largefile-task-receipts/R03-sanitizer-shared-link-and-ub-2026-09-08.md`.
+
+The R03 CTest harness follow-up raised only the timeout allowance for the two
+deterministic source/evidence control tests, which can exceed one minute under
+external storage or emulation. The regenerated workflow-equivalent sanitizer
+configuration passed both targets 2/2: `largefile_source_guards` in 204.70
+seconds and `largefile_runtime_evidence_check` in 114.46 seconds. No assertion,
+release-gate, or qualification status changed.
+
+A current local Docker capacity check confirms the remaining R03 boundary:
+the container is `linux/x86_64` but exposes only `2467680 kB` of memory and
+`3548892` KiB of free temporary overlay space, below the required 48-GiB
+memory and 68-GiB disk thresholds. It cannot serve as the certified runner.
+
+The follow-on PDF admission slice fixed two current-source defects found by
+the new regression: the crypt-filter path now passes its validated `cf_len`
+instead of an uninitialized local, and `pdf_getdict()` restores the opening
+`<<` after token scanning has skipped delimiters and whitespace. The
+null-context metadata and AES crypt-filter regressions pass in the rebuilt
+ARM64 disposable binary's PDF case, 24/24 with zero failures and errors.
+The source/evidence guard sweep, status freshness check, and diff check also
+pass. A broader current-source `check_clamav` attempt was then killed with
+exit 137 by the same approximately 2.4-GiB container after reaching the test
+harness; no assertion or sanitizer diagnostic was emitted, so it is recorded
+as a resource-limited non-result rather than a source failure. See
+`docs/largefile-task-receipts/R08-pdf-metadata-callback-2026-09-08.md`.
+
+The current-source production CLI was then relinked against the refreshed
+static library. Its version smoke passed, and the repository's real
+fuzzy-image CLI regression passed 4/4 in the disposable ARM64 container,
+covering exact matches, disabled-feature behavior, malformed signatures, and
+one-bit versus two-bit hamming-distance behavior. This strengthens R09
+development evidence without promoting the fuzzy-image rows; certified,
+full-size, sanitizer, and capability-bound records remain required. The
+container-only full `check_clamav` attempt exited 137 under its approximately
+2.4-GiB memory ceiling and remains a resource-limited non-result.
+
+The independently filtered current-source Check groups then passed PDF 24/24,
+required-unsupported 5/5, RAR 11/11, and the separate bytecode suite 87/87.
+The earlier bytecode filter had selected no tests because bytecode is a
+separate Check suite; that invocation was not counted as evidence.
+
+The refreshed current-source ARM64 daemon/client pair then passed the
+repository's three service smoke checks 3/3 in 2.109 seconds: daemon version,
+PING/PONG, and clamdscan's daemon-version query. Startup reported the intended
+32-GiB contiguous, 64-GiB temporary/logical-scan, and 256-GiB matcher-work
+ceilings. This remains development evidence only; certified Linux x86-64,
+full-size materialized, and R04 service records are still unavailable. See
+`docs/largefile-task-receipts/R10-development-ingress.md`.
+
+The same current-source pair then completed a fresh 24-record structured
+service capture: all six daemon report commands plus fd-pass and stream client
+transports across clean, detection, and MaxFileSize-limit outcomes. The matrix
+was 8/8 `COMPLETE`, 8/8 `DETECTION_TERMINATED`, and 8/8 `LIMIT_INCOMPLETE`,
+with exit codes 0/1/2 respectively. An independent acceptance-record
+verification passed all 24 retained records and artifact bindings. This is
+current ARM64 Debug development evidence only; it does not populate the empty
+authoritative R04 records file. See
+`docs/largefile-task-receipts/R10-development-ingress.md`.
+
+The application-facing regression follow-up also passed the complete current-
+source `clamd_test.py` target 15/15 in 31.470 seconds after moving its
+temporary directory to container-local storage and supplying the disposable
+container's missing `libsubunit.so.0`. The embedded `check_clamd` API suite
+passed 107/107 and the final daemon PING returned `PONG`; the earlier CTest
+failure was host-mounted socket setup, not a daemon source failure. The
+companion `clamscan`, `freshclam`, and `sigtool` targets passed as well. This
+is still ARM64 development evidence and does not qualify R04 records.
+
+The CTest harness now supports `CLAMAV_TEST_TMP` as an explicit temporary-root
+cache path. A fresh disposable ARM64 reconfiguration with
+`CLAMAV_TEST_TMP=/tmp/clamav-ctest-temp` regenerated the environment with the
+container-local path, and the registered `clamd` target passed 1/1 in 30.99
+seconds. The target exercised the same 15/15 daemon suite and 107/107 embedded
+API checks documented above. The default remains the unit-test build directory;
+this portability fix does not change the release gate or qualify any R04 row.
+
+The milter manual-wire boundary follow-up also passes from the current source.
+Its mail-like fixture now disables mail parsing only for the raw exact-offset
+oracle, so the temporary tail signature is detected at the root coordinate
+instead of a child mail layer; the temporary signature matcher accepts the
+`.UNOFFICIAL` suffix that ClamAV adds to ad hoc database names. The disposable
+ARM64 run used a 4,096-byte development limit and passed with a 4,096-byte root,
+4,096 logical bytes, exact offset 4,077, `DETECTION_TERMINATED`, zero skipped
+operations, and milter reject. The ordinary four-case milter matrix was rerun
+unchanged and passed `a`, `r`, `a`, `t`. This closes the local milter fixture
+ambiguity without promoting ARM64 evidence or changing the certified 32-GiB
+profile.
+
+The R10 direct legacy-wire follow-up corrected a capability-binding defect in
+the qualification tooling. Five edge labels had been recorded as direct
+`clamd` SCAN-family/FILDES/INSTREAM workloads while the script actually called
+`clamdscan` with structured-report options. They now use a dedicated probe for
+the actual NUL-terminated `zCONTSCAN`, `zMULTISCAN`, `zALLMATCHSCAN`,
+`zFILDES`, and `zINSTREAM` commands. The verifier types these rows as
+`legacy`, checks clean/detection/size-limit text replies, and refuses a
+structured report. Because the legacy protocol does not carry structured
+counters or a native alert offset, the acceptance producer intentionally does
+not promote these rows into R04 records. The disposable ARM64 daemon probe
+passed all six detection commands, clean SCAN, and INSTREAM size-limit
+behavior; the focused protocol suite passed 6/6 and the service/runtime
+evidence regressions passed. This is development evidence only.
+
+A follow-on verifier audit found that legacy workload rows checked their
+protocol text and input identity but did not independently bind the recorded
+process exit to the role oracle. The service workload verifier now performs
+that exact status check, with a regression for a valid detection reply paired
+with exit 0. The workload suite passes 24/24 and the full source-guard sweep
+passes; no capability status or qualification claim changed.
+
+The current-source ARM64 `clamscan` target was also rebuilt in a disposable
+container after supplying only its missing development headers inside that
+container. The rebuild completed at low concurrency, the scanner version
+smoke passed, and `logo.png` returned `OK`; the temporary container was
+removed. This strengthens executable development verification but remains
+ARM64-only and does not create certified R03/R04 evidence.
+
+The R10 service qualification startup probe was corrected after tracing the
+client semantics: `clamdscan --ping ... --wait` continues into the ordinary
+scan path after PING and may scan `$PWD` when no input is supplied. The
+qualification loop now calls ping-only mode, with source guards rejecting the
+regressed option combination. Shell syntax and the full source-guard sweep
+pass. This closes a local qualification-tooling defect but does not promote
+development evidence or alter the blocked release gate.
+
+The R13 fanotify loop now fails closed when a permission event cannot be
+queued or cannot be prepared: allocation, context mapping, metadata-copy,
+metadata-version, read-link, and queue-admission failures send `FAN_DENY`
+before closing the kernel event descriptor. Permission queue failures are not
+retried after the decision is written; non-permission queue retry behavior is
+preserved. The current-source `clamonacc` target compiled and linked in a
+disposable ARM64 container, and the source guards now pin the denial helper.
+No real permission-event claim was made; Linux x86-64 fanotify evidence is
+still required.
+
+The same R13 worker now treats an interrupted or short normal permission
+response as an error, retries `EINTR`, and routes an unaccepted response
+through the shared denial-and-close recovery path so an intended allow cannot
+become an implicit allow during cleanup. It also rejects malformed queued
+fanotify context before dereferencing its metadata descriptor. These changes
+are source/build verified only; the authorized Linux x86-64 kernel run remains
+required.
+
+The shared fanotify fallback denial helper now retries `EINTR` before closing
+an unqueued or otherwise failed permission event, keeping every local response
+path consistent about complete kernel decisions. This remains development
+source/build evidence; real Linux permission-event qualification is still
+required.
+
+The response-boundary validation also now releases a valid metadata descriptor
+when the queued fanotify channel itself is invalid, preventing the new guard
+from introducing a cleanup leak. Source/build verification remains
+development-only until the authorized Linux kernel run is available.
+
+The follow-on R08 current-source parser-family sweep ran 92 bounded Check
+groups separately against the refreshed ARM64 development binary: Rust
+LHA/ALZ, archive and filesystem containers, executable/image/document families,
+mail/compression/OLE/VBA, SWF, and Mach-O. All 554 checks passed with zero
+failures or errors. No new implementation defect was exposed; the sweep is
+recorded in `docs/largefile-task-receipts/R08-current-source-parser-sweep-2026-09-08.md`.
+It remains development evidence only and does not replace the certified
+x86-64, full-size, sanitizer, resource, fanotify, or R04 qualification runs.
+
+The follow-on public ALZ/LHA integration run exposed and fixed a real current-
+source defect: ALZ extraction discarded the available member prefix on a
+decompressed-size limit or malformed declared-size/CRC/trailing-data result,
+so nested signatures in that prefix were missed. `ExtractSink::finish_partial()`
+now scans available bounded output before preserving the limit or parser error;
+hard backing-store, timeout, sink, allocation, and stop failures still abort.
+The rebuilt ARM64 development scanner passes the public ALZ/LHA suite 13/13,
+the Rust CTest target 152/152, and focused `rust_alz` C checks 2/2. The source
+guards and current snapshot freshness check pass after regenerating the
+line-numbered inventory. See
+`docs/largefile-task-receipts/R08-alz-partial-prefix-scan-2026-09-08.md`.
+This remains development evidence only; the certified x86-64/full-size gate
+is still blocked.
+
+The follow-on R04 service acceptance-producer correction now admits mapped
+workload report and log paths before opening either file, and rejects
+unsupported workload kinds and malformed offset-check fields at that same
+boundary, and the producer now rejects unknown workload labels instead of
+silently dropping them. The shared acceptance validator, service workload verifier, runtime
+acceptance producer, and PDF evidence checker now also reject symlink
+components before resolving retained paths. This closes a local
+evidence-tooling read-before-validation and link-following gap; the acceptance
+schema suite passes 11/11, the PDF schema suite 6/6, the runtime producer
+6/6, the service/result checker 35/35 with two Linux-only filesystem tests
+skipped on this host, and the complete source-guard sweep passes. No
+capability status changed and the authoritative acceptance-record file
+remains empty pending certified evidence.
+
+The service workload/oracle reader now rejects wrong-width rows and empty
+fields at TSV ingestion, before later indexing or evidence access. New
+regressions cover both malformed forms; the service workload suite passes
+27 tests with two Linux-only filesystem tests skipped on this host, and the
+complete source-guard sweep passes. No capability status changed and the
+authoritative acceptance-record file remains empty pending certified evidence.
+
+The R10 health probe now validates the daemon's exact NUL-terminated `PONG`
+reply after `zPING`; a successful socket write alone no longer reports a
+healthy service. The focused source change is recorded in
+`docs/largefile-task-receipts/R10-development-ingress.md`. A fresh executable
+was not claimed because the cached ARM64 container lacks the generated OpenSSL
+development header needed by the dependent relink; certified x86-64 health
+evidence remains open.
+
+The on-access client now applies the same exact NUL-terminated `PONG`
+validation to both its remote-detection and retrying health paths. Wrong,
+truncated, or absent daemon replies cannot produce a false healthy result.
+Source/evidence guards pass; the cached ARM64 image lacks the libcurl
+development header needed to relink the on-access target, so no new executable
+or runtime qualification is claimed. Certified privileged Linux x86-64
+evidence remains open.
+
+The on-access transport now retries `EINTR` correctly when `onas_sendln()`
+returns a zero-byte send; its previous `sent && errno == EINTR` test could
+never enter the retry branch. This is source/control verified only because the
+cached image still lacks the libcurl development header for a fresh object
+build.
+
+The on-access stream preflight now rewinds descriptor 0 when it refers to a
+regular file; the former special case could omit the file prefix. This remains
+source/control verified because the disposable image lacks libcurl development
+headers for a fresh on-access object.
+
+The excluded-file fanotify permission path now retries `EINTR` while delivering
+`FAN_ALLOW` and sends `FAN_DENY`/closes on short or failed delivery. This keeps
+the response boundary fail-closed without turning a transient interruption into
+an avoidable denial; privileged Linux x86-64 evidence remains open.
+
+On-access `FILDESREPORT` descriptor passing now retries `EINTR` and requires
+`sendmsg()` to deliver its complete one-byte payload, so ancillary FD delivery
+cannot be reported successful after a short send. Fresh object/runtime evidence
+remains blocked by the disposable image's missing development headers.
+
+Shared legacy `FILDES` and `FILDESREPORT` descriptor passing now applies the
+same boundary check: it retries `EINTR` and requires `sendmsg()` to deliver the
+complete one-byte payload before returning success. This protects clamdscan's
+shared client path and other legacy callers from treating a short ancillary
+send as delivered. The source guard and local control suite pass; fresh
+object/runtime evidence remains blocked by the disposable image's missing
+development headers.
+
+Shared legacy stream preflight now inspects descriptor 0 as well as every
+other descriptor, and rewinds regular files before sending `zINSTREAM` or its
+report variant. The former `0 != fd` guard could skip both checks when standard
+input referred to a regular file, allowing a suffix-only or over-limit stream.
+Source controls remain green; no fresh shared-client binary or certified
+runtime evidence was claimed.
+
+Fresh current-source object verification succeeded in a disposable ARM64
+container after installing the missing development packages inside that
+container: `clamonacc/client/protocol.c.o` and `common/clamdcom.c.o` both
+compiled from the canonical checkout. The complete `clamonacc` link was not
+claimed because Cargo attempted to refresh unavailable Git dependencies; this
+is object-level development evidence, not certified x86-64 runtime evidence.
+
+After adding Git to the disposable container, the complete current-source
+`clamonacc` target built and linked at 100% with Clang 16.0.6 and Rust 1.97.1,
+with UnRAR, Milter, fanotify, and shared libclamav enabled. The resulting
+ARM64 development hashes are `b1fdaa8d73a29668c097577fd9ec163fa0d221e45aa519e96e7340ede109d8ef`
+(`clamonacc`), `a656c48e7ecb857291ea96fde13a08c1fa6c6b636e50a1cadece493ec8d1dfda`
+(`libclamav.so.14.0.0`), and
+`eaa517a32169a0c02f176802cddf65ca5157f34a392b0ba78a14776207db930c`
+(`libcommon.a`). With `-c /dev/null`, the freshly linked `clamonacc --help`
+exited 0 and reported `1.5.3-largefile-devel`. This remains ARM64 development
+evidence, not certified x86-64 or full-size qualification evidence.
+
+The rebuilt `check_clamd` client stream-accounting group passed 10/10 in the
+disposable ARM64 container. It includes the new descriptor-0 regular-file
+regression, which starts from a nonzero offset and verifies that the shared
+`zINSTREAM` sender rewinds and transmits the complete payload, alongside the
+existing over-limit and descriptor-error checks. This remains focused
+development evidence rather than certified x86-64/full-size qualification.
+
+Shared `sendln()` now retries `send()` when the interrupted call returns
+`-1`/`EINTR`; the prior positive-result condition could report a transient
+signal as a transport failure. A deterministic socketpair regression fills
+the sender, interrupts the blocked send, drains the peer, and verifies the
+payload. The rebuilt client stream-accounting group passed 11/11 in the
+disposable ARM64 container. This remains development evidence rather than
+certified x86-64/full-size qualification.
+
+The R04 acceptance validator now binds the generic `complete` case suffix to
+the `COMPLETE` outcome. Previously, generic library/matcher/feature cases
+could carry a contradictory detection or failure while retaining the
+`complete` case ID. The new end-to-end negative regression and focused R04
+schema suite pass 11/11, and the full source/evidence guard sweep passes.
+No qualification record or capability status changed.
+
+The R04 completion-contract table is now total for all generated case
+suffixes: generic `complete`, feature `enabled`, and R09
+`required-behavior` are explicitly bound, while an unknown suffix is
+rejected fail-closed. The focused schema suite passes 12/12, including a
+generated-suffix coverage regression, and the full source/evidence guard
+sweep passes. No qualification record or capability status changed.
+
+The current-source ARM64 development build was repaired inside a disposable
+container and rebuilt from the canonical checkout for the application-facing
+targets `clamscan`, `clamd`, `clamdscan`, and `check_clamd`. The clean CLI
+control returned `OK`, the repository test signature returned the exact
+`ClamAV-Test-File.UNOFFICIAL FOUND`, and the full `clamd_test.TC` integration
+target passed 15/15 in 29.529 seconds; its focused `check_clamd` path reported
+111 checks with zero failures or errors. This closes the local R10 daemon
+rebuild/integration slice without changing capability status. The aggregate
+`check_clamav` target remains unavailable in this shared-library build shape
+because its wrapper-only test declarations are enabled only for the static
+Linux test configuration. The receipt is retained in
+`docs/largefile-task-receipts/R10-current-source-daemon-rebuild-2026-09-08.md`.
+This remains ARM64 development evidence; certified x86-64 Release/sanitizer,
+full-size, fanotify, and production-canary evidence remain open.
+
+The current-source static aggregate test executable was rebuilt from the
+canonical checkout in a disposable ARM64 container with static libclamav and
+the test wrappers enabled. With `T=120`, `CK_DEFAULT_TIMEOUT=120`, and
+`CK_FORK=yes`, the focused `cl_scan_api` group passed 836/836 checks, the
+focused MHTML group passed 5/5 checks, and the full aggregate suite passed
+2,836/2,836 checks with zero failures and zero errors. The initial default
+timeout run only reported slow 64–65 MiB streaming cases; rerunning them with
+the explicit development budget completed cleanly. Artifact hashes and the
+exact environment are recorded in
+`docs/largefile-task-receipts/R03-static-aggregate-check-2026-09-08.md`.
+This remains ARM64 development evidence; certified x86-64 Release/sanitizer,
+full-size, fanotify, and production-canary evidence remain open.
+
+The requested MCP-SSH Sonic3 runner was rechecked with the supplied
+`sonic3-sudo` profile. Profile/capability description succeeded, but the live
+connection diagnostic was denied by `no_matching_allow_rule`; the normal
+read-only `uname -a` command matched the configured full-access rule and then
+timed out during SSH connect after 30 seconds with no remote command started.
+Sonic1 was not guessed because no Sonic1 login-profile name was supplied.
+This is retained as R03 runner evidence in
+`docs/largefile-task-receipts/R03-sonic3-connection-2026-09-08.md` and leaves
+certified x86-64 qualification blocked without changing local capability
+status.
+
+Final local control revalidation (2026-09-08): `sh
+tools/largefile_source_guards.sh` returned exit 0 from the canonical checkout.
+The service-evidence control script also passed its 27 input-policy tests
+(with two expected Linux-only skips), 10 result checks, and 22 oversize
+checks. The current snapshot and `git diff --check` remain clean. These are
+development/evidence-integrity controls only; no capability status changed and
+the certified runner, full-size, privileged fanotify, and production-canary
+gates remain open.
+
+R03 development sanitizer slice completed on Sonic1 (2026-09-09): a fresh
+isolated C ASan/UBSan build from the repaired source graph linked `clamscan`,
+`clamd`, and `clamdscan` successfully with the direct offline Rust toolchain.
+Named clean and detection smoke containers exited 0 and 1 respectively with
+the expected OK/detection results and no ASan/UBSan diagnostics. The artifact
+hashes and exact container/build paths are recorded in
+`docs/largefile-task-receipts/R03-sonic1-current-source-gate-2026-09-08.md`.
+This remains development evidence only because the complete current test
+source and frozen certified source graph are still unavailable on the remote
+runner; no capability status changed.
+
+The Sonic1 Rust sanitizer prerequisite was checked explicitly: the retained
+image has stable rustc 1.97.1, and an isolated `-Zsanitizer=address` configure
+attempt failed at the repository's nightly-toolchain guard. No toolchain was
+installed or downloaded. R03 now has C ASan/UBSan development evidence, while
+the required Rust address-instrumented artifact remains blocked on an
+authorized nightly Rust environment; no capability status changed.
+
+The C sanitizer evidence was extended through the daemon/client path on
+Sonic1: sanitizer `clamd` stayed healthy, `clamdscan` returned clean 0/OK and
+large-file detection 1 with the exact alert, `--ping=1` returned PONG, and
+retained structured reports bound the results. The report hashes and service
+container identity are recorded in
+`docs/largefile-task-receipts/R03-sonic1-current-source-gate-2026-09-08.md`.
+This remains development evidence only; the required Rust address-instrumented
+artifact is still blocked on an authorized nightly toolchain and no capability
+status changed.
+
+R10 harness parity correction (2026-09-09): the service qualification matrix
+now requires separate report-backed `clamdscan` workloads for plain
+`--multiscan`, `--stream --multiscan`, and `--fdpass --multiscan`, alongside
+the existing direct legacy-wire `MULTISCAN` probe. The verifier, synthetic
+evidence control, and focused tests all require the three labels. This closes
+an omission in the acceptance harness; no capability status changed.
+
+The sanitizer service slice also covered framed `clamdscan --stream` ingress:
+clean exited 0/OK and the marker exited 1 with the exact large-file alert.
+Retained stream-report hashes and the stopped named service container are
+recorded in the R03 receipt; no capability status changed.
+
+The same sanitizer service slice covered Unix-socket fd passing: clean
+`clamdscan --fdpass` exited 0/OK and the marker input exited 1 with the exact
+large-file alert. The retained report hashes and stopped named container are
+recorded in the R03 receipt; no capability status changed.
+
+The existing Sonic1 C ASan/UBSan build was also given a bounded CTest source
+graph probe. `largefile_poc_fail_closed` and
+`largefile_runtime_evidence_check` passed. The source-guard entry failed on
+the repaired copy's stale `common/clamdcom.c`, while the acceptance-schema,
+clamscan-admission, and clamd-report-protocol entries could not start because
+their current test files were absent; CTest reported 2/6 passed and exit 8.
+This is retained as an exact partial-graph prerequisite in
+`docs/largefile-task-receipts/R03-sonic1-current-source-gate-2026-09-08.md`.
+The next Sonic1 run requires the complete current source/test graph and a
+regenerated build; no capability status changed.
+
+The Sonic1 sanitizer service slice also covered `clamdscan --multiscan
+--stream`: clean returned 0/OK and the marker input returned 1 with the exact
+large-file alert; the structured reports bind complete/detection outcomes and
+offset `1048512`. A plain `--multiscan` client-only path correctly failed
+closed when the daemon could not stat the unmounted client path. Report hashes
+and the stopped named daemon are retained in the R03 and R10 receipts. This is
+development evidence only; no capability status changed.
+
+The Sonic1 sanitizer service slice then verified plain `clamdscan
+--multiscan` path ingress with shared fixture paths: clean returned 0/OK and
+detection returned 1 with the exact alert and offset `1048512`. The reports
+and stopped named daemon are retained in the R03/R10 receipts. No capability
+status changed.
+
+The Sonic1 sanitizer service slice then verified `clamdscan --fdpass
+--multiscan` after repairing permissions on a disposable socket volume. Clean
+returned 0/OK and detection returned 1 with the exact alert and offset
+`1048512`; the successful daemon log had no sanitizer diagnostic. The initial
+startup-abort probe exposed a 2,313-byte LeakSanitizer engine-init leak, so
+`clamd/clamd.c` now frees the engine on pre-`recvloop()` startup failure and
+clears ownership after `recvloop()` returns. The remote binary predates that
+source fix, so post-fix sanitizer verification remains open; no capability
+status changed.
+
+Current-source Sonic1 rebuild boundary (2026-09-09): CMake configure completed
+on a disposable development overlay, and the current `clamd/clamd.c` plus
+`common/clamdcom.c` translation units compiled cleanly with the generated
+project flags. The full Rust-linked build remains blocked by missing locked
+Cargo crates (`adler2 v2.0.1`, then `android_system_properties v0.1.5` in
+offline checks) after one bounded fetch attempt timed out. No capability status
+changed; certified/current-source full-build and qualification evidence remain
+open.
+
+The same Sonic1 C-only check also compiled the current `clamdscan/client.c`
+with generated flags, covering the client-side default, fdpass, stream, and
+multiscan selection paths. No capability status changed.
+
+The Docker-contained ARM64 development service producer then generated 24
+artifact-bound R04 records across the six structured daemon REPORT commands
+and `clamdscan` fdpass/stream, with clean, detection, and limit outcomes for
+each. The generic verifier accepted all 24 records against their retained
+fixture, oracle, database, report, log, build, and source identities. Evidence
+is retained at `/private/tmp/clamav-r04-service-capture-20260909`; it remains
+development-only and no capability status changed.
+
+R06 bounded-reader follow-up (2026-09-09): added a short-read regression for
+the legacy OneNote `Read + Seek` path, limiting every source read to three
+bytes and confirming complete attachment output without abort. The pinned
+modern parser still exposes only an `&[u8]` reader, so the modern >256 MiB
+path remains blocked pending a reviewed dependency API or bounded parser fork;
+no capability status changed.
+
+The cached Sonic1 OneNote module was also compiled directly with existing Rust
+artifacts and ran 13/13 existing module tests successfully. This does not claim
+the newly added local short-read test was run remotely, and does not change the
+modern-parser dependency blocker or capability status.
+
+Targeted Sonic1 relink follow-up (2026-09-09): the retained current-source
+volume's `clamd` target reached the C graph after a root-owned-volume retry and
+after mounting the existing generated `clamav_rust.h` (SHA-256
+`fa88017207eea3dea79edf0523911139c6f5aa0a8b759ec254225a0e0db20739`). The
+build then failed at the older remote `libclamav/fmap.c` versus current
+`clamav.h` declaration boundary. The canonical checkout is internally
+consistent; the remote overlay is incomplete and must be replaced by a
+complete source transfer before a full current-source relink can be claimed.
+No capability status changed.
+
+Development service lifecycle follow-up (2026-09-09): strengthened the local
+ARM64 development producer so each outcome group records daemon health before
+and after cases plus verified stop cleanup, binds the lifecycle artifact into
+each record, and fails closed on health or cleanup failure. The focused
+lifecycle test passed 4/4 and the full local tools suite passed 144 tests with
+2 expected skips. This is development-only evidence; no capability status
+changed.
+
+Release-service lifecycle follow-up (2026-09-09): added a generation-tagged
+service lifecycle artifact to the qualification runner and made the independent
+evidence verifier require exact startup/pre-stop PONG plus process, socket, and
+PID-file cleanup for every daemon generation; its path and SHA-256 are bound
+into the service build identity. The synthetic runtime evidence regression
+passed and the shell/source guards passed. No real release run or capability
+promotion was claimed because the coherent current-source build remains
+blocked.
+
+Development capture lifecycle follow-up (2026-09-09): removed the harness
+cleanup that could delete a stale Unix socket before recording its state. The
+producer now requires a regular PID file before readiness, retains observed
+socket and PID-file absence after stop, and binds both results into the
+lifecycle artifact. Acceptance fixtures, source guards, and the full local
+tools suite passed (145 tests, 2 expected skips); the retained 24-record bundle
+predates this producer change and was not relabelled.
+
+Sonic1 provenance recheck (2026-09-09): the existing container that completed
+`clamd` and `clamdscan` is bound to the repaired 2026-09-08 source snapshot,
+not the canonical current checkout. The separate current-source volume has a
+broad dirty transfer state with deleted files and untracked AppleDouble
+artifacts, so it cannot support a coherent current-source release claim. No
+new build or private-source transfer was attempted; the build/dependency gate
+remains open.
+
+Current-source Docker application build (2026-09-09): the canonical checkout
+was mounted read-only into a disposable Linux x86-64 `rust:1.97-bookworm`
+container and configured coherently for Release shared/static libraries,
+applications, tests, milter, clamonacc, UnRAR, and interpreter bytecode. The
+full CMake build reached `100% Built target check_clamav`, and the complete
+serial CTest suite passed `16/16`, including Rust, clamd/`check_clamd`, milter,
+R04 capture, source guards, runtime evidence, and large-file controls. The
+local tools suite also passed 145 tests with 2 expected skips. This closes the
+current-source compile and development application-test slice for R03/R10;
+it does not promote any R04 capability because the container has about 1.77
+GiB available versus the 48-GiB exact-edge admission requirement, and it is
+not a sanitizer or full-size qualification run. The current R06 modern-reader
+dependency blocker and all seven R09 required-unsupported rows remain open.
+Receipt: `docs/largefile-task-receipts/R03-current-source-docker-build-2026-09-09.md`.
+
+Current-source sanitizer slice (2026-09-09): built the canonical checkout's
+C scanner and daemon targets with explicit C/C++ AddressSanitizer and
+UndefinedBehaviorSanitizer flags in a disposable Linux x86-64 container. The
+instrumented scanner detected the generated HDB test signature, the daemon
+protocol/lifecycle suite passed 15/15 cases in 50.01 seconds, and the native
+Check run passed all 2,836 checks through CTest in 459.23 seconds. No
+ASan/UBSan diagnostic appeared. This is a clean current-source C application
+sanitizer slice, but not the nightly Rust sanitizer candidate and not 32-GiB
+qualification. Receipt:
+`docs/largefile-task-receipts/R03-current-source-sanitizer-2026-09-09.md`.
+
+R09 bounded fuzzy-image reader slice (2026-09-09): replaced the scanner's
+whole-input fuzzy-image admission with a Rust `FMapReader`/`BufReader` path,
+bounded decoder working-set reservation, typed reader/status propagation, and
+panic-safe reservation release. The sanitizer-linked GIF group passed 16/16,
+including a valid 2-MiB encoded image under a 1.5-MiB contiguous cap; source
+guards, the 145-test tools suite, and acceptance checks passed. This remains
+development evidence only: the two required R09 matcher rows remain pending
+for certified 48-GiB qualification. Receipt:
+`docs/largefile-task-receipts/R09-fuzzy-image-reader-2026-09-09.md`.
+
+R06/R03 current-source reader and sanitizer follow-up (2026-09-09): vendored
+the pinned OneNote parser revision and added a bounded sequential reader with
+short-read handling, typed resource/allocation failures, and bounded payload
+materialization. Parser tests passed 13/13 unit and 4/4 integration cases;
+the current-source x86-64 relink and focused `rust_onenote` run passed 2/2.
+The mixed C/Rust sanitizer CTest bridge now supplies sanitizer runtimes only
+to Rust test executables; focused Rust sanitizer CTest passed 1/1. Quota,
+clamscan, clamd, freshclam, sigtool, MBR, and MHTML controls passed. The broad
+configured CTest run remains non-green because the unfiltered C suite and two
+repo-wide controls exceeded disposable-container time limits; certified
+runner, full-size evidence, and capability qualification remain blocked.
+
+R06 aggregate parser-memory refinement (2026-09-09): the vendored OneNote
+reader now tracks cumulative parser-owned payload materialization under an
+explicit 256 MiB budget and uses fallible reservations for both slice and
+stream inputs. The parser suite passed 14/14 unit and 4/4 integration cases;
+the full `libclamav_rust` consumer passed `cargo check --locked`; the outer
+admission cap and certified full-size/late-content qualification remain open.
+
+The generated large-file inventory was refreshed after the reader/build-script
+line shifts, and the complete `tools/largefile_source_guards.sh` sweep passed
+again across all 597 capabilities and acceptance controls.
+
+Remote qualification retry and CTest allowance follow-up (2026-09-09): MCP-
+SSH described the supplied `sonic3-sudo` profile for `sonic3`, but all three
+read-only probes timed out during SSH connect before a remote command started;
+the connection diagnostic was policy-denied. The previously requested
+`sonic1` retry was policy-denied because that host does not allow the supplied
+profile. No remote transfer or Docker test ran. Locally, the configured CTest
+allowance for `largefile_development_acceptance_capture` was aligned with the
+existing 300-second source/runtime control allowance after the standalone
+capture passed near its former 60-second limit. The source/evidence guard
+sweep passed across all 597 capabilities; no status changed. Receipt:
+`docs/largefile-task-receipts/R03-r10-mcp-ssh-and-ctest-2026-09-09.md`.
+
+R06 bounded stream-window refinement (2026-09-09): the vendored OneNote
+reader now rejects oversized stream `read`/`peek` requests before internal
+buffer growth and uses fallible refill reservations, preserving typed
+resource/allocation failures. The focused source-level change is covered by
+the reader regression; source guards, inventory freshness, and `git diff
+--check` pass. The fresh parser run passed 15 unit, 4 integration, and 1
+ignored doctest. A native C relink was not claimed because the available
+disposable image lacks the required Check headers. The modern outer admission
+cap and full per-object parser quota work remain open. No host installation,
+remote execution, usage reset, commit, push, or workflow action was used.
+
+R06 count-driven collection safety refinement (2026-09-09): the vendored
+reader now enforces a typed 64 MiB collection budget with fallible incremental
+reservation for compact ID arrays, object-property streams, property sets,
+nested property-value sets, and the FSSHTTP end-marker/package collections.
+The focused parser run passed 17 unit, 4 integration, and 1 ignored doctest,
+including the nested property-values oversized-count regression. Source
+guards, inventory freshness, snapshot validation, and `git diff --check` passed
+across all 597 capability entries. A fresh full consumer check was attempted
+but Docker Desktop failed to start after disposable build-disk pressure, so no
+consumer result is claimed for this slice; the prior successful consumer check
+remains recorded above. No host installation, remote execution, usage reset,
+commit, push, or workflow action was used.
+
+R06 ink-path decoder safety refinement (2026-09-09): the OneNote multi-byte
+ink decoder now applies the typed collection budget and fallible reservation
+before creating decoded value vectors, and reports truncated, over-wide, or
+out-of-range varints as parser errors instead of panicking. The focused parser
+run passed 20 unit, 4 integration, and 1 ignored doctest, including valid-zero,
+truncated-length, and truncated-varint regressions. Source guards, inventory
+freshness, snapshot validation, and `git diff --check` passed. Docker remained
+unavailable for a fresh consumer-level compile, so no consumer result is
+claimed for this slice. No host installation, remote execution, usage reset,
+commit, push, or workflow action was used.
+
+R06 post-reader mapping-table safety refinement (2026-09-09): the OneNote
+mapping-table builder now returns typed parser results and bounds its
+object/object-space maps and per-ID vectors with fallible incremental
+reservations under the 64 MiB collection budget. The focused parser run passed
+20 unit, 4 integration, and 1 ignored doctest. Source guards, inventory
+freshness, snapshot validation, and `git diff --check` passed. Docker remained
+unavailable for a fresh consumer-level compile, so no consumer result is
+claimed for this slice. No host installation, remote execution, usage reset,
+commit, push, or workflow action was used.
+
+R06 legacy whole-file read safety refinement (2026-09-09): path-based OneNote
+parsing now validates metadata against the materialization ceiling and reads in
+bounded chunks with fallible reservations and a second limit check for files
+that grow after metadata inspection. The focused parser suite remains at 20
+unit, 4 integration, and 1 ignored doctest; source guards, inventory freshness,
+snapshot validation, and `git diff --check` pass. Docker remains unavailable
+for a fresh consumer-level compile, so no consumer result is claimed. No host
+installation, remote execution, usage reset, commit, push, or workflow action
+was used.
+
+R06 derived property-vector safety refinement (2026-09-09): byte-property
+copies now reserve fallibly, while `u16` and `u32` conversions enforce the
+typed 64 MiB collection budget before pushing decoded values. The focused
+parser suite passed 21 unit, 4 integration, and 1 ignored doctest, including an
+over-budget derived-vector regression. Source guards, inventory freshness,
+snapshot validation, and `git diff --check` pass. Docker remains unavailable
+for a fresh consumer-level compile, so no consumer result is claimed. No host
+installation, remote execution, usage reset, commit, push, or workflow action
+was used.
+
+R06 modern scanner admission lift (2026-09-09): removed the stale production
+`FMap::WHOLE_INPUT_MAX` refusal from the modern OneNote scanner so logical
+inputs above the former cap reach the bounded `FMapReader` path. Whole-input
+borrowed-slice APIs retain their explicit cap. The focused parser suite passed
+21 unit, 4 integration, and 1 ignored doctest; source guards, inventory
+freshness, snapshot validation, and `git diff --check` pass. A fresh consumer
+compile and materialized late-content scanner fixture remain open because
+Docker is unavailable. No host installation, remote execution, usage reset,
+commit, push, or workflow action was used.
+
+R06 cache-only consumer-build follow-up (2026-09-09): reused the existing host
+and parser Cargo caches in a disposable combined cache and ran the consumer
+check with `--locked --offline`. Cargo resolved dependencies but the host
+`openssl-sys` build script stopped because `pkg-config` and discoverable
+OpenSSL development headers are absent. No software was installed and no
+network access was used; coherent consumer compilation remains unverified.
+
+R06 derived OneStore/output collection safety refinement (2026-09-09): added
+one bounded, fallible reservation path for parser-owned collections derived
+after source materialization. TOC flattening, note-tag and ink-stroke outputs,
+decoded ink paths, object reference vectors, revision group maps,
+revision/object caches, and the OneStore object-space map now reserve under
+the typed 64 MiB collection budget. Malformed ink dimensions and non-divisible
+path lengths return parser errors rather than reaching arithmetic or slice
+panics. The focused parser suite remains 21 unit, 4 integration, and 1
+ignored doctest; consumer compile, materialized late-content evidence, and
+full parser quota qualification remain open.

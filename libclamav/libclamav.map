@@ -373,6 +373,7 @@ CLAMAV_PRIVATE {
     cli_scan_result_should_halt;
     cli_scan_report_create;
     cli_scan_report_finish;
+    cli_scan_report_set_fallback_details;
     cli_scan_report_set_root_size;
     cli_scan_report_set_target;
     cli_scan_report_note_post_scan_failure;

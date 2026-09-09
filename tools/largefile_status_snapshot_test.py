@@ -67,6 +67,30 @@ class SnapshotTests(unittest.TestCase):
             with self.subTest(body=body), self.assertRaises(RuntimeError):
                 self.status(body)
 
+    def test_status_count_reader_rejects_wrong_row_width(self):
+        fields = {
+            "capability_total": "1",
+            "capability_qualified": "0",
+            "capability_bounded": "0",
+            "capability_pending": "1",
+            "capability_unsupported": "0",
+            "capability_unsupported_required": "0",
+            "capability_blocked": "1",
+            "parser_blocked": "1",
+            "release_readiness": "blocked",
+        }
+        result = mock.Mock(
+            returncode=1,
+            stdout="\n".join(f"{key}={value}" for key, value in fields.items()),
+            stderr="",
+        )
+        self.manifest.write_text(
+            HEADER + "parser\tx\tpending\tx.c\twork\textra\n", encoding="utf-8"
+        )
+        with mock.patch.object(snapshot.subprocess, "run", return_value=result), \
+                self.assertRaisesRegex(ValueError, "expected 5"):
+            snapshot.read_status(self.root, self.manifest)
+
     def test_invalid_header_rejected(self):
         self.manifest.write_text("invalid\nparser\tx\tpending\tx.c\twork\n")
         with self.assertRaises(RuntimeError):

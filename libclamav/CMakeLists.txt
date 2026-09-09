@@ -405,6 +405,17 @@ set(LIBCLAMAV_SOURCES
     udf.c               udf.h
 )
 
+# LLVM's sanitizer runtime reports an ODR violation when GCC emits the two
+# identical switch tables for the UDF allocation-descriptor paths.
+# This only matters when the Rust tests are address-instrumented and link the
+# C archive directly; keep the production and ordinary C sanitizer builds
+# unchanged while making the mixed C/Rust sanitizer test deterministic.
+if(CMAKE_C_FLAGS MATCHES "-fsanitize=address" AND
+   RUSTFLAGS MATCHES "(^| )-Zsanitizer=address($| )")
+    set_source_files_properties(udf.c PROPERTIES
+        COMPILE_OPTIONS "-fno-jump-tables;-fno-tree-switch-conversion")
+endif()
+
 if(ENABLE_SHARED_LIB)
     # The clamav shared library.
     add_library( clamav SHARED )

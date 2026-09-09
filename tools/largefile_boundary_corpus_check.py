@@ -46,8 +46,11 @@ def fail(message: str) -> None:
 def manifest_rows(path: Path) -> list[tuple[str, str, int, int, str]]:
     if not path.is_file() or path.is_symlink():
         fail(f"boundary manifest is missing or symlinked: {path}")
-    with path.open(newline="", encoding="utf-8") as stream:
-        rows = list(csv.reader(stream, delimiter="\t"))
+    try:
+        with path.open(newline="", encoding="utf-8") as stream:
+            rows = list(csv.reader(stream, delimiter="\t", strict=True))
+    except csv.Error as error:
+        fail(f"boundary manifest has malformed TSV: {error}")
     if not rows or tuple(rows[0]) != MANIFEST_HEADER:
         fail("boundary manifest has an invalid header")
     parsed = []

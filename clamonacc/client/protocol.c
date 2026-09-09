@@ -122,7 +122,7 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
         goto strm_out;
     }
 
-    if (S_ISREG(statbuf.st_mode) && 0 != fd && lseek(fd, 0, SEEK_SET) == (off_t)-1) {
+    if (S_ISREG(statbuf.st_mode) && lseek(fd, 0, SEEK_SET) == (off_t)-1) {
         logg(LOGG_ERROR, "%s: Failed to rewind the on-access stream input. ERROR\n",
              filename ? filename : "FD");
         if (ret_code)
@@ -249,9 +249,21 @@ static int onas_send_fdpass(int sockd, int fd)
     cmsg->cmsg_type         = SCM_RIGHTS;
     *(int *)CMSG_DATA(cmsg) = fd;
 
-    if (sendmsg(sockd, &msg, 0) == -1) {
-        logg(LOGG_ERROR, "FD send failed: %s\n", strerror(errno));
-        return -1;
+    {
+        ssize_t sent;
+
+        do {
+            sent = sendmsg(sockd, &msg, 0);
+        } while (sent == -1 && errno == EINTR);
+
+        if (sent != (ssize_t)iov[0].iov_len) {
+            if (sent < 0) {
+                logg(LOGG_ERROR, "FD send failed: %s\n", strerror(errno));
+            } else {
+                logg(LOGG_ERROR, "FD send was incomplete (%zd of %zu bytes)\n", sent, iov[0].iov_len);
+            }
+            return -1;
+        }
     }
 
     return 1;

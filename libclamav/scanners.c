@@ -6839,35 +6839,10 @@ static cl_error_t calculate_fuzzy_image_hash(cli_ctx *ctx, cli_file_t type)
 {
     cl_error_t status          = CL_EPARSE;
     cl_error_t metadata_status = CL_SUCCESS;
-    const uint8_t *offset      = NULL;
-    size_t image_size          = ctx->fmap->len;
-    bool image_locked          = false;
-    bool contiguous_reserved   = false;
     image_fuzzy_hash_t hash    = {0};
     json_object *header        = NULL;
 
     FFIError *fuzzy_hash_calc_error = NULL;
-
-    /* The fuzzy-image FFI consumes one contiguous image. Keep this optional
-     * matcher inside libclamav's bounded single-allocation policy. Skipping a
-     * configured detector must remain observable rather than yielding clean. */
-    if (image_size > CLI_MAX_ALLOCATION) {
-        cli_mark_scan_incomplete(ctx, "image fuzzy hash requires an oversized contiguous buffer");
-        goto done;
-    }
-
-    status = cli_scan_reserve_contiguous(ctx, image_size);
-    if (status != CL_SUCCESS)
-        goto done;
-    contiguous_reserved = true;
-
-    offset = fmap_need_off(ctx->fmap, 0, image_size);
-    if (NULL == offset) {
-        cli_mark_scan_incomplete(ctx, "image fuzzy hash could not read the complete image");
-        status = CL_EREAD;
-        goto done;
-    }
-    image_locked = true;
 
     if (SCAN_COLLECT_METADATA && (NULL != ctx->this_layer_metadata_json)) {
         if (NULL == (header = cli_jsonobj(ctx->this_layer_metadata_json, "ImageFuzzyHash"))) {
@@ -6878,7 +6853,8 @@ static cl_error_t calculate_fuzzy_image_hash(cli_ctx *ctx, cli_file_t type)
         }
     }
 
-    if (!fuzzy_hash_calculate_image(offset, image_size, hash.hash, 8, &fuzzy_hash_calc_error)) {
+    status = fuzzy_hash_calculate_image_fmap(ctx->fmap, ctx, hash.hash, 8, &fuzzy_hash_calc_error);
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("Failed to calculate image fuzzy hash for %s: %s\n",
                    cli_ftname(type),
                    ffierror_fmt(fuzzy_hash_calc_error));
@@ -6917,12 +6893,6 @@ static cl_error_t calculate_fuzzy_image_hash(cli_ctx *ctx, cli_file_t type)
     }
 
 done:
-    if (image_locked) {
-        fmap_unneed_off(ctx->fmap, 0, image_size);
-    }
-    if (contiguous_reserved) {
-        cli_scan_release_contiguous(ctx, image_size);
-    }
     if (NULL != fuzzy_hash_calc_error) {
         ffierror_free(fuzzy_hash_calc_error);
     }

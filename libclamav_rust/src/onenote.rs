@@ -22,7 +22,7 @@
 
 use std::{
     convert::TryInto,
-    io,
+    io::{self, Read},
     mem, panic,
     path::{Path, PathBuf},
 };
@@ -54,6 +54,9 @@ pub enum Error {
 
     #[error("Unable to parse OneNote file")]
     Parse,
+
+    #[error("OneNote parser materialization limit reached: {0}")]
+    ResourceLimit(String),
 
     #[error("OneNote input read failed: {0}")]
     ReadFailure(String),
@@ -128,6 +131,46 @@ fn reader_error(error: io::Error) -> Error {
         Error::Timeout(error.to_string())
     } else {
         Error::ReadFailure(error.to_string())
+    }
+}
+
+fn parser_error(error: onenote_parser::errors::Error) -> Error {
+    if error.is_resource_limit() {
+        return Error::ResourceLimit(error.to_string());
+    }
+    match error.into_io_error() {
+        Some(error) => reader_error(error),
+        None => Error::Parse,
+    }
+}
+
+fn scan_section<F>(section: &onenote_parser::section::Section, callback: &mut F)
+where
+    F: FnMut(Option<&str>, &[u8]) -> bool,
+{
+    'page_series: for page_series in section.page_series().iter() {
+        for page in page_series.pages().iter() {
+            for page_content in page.contents().iter() {
+                if let Some(page_outline) = page_content.outline() {
+                    for outline_item in page_outline.items().iter() {
+                        for &outline_element in outline_item.element().iter() {
+                            for content in outline_element.contents().iter() {
+                                if let Some(embedded_file) = content.embedded_file() {
+                                    let name = if embedded_file.filename().is_empty() {
+                                        None
+                                    } else {
+                                        Some(embedded_file.filename())
+                                    };
+                                    if !callback(name, embedded_file.data()) {
+                                        break 'page_series;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -329,30 +372,7 @@ impl<'a> OneNote<'a> {
             let section = parser
                 .parse_section_buffer(data, filename)
                 .map_err(|_| Error::Parse)?;
-            'page_series: for page_series in section.page_series().iter() {
-                for page in page_series.pages().iter() {
-                    for page_content in page.contents().iter() {
-                        if let Some(page_outline) = page_content.outline() {
-                            for outline_item in page_outline.items().iter() {
-                                for &outline_element in outline_item.element().iter() {
-                                    for content in outline_element.contents().iter() {
-                                        if let Some(embedded_file) = content.embedded_file() {
-                                            let name = if embedded_file.filename().is_empty() {
-                                                None
-                                            } else {
-                                                Some(embedded_file.filename())
-                                            };
-                                            if !callback(name, embedded_file.data()) {
-                                                break 'page_series;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            scan_section(&section, callback);
             Ok(())
         }
 
@@ -376,6 +396,26 @@ impl<'a> OneNote<'a> {
         }
 
         scan_legacy_bytes(data, &mut callback)
+    }
+
+    /// Parse a OneNote document from a bounded sequential reader and hand
+    /// each extracted attachment to the caller immediately.
+    ///
+    /// This is the scanner-facing modern-parser entry point. It deliberately
+    /// does not fall back to the legacy format: callers that need that
+    /// compatibility path can run the bounded legacy reader first and then
+    /// restart their reader here.
+    pub fn scan_reader<R, F>(reader: R, filename: &Path, mut callback: F) -> Result<(), Error>
+    where
+        R: Read,
+        F: FnMut(Option<&str>, &[u8]) -> bool,
+    {
+        let mut parser = onenote_parser::Parser::new();
+        let section = parser
+            .parse_section_reader(reader, filename)
+            .map_err(parser_error)?;
+        scan_section(&section, &mut callback);
+        Ok(())
     }
 
     /// Open a OneNote document given a slice bytes.
@@ -584,6 +624,11 @@ mod tests {
         eof_at: u64,
     }
 
+    struct ShortReadReader {
+        inner: Cursor<Vec<u8>>,
+        max_read: usize,
+    }
+
     impl Read for FailingReader {
         fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
             if self.inner.position() >= self.fail_at {
@@ -611,6 +656,22 @@ mod tests {
     }
 
     impl Seek for EarlyEofReader {
+        fn seek(&mut self, from: SeekFrom) -> io::Result<u64> {
+            self.inner.seek(from)
+        }
+    }
+
+    impl Read for ShortReadReader {
+        fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+            if buffer.is_empty() {
+                return Ok(0);
+            }
+            let read_len = self.max_read.min(buffer.len());
+            self.inner.read(&mut buffer[..read_len])
+        }
+    }
+
+    impl Seek for ShortReadReader {
         fn seek(&mut self, from: SeekFrom) -> io::Result<u64> {
             self.inner.seek(from)
         }
@@ -742,6 +803,22 @@ mod tests {
             .expect("legacy reader fixture should parse");
 
         assert_eq!(sink.files, vec![payload]);
+        assert!(!sink.aborted);
+    }
+
+    #[test]
+    fn legacy_reader_handles_short_source_reads() {
+        let fixture = legacy_fixture(b"short reads remain complete");
+        let mut reader = ShortReadReader {
+            inner: Cursor::new(fixture.clone()),
+            max_read: 3,
+        };
+        let mut sink = CollectSink::new();
+
+        scan_legacy_reader(&mut reader, fixture.len() as u64, &mut sink)
+            .expect("short source reads should not truncate a valid legacy fixture");
+
+        assert_eq!(sink.files, vec![b"short reads remain complete".to_vec()]);
         assert!(!sink.aborted);
     }
 

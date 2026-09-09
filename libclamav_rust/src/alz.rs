@@ -550,8 +550,14 @@ impl AlzLocalFileHeader {
                 Ok(len) => len,
                 Err(err) => {
                     debug!("Unable to decompress deflate data");
-                    sink.abort();
-                    return Err(classify_extraction_read_error(err, "compressed member data"));
+                    let extraction_error =
+                        classify_extraction_read_error(err, "compressed member data");
+                    if matches!(extraction_error, Error::Extract) {
+                        sink.finish_partial()?;
+                    } else {
+                        sink.abort();
+                    }
+                    return Err(extraction_error);
                 }
             };
             if len == 0 {
@@ -562,10 +568,18 @@ impl AlzLocalFileHeader {
                 .checked_add(u64::try_from(len).map_err(|_| Error::Extract)?)
                 .ok_or(Error::Extract)?;
             if needed > max_extracted_size {
-                /* A quota boundary is not a complete member boundary. Do not
-                 * dispatch the prefix to the scanner as though extraction
-                 * succeeded. */
-                sink.abort();
+                /* The quota boundary is not a complete member boundary, but
+                 * the available prefix still needs to be inspected. Preserve
+                 * the limit result after scanning the bounded prefix. */
+                let prefix_len = usize::try_from(
+                    max_extracted_size.saturating_sub(output_size),
+                )
+                .unwrap_or(len)
+                .min(len);
+                if prefix_len != 0 {
+                    sink.write(&buffer[..prefix_len])?;
+                }
+                sink.finish_partial()?;
                 return Err(Error::ScanLimitExceeded(needed));
             }
 
@@ -579,7 +593,7 @@ impl AlzLocalFileHeader {
                 "ALZ file {:?} produced {} bytes, expected {} bytes",
                 self.file_name, output_size, self.uncompressed_size
             );
-            sink.abort();
+            sink.finish_partial()?;
             return Err(Error::Extract);
         }
 
@@ -591,7 +605,7 @@ impl AlzLocalFileHeader {
                 actual_crc,
                 self.file_crc,
             );
-            sink.abort();
+            sink.finish_partial()?;
             return Err(Error::Extract);
         }
 
@@ -619,7 +633,7 @@ impl AlzLocalFileHeader {
                 self.file_name,
                 self.compressed_size.saturating_sub(decompressor.total_in()),
             );
-            sink.abort();
+            sink.finish_partial()?;
             return Err(Error::Extract);
         }
 
@@ -648,8 +662,14 @@ impl AlzLocalFileHeader {
             let len = match bounded.read(&mut buffer) {
                 Ok(len) => len,
                 Err(err) => {
-                    sink.abort();
-                    return Err(classify_extraction_read_error(err, "stored member data"));
+                    let extraction_error =
+                        classify_extraction_read_error(err, "stored member data");
+                    if matches!(extraction_error, Error::Extract) {
+                        sink.finish_partial()?;
+                    } else {
+                        sink.abort();
+                    }
+                    return Err(extraction_error);
                 }
             };
             if len == 0 {
@@ -660,10 +680,18 @@ impl AlzLocalFileHeader {
                 .checked_add(u64::try_from(len).map_err(|_| Error::Extract)?)
                 .ok_or(Error::Extract)?;
             if needed > max_extracted_size {
-                /* A quota boundary is not a complete member boundary. Do not
-                 * dispatch the prefix to the scanner as though extraction
-                 * succeeded. */
-                sink.abort();
+                /* The quota boundary is not a complete member boundary, but
+                 * the available prefix still needs to be inspected. Preserve
+                 * the limit result after scanning the bounded prefix. */
+                let prefix_len = usize::try_from(
+                    max_extracted_size.saturating_sub(output_size),
+                )
+                .unwrap_or(len)
+                .min(len);
+                if prefix_len != 0 {
+                    sink.write(&buffer[..prefix_len])?;
+                }
+                sink.finish_partial()?;
                 return Err(Error::ScanLimitExceeded(needed));
             }
 
@@ -673,7 +701,7 @@ impl AlzLocalFileHeader {
         }
 
         if bounded.limit() != 0 {
-            sink.abort();
+            sink.finish_partial()?;
             return Err(Error::Extract);
         }
 
@@ -682,7 +710,7 @@ impl AlzLocalFileHeader {
                 "ALZ file {:?} produced {} bytes, expected {} bytes",
                 self.file_name, output_size, self.uncompressed_size
             );
-            sink.abort();
+            sink.finish_partial()?;
             return Err(Error::Extract);
         }
 
@@ -692,7 +720,7 @@ impl AlzLocalFileHeader {
                 "ALZ file {:?} has CRC {:08x}, expected {:08x}",
                 self.file_name, actual_crc, self.file_crc
             );
-            sink.abort();
+            sink.finish_partial()?;
             return Err(Error::Extract);
         }
 
@@ -719,7 +747,7 @@ impl AlzLocalFileHeader {
                 "ALZ file {:?} left declared bzip2 bytes unconsumed",
                 self.file_name
             );
-            sink.abort();
+            sink.finish_partial()?;
             return Err(Error::Extract);
         }
 
@@ -753,6 +781,13 @@ pub trait ExtractSink {
     fn begin(&mut self, name: Option<&str>) -> Result<(), Error>;
     fn write(&mut self, data: &[u8]) -> Result<(), Error>;
     fn finish(&mut self) -> Result<(), Error>;
+    fn finish_partial(&mut self) -> Result<(), Error> {
+        let result = self.finish();
+        if result.is_ok() {
+            self.discard_empty_member();
+        }
+        result
+    }
     fn discard_empty_member(&mut self) {}
     fn last_size(&self) -> u64 {
         0
@@ -1031,7 +1066,7 @@ impl<'aa> Alz {
                 }
                 Err(Error::ScanLimitExceeded(needed)) => {
                     debug!(
-                        "ALZ file {:?} exceeded extraction size limits; partial content was discarded.",
+                        "ALZ file {:?} exceeded extraction size limits; the bounded partial content was scanned.",
                         local_fileheader.file_name
                     );
                     if needed > limits.max_file_size
@@ -1607,7 +1642,7 @@ mod tests {
     }
 
     #[test]
-    fn bzip2_error_discards_output_produced_before_error() {
+    fn bzip2_error_preserves_output_produced_before_error() {
         const ALZ_COMP_BZIP2: u8 = 1;
 
         let mut bytes = Vec::new();
@@ -1627,7 +1662,9 @@ mod tests {
         })
         .unwrap();
 
-        assert!(alz.embedded_files.is_empty());
+        assert_eq!(alz.embedded_files.len(), 1);
+        assert_eq!(alz.embedded_files[0].name.as_deref(), Some("truncated.bz2"));
+        assert!(!alz.embedded_files[0].data.is_empty());
     }
 
     #[test]
@@ -1647,7 +1684,7 @@ mod tests {
     }
 
     #[test]
-    fn bzip2_trailing_compressed_bytes_are_rejected_before_scan() {
+    fn bzip2_trailing_compressed_bytes_are_rejected_after_scan() {
         const ALZ_COMP_BZIP2: u8 = 1;
 
         let mut compressed = hex::decode(
@@ -1673,12 +1710,13 @@ mod tests {
         })
         .unwrap();
 
-        assert!(alz.embedded_files.is_empty());
+        assert_eq!(alz.embedded_files.len(), 1);
+        assert_eq!(alz.embedded_files[0].data, b"bzip payload");
         assert!(alz.has_parse_error());
     }
 
     #[test]
-    fn deflate_error_discards_output_produced_before_error() {
+    fn deflate_error_preserves_output_produced_before_error() {
         struct ErrorAfterOutput {
             output: Option<Vec<u8>>,
         }
@@ -1717,7 +1755,9 @@ mod tests {
             Err(Error::Extract)
         ));
 
-        assert!(files.is_empty());
+        assert_eq!(files.len(), 1);
+        assert_eq!(files[0].name.as_deref(), Some("corrupt.deflate"));
+        assert_eq!(files[0].data, payload);
     }
 
     #[test]
@@ -1834,7 +1874,8 @@ mod tests {
         .unwrap();
 
         assert_eq!(alz.file_limit_exceeded_size, Some(payload.len() as u64));
-        assert!(alz.embedded_files.is_empty());
+        assert_eq!(alz.embedded_files.len(), 1);
+        assert_eq!(alz.embedded_files[0].data, vec![b'A'; 64]);
     }
 
     #[test]
@@ -1845,7 +1886,7 @@ mod tests {
     }
 
     #[test]
-    fn stored_output_size_mismatch_is_rejected_before_scan() {
+    fn stored_output_size_mismatch_is_rejected_after_scanning_partial() {
         const ALZ_COMP_NOCOMP: u8 = 0;
 
         let mut bytes = Vec::new();
@@ -1869,11 +1910,12 @@ mod tests {
         .unwrap();
 
         assert!(alz.has_parse_error());
-        assert!(alz.embedded_files.is_empty());
+        assert_eq!(alz.embedded_files.len(), 1);
+        assert_eq!(alz.embedded_files[0].data, b"four");
     }
 
     #[test]
-    fn stored_crc_mismatch_is_rejected_before_scan() {
+    fn stored_crc_mismatch_is_rejected_after_scanning_partial() {
         const ALZ_COMP_NOCOMP: u8 = 0;
 
         let mut bytes = Vec::new();
@@ -1889,11 +1931,12 @@ mod tests {
         .unwrap();
 
         assert!(alz.has_parse_error());
-        assert!(alz.embedded_files.is_empty());
+        assert_eq!(alz.embedded_files.len(), 1);
+        assert_eq!(alz.embedded_files[0].data, b"bad");
     }
 
     #[test]
-    fn deflate_output_size_mismatch_is_rejected_before_scan() {
+    fn deflate_output_size_mismatch_is_rejected_after_scanning_partial() {
         const ALZ_COMP_DEFLATE: u8 = 2;
         let payload = b"deflate payload";
         let compressed = raw_deflate(payload);
@@ -1920,11 +1963,12 @@ mod tests {
         .unwrap();
 
         assert!(alz.has_parse_error());
-        assert!(alz.embedded_files.is_empty());
+        assert_eq!(alz.embedded_files.len(), 1);
+        assert_eq!(alz.embedded_files[0].data, payload);
     }
 
     #[test]
-    fn deflate_trailing_compressed_bytes_are_rejected_before_scan() {
+    fn deflate_trailing_compressed_bytes_are_rejected_after_scan() {
         const ALZ_COMP_DEFLATE: u8 = 2;
         let payload = b"deflate payload";
         let mut compressed = raw_deflate(payload);
@@ -1952,7 +1996,8 @@ mod tests {
         .unwrap();
 
         assert!(alz.has_parse_error());
-        assert!(alz.embedded_files.is_empty());
+        assert_eq!(alz.embedded_files.len(), 1);
+        assert_eq!(alz.embedded_files[0].data, payload);
     }
 
     #[test]
@@ -1990,8 +2035,9 @@ mod tests {
 
         assert_eq!(alz.file_limit_exceeded_size, None);
         assert_eq!(alz.total_limit_exceeded_size, Some(120));
-        assert_eq!(alz.embedded_files.len(), 1);
+        assert_eq!(alz.embedded_files.len(), 2);
         assert_eq!(alz.embedded_files[0].data.len(), 60);
+        assert_eq!(alz.embedded_files[1].data.len(), 40);
     }
 
     #[test]

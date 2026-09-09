@@ -47,6 +47,8 @@ REQUIRED_UNSUPPORTED = {
 # not become a free-form label.  Keep the outcome contract beside the case
 # schema so a copied generic proof cannot qualify a contradictory result.
 CASE_COMPLETION_CONTRACTS = {
+    "complete": {"COMPLETE"},
+    "enabled": {"COMPLETE", "DETECTION_TERMINATED"},
     "clean-edge": {"COMPLETE"},
     "detection-edge": {"DETECTION_TERMINATED"},
     "limit-edge": {"LIMIT_INCOMPLETE"},
@@ -61,6 +63,7 @@ CASE_COMPLETION_CONTRACTS = {
         "UNSUPPORTED", "LIMIT_INCOMPLETE", "MALFORMED_CONFIRMED",
         "RESOURCE_FAILURE", "APPLICATION_ABORT",
     },
+    "required-behavior": {"COMPLETE", "DETECTION_TERMINATED"},
     # R09's behavior case is intentionally format-specific; its paired
     # failure case is not allowed to look clean or detected.
     "required-failure": {
@@ -73,6 +76,17 @@ CASE_COMPLETION_CONTRACTS = {
 # check and the required failure outcome before R09 can be closed.
 R09_REQUIRED_CAPABILITIES = tuple(sorted(REQUIRED_UNSUPPORTED))
 INGRESS_KINDS = {"clamd", "clamdscan", "clamscan", "milter", "on-access"}
+SERVICE_LIFECYCLE_HEADER = ["event", "result"]
+SERVICE_LIFECYCLE_MARKER = "daemon-health=ping-before-and-after;cleanup=lifecycle-verified"
+SERVICE_LIFECYCLE_EXPECTED = {
+    "ping_before_cases": "pass",
+    "ping_after_cases": "pass",
+    "pidfile_present_after_start": "yes",
+    "daemon_running_before_stop": "yes",
+    "daemon_exited_after_stop": "yes",
+    "socket_absent_after_stop": "yes",
+    "pidfile_absent_after_stop": "yes",
+}
 
 
 def fail(message: str) -> None:
@@ -93,23 +107,71 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def safe_evidence_file(root: Path, value: str, label: str) -> Path:
+    """Resolve a retained evidence file without following a symlink path."""
+    if not value or value.startswith("/"):
+        fail(f"{label} has an unsafe artifact path: {value!r}")
+    root = root.resolve()
+    relative = Path(value)
+    lexical = root / relative
+    current = root
+    for part in relative.parts:
+        if part in ("", "."):
+            continue
+        if part == "..":
+            current = current.parent
+            continue
+        current /= part
+        if current.is_symlink():
+            fail(f"{label} is symlinked: {value}")
+    path = lexical.resolve()
+    try:
+        path.relative_to(root)
+    except ValueError as error:
+        raise ValueError(f"{label} escapes evidence root") from error
+    if not path.is_file():
+        fail(f"{label} is missing or not a regular file: {value}")
+    return path
+
+
 def read_tsv(path: Path, header: list[str]) -> list[dict[str, str]]:
     try:
         with path.open(newline="", encoding="utf-8") as stream:
-            rows = list(csv.DictReader(stream, delimiter="\t"))
+            reader = csv.reader(stream, delimiter="\t", strict=True)
+            actual = next(reader, None)
+            if actual != header:
+                fail(f"{path} has an invalid header")
+            rows: list[dict[str, str]] = []
+            for line_number, values in enumerate(reader, start=2):
+                if len(values) != len(header):
+                    fail(
+                        f"{path} has {len(values)} columns at line {line_number}; "
+                        f"expected {len(header)}"
+                    )
+                row = dict(zip(header, values))
+                if any(value == "" for value in row.values()):
+                    fail(f"{path} has an empty field at line {line_number}")
+                rows.append(row)
+    except csv.Error as error:
+        fail(f"{path} has malformed TSV: {error}")
     except OSError as error:
         fail(f"cannot read {path}: {error}")
-    if not rows and not path.read_text(encoding="utf-8").startswith("\t".join(header) + "\n"):
-        fail(f"{path} has an invalid header")
-    with path.open(newline="", encoding="utf-8") as stream:
-        reader = csv.reader(stream, delimiter="\t")
-        actual = next(reader, None)
-    if actual != header:
-        fail(f"{path} has an invalid header")
-    for line_number, row in enumerate(rows, start=2):
-        if any(value == "" for value in row.values()):
-            fail(f"{path} has an empty field at line {line_number}")
     return rows
+
+
+def validate_service_lifecycle(path: Path, label: str) -> None:
+    """Validate the retained daemon health and cleanup contract."""
+    rows = read_tsv(path, SERVICE_LIFECYCLE_HEADER)
+    actual: dict[str, str] = {}
+    for row in rows:
+        event = row["event"]
+        if event in actual:
+            fail(f"{label} duplicates lifecycle event: {event}")
+        if event not in SERVICE_LIFECYCLE_EXPECTED:
+            fail(f"{label} has an unknown lifecycle event: {event}")
+        actual[event] = row["result"]
+    if actual != SERVICE_LIFECYCLE_EXPECTED:
+        fail(f"{label} does not prove the complete daemon lifecycle contract")
 
 
 def load_capabilities(path: Path) -> list[dict[str, str]]:
@@ -229,7 +291,12 @@ def validate_records(
         if completion not in completions:
             fail(f"acceptance record has an invalid completion at line {line_number}")
         allowed_completions = case_completion_contract(row["case_id"])
-        if allowed_completions is not None and completion not in allowed_completions:
+        if allowed_completions is None:
+            fail(
+                f"acceptance record has no completion contract at line {line_number}: "
+                f"{row['case_id']}"
+            )
+        if completion not in allowed_completions:
             fail(
                 f"acceptance record completion does not match its case contract "
                 f"at line {line_number}: {row['case_id']} requires "
@@ -258,18 +325,31 @@ def validate_records(
             root = evidence_root.resolve()
             artifact_paths: list[Path] = []
             for artifact in row["artifacts"].split(","):
-                if not artifact or artifact.startswith("/"):
-                    fail(f"acceptance record has an unsafe artifact path at line {line_number}")
-                path = (root / artifact).resolve()
-                try:
-                    path.relative_to(root)
-                except ValueError as error:
-                    raise ValueError(
-                        f"acceptance record artifact escapes evidence root at line {line_number}"
-                    ) from error
-                if not path.is_file() or path.is_symlink():
-                    fail(f"acceptance record artifact is missing or symlinked at line {line_number}: {artifact}")
+                path = safe_evidence_file(
+                    root, artifact, f"acceptance record artifact at line {line_number}"
+                )
                 artifact_paths.append(path)
+            lifecycle_names = [
+                artifact for artifact in row["artifacts"].split(",")
+                if artifact.startswith("provenance/service-lifecycle-")
+            ]
+            lifecycle_bound = SERVICE_LIFECYCLE_MARKER in row["resource_phase"]
+            if lifecycle_names and not lifecycle_bound:
+                fail(
+                    f"acceptance record lifecycle artifact is missing its binding marker "
+                    f"at line {line_number}"
+                )
+            if lifecycle_bound:
+                if len(lifecycle_names) != 1:
+                    fail(
+                        f"acceptance record must bind exactly one lifecycle artifact "
+                        f"at line {line_number}"
+                    )
+                lifecycle_path = artifact_paths[row["artifacts"].split(",").index(lifecycle_names[0])]
+                validate_service_lifecycle(
+                    lifecycle_path,
+                    f"acceptance record lifecycle artifact at line {line_number}",
+                )
             artifact_hashes = {sha256(path) for path in artifact_paths}
             for field in (
                 "source_manifest_sha256", "build_identity_sha256", "config_sha256",

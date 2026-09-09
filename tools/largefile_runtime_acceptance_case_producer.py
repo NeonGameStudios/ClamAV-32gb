@@ -68,23 +68,19 @@ def require_file(path: Path, label: str) -> Path:
 def safe_path(root: Path, value: str, label: str) -> Path:
     if not value or value.startswith("/"):
         fail(f"{label} is not a safe relative path: {value!r}")
-    path = (root / value).resolve()
     try:
-        path.relative_to(root.resolve())
+        return acceptance_cases.safe_evidence_file(root, value, label)
     except ValueError as error:
-        raise ValueError(f"{label} escapes runtime evidence") from error
-    return require_file(path, label)
+        if "escapes evidence root" in str(error):
+            raise ValueError(f"{label} escapes runtime evidence") from error
+        raise
 
 
 def load_rows(path: Path, header: list[str], label: str) -> list[dict[str, str]]:
-    with path.open(newline="", encoding="utf-8") as stream:
-        reader = csv.DictReader(stream, delimiter="\t")
-        if reader.fieldnames != header:
-            fail(f"{label} has an invalid header")
-        rows = list(reader)
-    if any(any(value == "" for value in row.values()) for row in rows):
-        fail(f"{label} contains an empty field")
-    return rows
+    try:
+        return acceptance_cases.read_tsv(path, header)
+    except ValueError as error:
+        raise ValueError(f"{label} is invalid: {error}") from error
 
 
 def load_oracle(root: Path) -> list[dict[str, str]]:

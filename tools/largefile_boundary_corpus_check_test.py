@@ -65,6 +65,14 @@ class BoundaryCorpusTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "manifest rows"):
             checker.validate_corpus(self.root)
 
+    def test_malformed_manifest_quoting_is_rejected(self):
+        (self.root / "manifest.tsv").write_text(
+            "\t".join(checker.MANIFEST_HEADER) + "\n\"unterminated\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ValueError, "malformed TSV"):
+            checker.manifest_rows(self.root / "manifest.tsv")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

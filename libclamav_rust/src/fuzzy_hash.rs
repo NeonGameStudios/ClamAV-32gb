@@ -24,12 +24,16 @@ use std::{
     collections::HashMap,
     convert::{TryFrom, TryInto},
     ffi::CStr,
+    io::{self, BufReader},
     mem::ManuallyDrop,
     os::raw::c_char,
     panic, slice,
 };
 
-use image::{imageops::FilterType::Lanczos3, DynamicImage, ImageBuffer, Luma, Pixel, Rgb};
+use image::{
+    imageops::FilterType::Lanczos3, DynamicImage, ImageBuffer, ImageDecoder, ImageReader, Luma,
+    Pixel, Rgb,
+};
 use log::{debug, error, warn};
 use num_traits::{NumCast, ToPrimitive, Zero};
 use rustdct::DctPlanner;
@@ -68,6 +72,12 @@ pub enum Error {
 
     #[error("{0} parameter is NULL")]
     NullParam(&'static str),
+
+    #[error("Image reader failed: {0}")]
+    ImageReader(#[source] io::Error),
+
+    #[error("Image decoder exceeded the configured contiguous budget: {0}")]
+    ContiguousBudget(sys::cl_error_t),
 
     #[error("{0} hash must be {1} characters in length")]
     InvalidHashLength(&'static str, usize),
@@ -266,6 +276,142 @@ pub unsafe extern "C" fn _fuzzy_hash_calculate_image(
     hash_out.copy_from(hash_bytes.as_ptr(), hash_bytes.len());
 
     true
+}
+
+/// Calculate an image fuzzy hash from a bounded fmap reader.
+///
+/// The encoded source is read through `FMapReader` in bounded windows. Only
+/// the image decoder's declared output working set is admitted to the shared
+/// contiguous budget; the encoded source itself is never borrowed as one
+/// whole-file slice.
+fn fuzzy_hash_calculate_image_reader_inner(
+    fmap: &crate::fmap::FMap,
+    scan_ctx: *mut sys::cli_ctx,
+) -> Result<Vec<u8>, Error> {
+    if scan_ctx.is_null() {
+        return Err(Error::NullParam("scan_ctx"));
+    }
+
+    let reader = ImageReader::new(BufReader::new(crate::fmap::FMapReader::new_with_context(
+        fmap, scan_ctx,
+    )))
+    .with_guessed_format()
+    .map_err(Error::ImageReader)?;
+    let decoder = reader.into_decoder().map_err(Error::ImageLoad)?;
+
+    /*
+     * The fuzzy calculation converts the decoded image to RGB, grayscale,
+     * and a small working image. Reserve a bounded multiple of the decoder's
+     * declared output, with a floor so tiny images still exercise the shared
+     * contiguous admission boundary. This is deliberately independent of the
+     * encoded source length.
+     */
+    const MIN_WORKING_SET: u64 = 1024 * 1024;
+    let decoded_bytes: u64 = decoder.total_bytes();
+    let working_set = decoded_bytes
+        .checked_mul(3)
+        .ok_or(Error::ContiguousBudget(sys::cl_error_t_CL_ERESOURCE))?
+        .max(MIN_WORKING_SET);
+
+    let status = unsafe { sys::cli_scan_reserve_contiguous(scan_ctx, working_set) };
+    if status != sys::cl_error_t_CL_SUCCESS {
+        return Err(Error::ContiguousBudget(status));
+    }
+
+    let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+        DynamicImage::from_decoder(decoder)
+            .map_err(Error::ImageLoad)
+            .and_then(calculate_fuzzy_hash_from_image)
+    }));
+    unsafe { sys::cli_scan_release_contiguous(scan_ctx, working_set) };
+    match result {
+        Ok(result) => result,
+        Err(_) => Err(Error::ImageLoadPanic()),
+    }
+}
+
+fn fuzzy_hash_reader_status(error: &Error) -> sys::cl_error_t {
+    fn io_status(error: &io::Error) -> sys::cl_error_t {
+        if error.kind() == io::ErrorKind::TimedOut {
+            sys::cl_error_t_CL_ETIMEOUT
+        } else if crate::fmap::is_read_failure(error) {
+            sys::cl_error_t_CL_EREAD
+        } else {
+            sys::cl_error_t_CL_EPARSE
+        }
+    }
+
+    match error {
+        Error::ContiguousBudget(status) => *status,
+        Error::ImageReader(error) => io_status(error),
+        Error::ImageLoad(image::ImageError::IoError(error)) => io_status(error),
+        Error::ImageLoad(image::ImageError::Limits(_)) => sys::cl_error_t_CL_ERESOURCE,
+        _ => sys::cl_error_t_CL_EPARSE,
+    }
+}
+
+/// C interface for calculating an image fuzzy hash from a fmap.
+///
+/// Unlike `fuzzy_hash_calculate_image`, this entry point does not create a
+/// Rust slice over the encoded input. It is used by the scanner for image
+/// layers that may be larger than the ordinary contiguous source limit.
+///
+/// # Safety
+///
+/// `fmap`, `scan_ctx`, `hash_out`, and `err` must be valid pointers. The fmap
+/// and scan context remain owned by the caller for the duration of this call.
+#[no_mangle]
+pub unsafe extern "C" fn fuzzy_hash_calculate_image_fmap(
+    fmap: *mut sys::fmap_t,
+    scan_ctx: *mut sys::cli_ctx,
+    hash_out: *mut u8,
+    hash_out_len: usize,
+    err: *mut *mut FFIError,
+) -> sys::cl_error_t {
+    if err.is_null() {
+        error!("err is NULL");
+        return sys::cl_error_t_CL_ENULLARG;
+    }
+    if hash_out.is_null() {
+        *err = Box::into_raw(Box::new(Error::NullParam("hash_out").into()));
+        return sys::cl_error_t_CL_ENULLARG;
+    }
+    if hash_out_len < IMAGE_FUZZY_HASH_LEN {
+        *err = Box::into_raw(Box::new(Error::InvalidParameter(format!(
+            "hash_bytes output parameter too small to hold the hash: {} < {}",
+            hash_out_len, IMAGE_FUZZY_HASH_LEN
+        ))
+        .into()));
+        return sys::cl_error_t_CL_EARG;
+    }
+
+    let fmap = match crate::fmap::FMap::try_from(fmap) {
+        Ok(fmap) => fmap,
+        Err(error) => {
+            *err = Box::into_raw(Box::new(Error::InvalidParameter(error.to_string()).into()));
+            return sys::cl_error_t_CL_ENULLARG;
+        }
+    };
+
+    let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+        fuzzy_hash_calculate_image_reader_inner(&fmap, scan_ctx)
+    }));
+    let result = match result {
+        Ok(result) => result,
+        Err(_) => Err(Error::ImageLoadPanic()),
+    };
+
+    match result {
+        Ok(hash_bytes) => {
+            hash_out.copy_from(hash_bytes.as_ptr(), hash_bytes.len());
+            sys::cl_error_t_CL_SUCCESS
+        }
+        Err(error) => {
+            let status = fuzzy_hash_reader_status(&error);
+            *err = Box::into_raw(Box::new(error.into()));
+            status
+        }
+    }
 }
 
 impl FuzzyHashMap {
@@ -481,6 +627,11 @@ pub fn fuzzy_hash_calculate_image(buffer: &[u8]) -> Result<Vec<u8>, Error> {
         Ok(image) => image?,
         Err(_) => return Err(Error::ImageLoadPanic()),
     };
+
+    calculate_fuzzy_hash_from_image(og_image)
+}
+
+fn calculate_fuzzy_hash_from_image(og_image: DynamicImage) -> Result<Vec<u8>, Error> {
 
     // Drop the alpha channel (if exists).
     let buff_rgb8 = og_image.to_rgb8();

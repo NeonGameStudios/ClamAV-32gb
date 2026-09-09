@@ -32,6 +32,10 @@ set(DISABLE_MPOOL
     0 CACHE STRING
     "Disable mpool support entirely.")
 
+set(CLAMAV_TEST_TMP
+    "" CACHE PATH
+    "Root directory for unit-test temporary files; empty uses the unit-test build directory.")
+
 option(ENABLE_LARGE_FILE_DEFAULTS
     "Use the gated 32 GiB/64 GiB large-file defaults. Requires Linux x86-64 qualification."
     OFF)

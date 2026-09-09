@@ -2906,7 +2906,7 @@ static cl_error_t cli_bytecode_prepare_interpreter(struct cli_bc *bc)
                     ptr = ptr_compose(bcglobalid,
                                       gmap[bc->globals[j][1]] + bc->globals[j][0]);
                 }
-                *(uint64_t *)&bc->globalBytes[gmap[j]] = ptr;
+                memcpy(&bc->globalBytes[gmap[j]], &ptr, sizeof(ptr));
                 break;
             }
             case DArrayType: {
@@ -2919,16 +2919,22 @@ static cl_error_t cli_bytecode_prepare_interpreter(struct cli_bc *bc)
                             bc->globalBytes[off + i] = bc->globals[j][i];
                         break;
                     case 2:
-                        for (i = 0; i < ty->numElements; i++)
-                            *(uint16_t *)&bc->globalBytes[off + i * 2] = bc->globals[j][i];
+                        for (i = 0; i < ty->numElements; i++) {
+                            uint16_t value = (uint16_t)bc->globals[j][i];
+                            memcpy(&bc->globalBytes[off + i * 2], &value, sizeof(value));
+                        }
                         break;
                     case 4:
-                        for (i = 0; i < ty->numElements; i++)
-                            *(uint32_t *)&bc->globalBytes[off + i * 4] = bc->globals[j][i];
+                        for (i = 0; i < ty->numElements; i++) {
+                            uint32_t value = (uint32_t)bc->globals[j][i];
+                            memcpy(&bc->globalBytes[off + i * 4], &value, sizeof(value));
+                        }
                         break;
                     case 8:
-                        for (i = 0; i < ty->numElements; i++)
-                            *(uint64_t *)&bc->globalBytes[off + i * 8] = bc->globals[j][i];
+                        for (i = 0; i < ty->numElements; i++) {
+                            uint64_t value = bc->globals[j][i];
+                            memcpy(&bc->globalBytes[off + i * 8], &value, sizeof(value));
+                        }
                         break;
                     default:
                         cli_dbgmsg("interpreter: unsupported elsize: %u\n", elsize);

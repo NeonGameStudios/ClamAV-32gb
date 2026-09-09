@@ -87,7 +87,7 @@ int sendln(int sockd, const char *line, unsigned int len)
     while (len) {
         int sent = send(sockd, line, len, 0);
         if (sent <= 0) {
-            if (sent && errno == EINTR) continue;
+            if (sent < 0 && errno == EINTR) continue;
             logg(LOGG_ERROR, "Can't send to clamd: %s\n", strerror(errno));
             return 1;
         }
@@ -228,9 +228,21 @@ static int send_fdpass_fd_command(int sockd, int fd, const char *command)
     cmsg->cmsg_level        = SOL_SOCKET;
     cmsg->cmsg_type         = SCM_RIGHTS;
     *(int *)CMSG_DATA(cmsg) = fd;
-    if (sendmsg(sockd, &msg, 0) == -1) {
-        logg(LOGG_ERROR, "FD send failed: %s\n", strerror(errno));
-        return -1;
+    {
+        ssize_t sent;
+
+        do {
+            sent = sendmsg(sockd, &msg, 0);
+        } while (sent == -1 && errno == EINTR);
+
+        if (sent != (ssize_t)iov[0].iov_len) {
+            if (sent < 0) {
+                logg(LOGG_ERROR, "FD send failed: %s\n", strerror(errno));
+            } else {
+                logg(LOGG_ERROR, "FD send was incomplete (%zd of %zu bytes)\n", sent, iov[0].iov_len);
+            }
+            return -1;
+        }
     }
     return 1;
 }
@@ -497,31 +509,29 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
      * preflight identical to clamd's engine validation. */
     todo = clamd_stream_limit(clamdopts);
 
-    if (0 != fd) {
-        if (FSTAT(fd, &sb) != 0) {
-            logg(LOGG_ERROR, "%s: Failed to stat stream input: %s\n",
-                 display_filename ? display_filename : "STDIN", strerror(errno));
-            return -1;
-        }
+    if (FSTAT(fd, &sb) != 0) {
+        logg(LOGG_ERROR, "%s: Failed to stat stream input: %s\n",
+             display_filename ? display_filename : "STDIN", strerror(errno));
+        return -1;
+    }
 
-        if (S_ISREG(sb.st_mode) &&
-            (sb.st_size > 0) &&
-            ((uint64_t)sb.st_size > (uint64_t)todo)) {
-            logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated stream. ERROR\n",
-                 display_filename ? display_filename : "STDIN");
-            return 0;
-        }
+    if (S_ISREG(sb.st_mode) &&
+        (sb.st_size > 0) &&
+        ((uint64_t)sb.st_size > (uint64_t)todo)) {
+        logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated stream. ERROR\n",
+             display_filename ? display_filename : "STDIN");
+        return 0;
+    }
 
-        /* A descriptor supplied by a caller must represent the complete
-         * object.  Rewind regular files before starting the protocol, and
-         * fail before sending the command if the rewind is impossible.  Pipes
-         * and other streaming descriptors are intentionally left at their
-         * current position because they are not seekable. */
-        if (S_ISREG(sb.st_mode) && lseek(fd, 0, SEEK_SET) < 0) {
-            logg(LOGG_ERROR, "%s: Failed to rewind regular stream input: %s\n",
-                 display_filename ? display_filename : "STDIN", strerror(errno));
-            return -1;
-        }
+    /* A descriptor supplied by a caller must represent the complete
+     * object.  Rewind regular files before starting the protocol, including
+     * when standard input refers to a regular file.  Pipes and other
+     * streaming descriptors are intentionally left at their current position
+     * because they are not seekable. */
+    if (S_ISREG(sb.st_mode) && lseek(fd, 0, SEEK_SET) < 0) {
+        logg(LOGG_ERROR, "%s: Failed to rewind regular stream input: %s\n",
+             display_filename ? display_filename : "STDIN", strerror(errno));
+        return -1;
     }
 
     if (sendln(sockd, command, (unsigned int)strlen(command) + 1U)) {
@@ -959,6 +969,32 @@ static int scan_report_json_incomplete_status_is_valid(cl_error_t status)
     return status != CL_SUCCESS && status != CL_VERIFIED && status != CL_VIRUS;
 }
 
+static int scan_report_completion_name_is_known(const char *completion)
+{
+    if (!completion)
+        return 0;
+
+    return strcmp(completion, "COMPLETE") == 0 ||
+           strcmp(completion, "DETECTION_TERMINATED") == 0 ||
+           strcmp(completion, "LIMIT_INCOMPLETE") == 0 ||
+           strcmp(completion, "UNSUPPORTED") == 0 ||
+           strcmp(completion, "MALFORMED_CONFIRMED") == 0 ||
+           strcmp(completion, "RESOURCE_FAILURE") == 0 ||
+           strcmp(completion, "APPLICATION_ABORT") == 0;
+}
+
+static int scan_report_completion_name_is_incomplete(const char *completion)
+{
+    if (!completion)
+        return 0;
+
+    return strcmp(completion, "LIMIT_INCOMPLETE") == 0 ||
+           strcmp(completion, "UNSUPPORTED") == 0 ||
+           strcmp(completion, "MALFORMED_CONFIRMED") == 0 ||
+           strcmp(completion, "RESOURCE_FAILURE") == 0 ||
+           strcmp(completion, "APPLICATION_ABORT") == 0;
+}
+
 int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete,
                             cl_error_t *status_out)
 {
@@ -993,6 +1029,11 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
         completion = NULL;
     }
 
+    /* Do not let an unrecognized completion label turn a malformed or
+     * contradictory report into an authoritative outcome. */
+    if (completion && !scan_report_completion_name_is_known(completion))
+        goto invalid;
+
     if (json_object_is_type(verdict_object, json_type_int)) {
         verdict = json_object_get_int(verdict_object);
 
@@ -1004,7 +1045,7 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
          * also reported an incomplete outcome. */
         if (verdict == CL_VERDICT_STRONG_INDICATOR ||
             verdict == CL_VERDICT_POTENTIALLY_UNWANTED) {
-            if (strcmp(completion, "COMPLETE") == 0)
+            if (strcmp(completion, "DETECTION_TERMINATED") != 0)
                 goto invalid;
             if (scan_report_json_status_value(object, &report_status, 0) < 0)
                 goto invalid;
@@ -1051,7 +1092,7 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
     if (!json_object_is_type(verdict_object, json_type_string))
         goto invalid;
     if (strcmp(json_object_get_string(verdict_object), "infected") == 0) {
-        if (completion && strcmp(completion, "COMPLETE") == 0)
+        if (completion && strcmp(completion, "DETECTION_TERMINATED") != 0)
             goto invalid;
         if (scan_report_json_status_value(object, &report_status, 0) < 0)
             goto invalid;
@@ -1062,7 +1103,7 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
         return 0;
     }
     if (strcmp(json_object_get_string(verdict_object), "incomplete") == 0) {
-        if (completion && strcmp(completion, "COMPLETE") == 0)
+        if (completion && !scan_report_completion_name_is_incomplete(completion))
             goto invalid;
         if (scan_report_json_status_value(object, &report_status, 0) < 0 ||
             !scan_report_json_incomplete_status_is_valid(report_status))

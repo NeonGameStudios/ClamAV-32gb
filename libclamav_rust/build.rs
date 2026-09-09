@@ -120,6 +120,20 @@ fn main() -> Result<(), &'static str> {
     // We only want to generate bindings for `cargo build`, not `cargo test`.
     // FindRust.cmake defines $CARGO_CMD so we can differentiate.
     let cargo_cmd = env::var("CARGO_CMD").unwrap_or_else(|_| "".into());
+    if cargo_cmd == "test" {
+        let rustflags = env::var("RUSTFLAGS")
+            .or_else(|_| env::var("CARGO_ENCODED_RUSTFLAGS"))
+            .unwrap_or_default();
+        // Rust test links use -nodefaultlibs.  When the C archive was built
+        // with sanitizers, request the runtimes explicitly so the mixed test
+        // binary can resolve the C instrumentation helpers.
+        if rustflags.contains("address") {
+            println!("cargo:rustc-link-lib=asan");
+        }
+        if rustflags.contains("undefined") {
+            println!("cargo:rustc-link-lib=ubsan");
+        }
+    }
     if cargo_cmd == "build" {
         // Always generate the C-headers when CMake kicks off a build.
         execute_cbindgen()?;

@@ -54,6 +54,17 @@ for relative_binary in \
 done
 printf 'synthetic runtime dependency\n' > "$tmp/libclamav.so"
 printf 'synthetic source manifest\n' > "$out/provenance/source-manifest.txt"
+lifecycle=$out/provenance/service-lifecycle.tsv
+printf 'generation\tevent\tresult\n' > "$lifecycle"
+for lifecycle_event in \
+    'ping_after_start	pass' \
+    'ping_before_stop	pass' \
+    'daemon_running_before_stop	yes' \
+    'daemon_exited_after_stop	yes' \
+    'socket_absent_after_stop	yes' \
+    'pidfile_absent_after_stop	yes'; do
+    printf '1\t%s\n' "$lifecycle_event" >> "$lifecycle"
+done
 source_manifest_sha256=$(sha256sum "$out/provenance/source-manifest.txt" | awk '{ print $1 }')
 source_commit=$source_manifest_sha256
 source_tree=$source_manifest_sha256
@@ -158,7 +169,7 @@ printf 'kind\tid\tcase_id\tsource_manifest_sha256\tbuild_identity_sha256\tconfig
 clean_report_json=$(printf '{"version":1,"completion":"COMPLETE","file_type":"CL_TYPE_DATA","status":0,"verdict":0,"root_size":%s,"logical_bytes":%s,"max_scan_size":68719476736,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
 detection_report_json=$(printf '{"version":1,"completion":"DETECTION_TERMINATED","file_type":"CL_TYPE_DATA","status":0,"verdict":2,"last_alert":"Synthetic.Detection","last_alert_offset":123,"root_size":%s,"logical_bytes":%s,"max_scan_size":68719476736,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
 report_json=$clean_report_json
-workload_labels='production_cvd_scanreport production_cvd_contscanreport production_cvd_multiscanreport production_cvd_allmatchscan production_cvd_fildesreport production_cvd_instreamreport production-clamscan clamd-serial-queue-1 clamd-serial-queue-2 production_cvd production_cvd_fildes production_cvd_instream materialized_warm materialized_cold parser_expansion edge-clamscan edge-clamscan-stdin edge-clamdscan-stdin edge_contscan edge_multiscan edge_allmatch edge_fildes edge_instream clamd-parallel-client-1 clamd-parallel-client-2'
+workload_labels='production_cvd_scanreport production_cvd_contscanreport production_cvd_multiscanreport production_cvd_allmatchscan production_cvd_fildesreport production_cvd_instreamreport production-clamscan clamd-serial-queue-1 clamd-serial-queue-2 production_cvd production_cvd_fildes production_cvd_instream materialized_warm materialized_cold parser_expansion edge-clamscan edge-clamscan-stdin edge-clamdscan-stdin edge-clamdscan-multiscan edge-clamdscan-stream-multiscan edge-clamdscan-fdpass-multiscan edge_contscan edge_multiscan edge_allmatch edge_fildes edge_instream clamd-parallel-client-1 clamd-parallel-client-2'
 for label in $workload_labels; do
     case "$label" in
         production_cvd_scanreport|production_cvd_contscanreport|production_cvd_multiscanreport|production_cvd_allmatchscan|production_cvd_fildesreport|production_cvd_instreamreport)
@@ -196,6 +207,11 @@ for label in $workload_labels; do
             role=edge
             check_offset=yes
             ;;
+        edge_contscan|edge_multiscan|edge_allmatch|edge_fildes|edge_instream)
+            kind=legacy
+            role=edge
+            check_offset=no
+            ;;
         *)
             kind=service
             role=edge
@@ -203,10 +219,26 @@ for label in $workload_labels; do
             ;;
     esac
     log_rel="logs/$label.log"
-    report_rel="reports/$label.jsonl"
+    if [ "$kind" = legacy ]; then
+        report_rel=-
+    else
+        report_rel="reports/$label.jsonl"
+    fi
     workload_status=0
     report_for_role=$clean_report_json
-    if [ "$role" = edge ]; then
+    if [ "$kind" = legacy ]; then
+        case "$label" in
+            edge_contscan) legacy_mode=CONTSCAN ;;
+            edge_multiscan) legacy_mode=MULTISCAN ;;
+            edge_allmatch) legacy_mode=ALLMATCHSCAN ;;
+            edge_fildes) legacy_mode=FILDES ;;
+            edge_instream) legacy_mode=INSTREAM ;;
+        esac
+        printf 'protocol_mode=%s\n' "$legacy_mode" > "$out/$log_rel"
+        printf '%s: Synthetic.Detection FOUND\n' "$workload_input" >> "$out/$log_rel"
+        report_for_role=$detection_report_json
+        workload_status=1
+    elif [ "$role" = edge ]; then
         printf '%s: Synthetic.Detection FOUND\n' "$workload_input" > "$out/$log_rel"
         printf 'signature Synthetic.Detection matched at 123\n' >> "$out/$log_rel"
         report_for_role=$detection_report_json
@@ -214,7 +246,9 @@ for label in $workload_labels; do
     else
         printf 'clean\n' > "$out/$log_rel"
     fi
-    printf '%s' "$report_for_role" > "$out/$report_rel"
+    if [ "$report_rel" != - ]; then
+        printf '%s' "$report_for_role" > "$out/$report_rel"
+    fi
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "$label" "$kind" "$role" "$workload_input" "$log_rel" "$report_rel" \
         "$workload_status" "$check_offset" >> "$workload_results"
@@ -270,6 +304,8 @@ loaded_dependencies_sha256=$(sha256sum "$loaded_dependencies" | awk '{ print $1 
     printf 'service_loader_path=artifacts/service-runtime-components\n'
     printf 'service_interpreter_records_after=provenance/service-interpreter-records-after.txt\n'
     printf 'service_interpreter_records_after_sha256=%s\n' "$(sha256sum "$interpreter_records_after" | awk '{ print $1 }')"
+    printf 'service_lifecycle=provenance/service-lifecycle.tsv\n'
+    printf 'service_lifecycle_sha256=%s\n' "$(sha256sum "$lifecycle" | awk '{ print $1 }')"
     printf 'loader_injection=disabled\n'
     printf 'max_scan_time_ms=14400000\n'
     printf 'service_timeout_s=14400\n'
@@ -292,6 +328,7 @@ loaded_dependencies_sha256=$(sha256sum "$loaded_dependencies" | awk '{ print $1 
     printf 'parallel_queue_log=logs/clamd-parallel-queue.log\n'
     printf 'parallel_queue_observation_count=1\n'
     printf 'parallel_queue=pass\n'
+    printf 'service_lifecycle=pass\n'
     printf 'service_build_identity=pass\n'
     printf 'service_qualification=pass\n'
 } > "$out/service-summary.txt"
@@ -323,6 +360,18 @@ write_checksum_manifest()
             done
     ) > "$out/SHA256SUMS"
 }
+
+cp "$lifecycle" "$tmp/service-lifecycle.good"
+sed 's/^1\tsocket_absent_after_stop\tyes$/1\tsocket_absent_after_stop\tno/' \
+    "$tmp/service-lifecycle.good" > "$lifecycle"
+write_checksum_manifest
+if sh "$control_root/tools/largefile_service_evidence_check.sh" "$out" "$build" > "$tmp/lifecycle.out" 2> "$tmp/lifecycle.err"; then
+    echo 'service evidence verifier accepted failed lifecycle cleanup' >&2
+    exit 1
+fi
+grep -F 'service lifecycle evidence is incomplete or failed' "$tmp/lifecycle.err" >/dev/null
+mv "$tmp/service-lifecycle.good" "$lifecycle"
+write_checksum_manifest
 
 # Rehash the tampered evidence so rejection must come from the semantic
 # allocation checks, rather than the outer checksum manifest.

@@ -861,6 +861,17 @@ fn cmd_xchg(ctx: &mut Context, xchg_op: XchgOp) -> Result<(), InputError> {
     Ok(())
 }
 
+/// Return the directory in which an in-place replacement temporary should be
+/// created. Keeping the temporary beside the file being replaced preserves
+/// same-filesystem rename semantics without requiring the process's current
+/// directory to be writable.
+fn replacement_temp_dir(path: &Path) -> &Path {
+    match path.parent() {
+        Some(parent) if !parent.as_os_str().is_empty() => parent,
+        _ => Path::new("."),
+    }
+}
+
 /// Move range of lines from one DB file into another
 fn cmd_move(ctx: &mut Context, move_op: MoveOp) -> Result<(), InputError> {
     #[derive(PartialEq, Debug)]
@@ -891,11 +902,11 @@ fn cmd_move(ctx: &mut Context, move_op: MoveOp) -> Result<(), InputError> {
     // Create tmp file and open for writing
     let tmp_named_file = tempfile::Builder::new()
         .prefix("_tmp_move_file")
-        .tempfile_in("./")
+        .tempfile_in(replacement_temp_dir(&move_op.src))
         .map_err(|e| {
             InputError::ProcessingString(format!(
-                "Failed to create temp file in current directory {:?} for MOVE command: {}",
-                std::env::current_dir(),
+                "Failed to create temp file beside source file {:?} for MOVE command: {}",
+                &move_op.src,
                 e
             ))
         })?;
@@ -1010,11 +1021,11 @@ fn cmd_close(ctx: &mut Context) -> Result<(), InputError> {
         // Create tmp file and open for writing
         let tmp_named_file = tempfile::Builder::new()
             .prefix("_tmp_move_file")
-            .tempfile_in("./")
+            .tempfile_in(replacement_temp_dir(Path::new(&open_db)))
             .map_err(|e| {
                 InputError::ProcessingString(format!(
-                    "Failed to create temp file in current directory {:?} for CLOSE command: {}",
-                    std::env::current_dir(),
+                    "Failed to create temp file beside database file {:?} for CLOSE command: {}",
+                    &open_db,
                     e
                 ))
             })?;
@@ -1534,9 +1545,7 @@ mod tests {
     fn initialize_db_file_with_data(
         initial_data: Vec<&str>,
     ) -> Result<tempfile::TempPath, CdiffTestError> {
-        let mut file = tempfile::Builder::new()
-            .tempfile_in("./")
-            .expect("Failed to create temp file");
+        let mut file = tempfile::NamedTempFile::new().expect("Failed to create temp file");
         for line in initial_data {
             file.write_all(line.as_bytes())
                 .expect("Failed to write line to temp file");
