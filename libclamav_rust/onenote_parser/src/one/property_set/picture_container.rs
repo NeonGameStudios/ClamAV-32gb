@@ -2,6 +2,7 @@ use crate::errors::{ErrorKind, Result};
 use crate::one::property::{simple, PropertyType};
 use crate::one::property_set::PropertySetId;
 use crate::onestore::object::Object;
+use crate::reader::copy_bytes;
 
 /// A picture container.
 ///
@@ -24,7 +25,11 @@ pub(crate) fn parse(object: &Object) -> Result<Data> {
         .into());
     }
 
-    let data = object.file_data().map(|v| v.to_vec()).unwrap_or_default();
+    let data = object
+        .file_data()
+        .map(copy_bytes)
+        .transpose()?
+        .unwrap_or_default();
     let extension = simple::parse_string(PropertyType::PictureFileExtension, object)?;
 
     Ok(Data { data, extension })

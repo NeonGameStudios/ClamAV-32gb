@@ -71,6 +71,7 @@ impl Error {
             ErrorKind::ResourceLimit { .. }
                 | ErrorKind::CollectionLimit { .. }
                 | ErrorKind::AllocationFailed { .. }
+                | ErrorKind::RecursionLimit { .. }
         )
     }
 
@@ -104,6 +105,10 @@ pub enum ErrorKind {
     /// The bounded payload buffer could not be grown.
     #[error("Unable to allocate {requested} bytes for a OneNote payload")]
     AllocationFailed { requested: usize },
+
+    /// A recursive OneNote structure exceeds the parser's depth limit.
+    #[error("Recursion depth of {requested} exceeds the recursion limit of {max}")]
+    RecursionLimit { requested: usize, max: usize },
 
     /// The parser was asked to process a table-of-contents file that turned out not to be one.
     #[error("Not a table of contents file: {file}")]

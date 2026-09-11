@@ -6,13 +6,16 @@
 //! [\[MS-ISF\]]: https://docs.microsoft.com/en-us/uwp/specifications/ink-serialized-format
 
 use crate::errors::{ErrorKind, Result};
-use crate::reader::Reader;
+use crate::reader::{reserve_collection, Reader};
 use std::{convert::TryFrom, mem::size_of};
 
 pub(crate) fn decode_signed(input: &[u8]) -> Result<Vec<i64>> {
-    Ok(decode(input)?
-        .into_iter()
-        .map(|value| {
+    let values = decode(input)?;
+    let mut output = Vec::new();
+    reserve_collection(&mut output, values.len())?;
+    for value in values {
+        reserve_collection(&mut output, 1)?;
+        output.push({
             let shifted = (value >> 1) as i64;
 
             if value & 0x1 == 0x1 {
@@ -20,8 +23,9 @@ pub(crate) fn decode_signed(input: &[u8]) -> Result<Vec<i64>> {
             } else {
                 shifted
             }
-        })
-        .collect())
+        });
+    }
+    Ok(output)
 }
 
 fn decode(input: &[u8]) -> Result<Vec<u64>> {

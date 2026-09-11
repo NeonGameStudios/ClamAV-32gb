@@ -113,6 +113,14 @@ impl PropertyValue {
     // }
 
     pub(crate) fn parse(property_id: PropertyId, reader: Reader) -> Result<PropertyValue> {
+        Self::parse_at_depth(property_id, reader, 0)
+    }
+
+    pub(crate) fn parse_at_depth(
+        property_id: PropertyId,
+        reader: Reader,
+        depth: usize,
+    ) -> Result<PropertyValue> {
         let prop_type = property_id.prop_type();
 
         let value = match prop_type {
@@ -133,8 +141,8 @@ impl PropertyValue {
             0xC => PropertyValue::ContextId,
             0xD => PropertyValue::ContextIds(reader.get_u32()?),
 
-            0x10 => PropertyValue::parse_property_values(reader)?,
-            0x11 => PropertyValue::PropertySet(PropertySet::parse(reader)?),
+            0x10 => PropertyValue::parse_property_values(reader, depth + 1)?,
+            0x11 => PropertyValue::PropertySet(PropertySet::parse_at_depth(reader, depth + 1)?),
 
             v => {
                 return Err(ErrorKind::MalformedOneStoreData(
@@ -149,12 +157,12 @@ impl PropertyValue {
 
     fn parse_vec(reader: Reader) -> Result<PropertyValue> {
         let size = reader.get_u32()?;
-        let data = reader.read_vec(size as usize)?;
+        let data = reader.read_vec_u64(u64::from(size))?;
 
         Ok(PropertyValue::Vec(data))
     }
 
-    fn parse_property_values(reader: Reader) -> Result<PropertyValue> {
+    fn parse_property_values(reader: Reader, depth: usize) -> Result<PropertyValue> {
         let size = reader.get_u32()? as u64;
 
         // Parse property ID
@@ -167,7 +175,7 @@ impl PropertyValue {
         let mut values = Vec::new();
         reader.reserve_vec(&mut values, size)?;
         for _ in 0..size {
-            values.push(PropertySet::parse(reader)?);
+            values.push(PropertySet::parse_at_depth(reader, depth)?);
         }
 
         Ok(PropertyValue::PropertyValues(id, values))
@@ -236,6 +244,38 @@ mod test {
 
         let error = super::PropertyValue::parse(PropertyId::new(0x4000_0000), &mut reader)
             .unwrap_err();
+
+        assert!(error.is_resource_limit());
+    }
+
+    #[test]
+    fn byte_vector_rejects_an_oversized_declared_payload() {
+        let mut reader = Reader::new(&[0xff, 0xff, 0xff, 0xff]);
+
+        let error = super::PropertyValue::parse(PropertyId::new(0x1c00_0000), &mut reader)
+            .unwrap_err();
+
+        assert!(error.is_resource_limit());
+    }
+
+    #[test]
+    fn property_values_reject_deep_nested_property_sets() {
+        let nested_property_set = 0x4400_0000u32;
+        let empty_property = 0x0400_0000u32;
+        let mut bytes = Vec::new();
+
+        for _ in 0..Reader::MAX_RECURSION_DEPTH {
+            bytes.extend_from_slice(&1u16.to_le_bytes());
+            bytes.extend_from_slice(&nested_property_set.to_le_bytes());
+        }
+        bytes.extend_from_slice(&1u16.to_le_bytes());
+        bytes.extend_from_slice(&empty_property.to_le_bytes());
+
+        let error = super::PropertyValue::parse(
+            PropertyId::new(nested_property_set),
+            &mut Reader::new(&bytes),
+        )
+        .unwrap_err();
 
         assert!(error.is_resource_limit());
     }

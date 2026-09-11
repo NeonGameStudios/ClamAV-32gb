@@ -1,7 +1,7 @@
 use crate::errors::{ErrorKind, Result};
 use std::{
     collections::HashMap,
-    convert::TryInto,
+    convert::{TryFrom, TryInto},
     hash::Hash,
     io::Read,
     mem::size_of,
@@ -10,6 +10,16 @@ use std::{
 enum Input<'a> {
     Slice(&'a [u8]),
     Stream(Box<dyn Read + 'a>),
+}
+
+fn checked_reader_end(start: usize, length: usize, max: usize) -> Result<usize> {
+    start.checked_add(length).ok_or_else(|| {
+        ErrorKind::ResourceLimit {
+            requested: usize::MAX,
+            max,
+        }
+        .into()
+    })
 }
 
 pub(crate) struct Reader<'a> {
@@ -24,6 +34,10 @@ impl<'a> Reader<'a> {
     pub(crate) const REFILL_SIZE: usize = 64 * 1024;
     pub(crate) const MAX_MATERIALIZED_BYTES: usize = 256 * 1024 * 1024;
     pub(crate) const MAX_COLLECTION_BYTES: usize = 64 * 1024 * 1024;
+    // Keep recursive format traversal below the stack-exhaustion range while
+    // allowing substantially deeper nesting than valid OneNote documents
+    // normally require.
+    pub(crate) const MAX_RECURSION_DEPTH: usize = 128;
 
     pub(crate) fn new(data: &'a [u8]) -> Reader<'a> {
         Self::new_with_materialization_limit(data, Self::MAX_MATERIALIZED_BYTES)
@@ -71,6 +85,14 @@ impl<'a> Reader<'a> {
             return Ok(());
         }
 
+        if matches!(self.input, Input::Stream(_)) && cnt > Self::REFILL_SIZE {
+            return Err(ErrorKind::ResourceLimit {
+                requested: cnt,
+                max: Self::REFILL_SIZE,
+            }
+            .into());
+        }
+
         if let Input::Slice(data) = &self.input {
             if data.len() < cnt {
                 return Err(ErrorKind::UnexpectedEof.into());
@@ -91,21 +113,29 @@ impl<'a> Reader<'a> {
             let available = self.buffer.len().saturating_sub(self.cursor);
             let requested = (cnt - available).min(Self::REFILL_SIZE);
             let start = self.buffer.len();
+            let end = checked_reader_end(start, requested, self.materialization_limit)?;
             self.buffer
                 .try_reserve(requested)
                 .map_err(|_| ErrorKind::AllocationFailed {
                     requested: cnt,
                 })?;
-            self.buffer.resize(start + requested, 0);
+            self.buffer.resize(end, 0);
             let read = match &mut self.input {
-                Input::Stream(reader) => reader.read(&mut self.buffer[start..])?,
+                Input::Stream(reader) => loop {
+                    match reader.read(&mut self.buffer[start..]) {
+                        Ok(read) => break read,
+                        Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+                        Err(error) => return Err(error.into()),
+                    }
+                },
                 Input::Slice(_) => unreachable!(),
             };
             if read == 0 {
                 self.buffer.truncate(start);
                 return Err(ErrorKind::UnexpectedEof.into());
             }
-            self.buffer.truncate(start + read);
+            let end = checked_reader_end(start, read, self.materialization_limit)?;
+            self.buffer.truncate(end);
         }
 
         Ok(())
@@ -122,8 +152,9 @@ impl<'a> Reader<'a> {
             }
             Input::Stream(_) => {
                 let start = self.cursor;
-                self.cursor += cnt;
-                Ok(&self.buffer[start..start + cnt])
+                let end = checked_reader_end(start, cnt, self.materialization_limit)?;
+                self.cursor = end;
+                Ok(&self.buffer[start..end])
             }
         }
     }
@@ -172,6 +203,14 @@ impl<'a> Reader<'a> {
         }
         self.materialized_bytes = requested;
         Ok(data)
+    }
+
+    pub(crate) fn read_vec_u64(&mut self, cnt: u64) -> Result<Vec<u8>> {
+        let cnt = usize::try_from(cnt).map_err(|_| ErrorKind::ResourceLimit {
+            requested: usize::MAX,
+            max: self.materialization_limit.min(Self::MAX_MATERIALIZED_BYTES),
+        })?;
+        self.read_vec(cnt)
     }
 
     /// Check a count before using it to size a parser-owned collection.
@@ -231,6 +270,18 @@ impl<'a> Reader<'a> {
 
     fn collection_limit(&self) -> usize {
         self.materialization_limit.min(Self::MAX_COLLECTION_BYTES)
+    }
+
+    pub(crate) fn check_recursion_depth(depth: usize) -> Result<()> {
+        let requested = depth.checked_add(1).unwrap_or(usize::MAX);
+        if depth >= Self::MAX_RECURSION_DEPTH {
+            return Err(ErrorKind::RecursionLimit {
+                requested,
+                max: Self::MAX_RECURSION_DEPTH,
+            }
+            .into());
+        }
+        Ok(())
     }
 
     pub(crate) fn peek(&mut self, cnt: usize) -> Result<&[u8]> {
@@ -314,6 +365,14 @@ pub(crate) fn reserve_collection<T>(values: &mut Vec<T>, additional: usize) -> R
     Ok(())
 }
 
+/// Copy parser-owned byte data through the bounded derived-data budget.
+pub(crate) fn copy_bytes(values: &[u8]) -> Result<Vec<u8>> {
+    let mut output = Vec::new();
+    reserve_collection(&mut output, values.len())?;
+    output.extend_from_slice(values);
+    Ok(output)
+}
+
 /// Reserve parser-owned map capacity without allowing the collection to grow
 /// beyond the bounded derived-data budget.
 pub(crate) fn reserve_collection_map<K: Eq + Hash, V>(
@@ -374,10 +433,41 @@ pub(crate) fn reserve_collection_set<T: Eq + Hash>(
     Ok(())
 }
 
+/// Collect fallible parser results into a bounded vector.
+pub(crate) fn collect_results<T, I>(items: I) -> Result<Vec<T>>
+where
+    I: IntoIterator<Item = Result<T>>,
+{
+    let items = items.into_iter();
+    let mut values = Vec::new();
+    let (lower_bound, _) = items.size_hint();
+    reserve_collection(&mut values, lower_bound)?;
+    for item in items {
+        reserve_collection(&mut values, 1)?;
+        values.push(item?);
+    }
+    Ok(values)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::Reader;
-    use std::io::Cursor;
+    use super::{checked_reader_end, Reader};
+    use std::io::{self, Cursor, Read};
+
+    struct InterruptOnce {
+        interrupted: bool,
+        data: Cursor<Vec<u8>>,
+    }
+
+    impl Read for InterruptOnce {
+        fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+            if !self.interrupted {
+                self.interrupted = true;
+                return Err(io::Error::new(io::ErrorKind::Interrupted, "retry"));
+            }
+            self.data.read(buffer)
+        }
+    }
 
     #[test]
     fn read_vec_rejects_payloads_above_materialization_limit() {
@@ -388,6 +478,22 @@ mod tests {
             .unwrap_err();
 
         assert!(error.is_resource_limit());
+    }
+
+    #[test]
+    fn read_vec_u64_rejects_payloads_above_materialization_limit() {
+        let mut reader = Reader::from_reader(Cursor::new(Vec::<u8>::new()));
+
+        let error = reader
+            .read_vec_u64((Reader::MAX_MATERIALIZED_BYTES as u64) + 1)
+            .unwrap_err();
+
+        assert!(error.is_resource_limit());
+    }
+
+    #[test]
+    fn recursion_depth_rejects_the_first_level_beyond_limit() {
+        assert!(Reader::check_recursion_depth(Reader::MAX_RECURSION_DEPTH).is_err());
     }
 
     #[test]
@@ -414,6 +520,35 @@ mod tests {
 
         assert!(error.is_resource_limit());
         assert!(reader.buffer.is_empty());
+    }
+
+    #[test]
+    fn stream_window_rejects_a_single_refill_overflow() {
+        let mut reader = Reader::from_reader(Cursor::new(Vec::<u8>::new()));
+
+        let error = reader.read(Reader::REFILL_SIZE + 1).unwrap_err();
+
+        assert!(error.is_resource_limit());
+        assert!(reader.buffer.is_empty());
+    }
+
+    #[test]
+    fn stream_reader_retries_interrupted_reads() {
+        let source = InterruptOnce {
+            interrupted: false,
+            data: Cursor::new(b"ok".to_vec()),
+        };
+        let mut reader = Reader::from_reader(source);
+
+        assert_eq!(reader.read(2).unwrap(), b"ok");
+    }
+
+    #[test]
+    fn reader_offset_addition_overflow_is_resource_visible() {
+        let error = checked_reader_end(usize::MAX, 1, Reader::MAX_MATERIALIZED_BYTES)
+            .expect_err("reader offset overflow must fail closed");
+
+        assert!(error.is_resource_limit());
     }
 
     #[test]

@@ -34,6 +34,15 @@ RECORD_HEADER = [
 HASH_RE = re.compile(r"[0-9a-f]{64}\Z")
 CASE_ID_RE = re.compile(r"[a-z0-9_-]+:[^\t,]+:[a-z0-9_-]+\Z")
 NONNEGATIVE_RE = re.compile(r"[0-9]+\Z")
+RESOURCE_PHASE_TOKEN_RE = re.compile(
+    r"(?:"
+    r"(?P<measured>rss|pcre|post-pcre|temporary)(?:<=|<)[0-9]+(?:[A-Za-z]+)?|"
+    r"(?P<development>max-file|max-scan|max-temp)=[0-9]+(?:[A-Za-z]+)?|"
+    r"development-envelope|mode=[A-Za-z0-9_.:/+\\-]+|"
+    r"daemon-rss=unmeasured|socket=tempfs|"
+    r"daemon-health=ping-before-and-after|cleanup=lifecycle-verified"
+    r")\Z"
+)
 REQUIRED_UNSUPPORTED = {
     ("matcher", "rust-fuzzy-image-ffi-admission"),
     ("matcher", "fuzzy-image"),
@@ -91,6 +100,33 @@ SERVICE_LIFECYCLE_EXPECTED = {
 
 def fail(message: str) -> None:
     raise ValueError(message)
+
+
+def parse_resource_phases(value: str, line_number: int) -> set[str]:
+    """Parse the reviewed resource-phase grammar without ignoring junk."""
+    tokens = value.split(";")
+    if not tokens or any(not token for token in tokens):
+        fail(
+            f"acceptance record has an invalid resource phase token and lacks "
+            f"structured resource phases at line {line_number}"
+        )
+    phases: set[str] = set()
+    for token in tokens:
+        match = RESOURCE_PHASE_TOKEN_RE.fullmatch(token)
+        if match is None:
+            fail(
+                f"acceptance record has an invalid resource phase token and lacks "
+                f"structured resource phases at line {line_number}: {token!r}"
+            )
+        phase = match.group("measured") or match.group("development")
+        if phase is not None and phase in phases:
+            fail(
+                f"acceptance record repeats resource phase {phase} at line "
+                f"{line_number}"
+            )
+        if phase is not None:
+            phases.add(phase)
+    return phases
 
 
 def case_completion_contract(case_id: str) -> set[str] | None:
@@ -321,6 +357,17 @@ def validate_records(
             fail(f"acceptance record lacks health/cleanup/artifact evidence at line {line_number}")
         if not row["platform"] or not row["fixture_role"] or not row["resource_phase"] or not row["reason"]:
             fail(f"acceptance record lacks required contextual evidence at line {line_number}")
+        resource_phases = parse_resource_phases(row["resource_phase"], line_number)
+        has_release_budget = {"rss", "temporary"}.issubset(resource_phases)
+        has_development_budget = {"max-file", "max-temp"}.issubset(resource_phases)
+        if not (has_release_budget or has_development_budget):
+            fail(
+                f"acceptance record lacks structured resource phases "
+                f"at line {line_number}"
+            )
+        if (row["kind"], row["id"]) == ("matcher", "pcre") and \
+                not {"pcre", "post-pcre"}.issubset(resource_phases):
+            fail(f"acceptance record lacks PCRE resource phases at line {line_number}")
         if evidence_root is not None:
             root = evidence_root.resolve()
             artifact_paths: list[Path] = []
@@ -340,6 +387,11 @@ def validate_records(
                     f"at line {line_number}"
                 )
             if lifecycle_bound:
+                if row["fixture_role"] == "-":
+                    fail(
+                        f"lifecycle-bound acceptance record lacks a service fixture role "
+                        f"at line {line_number}"
+                    )
                 if len(lifecycle_names) != 1:
                     fail(
                         f"acceptance record must bind exactly one lifecycle artifact "
@@ -362,6 +414,11 @@ def validate_records(
                     )
             inputs_path = root / "provenance/service-inputs-before.json"
             fixture_bound = row["fixture_role"] == "-"
+            if lifecycle_bound and not inputs_path.is_file():
+                fail(
+                    f"lifecycle-bound acceptance record lacks service input identity evidence "
+                    f"at line {line_number}"
+                )
             if inputs_path.is_file() and row["fixture_role"] != "-":
                 if inputs_path not in artifact_paths:
                     fail(

@@ -8,7 +8,7 @@ use crate::one::property_set::{embedded_ink_container, paragraph_style_object, r
 use crate::onenote::ink::{parse_ink_data, Ink, InkBoundingBox};
 use crate::onenote::note_tag::{parse_note_tags, NoteTag};
 use crate::onestore::object_space::ObjectSpace;
-use itertools::Itertools;
+use crate::reader::{collect_results, reserve_collection};
 
 /// A rich text paragraph.
 ///
@@ -377,34 +377,35 @@ pub(crate) fn parse_rich_text(content_id: ExGuid, space: &ObjectSpace) -> Result
 
     // Parse the styles text runs (part 1)
     let text_run_data = embedded_ink_container::Data::parse(object)?.unwrap_or_default();
-    let styles_data: Vec<paragraph_style_object::Data> = data
-        .text_run_formatting
-        .iter()
-        .map(|style_id| {
-            space
-                .get_object(*style_id)
-                .ok_or_else(|| ErrorKind::MalformedOneNoteData("styling is missing".into()).into())
-        })
-        .map(|style_object| style_object.and_then(|object| paragraph_style_object::parse(object)))
-        .collect::<Result<Vec<_>>>()?;
+    let styles_data: Vec<paragraph_style_object::Data> = collect_results(
+        data.text_run_formatting
+            .iter()
+            .map(|style_id| {
+                space.get_object(*style_id).ok_or_else(|| {
+                    ErrorKind::MalformedOneNoteData("styling is missing".into()).into()
+                })
+            })
+            .map(|style_object| {
+                style_object.and_then(|object| paragraph_style_object::parse(object))
+            }),
+    )?;
 
     // Parse the embedded objects
-    let objects = text_run_data
-        .into_iter()
-        .zip(&styles_data)
-        .flat_map(|(object_data, style_data)| {
-            style_data
-                .text_run_is_embedded_object
-                .then(|| (style_data.text_run_object_type, object_data))
-        })
-        .collect_vec();
+    let mut objects = Vec::new();
+    reserve_collection(&mut objects, text_run_data.len().min(styles_data.len()))?;
+    for (object_data, style_data) in text_run_data.into_iter().zip(&styles_data) {
+        if style_data.text_run_is_embedded_object {
+            reserve_collection(&mut objects, 1)?;
+            objects.push((style_data.text_run_object_type, object_data));
+        }
+    }
 
     let mut objects_without_ref = 0;
 
-    let embedded_objects: Vec<_> = objects
-        .into_iter()
-        .enumerate()
-        .map(|(i, (object_type, embedded_data))| match object_type {
+    let mut embedded_objects = Vec::new();
+    reserve_collection(&mut embedded_objects, objects.len())?;
+    for (i, (object_type, embedded_data)) in objects.into_iter().enumerate() {
+        let embedded_object = match object_type {
             Some(INK_END_OF_LINE_BLOB) => {
                 objects_without_ref += 1;
                 Ok(Some(EmbeddedObject::InkLineBreak))
@@ -416,28 +417,43 @@ pub(crate) fn parse_rich_text(content_id: ExGuid, space: &ObjectSpace) -> Result
             }
             None => {
                 if !data.text_run_data_object.is_empty() {
-                    return parse_embedded_ink_data(
-                        data.text_run_data_object[i - objects_without_ref],
+                    let object_id = i
+                        .checked_sub(objects_without_ref)
+                        .and_then(|index| data.text_run_data_object.get(index))
+                        .copied()
+                        .ok_or_else(|| {
+                            ErrorKind::MalformedOneNoteFileData(
+                                "embedded object reference is missing".into(),
+                            )
+                        })?;
+                    parse_embedded_ink_data(
+                        object_id,
                         space,
                         embedded_data,
                     )
-                    .map(|container| Some(EmbeddedObject::Ink(container)));
+                    .map(|container| Some(EmbeddedObject::Ink(container)))
+                } else {
+                    Ok(None)
                 }
-
-                Ok(None)
             }
             Some(v) => Err(ErrorKind::MalformedOneNoteFileData(
                 format!("unknown embedded object type: {:x}", v).into(),
             )
             .into()),
-        })
-        .collect::<Result<Vec<_>>>()?
-        .into_iter()
-        .flatten()
-        .collect_vec();
+        }?;
+        if let Some(embedded_object) = embedded_object {
+            reserve_collection(&mut embedded_objects, 1)?;
+            embedded_objects.push(embedded_object);
+        }
+    }
 
     // Parse the styles text runs (part 2)
-    let styles = styles_data.into_iter().map(parse_style).collect_vec();
+    let mut styles = Vec::new();
+    reserve_collection(&mut styles, styles_data.len())?;
+    for style_data in styles_data {
+        reserve_collection(&mut styles, 1)?;
+        styles.push(parse_style(style_data));
+    }
 
     // TODO: Parse lang code into iso code
     // dia-i18n = "0.8.0"

@@ -346,6 +346,7 @@ int get_clamd_version(const struct optstruct *opts)
 {
     char *buff;
     int len, sockd;
+    int version_received = 0;
     struct RCVLN rcv;
     const char zVERSION[] = "zVERSION";
 
@@ -372,11 +373,19 @@ int get_clamd_version(const struct optstruct *opts)
             return 2;
         }
 
+        if (version_received || buff == NULL || len <= (int)sizeof("ClamAV ") ||
+            strncmp(buff, "ClamAV ", sizeof("ClamAV ") - 1) != 0) {
+            logg(LOGG_ERROR, "Clamd did not return a valid version frame.\n");
+            closesocket(sockd);
+            return 2;
+        }
+
         printf("%s\n", buff);
+        version_received = 1;
     }
 
     closesocket(sockd);
-    return 0;
+    return version_received ? 0 : 2;
 }
 
 int reload_clamd_database(const struct optstruct *opts)
@@ -395,7 +404,8 @@ int reload_clamd_database(const struct optstruct *opts)
         return 2;
     }
 
-    if (!(len = recvln(&rcv, &buff, NULL)) || len < 10 || memcmp(buff, "RELOADING", 9)) {
+    if (!(len = recvln(&rcv, &buff, NULL)) || buff == NULL || len != (int)sizeof("RELOADING") ||
+        memcmp(buff, "RELOADING\0", sizeof("RELOADING")) != 0) {
         logg(LOGG_ERROR, "Clamd did not reload the database\n");
         closesocket(sockd);
         return 2;

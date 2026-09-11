@@ -147,6 +147,11 @@ fn onenote_error_status(err: &onenote::Error) -> cl_error_t {
     }
 }
 
+fn onenote_legacy_fallback_allowed(err: &onenote::Error, prefix: &[u8]) -> bool {
+    matches!(err, onenote::Error::Format | onenote::Error::Parse)
+        && onenote::is_legacy_magic(prefix)
+}
+
 fn rust_context_error_status(err: &ctx::Error) -> cl_error_t {
     match err {
         ctx::Error::NullPointer(_) => cl_error_t_CL_ENULLARG,
@@ -745,7 +750,7 @@ unsafe fn scan_onenote_inner(ctx: *mut cli_ctx) -> cl_error_t {
         return cl_error_t_CL_ENULLARG;
     }
 
-    let mut reader = FMapReader::new_with_context(&fmap, ctx);
+    let mut prefix_reader = FMapReader::new_with_context(&fmap, ctx);
     let mut prefix = [0u8; 16];
     if fmap.len() < prefix.len() {
         return parser_failure(
@@ -755,44 +760,9 @@ unsafe fn scan_onenote_inner(ctx: *mut cli_ctx) -> cl_error_t {
             "OneNote input ended before its fixed prefix was complete",
         );
     }
-    if let Err(err) = reader.read_exact(&mut prefix) {
+    if let Err(err) = prefix_reader.read_exact(&mut prefix) {
         return parser_failure(ctx, "OneNote", rust_reader_status(&err, cl_error_t_CL_EREAD), err);
     }
-    if onenote::is_legacy_magic(&prefix) {
-        let file_len = match u64::try_from(fmap.len()) {
-            Ok(size) => size,
-            Err(_) => {
-                return parser_failure(
-                    ctx,
-                    "OneNote",
-                    cl_error_t_CL_ERESOURCE,
-                    "OneNote input size is not representable in the 64-bit accounting domain",
-                );
-            }
-        };
-        let mut sink = OneNoteScanSink::new(ctx);
-        let parse_result = onenote::scan_legacy_reader(&mut reader, file_len, &mut sink);
-        if sink.scan_result != cl_error_t_CL_SUCCESS {
-            return sink.scan_result;
-        }
-        if let Some(status) = reader.deadline_status() {
-            return parser_failure(ctx, "OneNote", status, "reader reached the configured time limit");
-        }
-        if sink.attachments_seen {
-            return match parse_result {
-                Ok(()) => cl_error_t_CL_SUCCESS,
-                Err(err) => parser_failure(ctx, "OneNote", onenote_error_status(&err), err),
-            };
-        }
-        if let Err(err) = parse_result {
-            return parser_failure(ctx, "OneNote", onenote_error_status(&err), err);
-        }
-        /* The legacy magic is shared by newer section files. If no legacy
-         * attachment record was found, let the modern parser inspect the
-         * complete root instead of treating the input as an empty legacy
-         * document. */
-    }
-
     let mut scan_result = cl_error_t_CL_SUCCESS;
     let modern_reader = FMapReader::new_with_context(&fmap, ctx);
 
@@ -847,15 +817,65 @@ unsafe fn scan_onenote_inner(ctx: *mut cli_ctx) -> cl_error_t {
         true
     });
 
-    let parse_status = if scan_result != cl_error_t_CL_SUCCESS {
-        scan_result
-    } else {
-        match parse_result {
-            Ok(()) => cl_error_t_CL_SUCCESS,
-            Err(err) => parser_failure(ctx, "OneNote", onenote_error_status(&err), err),
+    if scan_result != cl_error_t_CL_SUCCESS {
+        return scan_result;
+    }
+
+    let modern_error = match parse_result {
+        Ok(()) => return cl_error_t_CL_SUCCESS,
+        Err(err) => err,
+    };
+
+    /* Modern parsing must get first refusal. The legacy marker is shared by
+     * newer section files, so scanning for legacy records first can turn a
+     * valid modern document containing coincidental marker bytes into a false
+     * attachment or a malformed result. Fall back only for the same
+     * format/parse failures accepted by the byte-slice compatibility API. */
+    if !onenote_legacy_fallback_allowed(&modern_error, &prefix) {
+        return parser_failure(
+            ctx,
+            "OneNote",
+            onenote_error_status(&modern_error),
+            modern_error,
+        );
+    }
+
+    let file_len = match u64::try_from(fmap.len()) {
+        Ok(size) => size,
+        Err(_) => {
+            return parser_failure(
+                ctx,
+                "OneNote",
+                cl_error_t_CL_ERESOURCE,
+                "OneNote input size is not representable in the 64-bit accounting domain",
+            );
         }
     };
-    parse_status
+    let mut reader = FMapReader::new_with_context(&fmap, ctx);
+    let mut sink = OneNoteScanSink::new(ctx);
+    let legacy_result = onenote::scan_legacy_reader(&mut reader, file_len, &mut sink);
+    if sink.scan_result != cl_error_t_CL_SUCCESS {
+        return sink.scan_result;
+    }
+    if let Some(status) = reader.deadline_status() {
+        return parser_failure(ctx, "OneNote", status, "reader reached the configured time limit");
+    }
+    if sink.attachments_seen {
+        return match legacy_result {
+            Ok(()) => cl_error_t_CL_SUCCESS,
+            Err(err) => parser_failure(ctx, "OneNote", onenote_error_status(&err), err),
+        };
+    }
+
+    match legacy_result {
+        Ok(()) => parser_failure(
+            ctx,
+            "OneNote",
+            onenote_error_status(&modern_error),
+            modern_error,
+        ),
+        Err(err) => parser_failure(ctx, "OneNote", onenote_error_status(&err), err),
+    }
 }
 
 /// Scan the contents of a LHA or LZH archive
@@ -1716,6 +1736,27 @@ mod tests {
             rust_context_error_status(&ctx::Error::Format),
             cl_error_t_CL_EPARSE
         );
+    }
+
+    #[test]
+    fn onenote_fallback_is_limited_to_shared_magic_format_failures() {
+        let magic = [
+            0xe4, 0x52, 0x5c, 0x7b, 0x8c, 0xd8, 0xa7, 0x4d, 0xae, 0xb1, 0x53, 0x78, 0xd0, 0x29,
+            0x96, 0xd3,
+        ];
+
+        assert!(onenote_legacy_fallback_allowed(
+            &onenote::Error::Parse,
+            &magic,
+        ));
+        assert!(!onenote_legacy_fallback_allowed(
+            &onenote::Error::ResourceLimit("bounded parser payload".to_owned()),
+            &magic,
+        ));
+        assert!(!onenote_legacy_fallback_allowed(
+            &onenote::Error::Parse,
+            b"not-onenote-magic",
+        ));
     }
 
     #[test]

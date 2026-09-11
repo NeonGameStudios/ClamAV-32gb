@@ -219,6 +219,8 @@ static sfsistat sendchunk(struct CLAMFI *cf, unsigned char *bodyp, size_t len, S
         while (len) {
             ssize_t n = write(cf->alt, bodyp, len);
 
+            if (n < 0 && errno == EINTR)
+                continue;
             if (n <= 0) {
                 logg(LOGG_ERROR, "Failed to write temporary file\n");
                 nullify(ctx, cf, CF_BOTH);
@@ -352,7 +354,8 @@ sfsistat clamfi_eom(SMFICTX *ctx)
     struct CLAMFI *cf;
     struct nc_scan_report scan_report;
     char *reply = NULL;
-    int len, ret;
+    int len, ret, written;
+    size_t alert_len, reply_size;
     unsigned int crcpt;
 
     if (!(cf = (struct CLAMFI *)smfi_getpriv(ctx)))
@@ -454,10 +457,17 @@ sfsistat clamfi_eom(SMFICTX *ctx)
      * structured result into its two legacy branches. The actual report was
      * already validated by nc_recv_scan_report(). */
     if (scan_report.infected && scan_report.alert && *scan_report.alert) {
-        size_t reply_size = strlen(scan_report.alert) + sizeof("stream:  FOUND\n");
-        reply             = (char *)malloc(reply_size);
-        if (reply)
-            snprintf(reply, reply_size, "stream: %s FOUND\n", scan_report.alert);
+        alert_len = strlen(scan_report.alert);
+        if (clamfi_scan_reply_size(alert_len, &reply_size)) {
+            reply = (char *)malloc(reply_size);
+            if (reply) {
+                written = snprintf(reply, reply_size, "stream: %s FOUND\n", scan_report.alert);
+                if (written < 0 || (size_t)written >= reply_size) {
+                    free(reply);
+                    reply = NULL;
+                }
+            }
+        }
     } else if (scan_report.infected)
         reply = strdup("stream: structured clamd report FOUND\n");
     else

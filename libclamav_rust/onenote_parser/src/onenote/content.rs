@@ -5,8 +5,9 @@ use crate::onenote::embedded_file::{parse_embedded_file, EmbeddedFile};
 use crate::onenote::image::{parse_image, Image};
 use crate::onenote::ink::{parse_ink, Ink};
 use crate::onenote::rich_text::{parse_rich_text, RichText};
-use crate::onenote::table::{parse_table, Table};
+use crate::onenote::table::{parse_table_at_depth, Table};
 use crate::onestore::object_space::ObjectSpace;
+use crate::reader::Reader;
 
 /// The content of an outline.
 #[derive(Clone, Debug)]
@@ -77,7 +78,12 @@ impl Content {
     }
 }
 
-pub(crate) fn parse_content(content_id: ExGuid, space: &ObjectSpace) -> Result<Content> {
+pub(crate) fn parse_content_at_depth(
+    content_id: ExGuid,
+    space: &ObjectSpace,
+    depth: usize,
+) -> Result<Content> {
+    Reader::check_recursion_depth(depth)?;
     let content_type = space
         .get_object(content_id)
         .ok_or_else(|| ErrorKind::MalformedOneNoteData("page content is missing".into()))?
@@ -94,7 +100,9 @@ pub(crate) fn parse_content(content_id: ExGuid, space: &ObjectSpace) -> Result<C
             Content::EmbeddedFile(parse_embedded_file(content_id, space)?)
         }
         PropertySetId::RichTextNode => Content::RichText(parse_rich_text(content_id, space)?),
-        PropertySetId::TableNode => Content::Table(parse_table(content_id, space)?),
+        PropertySetId::TableNode => {
+            Content::Table(parse_table_at_depth(content_id, space, depth + 1)?)
+        }
         PropertySetId::InkContainer => Content::Ink(parse_ink(content_id, space)?),
         _ => Content::Unknown,
     };

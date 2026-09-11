@@ -1492,6 +1492,8 @@ if [ "$service_peak_rss_kb" -gt "$rss_budget_kb" ]; then
     exit 1
 fi
 printf 'service_rss_peak_kb=%s\n' "$service_peak_rss_kb" >> "$out/service-summary.txt"
+printf 'service_rss_samples=%s\n' "$service_rss_samples" >> "$out/service-summary.txt"
+printf 'service_temp_samples=%s\n' "$service_temp_samples" >> "$out/service-summary.txt"
 printf 'rss_budget_kb=%s\n' "$rss_budget_kb" >> "$out/service-summary.txt"
 printf 'pcre_rss_budget_kb=%s\n' "$pcre_rss_budget_kb" >> "$out/service-summary.txt"
 printf 'post_pcre_rss_budget_kb=%s\n' "$post_pcre_rss_budget_kb" >> "$out/service-summary.txt"

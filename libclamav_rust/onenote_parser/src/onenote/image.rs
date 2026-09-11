@@ -5,6 +5,7 @@ use crate::one::property_set::{image_node, picture_container};
 use crate::onenote::iframe::{parse_iframe, IFrame};
 use crate::onenote::note_tag::{parse_note_tags, NoteTag};
 use crate::onestore::object_space::ObjectSpace;
+use crate::reader::collect_results;
 
 /// An embedded image.
 ///
@@ -219,11 +220,11 @@ pub(crate) fn parse_image(image_id: ExGuid, space: &ObjectSpace) -> Result<Image
         (None, None)
     };
 
-    let embed = node
-        .iframe
-        .into_iter()
-        .map(|iframe_id| parse_iframe(iframe_id, space))
-        .collect::<Result<_>>()?;
+    let embed = collect_results(
+        node.iframe
+            .into_iter()
+            .map(|iframe_id| parse_iframe(iframe_id, space)),
+    )?;
 
     // TODO: Parse language code
 

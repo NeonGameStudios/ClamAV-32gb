@@ -55,6 +55,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #if HAVE_UNISTD_H
@@ -85,7 +86,6 @@ void (*action)(const action_source_t *) = NULL;
 unsigned int notmoved = 0, notremoved = 0;
 
 static char *actarget;
-static int targlen;
 #ifndef _WIN32
 static int actarget_fd         = -1;
 static char *actarget_lockname = NULL;
@@ -2716,11 +2716,68 @@ cl_error_t action_source_close(action_source_t *source)
     return status;
 }
 
+static int action_build_dest_path(const char *filename, unsigned int suffix, char **path_out)
+{
+    size_t target_len;
+    size_t filename_len;
+    size_t path_len;
+    char *path;
+    int written;
+
+    if ((NULL == actarget) || (NULL == filename) || (NULL == path_out) || suffix > 999U) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    target_len  = strlen(actarget);
+    filename_len = strlen(filename);
+    if (target_len > SIZE_MAX - 2U || filename_len > SIZE_MAX - target_len - 2U) {
+        errno = EOVERFLOW;
+        return -1;
+    }
+
+    path_len = target_len + 1U + filename_len + 1U;
+    if (suffix != 0U) {
+        if (path_len > SIZE_MAX - (sizeof(".000") - 1U)) {
+            errno = EOVERFLOW;
+            return -1;
+        }
+        path_len += sizeof(".000") - 1U;
+    }
+    if (path_len - 1U > (size_t)INT_MAX) {
+        errno = EOVERFLOW;
+        return -1;
+    }
+
+    path = (char *)malloc(path_len);
+    if (NULL == path)
+        return -1;
+
+    if (suffix != 0U)
+        written = snprintf(path, path_len, "%s" PATHSEP "%s.%03u", actarget, filename, suffix);
+    else
+        written = snprintf(path, path_len, "%s" PATHSEP "%s", actarget, filename);
+    if (written < 0 || (size_t)written >= path_len) {
+        free(path);
+        errno = EOVERFLOW;
+        return -1;
+    }
+
+    free(*path_out);
+    *path_out = path;
+    return 0;
+}
+
 static int getdest(const char *fullpath, char **newname)
 {
     char *tmps, *filename;
     const char *dest_basename;
     int fd, i;
+
+    if ((NULL == fullpath) || (NULL == newname)) {
+        errno = EINVAL;
+        return -1;
+    }
 
     tmps = strdup(fullpath);
     if (!tmps) {
@@ -2729,12 +2786,11 @@ static int getdest(const char *fullpath, char **newname)
     }
     filename = basename(tmps);
 
-    if (!(*newname = (char *)malloc(targlen + strlen(filename) + 6))) {
+    if (action_build_dest_path(filename, 0, newname) != 0) {
         free(tmps);
         return -1;
     }
     dest_basename = filename;
-    sprintf(*newname, "%s" PATHSEP "%s", actarget, dest_basename);
     for (i = 1; i < 1000; i++) {
 #ifndef _WIN32
         fd = action_openat_nointr(actarget_fd, dest_basename, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_BINARY, 0600);
@@ -2758,7 +2814,8 @@ static int getdest(const char *fullpath, char **newname)
             return fd;
         }
         if (errno != EEXIST) break;
-        sprintf(*newname, "%s" PATHSEP "%s.%03u", actarget, filename, i);
+        if (action_build_dest_path(filename, (unsigned int)i, newname) != 0)
+            break;
         dest_basename = strrchr(*newname, *PATHSEP);
         dest_basename = (NULL == dest_basename) ? *newname : dest_basename + 1;
     }
@@ -2809,13 +2866,11 @@ static int action_link_source_to_dest(const action_source_t *source, char **newn
     }
     filename = basename(tmps);
 
-    dest_path = (char *)malloc(targlen + strlen(filename) + 6);
-    if (NULL == dest_path) {
+    if (action_build_dest_path(filename, 0, &dest_path) != 0) {
         goto done;
     }
 
     dest_basename = filename;
-    sprintf(dest_path, "%s" PATHSEP "%s", actarget, dest_basename);
     for (i = 1; i < 1000; i++) {
         if (0 == linkat(AT_FDCWD, source->action_path, actarget_fd, dest_basename, 0)) {
             if (0 != action_fstatat_nointr(actarget_fd, dest_basename, &dest_stat, AT_SYMLINK_NOFOLLOW)) {
@@ -2852,7 +2907,8 @@ static int action_link_source_to_dest(const action_source_t *source, char **newn
             goto done;
         }
 
-        sprintf(dest_path, "%s" PATHSEP "%s.%03u", actarget, filename, i);
+        if (action_build_dest_path(filename, (unsigned int)i, &dest_path) != 0)
+            goto done;
         dest_basename = strrchr(dest_path, *PATHSEP);
         dest_basename = (NULL == dest_basename) ? dest_path : dest_basename + 1;
     }
@@ -3825,7 +3881,6 @@ int actsetup(const struct optstruct *opts)
         actarget                      = actarget_normalized;
 #endif
         if (!isdir()) return 1;
-        targlen = strlen(actarget);
 #ifndef _WIN32
         ret = cli_basename(actarget, strlen(actarget), &actarget_basename, false /* posix_support_backslash_pathsep */);
         if ((CL_SUCCESS != ret) ||

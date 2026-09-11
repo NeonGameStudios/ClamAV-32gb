@@ -36,6 +36,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #include <json.h>
 
@@ -85,7 +86,7 @@ uint64_t clamd_stream_limit(const struct optstruct *clamdopts)
 int sendln(int sockd, const char *line, unsigned int len)
 {
     while (len) {
-        int sent = send(sockd, line, len, 0);
+        ssize_t sent = send(sockd, line, len, 0);
         if (sent <= 0) {
             if (sent < 0 && errno == EINTR) continue;
             logg(LOGG_ERROR, "Can't send to clamd: %s\n", strerror(errno));
@@ -94,6 +95,42 @@ int sendln(int sockd, const char *line, unsigned int len)
         line += sent;
         len -= sent;
     }
+    return 0;
+}
+
+/* Build a NUL-terminated path command without allowing size_t arithmetic or
+ * the unsigned-int sendln() length to wrap. */
+static int build_clamd_path_command(const char *prefix, const char *filename,
+                                    char **command_out, unsigned int *length_out)
+{
+    size_t prefix_len;
+    size_t filename_len;
+    size_t command_len;
+    int formatted_len;
+    char *command;
+
+    if (!prefix || !filename || !command_out || !length_out)
+        return -1;
+
+    prefix_len  = strlen(prefix);
+    filename_len = strlen(filename);
+    if (prefix_len == SIZE_MAX || filename_len > SIZE_MAX - prefix_len - 1)
+        return -1;
+    command_len = prefix_len + filename_len + 1;
+    if (command_len > UINT_MAX)
+        return -1;
+
+    command = (char *)malloc(command_len);
+    if (!command)
+        return -1;
+    formatted_len = snprintf(command, command_len, "%s%s", prefix, filename);
+    if (formatted_len < 0 || (size_t)formatted_len + 1 != command_len) {
+        free(command);
+        return -1;
+    }
+
+    *command_out = command;
+    *length_out = (unsigned int)command_len;
     return 0;
 }
 
@@ -164,6 +201,51 @@ int recvln(struct RCVLN *s, char **rbol, char **reol)
             s->r   = 0;
         }
     }
+}
+
+/* Parse the numeric prefix emitted by clamd for a legacy IDSESSION reply.
+ * The colon is part of the wire grammar; requiring it prevents a malformed
+ * line such as "7garbage" from being correlated with request 7. */
+int parse_clamd_session_id(const char *line, unsigned int *id)
+{
+    char *end;
+    unsigned long value;
+
+    if (!line || !id || line[0] < '1' || line[0] > '9')
+        return -1;
+
+    errno = 0;
+    value = strtoul(line, &end, 10);
+    if (errno == ERANGE || end == line || *end != ':' || value > UINT_MAX)
+        return -1;
+
+    *id = (unsigned int)value;
+    return 0;
+}
+
+/* Return the only terminal outcomes allowed on the legacy text protocol.
+ * The reply length includes the NUL frame terminator, as returned by recvln.
+ * Keeping this check separate from filename/session-ID correlation prevents an
+ * unknown suffix from being treated as a clean result. */
+cl_error_t parse_clamd_legacy_reply(const char *line, unsigned int length)
+{
+    if (!line || length == 0 || line[length - 1] != '\0' || !strchr(line, ':'))
+        return CL_EPARSE;
+
+    if (length >= sizeof(" FOUND") &&
+        memcmp(line + length - sizeof(" FOUND"), " FOUND", sizeof(" FOUND") - 1) == 0)
+        return CL_VIRUS;
+    if (length >= sizeof(" ERROR") &&
+        memcmp(line + length - sizeof(" ERROR"), " ERROR", sizeof(" ERROR") - 1) == 0)
+        return CL_ERROR;
+    if (length >= sizeof(" OK") &&
+        memcmp(line + length - sizeof(" OK"), " OK", sizeof(" OK") - 1) == 0)
+        return CL_SUCCESS;
+    if (length >= sizeof(" Excluded") &&
+        memcmp(line + length - sizeof(" Excluded"), " Excluded", sizeof(" Excluded") - 1) == 0)
+        return CL_SUCCESS;
+
+    return CL_EPARSE;
 }
 
 /* Determines if a path should be excluded
@@ -498,6 +580,7 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
     uint32_t buf[BUFSIZ / sizeof(uint32_t)];
     ssize_t len;
     uint64_t todo;
+    bool known_size;
     STATBUF sb;
 
     if (fd < 0) {
@@ -515,13 +598,23 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
         return -1;
     }
 
-    if (S_ISREG(sb.st_mode) &&
+    if (sb.st_size < 0) {
+        logg(LOGG_ERROR, "%s: Stream input has an invalid negative size. ERROR\n",
+             display_filename ? display_filename : "STDIN");
+        return -1;
+    }
+
+    known_size = S_ISREG(sb.st_mode);
+    if (known_size &&
         (sb.st_size > 0) &&
         ((uint64_t)sb.st_size > (uint64_t)todo)) {
         logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated stream. ERROR\n",
              display_filename ? display_filename : "STDIN");
         return 0;
     }
+
+    if (known_size)
+        todo = (uint64_t)sb.st_size;
 
     /* A descriptor supplied by a caller must represent the complete
      * object.  Rewind regular files before starting the protocol, including
@@ -538,9 +631,24 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
         return -1;
     }
 
-    do {
-        len = read(fd, &buf[1], sizeof(buf) - sizeof(uint32_t));
-    } while (len < 0 && errno == EINTR);
+    if (known_size && todo == 0) {
+        do {
+            len = read(fd, &buf[1], 1);
+        } while (len < 0 && errno == EINTR);
+        if (len > 0) {
+            logg(LOGG_ERROR, "%s: Regular stream input grew after admission. ERROR\n",
+                 display_filename ? display_filename : "STDIN");
+            return -1;
+        }
+        if (len < 0) {
+            logg(LOGG_ERROR, "Failed to read from %s.\n", display_filename ? display_filename : "STDIN");
+            return -1;
+        }
+    } else {
+        do {
+            len = read(fd, &buf[1], sizeof(buf) - sizeof(uint32_t));
+        } while (len < 0 && errno == EINTR);
+    }
     while (len > 0) {
         if ((uint64_t)len > todo) {
             logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated stream. ERROR\n",
@@ -573,6 +681,11 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
     }
     if (len) {
         logg(LOGG_ERROR, "Failed to read from %s.\n", display_filename ? display_filename : "STDIN");
+        return -1;
+    }
+    if (known_size && todo) {
+        logg(LOGG_ERROR, "%s: Regular stream input ended before its admitted size. ERROR\n",
+             display_filename ? display_filename : "STDIN");
         return -1;
     }
     *buf = 0;
@@ -719,7 +832,8 @@ int dconnect(struct optstruct *clamdopts)
 int dsresult(int sockd, int scantype, const char *filename, const action_source_t *action_source, bool apply_action, int *printok, int *errors, struct optstruct *clamdopts)
 {
     int infected = 0, len = 0, beenthere = 0;
-    char *bol, *eol;
+    cl_error_t reply_status;
+    char *bol;
     struct RCVLN rcv;
     STATBUF sb;
     const char *display_filename = (NULL != action_source) ? action_source->display_path : filename;
@@ -735,21 +849,29 @@ int dsresult(int sockd, int scantype, const char *filename, const action_source_
                 infected = -1;
                 goto done;
             }
-            len = strlen(filename) + strlen(scancmd[scantype]) + 3;
-            if (!(bol = malloc(len))) {
-                logg(LOGG_ERROR, "Cannot allocate a command buffer: %s\n", strerror(errno));
-                infected = -1;
-                goto done;
-            }
-            sprintf(bol, "z%s %s", scancmd[scantype], filename);
-            if (sendln(sockd, bol, len)) {
-                free(bol);
-                infected = -1;
-                goto done;
-            }
-            free(bol);
-            break;
+            {
+                char prefix[sizeof("zALLMATCHSCAN ")];
+                unsigned int command_len;
+                int prefix_len;
 
+                prefix_len = snprintf(prefix, sizeof(prefix), "z%s ", scancmd[scantype]);
+                if (prefix_len < 0 || (size_t)prefix_len >= sizeof(prefix) ||
+                    build_clamd_path_command(prefix, filename, &bol, &command_len) < 0) {
+                    logg(LOGG_ERROR, "Cannot build a bounded clamd scan command.\n");
+                    infected = -1;
+                    goto done;
+                }
+                if (sendln(sockd, bol, command_len)) {
+                    free(bol);
+                    infected = -1;
+                    goto done;
+                }
+                free(bol);
+            }
+            /* A successfully sent path request only needs a positive reply
+             * sentinel; the command length is not a scan result. */
+            len = 1;
+            break;
         case STREAM:
             /* NULL filename safe in send_stream() */
             len = (NULL != action_source) ? send_stream_fd_action(sockd, action_source->scan_fd, display_filename, clamdopts) : send_stream(sockd, filename, clamdopts);
@@ -773,13 +895,19 @@ int dsresult(int sockd, int scantype, const char *filename, const action_source_
         goto done;
     }
 
-    while ((len = recvln(&rcv, &bol, &eol))) {
+    while ((len = recvln(&rcv, &bol, NULL))) {
         if (len == -1) {
             infected = -1;
             goto done;
         }
         beenthere = 1;
         if (!filename) logg(LOGG_INFO, "%s\n", bol);
+        reply_status = parse_clamd_legacy_reply(bol, (unsigned int)len);
+        if (reply_status == CL_EPARSE) {
+            logg(LOGG_INFO, "Failed to parse reply: \"%s\"\n", bol);
+            infected = -1;
+            goto done;
+        }
         if (len > 7) {
             char *colon = strrchr(bol, ':');
             if (colon && colon[1] != ' ') {
@@ -799,9 +927,9 @@ int dsresult(int sockd, int scantype, const char *filename, const action_source_
                     logg(LOGG_INFO, "Failed to parse reply: \"%s\"\n", bol);
                 infected = -1;
                 goto done;
-            } else if (!memcmp(eol - 7, " FOUND", 6)) {
+            } else if (reply_status == CL_VIRUS) {
                 static char last_filename[PATH_MAX + 1] = {'\0'};
-                *(eol - 7)                              = 0;
+                *(bol + len - sizeof(" FOUND"))         = 0;
                 if (printok)
                     *printok = 0;
                 if (scantype != ALLMATCH) {
@@ -823,7 +951,7 @@ int dsresult(int sockd, int scantype, const char *filename, const action_source_
                         if (apply_action && action && (NULL != action_source)) action(action_source);
                     }
                 }
-            } else if (!memcmp(eol - 7, " ERROR", 6)) {
+            } else if (reply_status == CL_ERROR) {
                 if (errors)
                     (*errors)++;
                 if (printok)
@@ -914,6 +1042,240 @@ int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *t
     return 1;
 }
 
+static void report_json_free_keys(char **keys, size_t key_count)
+{
+    size_t i;
+
+    for (i = 0; i < key_count; i++)
+        free(keys[i]);
+    free(keys);
+}
+
+/* Decode one top-level object key so escaped spellings such as "id" and
+ * "\u0069d" cannot evade duplicate-key detection. JSON-C keeps only one
+ * value for duplicate object names, so accepting them would make the
+ * structured-report result depend on which duplicate happened to win. */
+static int report_json_decode_key(const char *json, size_t json_length,
+                                  size_t *cursor, char **key_out)
+{
+    size_t start;
+    size_t end;
+    size_t token_length;
+    char *token = NULL;
+    char *key = NULL;
+    const char *value;
+    struct json_tokener *tokener = NULL;
+    struct json_object *object = NULL;
+    enum json_tokener_error error;
+    size_t parse_end;
+
+    if (!json || !cursor || !key_out || *cursor >= json_length || json[*cursor] != '"')
+        return -1;
+
+    start = *cursor;
+    end = start + 1;
+    while (end < json_length) {
+        unsigned char current = (unsigned char)json[end];
+
+        if (current == '"')
+            break;
+        if (current < 0x20)
+            return -1;
+        if (current == '\\') {
+            end++;
+            if (end >= json_length)
+                return -1;
+            if (json[end] == 'u') {
+                if (json_length - end < 5)
+                    return -1;
+                end += 4;
+            }
+        }
+        end++;
+    }
+    if (end >= json_length || json[end] != '"')
+        return -1;
+
+    token_length = end - start + 1;
+    if (token_length > INT_MAX)
+        return -1;
+    token = (char *)malloc(token_length + 1);
+    if (!token)
+        return -1;
+    memcpy(token, json + start, token_length);
+    token[token_length] = '\0';
+
+    tokener = json_tokener_new();
+    if (!tokener)
+        goto fail;
+    object = json_tokener_parse_ex(tokener, token, (int)token_length);
+    error = json_tokener_get_error(tokener);
+    parse_end = (size_t)json_tokener_get_parse_end(tokener);
+    json_tokener_free(tokener);
+    tokener = NULL;
+    if (error != json_tokener_success || !object || parse_end != token_length ||
+        !json_object_is_type(object, json_type_string))
+        goto fail;
+
+    value = json_object_get_string(object);
+    if (!value)
+        goto fail;
+    key = (char *)malloc(strlen(value) + 1);
+    if (!key)
+        goto fail;
+    strcpy(key, value);
+    json_object_put(object);
+    free(token);
+    *cursor = end + 1;
+    *key_out = key;
+    return 0;
+
+fail:
+    if (tokener)
+        json_tokener_free(tokener);
+    json_object_put(object);
+    free(key);
+    free(token);
+    return -1;
+}
+
+/* Detect duplicate names in the top-level structured-report object before
+ * JSON-C collapses them. Nested metadata is intentionally not inspected: the
+ * report consumers only bind top-level fields, and the normal parser remains
+ * responsible for validating nested JSON syntax. */
+static int report_json_top_level_keys_unique(const char *json, uint32_t json_length)
+{
+    char **keys = NULL;
+    size_t key_count = 0;
+    size_t key_capacity = 0;
+    size_t cursor = 0;
+    size_t i;
+
+    while (cursor < json_length && isspace((unsigned char)json[cursor]))
+        cursor++;
+    if (cursor >= json_length || json[cursor] != '{')
+        return 0;
+    cursor++;
+
+    while (1) {
+        char *key = NULL;
+        size_t depth = 0;
+        bool in_string = false;
+
+        while (cursor < json_length && isspace((unsigned char)json[cursor]))
+            cursor++;
+        if (cursor >= json_length)
+            goto fail;
+        if (json[cursor] == '}') {
+            cursor++;
+            while (cursor < json_length && isspace((unsigned char)json[cursor]))
+                cursor++;
+            if (cursor != json_length)
+                goto fail;
+            report_json_free_keys(keys, key_count);
+            return 0;
+        }
+
+        if (report_json_decode_key(json, json_length, &cursor, &key) < 0)
+            goto fail;
+        for (i = 0; i < key_count; i++) {
+            if (strcmp(keys[i], key) == 0) {
+                free(key);
+                goto fail;
+            }
+        }
+        if (key_count == key_capacity) {
+            size_t next_capacity = key_capacity ? key_capacity * 2 : 8;
+            char **next_keys;
+
+            if (next_capacity < key_capacity || next_capacity > SIZE_MAX / sizeof(*keys)) {
+                free(key);
+                goto fail;
+            }
+            next_keys = (char **)realloc(keys, next_capacity * sizeof(*keys));
+            if (!next_keys) {
+                free(key);
+                goto fail;
+            }
+            keys = next_keys;
+            key_capacity = next_capacity;
+        }
+        keys[key_count++] = key;
+
+        while (cursor < json_length && isspace((unsigned char)json[cursor]))
+            cursor++;
+        if (cursor >= json_length || json[cursor] != ':')
+            goto fail;
+        cursor++;
+        while (cursor < json_length && isspace((unsigned char)json[cursor]))
+            cursor++;
+
+        while (cursor < json_length) {
+            unsigned char current = (unsigned char)json[cursor];
+
+            if (in_string) {
+                if (current == '\\') {
+                    if (cursor + 1 >= json_length)
+                        goto fail;
+                    cursor += 2;
+                    continue;
+                }
+                if (current == '"')
+                    in_string = false;
+                cursor++;
+                continue;
+            }
+            if (current == '"') {
+                in_string = true;
+                cursor++;
+                continue;
+            }
+            if (current == '{' || current == '[') {
+                depth++;
+                cursor++;
+                continue;
+            }
+            if (current == '}' || current == ']') {
+                if (depth == 0) {
+                    if (current != '}')
+                        goto fail;
+                    break;
+                }
+                depth--;
+                cursor++;
+                continue;
+            }
+            if (current == ',' && depth == 0)
+                break;
+            cursor++;
+        }
+        if (in_string || depth != 0 || cursor >= json_length)
+            goto fail;
+        while (cursor < json_length && isspace((unsigned char)json[cursor]))
+            cursor++;
+        if (cursor >= json_length)
+            goto fail;
+        if (json[cursor] == ',') {
+            cursor++;
+            continue;
+        }
+        if (json[cursor] == '}') {
+            cursor++;
+            while (cursor < json_length && isspace((unsigned char)json[cursor]))
+                cursor++;
+            if (cursor != json_length)
+                goto fail;
+            report_json_free_keys(keys, key_count);
+            return 0;
+        }
+        goto fail;
+    }
+
+fail:
+    report_json_free_keys(keys, key_count);
+    return -1;
+}
+
 static struct json_object *report_json_parse_object(const char *json, uint32_t json_length)
 {
     struct json_object *object;
@@ -921,7 +1283,8 @@ static struct json_object *report_json_parse_object(const char *json, uint32_t j
     enum json_tokener_error error;
     size_t parse_end;
 
-    if (!json || json_length == 0 || json[json_length] != '\0')
+    if (!json || json_length == 0 || json_length > INT_MAX || json[json_length] != '\0' ||
+        report_json_top_level_keys_unique(json, json_length) < 0)
         return NULL;
 
     tokener = json_tokener_new();
@@ -940,6 +1303,33 @@ static struct json_object *report_json_parse_object(const char *json, uint32_t j
         return NULL;
     }
     return object;
+}
+
+int scan_report_json_id(const char *json, uint32_t json_length, unsigned int *id)
+{
+    struct json_object *object;
+    struct json_object *id_object = NULL;
+    int64_t value;
+
+    if (!json || !id || json_length == 0)
+        return -1;
+
+    object = report_json_parse_object(json, json_length);
+    if (!object || !json_object_object_get_ex(object, "id", &id_object) ||
+        !json_object_is_type(id_object, json_type_int)) {
+        json_object_put(object);
+        return -1;
+    }
+
+    value = json_object_get_int64(id_object);
+    if (value < 0 || (uint64_t)value > UINT_MAX) {
+        json_object_put(object);
+        return -1;
+    }
+
+    *id = (unsigned int)value;
+    json_object_put(object);
+    return 0;
 }
 
 static int scan_report_json_status_value(struct json_object *object, cl_error_t *status_out, int required)
@@ -1035,6 +1425,11 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
         goto invalid;
 
     if (json_object_is_type(verdict_object, json_type_int)) {
+        if (!json_object_object_get_ex(object, "version", &status_object) ||
+            !json_object_is_type(status_object, json_type_int) ||
+            json_object_get_int64(status_object) != 1)
+            goto invalid;
+
         verdict = json_object_get_int(verdict_object);
 
         if (!completion || verdict < CL_VERDICT_NOTHING_FOUND ||
@@ -1274,6 +1669,7 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
     int sent = 0;
     int frame;
     int terminated               = 0;
+    char *command;
     const char *display_filename = (NULL != action_source) ? action_source->display_path : filename;
 
     if (!infected || !incomplete || !errors)
@@ -1347,12 +1743,10 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
             if (!filename)
                 return -1;
             {
-                size_t length = strlen(filename) + sizeof("zCONTSCANREPORT ");
-                char *command = (char *)malloc(length);
-                if (!command)
+                unsigned int command_len;
+                if (build_clamd_path_command("zCONTSCANREPORT ", filename, &command, &command_len) < 0)
                     return -1;
-                snprintf(command, length, "zCONTSCANREPORT %s", filename);
-                if (sendln(sockd, command, (unsigned int)length)) {
+                if (sendln(sockd, command, command_len)) {
                     free(command);
                     return -1;
                 }
@@ -1364,12 +1758,10 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
             if (!filename)
                 return -1;
             {
-                size_t length = strlen(filename) + sizeof("zMULTISCANREPORT ");
-                char *command = (char *)malloc(length);
-                if (!command)
+                unsigned int command_len;
+                if (build_clamd_path_command("zMULTISCANREPORT ", filename, &command, &command_len) < 0)
                     return -1;
-                snprintf(command, length, "zMULTISCANREPORT %s", filename);
-                if (sendln(sockd, command, (unsigned int)length)) {
+                if (sendln(sockd, command, command_len)) {
                     free(command);
                     return -1;
                 }
@@ -1381,12 +1773,10 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
             if (!filename)
                 return -1;
             {
-                size_t length = strlen(filename) + sizeof("zALLMATCHSCANREPORT ");
-                char *command = (char *)malloc(length);
-                if (!command)
+                unsigned int command_len;
+                if (build_clamd_path_command("zALLMATCHSCANREPORT ", filename, &command, &command_len) < 0)
                     return -1;
-                snprintf(command, length, "zALLMATCHSCANREPORT %s", filename);
-                if (sendln(sockd, command, (unsigned int)length)) {
+                if (sendln(sockd, command, command_len)) {
                     free(command);
                     return -1;
                 }
@@ -1437,6 +1827,14 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
             }
             if (terminated)
                 break;
+            /* Each structured report request has exactly one JSON report
+             * object followed by the zero-length terminator. Do not merge a
+             * second frame into the caller's result. */
+            if (received) {
+                logg(LOGG_ERROR, "Received multiple structured scan report frames from clamd.\n");
+                free(json);
+                return -1;
+            }
             received = 1;
             if (scan_report_json_status(json, json_length, &frame_infected, &frame_incomplete,
                                         &frame_status) < 0) {

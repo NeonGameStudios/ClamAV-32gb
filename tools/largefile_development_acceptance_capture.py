@@ -76,6 +76,17 @@ def write_clean_database(root: Path) -> Path:
     return database
 
 
+def resolve_cvd_certs_dir(source_root: Path, supplied: Path | None) -> Path:
+    """Use the repository CA by default and reject an unusable trust root."""
+    certs = supplied if supplied is not None else source_root / "unit_tests/input/signing/verify"
+    if not certs.is_dir() or certs.is_symlink():
+        fail(
+            "CVD certificate directory is missing or symlinked: "
+            f"{certs}; pass --cvd-certs-dir with a valid directory"
+        )
+    return certs.resolve()
+
+
 def run_case(
     scanner: Path,
     database: Path,
@@ -306,6 +317,7 @@ def capture(
     if not os.access(scanner, os.X_OK):
         fail(f"clamscan is not executable: {scanner}")
     source_root = source_root.resolve()
+    cvd_certs_dir = resolve_cvd_certs_dir(source_root, cvd_certs_dir)
     output = output.resolve()
     try:
         output.relative_to(source_root)
@@ -387,7 +399,7 @@ def main(argv: list[str] | None = None) -> int:
                         default=Path(__file__).resolve().parents[1])
     parser.add_argument("--build-dir", type=Path, required=True)
     parser.add_argument("--cvd-certs-dir", type=Path,
-                        help="optional CVD root-CA directory for a build-tree scanner")
+                        help="CVD root-CA directory; defaults to the repository test CA")
     args = parser.parse_args(argv)
     try:
         count = capture(

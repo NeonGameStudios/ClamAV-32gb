@@ -465,6 +465,2237 @@ static cl_error_t cli_rar_skip_failure_to_scan_result(cl_error_t skip_status)
     return skip_status;
 }
 
+static cl_error_t cli_ai_model_malformed(cli_ctx *ctx, const char *reason)
+{
+    cli_mark_scan_incomplete(ctx, reason);
+    return CL_EPARSE;
+}
+
+static cl_error_t cli_ai_model_read(cli_ctx *ctx, uint64_t *offset, void *buffer, size_t size)
+{
+    uint64_t file_len;
+    size_t native_offset;
+    cl_error_t status;
+
+    if (ctx == NULL || ctx->fmap == NULL || offset == NULL || (buffer == NULL && size != 0))
+        return CL_ENULLARG;
+
+    file_len = (uint64_t)ctx->fmap->len;
+    if (*offset > file_len || (uint64_t)size > file_len - *offset)
+        return cli_ai_model_malformed(ctx, "AI model header or metadata is truncated");
+
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS)
+        return status;
+
+    native_offset = (size_t)*offset;
+    {
+        size_t bytes_read = fmap_readn(ctx->fmap, buffer, native_offset, size);
+
+        if (bytes_read == (size_t)-1) {
+            cli_mark_scan_incomplete(ctx, "AI model input backing read failed");
+            return CL_EREAD;
+        }
+        if (bytes_read != size)
+            return cli_ai_model_malformed(ctx, "AI model input could not be read completely");
+    }
+
+    *offset += (uint64_t)size;
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_skip(cli_ctx *ctx, uint64_t *offset, uint64_t size)
+{
+    uint64_t file_len;
+    cl_error_t status;
+
+    if (ctx == NULL || ctx->fmap == NULL || offset == NULL)
+        return CL_ENULLARG;
+
+    file_len = (uint64_t)ctx->fmap->len;
+    if (*offset > file_len || size > file_len - *offset)
+        return cli_ai_model_malformed(ctx, "AI model header or metadata is truncated");
+
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS)
+        return status;
+
+    *offset += size;
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_get_u32(cli_ctx *ctx, uint64_t *offset, uint32_t *value)
+{
+    uint8_t bytes[sizeof(uint32_t)];
+    cl_error_t status;
+
+    status = cli_ai_model_read(ctx, offset, bytes, sizeof(bytes));
+    if (status != CL_SUCCESS)
+        return status;
+
+    *value = ((uint32_t)bytes[0]) |
+             ((uint32_t)bytes[1] << 8) |
+             ((uint32_t)bytes[2] << 16) |
+             ((uint32_t)bytes[3] << 24);
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_get_u64(cli_ctx *ctx, uint64_t *offset, uint64_t *value)
+{
+    uint8_t bytes[sizeof(uint64_t)];
+    cl_error_t status;
+    unsigned int i;
+
+    status = cli_ai_model_read(ctx, offset, bytes, sizeof(bytes));
+    if (status != CL_SUCCESS)
+        return status;
+
+    *value = 0;
+    for (i = 0; i < sizeof(bytes); i++)
+        *value |= (uint64_t)bytes[i] << (i * 8);
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_skip_gguf_value(cli_ctx *ctx, uint64_t *offset,
+                                                uint32_t value_type, unsigned int depth)
+{
+    cl_error_t status;
+    uint64_t size;
+    uint64_t count;
+    uint32_t element_type;
+    uint64_t i;
+
+    if (depth > 32)
+        return cli_ai_model_malformed(ctx, "GGUF metadata array nesting is too deep");
+
+    switch (value_type) {
+        case 0: /* UINT8 */
+        case 1: /* INT8 */
+        case 7: /* BOOL */
+            return cli_ai_model_skip(ctx, offset, 1);
+
+        case 2: /* UINT16 */
+        case 3: /* INT16 */
+            return cli_ai_model_skip(ctx, offset, 2);
+
+        case 4: /* UINT32 */
+        case 5: /* INT32 */
+        case 6: /* FLOAT32 */
+            return cli_ai_model_skip(ctx, offset, 4);
+
+        case 8: /* STRING */
+            status = cli_ai_model_get_u64(ctx, offset, &size);
+            if (status != CL_SUCCESS)
+                return status;
+            return cli_ai_model_skip(ctx, offset, size);
+
+        case 9: /* ARRAY */
+            status = cli_ai_model_get_u32(ctx, offset, &element_type);
+            if (status != CL_SUCCESS)
+                return status;
+            status = cli_ai_model_get_u64(ctx, offset, &count);
+            if (status != CL_SUCCESS)
+                return status;
+
+            /* Every GGUF scalar consumes at least one byte. This preflight
+             * prevents a hostile count from turning into an unbounded loop. */
+            if (count > (uint64_t)ctx->fmap->len - *offset)
+                return cli_ai_model_malformed(ctx, "GGUF metadata array exceeds the input");
+
+            for (i = 0; i < count; i++) {
+                status = cli_ai_model_skip_gguf_value(ctx, offset, element_type, depth + 1);
+                if (status != CL_SUCCESS)
+                    return status;
+            }
+            return CL_SUCCESS;
+
+        case 10: /* UINT64 */
+        case 11: /* INT64 */
+        case 12: /* FLOAT64 */
+            return cli_ai_model_skip(ctx, offset, 8);
+
+        default:
+            return cli_ai_model_malformed(ctx, "GGUF metadata value type is invalid");
+    }
+}
+
+/* Return the GGML storage geometry for the GGUF tensor types that this
+ * structural parser can validate without decoding model payloads. The byte
+ * count is per quantization block, not per element. */
+static int cli_ai_model_gguf_tensor_format(uint32_t tensor_type,
+                                           uint32_t *block_size,
+                                           uint32_t *block_bytes)
+{
+    if (!block_size || !block_bytes)
+        return 0;
+
+    switch (tensor_type) {
+        case 0:  /* F32 */
+            *block_size = 1;
+            *block_bytes = 4;
+            break;
+        case 1:  /* F16 */
+            *block_size = 1;
+            *block_bytes = 2;
+            break;
+        case 2:  /* Q4_0 */
+            *block_size = 32;
+            *block_bytes = 18;
+            break;
+        case 3:  /* Q4_1 */
+            *block_size = 32;
+            *block_bytes = 20;
+            break;
+        case 6:  /* Q5_0 */
+            *block_size = 32;
+            *block_bytes = 22;
+            break;
+        case 7:  /* Q5_1 */
+            *block_size = 32;
+            *block_bytes = 24;
+            break;
+        case 8:  /* Q8_0 */
+            *block_size = 32;
+            *block_bytes = 34;
+            break;
+        case 9:  /* Q8_1 */
+            *block_size = 32;
+            *block_bytes = 36;
+            break;
+        case 10: /* Q2_K */
+            *block_size = 256;
+            *block_bytes = 84;
+            break;
+        case 11: /* Q3_K */
+            *block_size = 256;
+            *block_bytes = 110;
+            break;
+        case 12: /* Q4_K */
+            *block_size = 256;
+            *block_bytes = 144;
+            break;
+        case 13: /* Q5_K */
+            *block_size = 256;
+            *block_bytes = 176;
+            break;
+        case 14: /* Q6_K */
+            *block_size = 256;
+            *block_bytes = 210;
+            break;
+        case 15: /* Q8_K */
+            *block_size = 256;
+            *block_bytes = 292;
+            break;
+        case 16: /* IQ2_XXS */
+            *block_size = 256;
+            *block_bytes = 66;
+            break;
+        case 17: /* IQ2_XS */
+            *block_size = 256;
+            *block_bytes = 74;
+            break;
+        case 18: /* IQ3_XXS */
+            *block_size = 256;
+            *block_bytes = 98;
+            break;
+        case 19: /* IQ1_S */
+            *block_size = 256;
+            *block_bytes = 50;
+            break;
+        case 20: /* IQ4_NL */
+            *block_size = 32;
+            *block_bytes = 18;
+            break;
+        case 21: /* IQ3_S */
+            *block_size = 256;
+            *block_bytes = 110;
+            break;
+        case 22: /* IQ2_S */
+            *block_size = 256;
+            *block_bytes = 82;
+            break;
+        case 23: /* IQ4_XS */
+            *block_size = 256;
+            *block_bytes = 136;
+            break;
+        case 24: /* I8 */
+            *block_size = 1;
+            *block_bytes = 1;
+            break;
+        case 25: /* I16 */
+            *block_size = 1;
+            *block_bytes = 2;
+            break;
+        case 26: /* I32 */
+            *block_size = 1;
+            *block_bytes = 4;
+            break;
+        case 27: /* I64 */
+        case 28: /* F64 */
+            *block_size = 1;
+            *block_bytes = 8;
+            break;
+        case 29: /* IQ1_M */
+            *block_size = 256;
+            *block_bytes = 56;
+            break;
+        case 30: /* BF16 */
+            *block_size = 1;
+            *block_bytes = 2;
+            break;
+        case 34: /* TQ1_0 */
+            *block_size = 256;
+            *block_bytes = 54;
+            break;
+        case 35: /* TQ2_0 */
+            *block_size = 256;
+            *block_bytes = 66;
+            break;
+        case 39: /* MXFP4 */
+            *block_size = 32;
+            *block_bytes = 17;
+            break;
+        case 40: /* NVFP4 */
+            *block_size = 64;
+            *block_bytes = 36;
+            break;
+        case 41: /* Q1_0 */
+            *block_size = 128;
+            *block_bytes = 18;
+            break;
+        case 42: /* Q2_0 */
+            *block_size = 64;
+            *block_bytes = 18;
+            break;
+        default:
+            return 0;
+    }
+    return 1;
+}
+
+/* TFLite stores a Model table in a FlatBuffer with the four-byte file
+ * identifier "TFL3" at offset four.  Validate the container topology without
+ * materializing model weights.  The generic table walk deliberately limits
+ * itself to the Model table and its direct table vectors; the tensor and
+ * operator payloads remain opaque to this structural parser and are still
+ * covered by the mandatory outer matcher. */
+#define CLI_AI_MODEL_TFLITE_MAX_TABLES       1048576U
+#define CLI_AI_MODEL_TFLITE_MAX_TENSOR_TYPE 22U
+
+typedef struct cli_ai_model_tflite_validator {
+    cli_ctx *ctx;
+    uint64_t file_len;
+    uint32_t tables;
+} cli_ai_model_tflite_validator_t;
+
+typedef struct cli_ai_model_tflite_table {
+    uint64_t offset;
+    uint64_t vtable_offset;
+    uint16_t vtable_size;
+    uint16_t object_size;
+} cli_ai_model_tflite_table_t;
+
+static cl_error_t cli_ai_model_tflite_string(cli_ai_model_tflite_validator_t *validator,
+                                              uint64_t field_offset);
+
+static cl_error_t cli_ai_model_tflite_get_u16(cli_ctx *ctx, uint64_t *offset, uint16_t *value)
+{
+    uint8_t bytes[sizeof(uint16_t)];
+    cl_error_t status;
+
+    status = cli_ai_model_read(ctx, offset, bytes, sizeof(bytes));
+    if (status != CL_SUCCESS)
+        return status;
+
+    *value = (uint16_t)bytes[0] | ((uint16_t)bytes[1] << 8);
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_get_u32(cli_ctx *ctx, uint64_t *offset, uint32_t *value)
+{
+    uint8_t bytes[sizeof(uint32_t)];
+    cl_error_t status;
+
+    status = cli_ai_model_read(ctx, offset, bytes, sizeof(bytes));
+    if (status != CL_SUCCESS)
+        return status;
+
+    *value = ((uint32_t)bytes[0]) |
+             ((uint32_t)bytes[1] << 8) |
+             ((uint32_t)bytes[2] << 16) |
+             ((uint32_t)bytes[3] << 24);
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_uoffset(cli_ctx *ctx,
+                                               uint64_t file_len,
+                                               uint64_t field_offset,
+                                               uint64_t *target)
+{
+    uint64_t offset = field_offset;
+    uint32_t relative;
+    cl_error_t status;
+
+    status = cli_ai_model_tflite_get_u32(ctx, &offset, &relative);
+    if (status != CL_SUCCESS)
+        return status;
+    if (relative == 0) {
+        *target = 0;
+        return CL_SUCCESS;
+    }
+    if ((uint64_t)relative > file_len - field_offset)
+        return cli_ai_model_malformed(ctx, "TFLite FlatBuffer offset exceeds the input");
+
+    *target = field_offset + (uint64_t)relative;
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_table(cli_ai_model_tflite_validator_t *validator,
+                                             uint64_t table_offset,
+                                             cli_ai_model_tflite_table_t *table)
+{
+    uint64_t offset;
+    uint32_t raw_vtable_offset;
+    uint16_t field_offset;
+    uint16_t i;
+    cl_error_t status;
+
+    if (!validator || !table)
+        return CL_ENULLARG;
+    if (validator->tables >= CLI_AI_MODEL_TFLITE_MAX_TABLES)
+        return cli_ai_model_malformed(validator->ctx, "TFLite FlatBuffer table count exceeds the parser limit");
+    validator->tables++;
+
+    if (table_offset > validator->file_len || validator->file_len - table_offset < sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite FlatBuffer table is truncated");
+
+    offset = table_offset;
+    status = cli_ai_model_tflite_get_u32(validator->ctx, &offset, &raw_vtable_offset);
+    if (status != CL_SUCCESS)
+        return status;
+
+    /* FlatBuffers stores a positive backwards vtable distance. Treating its
+     * raw word as a signed delta can reinterpret bytes after the table. */
+    if (raw_vtable_offset == 0 || (uint64_t)raw_vtable_offset > table_offset)
+        return cli_ai_model_malformed(validator->ctx, "TFLite FlatBuffer vtable offset is invalid");
+    table->offset        = table_offset;
+    table->vtable_offset = table_offset - (uint64_t)raw_vtable_offset;
+    offset               = table->vtable_offset;
+    status               = cli_ai_model_tflite_get_u16(validator->ctx, &offset, &table->vtable_size);
+    if (status != CL_SUCCESS)
+        return status;
+    status = cli_ai_model_tflite_get_u16(validator->ctx, &offset, &table->object_size);
+    if (status != CL_SUCCESS)
+        return status;
+
+    if (table->vtable_size < 4 || (table->vtable_size & 1U) != 0 ||
+        (uint64_t)table->vtable_size > table->offset - table->vtable_offset ||
+        (uint64_t)table->vtable_size > validator->file_len - table->vtable_offset)
+        return cli_ai_model_malformed(validator->ctx, "TFLite FlatBuffer vtable is invalid");
+    if (table->object_size < sizeof(uint32_t) ||
+        (uint64_t)table->object_size > validator->file_len - table->offset)
+        return cli_ai_model_malformed(validator->ctx, "TFLite FlatBuffer table size is invalid");
+
+    for (i = 4; i < table->vtable_size; i += sizeof(uint16_t)) {
+        offset = table->vtable_offset + i;
+        status = cli_ai_model_tflite_get_u16(validator->ctx, &offset, &field_offset);
+        if (status != CL_SUCCESS)
+            return status;
+        if (field_offset != 0 &&
+            (field_offset < sizeof(uint32_t) || field_offset >= table->object_size))
+            return cli_ai_model_malformed(validator->ctx, "TFLite FlatBuffer field offset is outside its table");
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_field(cli_ctx *ctx,
+                                             const cli_ai_model_tflite_table_t *table,
+                                             uint16_t field_index,
+                                             uint64_t *field_offset,
+                                             bool *present)
+{
+    uint64_t entry_offset;
+    uint16_t vtable_field_offset;
+    cl_error_t status;
+
+    if (!ctx || !table || !field_offset || !present)
+        return CL_ENULLARG;
+    *present = false;
+    entry_offset = (uint64_t)field_index * sizeof(uint16_t) + sizeof(uint32_t);
+    if (entry_offset + sizeof(uint16_t) > table->vtable_size)
+        return CL_SUCCESS;
+
+    entry_offset += table->vtable_offset;
+    status = cli_ai_model_tflite_get_u16(ctx, &entry_offset, &vtable_field_offset);
+    if (status != CL_SUCCESS)
+        return status;
+    if (vtable_field_offset == 0)
+        return CL_SUCCESS;
+    if ((uint64_t)vtable_field_offset > (uint64_t)table->object_size - sizeof(uint32_t))
+        return cli_ai_model_malformed(ctx, "TFLite FlatBuffer field value exceeds its table");
+
+    *field_offset = table->offset + vtable_field_offset;
+    *present      = true;
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_vector(cli_ai_model_tflite_validator_t *validator,
+                                              uint64_t field_offset,
+                                              uint32_t element_width,
+                                              bool table_elements,
+                                              uint32_t *count_out)
+{
+    uint64_t vector_offset;
+    uint64_t element_offset;
+    uint64_t target;
+    uint32_t count;
+    uint32_t i;
+    cl_error_t status;
+
+    if (element_width == 0)
+        return CL_ENULLARG;
+    status = cli_ai_model_tflite_uoffset(validator->ctx, validator->file_len, field_offset, &vector_offset);
+    if (status != CL_SUCCESS)
+        return status;
+    if (vector_offset == 0) {
+        if (count_out)
+            *count_out = 0;
+        return CL_SUCCESS;
+    }
+
+    if (vector_offset > validator->file_len || validator->file_len - vector_offset < sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite FlatBuffer vector is truncated");
+    element_offset = vector_offset;
+    status         = cli_ai_model_tflite_get_u32(validator->ctx, &element_offset, &count);
+    if (status != CL_SUCCESS)
+        return status;
+    if (count > (validator->file_len - vector_offset - sizeof(uint32_t)) / element_width)
+        return cli_ai_model_malformed(validator->ctx, "TFLite FlatBuffer vector exceeds the input");
+    if (count_out)
+        *count_out = count;
+    if (!table_elements)
+        return CL_SUCCESS;
+    if (count > CLI_AI_MODEL_TFLITE_MAX_TABLES - validator->tables)
+        return cli_ai_model_malformed(validator->ctx, "TFLite FlatBuffer table vector exceeds the parser limit");
+
+    for (i = 0; i < count; i++) {
+        cli_ai_model_tflite_table_t table;
+
+        element_offset = vector_offset + sizeof(uint32_t) + (uint64_t)i * element_width;
+        status         = cli_ai_model_tflite_uoffset(validator->ctx,
+                                                      validator->file_len,
+                                                      element_offset,
+                                                      &target);
+        if (status != CL_SUCCESS)
+            return status;
+        if (target == 0)
+            continue;
+        status = cli_ai_model_tflite_table(validator, target, &table);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_scalar_u8(cli_ai_model_tflite_validator_t *validator,
+                                                 const cli_ai_model_tflite_table_t *table,
+                                                 uint16_t field_index,
+                                                 uint8_t default_value,
+                                                 uint8_t *value,
+                                                 bool *present)
+{
+    uint64_t field_offset;
+    cl_error_t status;
+
+    if (!validator || !table || !value || !present)
+        return CL_ENULLARG;
+    status = cli_ai_model_tflite_field(validator->ctx, table, field_index, &field_offset, present);
+    if (status != CL_SUCCESS || !*present) {
+        if (status == CL_SUCCESS)
+            *value = default_value;
+        return status;
+    }
+    if (field_offset < table->offset || field_offset - table->offset >
+                                               (uint64_t)table->object_size - sizeof(uint8_t) ||
+        field_offset > validator->file_len || validator->file_len - field_offset < sizeof(uint8_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite scalar byte field exceeds its table");
+    return cli_ai_model_read(validator->ctx, &field_offset, value, sizeof(*value));
+}
+
+static cl_error_t cli_ai_model_tflite_scalar_u32(cli_ai_model_tflite_validator_t *validator,
+                                                  const cli_ai_model_tflite_table_t *table,
+                                                  uint16_t field_index,
+                                                  uint32_t default_value,
+                                                  uint32_t *value,
+                                                  bool *present)
+{
+    uint64_t field_offset;
+    cl_error_t status;
+
+    if (!validator || !table || !value || !present)
+        return CL_ENULLARG;
+    status = cli_ai_model_tflite_field(validator->ctx, table, field_index, &field_offset, present);
+    if (status != CL_SUCCESS || !*present) {
+        if (status == CL_SUCCESS)
+            *value = default_value;
+        return status;
+    }
+    if (field_offset < table->offset || field_offset - table->offset >
+                                               (uint64_t)table->object_size - sizeof(uint32_t) ||
+        field_offset > validator->file_len || validator->file_len - field_offset < sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite scalar field exceeds its table");
+    return cli_ai_model_tflite_get_u32(validator->ctx, &field_offset, value);
+}
+
+static cl_error_t cli_ai_model_tflite_signed_vector(cli_ai_model_tflite_validator_t *validator,
+                                                     uint64_t field_offset,
+                                                     uint32_t maximum_rank)
+{
+    uint64_t vector_offset;
+    uint64_t element_offset;
+    uint32_t count;
+    uint32_t raw_dimension;
+    uint32_t i;
+    cl_error_t status;
+
+    status = cli_ai_model_tflite_uoffset(validator->ctx, validator->file_len, field_offset, &vector_offset);
+    if (status != CL_SUCCESS || vector_offset == 0)
+        return status;
+    if (vector_offset > validator->file_len || validator->file_len - vector_offset < sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite signed vector is truncated");
+    element_offset = vector_offset;
+    status         = cli_ai_model_tflite_get_u32(validator->ctx, &element_offset, &count);
+    if (status != CL_SUCCESS)
+        return status;
+    if (count > (validator->file_len - vector_offset - sizeof(uint32_t)) / sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite signed vector exceeds the input");
+    if (count > maximum_rank)
+        return cli_ai_model_malformed(validator->ctx, "TFLite tensor rank exceeds the parser limit");
+
+    for (i = 0; i < count; i++) {
+        element_offset = vector_offset + sizeof(uint32_t) + (uint64_t)i * sizeof(uint32_t);
+        status         = cli_ai_model_tflite_get_u32(validator->ctx, &element_offset, &raw_dimension);
+        if (status != CL_SUCCESS)
+            return status;
+        /* TFLite uses signed int32 dimensions; -1 is the only negative
+         * dimension reserved for an unknown shape component. */
+        if (raw_dimension > INT32_MAX && raw_dimension != UINT32_MAX)
+            return cli_ai_model_malformed(validator->ctx, "TFLite tensor dimension is outside int32 range");
+    }
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_tensor_index_vector(cli_ai_model_tflite_validator_t *validator,
+                                                           uint64_t field_offset,
+                                                           uint32_t tensor_count,
+                                                           bool allow_optional)
+{
+    uint64_t vector_offset;
+    uint64_t element_offset;
+    uint32_t count;
+    uint32_t raw_index;
+    uint32_t i;
+    cl_error_t status;
+
+    status = cli_ai_model_tflite_uoffset(validator->ctx, validator->file_len, field_offset, &vector_offset);
+    if (status != CL_SUCCESS || vector_offset == 0)
+        return status;
+    if (vector_offset > validator->file_len || validator->file_len - vector_offset < sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite tensor-index vector is truncated");
+    element_offset = vector_offset;
+    status         = cli_ai_model_tflite_get_u32(validator->ctx, &element_offset, &count);
+    if (status != CL_SUCCESS)
+        return status;
+    if (count > (validator->file_len - vector_offset - sizeof(uint32_t)) / sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite tensor-index vector exceeds the input");
+
+    for (i = 0; i < count; i++) {
+        element_offset = vector_offset + sizeof(uint32_t) + (uint64_t)i * sizeof(uint32_t);
+        status         = cli_ai_model_tflite_get_u32(validator->ctx, &element_offset, &raw_index);
+        if (status != CL_SUCCESS)
+            return status;
+        if (raw_index == UINT32_MAX && allow_optional)
+            continue;
+        if (raw_index > INT32_MAX || raw_index >= tensor_count)
+            return cli_ai_model_malformed(validator->ctx, "TFLite tensor index exceeds the subgraph");
+    }
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_tensor_table(cli_ai_model_tflite_validator_t *validator,
+                                                    const cli_ai_model_tflite_table_t *table,
+                                                    uint32_t buffer_count)
+{
+    uint64_t field_offset;
+    uint32_t buffer_index;
+    uint8_t tensor_type;
+    bool present;
+    cl_error_t status;
+
+    status = cli_ai_model_tflite_field(validator->ctx, table, 0, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_signed_vector(validator, field_offset, 64);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+
+    status = cli_ai_model_tflite_scalar_u8(validator, table, 1, 0, &tensor_type, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    /* TensorType is an int8 enum in the schema. Keep the accepted range
+     * bounded to the currently defined schema values; unknown enum bytes
+     * must not silently turn a malformed model into a complete one. */
+    if (present && tensor_type > CLI_AI_MODEL_TFLITE_MAX_TENSOR_TYPE)
+        return cli_ai_model_malformed(validator->ctx, "TFLite tensor type is unsupported");
+
+    status = cli_ai_model_tflite_scalar_u32(validator, table, 2, 0, &buffer_index, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (buffer_count == 0 || buffer_index >= buffer_count)
+        return cli_ai_model_malformed(validator->ctx, "TFLite tensor buffer index exceeds the model");
+
+    status = cli_ai_model_tflite_field(validator->ctx, table, 3, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_string(validator, field_offset);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    status = cli_ai_model_tflite_field(validator->ctx, table, 7, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_signed_vector(validator, field_offset, 64);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_tensor_vector(cli_ai_model_tflite_validator_t *validator,
+                                                     uint64_t field_offset,
+                                                     uint32_t buffer_count,
+                                                     uint32_t *count_out)
+{
+    uint64_t vector_offset;
+    uint64_t element_offset;
+    uint64_t target;
+    uint32_t count;
+    uint32_t i;
+    cl_error_t status;
+
+    status = cli_ai_model_tflite_uoffset(validator->ctx, validator->file_len, field_offset, &vector_offset);
+    if (status != CL_SUCCESS || vector_offset == 0) {
+        if (status == CL_SUCCESS && count_out)
+            *count_out = 0;
+        return status;
+    }
+    if (vector_offset > validator->file_len || validator->file_len - vector_offset < sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite tensor vector is truncated");
+    element_offset = vector_offset;
+    status         = cli_ai_model_tflite_get_u32(validator->ctx, &element_offset, &count);
+    if (status != CL_SUCCESS)
+        return status;
+    if (count > (validator->file_len - vector_offset - sizeof(uint32_t)) / sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite tensor vector exceeds the input");
+    if (count > CLI_AI_MODEL_TFLITE_MAX_TABLES - validator->tables)
+        return cli_ai_model_malformed(validator->ctx, "TFLite tensor vector exceeds the parser limit");
+    if (count_out)
+        *count_out = count;
+
+    for (i = 0; i < count; i++) {
+        cli_ai_model_tflite_table_t table;
+
+        element_offset = vector_offset + sizeof(uint32_t) + (uint64_t)i * sizeof(uint32_t);
+        status         = cli_ai_model_tflite_uoffset(validator->ctx,
+                                                      validator->file_len,
+                                                      element_offset,
+                                                      &target);
+        if (status != CL_SUCCESS)
+            return status;
+        if (target == 0)
+            return cli_ai_model_malformed(validator->ctx, "TFLite tensor vector contains a null table");
+        status = cli_ai_model_tflite_table(validator, target, &table);
+        if (status != CL_SUCCESS)
+            return status;
+        status = cli_ai_model_tflite_tensor_table(validator, &table, buffer_count);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_operator_table(cli_ai_model_tflite_validator_t *validator,
+                                                      const cli_ai_model_tflite_table_t *table,
+                                                      uint32_t operator_code_count,
+                                                      uint32_t tensor_count)
+{
+    uint64_t field_offset;
+    uint32_t opcode_index;
+    bool present;
+    cl_error_t status;
+
+    status = cli_ai_model_tflite_scalar_u32(validator, table, 0, 0, &opcode_index, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (operator_code_count == 0 || opcode_index >= operator_code_count)
+        return cli_ai_model_malformed(validator->ctx, "TFLite operator code index exceeds the model");
+
+    status = cli_ai_model_tflite_field(validator->ctx, table, 1, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_tensor_index_vector(validator, field_offset, tensor_count, true);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    status = cli_ai_model_tflite_field(validator->ctx, table, 2, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_tensor_index_vector(validator, field_offset, tensor_count, false);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_operator_vector(cli_ai_model_tflite_validator_t *validator,
+                                                       uint64_t field_offset,
+                                                       uint32_t operator_code_count,
+                                                       uint32_t tensor_count)
+{
+    uint64_t vector_offset;
+    uint64_t element_offset;
+    uint64_t target;
+    uint32_t count;
+    uint32_t i;
+    cl_error_t status;
+
+    status = cli_ai_model_tflite_uoffset(validator->ctx, validator->file_len, field_offset, &vector_offset);
+    if (status != CL_SUCCESS || vector_offset == 0)
+        return status;
+    if (vector_offset > validator->file_len || validator->file_len - vector_offset < sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite operator vector is truncated");
+    element_offset = vector_offset;
+    status         = cli_ai_model_tflite_get_u32(validator->ctx, &element_offset, &count);
+    if (status != CL_SUCCESS)
+        return status;
+    if (count > (validator->file_len - vector_offset - sizeof(uint32_t)) / sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite operator vector exceeds the input");
+    if (count > CLI_AI_MODEL_TFLITE_MAX_TABLES - validator->tables)
+        return cli_ai_model_malformed(validator->ctx, "TFLite operator vector exceeds the parser limit");
+
+    for (i = 0; i < count; i++) {
+        cli_ai_model_tflite_table_t table;
+
+        element_offset = vector_offset + sizeof(uint32_t) + (uint64_t)i * sizeof(uint32_t);
+        status         = cli_ai_model_tflite_uoffset(validator->ctx,
+                                                      validator->file_len,
+                                                      element_offset,
+                                                      &target);
+        if (status != CL_SUCCESS)
+            return status;
+        if (target == 0)
+            return cli_ai_model_malformed(validator->ctx, "TFLite operator vector contains a null table");
+        status = cli_ai_model_tflite_table(validator, target, &table);
+        if (status != CL_SUCCESS)
+            return status;
+        status = cli_ai_model_tflite_operator_table(validator, &table, operator_code_count, tensor_count);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_subgraph_table(cli_ai_model_tflite_validator_t *validator,
+                                                      const cli_ai_model_tflite_table_t *table,
+                                                      uint32_t operator_code_count,
+                                                      uint32_t buffer_count)
+{
+    uint64_t field_offset;
+    uint32_t tensor_count;
+    bool present;
+    cl_error_t status;
+
+    tensor_count = 0;
+    status       = cli_ai_model_tflite_field(validator->ctx, table, 0, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_tensor_vector(validator, field_offset, buffer_count, &tensor_count);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+
+    status = cli_ai_model_tflite_field(validator->ctx, table, 1, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_tensor_index_vector(validator, field_offset, tensor_count, false);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    status = cli_ai_model_tflite_field(validator->ctx, table, 2, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_tensor_index_vector(validator, field_offset, tensor_count, false);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    status = cli_ai_model_tflite_field(validator->ctx, table, 3, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_operator_vector(validator, field_offset, operator_code_count, tensor_count);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    status = cli_ai_model_tflite_field(validator->ctx, table, 4, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present)
+        return cli_ai_model_tflite_string(validator, field_offset);
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_operator_code_vector(cli_ai_model_tflite_validator_t *validator,
+                                                            uint64_t field_offset,
+                                                            uint32_t *count_out)
+{
+    uint64_t vector_offset;
+    uint64_t element_offset;
+    uint64_t target;
+    uint32_t count;
+    uint32_t builtin_code;
+    uint32_t version;
+    uint32_t i;
+    bool present;
+    cl_error_t status;
+
+    status = cli_ai_model_tflite_uoffset(validator->ctx, validator->file_len, field_offset, &vector_offset);
+    if (status != CL_SUCCESS || vector_offset == 0) {
+        if (status == CL_SUCCESS && count_out)
+            *count_out = 0;
+        return status;
+    }
+    if (vector_offset > validator->file_len || validator->file_len - vector_offset < sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite operator-code vector is truncated");
+    element_offset = vector_offset;
+    status         = cli_ai_model_tflite_get_u32(validator->ctx, &element_offset, &count);
+    if (status != CL_SUCCESS)
+        return status;
+    if (count > (validator->file_len - vector_offset - sizeof(uint32_t)) / sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite operator-code vector exceeds the input");
+    if (count > CLI_AI_MODEL_TFLITE_MAX_TABLES - validator->tables)
+        return cli_ai_model_malformed(validator->ctx, "TFLite operator-code vector exceeds the parser limit");
+    if (count_out)
+        *count_out = count;
+
+    for (i = 0; i < count; i++) {
+        cli_ai_model_tflite_table_t table;
+
+        element_offset = vector_offset + sizeof(uint32_t) + (uint64_t)i * sizeof(uint32_t);
+        status         = cli_ai_model_tflite_uoffset(validator->ctx,
+                                                      validator->file_len,
+                                                      element_offset,
+                                                      &target);
+        if (status != CL_SUCCESS)
+            return status;
+        if (target == 0)
+            return cli_ai_model_malformed(validator->ctx, "TFLite operator-code vector contains a null table");
+        status = cli_ai_model_tflite_table(validator, target, &table);
+        if (status != CL_SUCCESS)
+            return status;
+
+        status = cli_ai_model_tflite_scalar_u32(validator, &table, 2, 1, &version, &present);
+        if (status != CL_SUCCESS)
+            return status;
+        if (present && (version == 0 || version > INT32_MAX))
+            return cli_ai_model_malformed(validator->ctx, "TFLite operator-code version is invalid");
+        status = cli_ai_model_tflite_scalar_u32(validator, &table, 3, 0, &builtin_code, &present);
+        if (status != CL_SUCCESS)
+            return status;
+        if (present && builtin_code > INT32_MAX)
+            return cli_ai_model_malformed(validator->ctx, "TFLite builtin operator code is outside int32 range");
+        status = cli_ai_model_tflite_field(validator->ctx, &table, 1, &element_offset, &present);
+        if (status != CL_SUCCESS)
+            return status;
+        if (present) {
+            status = cli_ai_model_tflite_string(validator, element_offset);
+            if (status != CL_SUCCESS)
+                return status;
+        }
+    }
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_subgraph_vector(cli_ai_model_tflite_validator_t *validator,
+                                                       uint64_t field_offset,
+                                                       uint32_t operator_code_count,
+                                                       uint32_t buffer_count,
+                                                       uint32_t *count_out)
+{
+    uint64_t vector_offset;
+    uint64_t element_offset;
+    uint64_t target;
+    uint32_t count;
+    uint32_t i;
+    cl_error_t status;
+
+    status = cli_ai_model_tflite_uoffset(validator->ctx, validator->file_len, field_offset, &vector_offset);
+    if (status != CL_SUCCESS || vector_offset == 0) {
+        if (status == CL_SUCCESS && count_out)
+            *count_out = 0;
+        return status;
+    }
+    if (vector_offset > validator->file_len || validator->file_len - vector_offset < sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite subgraph vector is truncated");
+    element_offset = vector_offset;
+    status         = cli_ai_model_tflite_get_u32(validator->ctx, &element_offset, &count);
+    if (status != CL_SUCCESS)
+        return status;
+    if (count > (validator->file_len - vector_offset - sizeof(uint32_t)) / sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite subgraph vector exceeds the input");
+    if (count > CLI_AI_MODEL_TFLITE_MAX_TABLES - validator->tables)
+        return cli_ai_model_malformed(validator->ctx, "TFLite subgraph vector exceeds the parser limit");
+    if (count_out)
+        *count_out = count;
+
+    for (i = 0; i < count; i++) {
+        cli_ai_model_tflite_table_t table;
+
+        element_offset = vector_offset + sizeof(uint32_t) + (uint64_t)i * sizeof(uint32_t);
+        status         = cli_ai_model_tflite_uoffset(validator->ctx,
+                                                      validator->file_len,
+                                                      element_offset,
+                                                      &target);
+        if (status != CL_SUCCESS)
+            return status;
+        if (target == 0)
+            return cli_ai_model_malformed(validator->ctx, "TFLite subgraph vector contains a null table");
+        status = cli_ai_model_tflite_table(validator, target, &table);
+        if (status != CL_SUCCESS)
+            return status;
+        status = cli_ai_model_tflite_subgraph_table(validator, &table, operator_code_count, buffer_count);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_buffer_vector(cli_ai_model_tflite_validator_t *validator,
+                                                     uint64_t field_offset,
+                                                     uint32_t *count_out)
+{
+    uint64_t vector_offset;
+    uint64_t element_offset;
+    uint64_t target;
+    uint64_t data_offset;
+    uint32_t count;
+    uint32_t i;
+    bool present;
+    cl_error_t status;
+
+    status = cli_ai_model_tflite_uoffset(validator->ctx, validator->file_len, field_offset, &vector_offset);
+    if (status != CL_SUCCESS)
+        return status;
+    if (vector_offset == 0) {
+        if (count_out)
+            *count_out = 0;
+        return CL_SUCCESS;
+    }
+    if (vector_offset > validator->file_len || validator->file_len - vector_offset < sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite buffer vector is truncated");
+
+    element_offset = vector_offset;
+    status         = cli_ai_model_tflite_get_u32(validator->ctx, &element_offset, &count);
+    if (status != CL_SUCCESS)
+        return status;
+    if (count > (validator->file_len - vector_offset - sizeof(uint32_t)) / sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite buffer vector exceeds the input");
+    if (count_out)
+        *count_out = count;
+    if (count > CLI_AI_MODEL_TFLITE_MAX_TABLES - validator->tables)
+        return cli_ai_model_malformed(validator->ctx, "TFLite buffer vector exceeds the parser limit");
+
+    for (i = 0; i < count; i++) {
+        cli_ai_model_tflite_table_t table;
+
+        element_offset = vector_offset + sizeof(uint32_t) + (uint64_t)i * sizeof(uint32_t);
+        status         = cli_ai_model_tflite_uoffset(validator->ctx,
+                                                      validator->file_len,
+                                                      element_offset,
+                                                      &target);
+        if (status != CL_SUCCESS)
+            return status;
+        if (target == 0)
+            continue;
+        status = cli_ai_model_tflite_table(validator, target, &table);
+        if (status != CL_SUCCESS)
+            return status;
+
+        /* Buffer.data is a scalar byte vector. Validate its complete range so
+         * a recognized model cannot claim a payload outside the FlatBuffer and
+         * still be treated as structurally complete. */
+        status = cli_ai_model_tflite_field(validator->ctx, &table, 0, &data_offset, &present);
+        if (status != CL_SUCCESS)
+            return status;
+        if (present) {
+            status = cli_ai_model_tflite_vector(validator, data_offset, sizeof(uint8_t), false, NULL);
+            if (status != CL_SUCCESS)
+                return status;
+        }
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_index_vector(cli_ai_model_tflite_validator_t *validator,
+                                                    uint64_t field_offset,
+                                                    uint32_t limit)
+{
+    uint64_t vector_offset;
+    uint64_t element_offset;
+    uint32_t count;
+    uint32_t raw_index;
+    uint32_t i;
+    cl_error_t status;
+
+    status = cli_ai_model_tflite_uoffset(validator->ctx, validator->file_len, field_offset, &vector_offset);
+    if (status != CL_SUCCESS)
+        return status;
+    if (vector_offset == 0)
+        return CL_SUCCESS;
+    if (vector_offset > validator->file_len || validator->file_len - vector_offset < sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite FlatBuffer index vector is truncated");
+
+    element_offset = vector_offset;
+    status         = cli_ai_model_tflite_get_u32(validator->ctx, &element_offset, &count);
+    if (status != CL_SUCCESS)
+        return status;
+    if (count > (validator->file_len - vector_offset - sizeof(uint32_t)) / sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite FlatBuffer index vector exceeds the input");
+
+    for (i = 0; i < count; i++) {
+        element_offset = vector_offset + sizeof(uint32_t) + (uint64_t)i * sizeof(uint32_t);
+        status         = cli_ai_model_tflite_get_u32(validator->ctx, &element_offset, &raw_index);
+        if (status != CL_SUCCESS)
+            return status;
+        /* The schema declares metadata_buffer as [int], not [uint]. Decode
+         * the signed range explicitly before comparing it with the buffers
+         * vector count; a negative index must never become a large valid
+         * buffer reference through an implementation-defined cast. */
+        if (raw_index > INT32_MAX)
+            return cli_ai_model_malformed(validator->ctx, "TFLite metadata_buffer index is negative");
+        if (raw_index >= limit)
+            return cli_ai_model_malformed(validator->ctx, "TFLite metadata_buffer index exceeds the buffers vector");
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_tflite_string(cli_ai_model_tflite_validator_t *validator,
+                                              uint64_t field_offset)
+{
+    uint64_t string_offset;
+    uint64_t end;
+    uint32_t length;
+    uint8_t terminator;
+    cl_error_t status;
+
+    status = cli_ai_model_tflite_uoffset(validator->ctx,
+                                         validator->file_len,
+                                         field_offset,
+                                         &string_offset);
+    if (status != CL_SUCCESS || string_offset == 0)
+        return status;
+    if (string_offset > validator->file_len || validator->file_len - string_offset < sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite FlatBuffer string is truncated");
+
+    end    = string_offset;
+    status = cli_ai_model_tflite_get_u32(validator->ctx, &end, &length);
+    if (status != CL_SUCCESS)
+        return status;
+    if ((uint64_t)length >= validator->file_len - string_offset - sizeof(uint32_t))
+        return cli_ai_model_malformed(validator->ctx, "TFLite FlatBuffer string exceeds the input");
+
+    end = string_offset + sizeof(uint32_t) + length;
+    status = cli_ai_model_read(validator->ctx, &end, &terminator, sizeof(terminator));
+    if (status != CL_SUCCESS)
+        return status;
+    if (terminator != '\0')
+        return cli_ai_model_malformed(validator->ctx, "TFLite FlatBuffer string is not terminated");
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_parse_tflite(cli_ctx *ctx)
+{
+    cli_ai_model_tflite_validator_t validator;
+    cli_ai_model_tflite_table_t model;
+    uint64_t offset;
+    uint64_t field_offset;
+    uint32_t subgraphs;
+    uint32_t operator_codes = 0;
+    uint32_t buffers = 0;
+    uint32_t root_offset;
+    uint8_t identifier[sizeof("TFL3") - 1];
+    bool present;
+    cl_error_t status;
+
+    if (!ctx || !ctx->fmap)
+        return CL_ENULLARG;
+    validator.ctx      = ctx;
+    validator.file_len = (uint64_t)ctx->fmap->len;
+    validator.tables   = 0;
+
+    if (validator.file_len < 8)
+        return cli_ai_model_malformed(ctx, "TFLite FlatBuffer header is truncated");
+    offset = 4;
+    status = cli_ai_model_read(ctx, &offset, identifier, sizeof(identifier));
+    if (status != CL_SUCCESS)
+        return status;
+    if (memcmp(identifier, "TFL3", sizeof(identifier)) != 0)
+        return cli_ai_model_malformed(ctx, "TFLite FlatBuffer identifier is invalid");
+
+    offset = 0;
+    status = cli_ai_model_tflite_get_u32(ctx, &offset, &root_offset);
+    if (status != CL_SUCCESS)
+        return status;
+    if (root_offset < 8 || (uint64_t)root_offset > validator.file_len - sizeof(uint32_t))
+        return cli_ai_model_malformed(ctx, "TFLite FlatBuffer root table offset is invalid");
+    status = cli_ai_model_tflite_table(&validator, root_offset, &model);
+    if (status != CL_SUCCESS)
+        return status;
+
+    /* Model fields are version, operator_codes, subgraphs, description,
+     * buffers, metadata_buffer, metadata, signature_defs,
+     * external_buffer_groups, and external_buffers. */
+    status = cli_ai_model_tflite_field(ctx, &model, 1, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_operator_code_vector(&validator, field_offset, &operator_codes);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    status = cli_ai_model_tflite_field(ctx, &model, 3, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_string(&validator, field_offset);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    status = cli_ai_model_tflite_field(ctx, &model, 4, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_buffer_vector(&validator, field_offset, &buffers);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+
+    status = cli_ai_model_tflite_field(ctx, &model, 2, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (!present)
+        return cli_ai_model_malformed(ctx, "TFLite model has no subgraph vector");
+    status = cli_ai_model_tflite_subgraph_vector(&validator,
+                                                  field_offset,
+                                                  operator_codes,
+                                                  buffers,
+                                                  &subgraphs);
+    if (status != CL_SUCCESS)
+        return status;
+    if (subgraphs == 0)
+        return cli_ai_model_malformed(ctx, "TFLite model has no subgraphs");
+
+    status = cli_ai_model_tflite_field(ctx, &model, 5, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        /* Model.metadata_buffer is a vector of scalar int32 buffer indices,
+         * not a vector of table offsets. Treating its values as uoffsets can
+         * reject a valid model or walk into attacker-controlled table data. */
+        status = cli_ai_model_tflite_index_vector(&validator, field_offset, buffers);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    status = cli_ai_model_tflite_field(ctx, &model, 6, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_vector(&validator, field_offset, sizeof(uint32_t), true, NULL);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    status = cli_ai_model_tflite_field(ctx, &model, 7, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_vector(&validator, field_offset, sizeof(uint32_t), true, NULL);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    status = cli_ai_model_tflite_field(ctx, &model, 8, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_vector(&validator, field_offset, sizeof(uint32_t), true, NULL);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    status = cli_ai_model_tflite_field(ctx, &model, 9, &field_offset, &present);
+    if (status != CL_SUCCESS)
+        return status;
+    if (present) {
+        status = cli_ai_model_tflite_vector(&validator, field_offset, sizeof(uint32_t), true, NULL);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+
+    return CL_SUCCESS;
+}
+
+/* ONNX ModelProto is a protobuf message.  Walk its wire representation
+ * directly from the fmap: length-delimited strings and tensor raw_data are
+ * skipped after checked range validation, while known message-bearing paths
+ * are recursively validated.  This provides structural admission without
+ * allocating a model-sized buffer or interpreting model operators. */
+#define CLI_AI_MODEL_ONNX_MAX_FIELDS 1048576U
+#define CLI_AI_MODEL_ONNX_MAX_DEPTH 64U
+
+enum cli_ai_model_onnx_message_kind {
+    CLI_AI_MODEL_ONNX_MODEL,
+    CLI_AI_MODEL_ONNX_GRAPH,
+    CLI_AI_MODEL_ONNX_NODE,
+    CLI_AI_MODEL_ONNX_ATTRIBUTE,
+    CLI_AI_MODEL_ONNX_TENSOR,
+    CLI_AI_MODEL_ONNX_SPARSE_TENSOR,
+    CLI_AI_MODEL_ONNX_OPERATOR_SET,
+    CLI_AI_MODEL_ONNX_METADATA,
+    /* A known length-delimited message whose full schema is outside this
+     * structural walk. Keep range and wire validation without applying a
+     * different message's field-number rules to its payload. */
+    CLI_AI_MODEL_ONNX_OPAQUE,
+};
+
+typedef struct cli_ai_model_onnx_validator {
+    cli_ctx *ctx;
+    uint64_t file_len;
+    uint32_t fields;
+} cli_ai_model_onnx_validator_t;
+
+static cl_error_t cli_ai_model_onnx_varint(cli_ai_model_onnx_validator_t *validator,
+                                            uint64_t *offset,
+                                            uint64_t end,
+                                            uint64_t *value)
+{
+    uint64_t result = 0;
+    uint64_t shift  = 0;
+    uint8_t byte;
+    unsigned int i;
+    cl_error_t status;
+
+    if (!validator || !offset || !value || *offset > end || end > validator->file_len)
+        return CL_ENULLARG;
+    for (i = 0; i < 10; i++) {
+        if (*offset >= end)
+            return cli_ai_model_malformed(validator->ctx, "ONNX protobuf varint is truncated");
+        status = cli_ai_model_read(validator->ctx, offset, &byte, sizeof(byte));
+        if (status != CL_SUCCESS)
+            return status;
+        if (i == 9 && byte > 1)
+            return cli_ai_model_malformed(validator->ctx, "ONNX protobuf varint overflows");
+        result |= (uint64_t)(byte & 0x7fU) << shift;
+        if ((byte & 0x80U) == 0) {
+            *value = result;
+            return CL_SUCCESS;
+        }
+        shift += 7;
+    }
+
+    return cli_ai_model_malformed(validator->ctx, "ONNX protobuf varint is too long");
+}
+
+static bool cli_ai_model_onnx_message_field(enum cli_ai_model_onnx_message_kind kind,
+                                             uint32_t field)
+{
+    switch (kind) {
+        case CLI_AI_MODEL_ONNX_MODEL:
+            return field == 7 || field == 8 || field == 14 || field == 20 || field == 25 ||
+                   field == 26;
+        case CLI_AI_MODEL_ONNX_GRAPH:
+            return field == 1 || field == 5 || field == 11 || field == 12 || field == 13 ||
+                   field == 14 || field == 15 || field == 16;
+        case CLI_AI_MODEL_ONNX_NODE:
+            return field == 5 || field == 9 || field == 10;
+        case CLI_AI_MODEL_ONNX_ATTRIBUTE:
+            return field == 5 || field == 6 || field == 10 || field == 11 || field == 14 ||
+                   field == 15 || field == 22 || field == 23;
+        case CLI_AI_MODEL_ONNX_TENSOR:
+            return field == 3 || field == 13 || field == 16;
+        case CLI_AI_MODEL_ONNX_SPARSE_TENSOR:
+            return field == 1 || field == 2;
+        case CLI_AI_MODEL_ONNX_OPERATOR_SET:
+        case CLI_AI_MODEL_ONNX_METADATA:
+        case CLI_AI_MODEL_ONNX_OPAQUE:
+            return false;
+    }
+    return false;
+}
+
+static enum cli_ai_model_onnx_message_kind cli_ai_model_onnx_child_kind(
+    enum cli_ai_model_onnx_message_kind kind,
+    uint32_t field)
+{
+    switch (kind) {
+        case CLI_AI_MODEL_ONNX_MODEL:
+            if (field == 7)
+                return CLI_AI_MODEL_ONNX_GRAPH;
+            if (field == 8)
+                return CLI_AI_MODEL_ONNX_OPERATOR_SET;
+            return CLI_AI_MODEL_ONNX_OPAQUE;
+        case CLI_AI_MODEL_ONNX_GRAPH:
+            if (field == 1)
+                return CLI_AI_MODEL_ONNX_NODE;
+            if (field == 5)
+                return CLI_AI_MODEL_ONNX_TENSOR;
+            if (field == 15)
+                return CLI_AI_MODEL_ONNX_SPARSE_TENSOR;
+            return CLI_AI_MODEL_ONNX_OPAQUE;
+        case CLI_AI_MODEL_ONNX_ATTRIBUTE:
+            if (field == 5 || field == 10)
+                return CLI_AI_MODEL_ONNX_TENSOR;
+            if (field == 6 || field == 11)
+                return CLI_AI_MODEL_ONNX_GRAPH;
+            if (field == 22 || field == 23)
+                return CLI_AI_MODEL_ONNX_SPARSE_TENSOR;
+            return CLI_AI_MODEL_ONNX_OPAQUE;
+        case CLI_AI_MODEL_ONNX_NODE:
+            if (field == 5)
+                return CLI_AI_MODEL_ONNX_ATTRIBUTE;
+            return CLI_AI_MODEL_ONNX_OPAQUE;
+        case CLI_AI_MODEL_ONNX_TENSOR:
+            return CLI_AI_MODEL_ONNX_OPAQUE;
+        case CLI_AI_MODEL_ONNX_SPARSE_TENSOR:
+            if (field == 1 || field == 2)
+                return CLI_AI_MODEL_ONNX_TENSOR;
+            return CLI_AI_MODEL_ONNX_OPAQUE;
+        case CLI_AI_MODEL_ONNX_OPERATOR_SET:
+        case CLI_AI_MODEL_ONNX_METADATA:
+        case CLI_AI_MODEL_ONNX_OPAQUE:
+            return CLI_AI_MODEL_ONNX_OPAQUE;
+    }
+    return CLI_AI_MODEL_ONNX_METADATA;
+}
+
+static bool cli_ai_model_onnx_wire_matches(enum cli_ai_model_onnx_message_kind kind,
+                                           uint32_t field,
+                                           uint32_t wire)
+{
+    if (kind == CLI_AI_MODEL_ONNX_MODEL) {
+        if (field == 1 || field == 5)
+            return wire == 0;
+        if (field == 2 || field == 3 || field == 4 || field == 6 || field == 7 ||
+            field == 8 || field == 14 || field == 20 || field == 25 || field == 26)
+            return wire == 2;
+    } else if (kind == CLI_AI_MODEL_ONNX_OPERATOR_SET) {
+        if (field == 1)
+            return wire == 2;
+        if (field == 2)
+            return wire == 0;
+    } else if (kind == CLI_AI_MODEL_ONNX_GRAPH) {
+        if (field == 1 || field == 2 || field == 5 || field == 10 || field == 11 ||
+            field == 12 || field == 13 || field == 14 || field == 15 || field == 16)
+            return wire == 2;
+    } else if (kind == CLI_AI_MODEL_ONNX_NODE) {
+        if (field == 1 || field == 2 || field == 3 || field == 4 || field == 5 ||
+            field == 6 || field == 7 || field == 8 || field == 9 || field == 10)
+            return wire == 2;
+    } else if (kind == CLI_AI_MODEL_ONNX_ATTRIBUTE) {
+        if (field == 1 || field == 4 || field == 5 || field == 6 || field == 9 ||
+            field == 10 || field == 11 || field == 13 || field == 14 || field == 15 ||
+            field == 21 || field == 22 || field == 23)
+            return wire == 2;
+        if (field == 2)
+            return wire == 5;
+        if (field == 3 || field == 20)
+            return wire == 0;
+        if (field == 7)
+            return wire == 2 || wire == 5;
+        if (field == 8)
+            return wire == 0 || wire == 2;
+    } else if (kind == CLI_AI_MODEL_ONNX_TENSOR) {
+        if (field == 1 || field == 5 || field == 7 || field == 11)
+            return wire == 0 || wire == 2;
+        if (field == 2 || field == 14)
+            return wire == 0;
+        if (field == 3 || field == 6 || field == 8 || field == 9 || field == 12 ||
+            field == 13 || field == 16)
+            return wire == 2;
+        if (field == 4)
+            return wire == 2 || wire == 5;
+        if (field == 10)
+            return wire == 1 || wire == 2;
+    } else if (kind == CLI_AI_MODEL_ONNX_SPARSE_TENSOR) {
+        if (field == 1 || field == 2)
+            return wire == 2;
+        if (field == 3)
+            return wire == 0 || wire == 2;
+    } else if (kind == CLI_AI_MODEL_ONNX_METADATA) {
+        if (field == 1 || field == 2)
+            return wire == 2;
+    }
+    return true;
+}
+
+static cl_error_t cli_ai_model_onnx_message(cli_ai_model_onnx_validator_t *validator,
+                                             uint64_t start,
+                                             uint64_t end,
+                                             enum cli_ai_model_onnx_message_kind kind,
+                                             unsigned int depth)
+{
+    uint64_t offset = start;
+    uint64_t key;
+    uint64_t length;
+    uint64_t child_end;
+    uint32_t field;
+    uint32_t wire;
+    uint64_t i;
+    bool has_ir_version = false;
+    bool has_opset_import = false;
+    bool has_graph = false;
+    bool has_opset_version = false;
+    cl_error_t status;
+
+    if (!validator || start > end || end > validator->file_len)
+        return CL_ENULLARG;
+    if (depth > CLI_AI_MODEL_ONNX_MAX_DEPTH)
+        return cli_ai_model_malformed(validator->ctx, "ONNX protobuf nesting is too deep");
+
+    while (offset < end) {
+        if (validator->fields >= CLI_AI_MODEL_ONNX_MAX_FIELDS)
+            return cli_ai_model_malformed(validator->ctx, "ONNX protobuf field count exceeds the parser limit");
+        validator->fields++;
+        status = cli_ai_model_onnx_varint(validator, &offset, end, &key);
+        if (status != CL_SUCCESS)
+            return status;
+        if ((key >> 3) > 0x1fffffffU)
+            return cli_ai_model_malformed(validator->ctx, "ONNX protobuf field number is invalid");
+        field = (uint32_t)(key >> 3);
+        wire  = (uint32_t)(key & 7U);
+        if (field == 0 || wire == 3 || wire == 4 || wire > 5)
+            return cli_ai_model_malformed(validator->ctx, "ONNX protobuf field wire type is invalid");
+        if (!cli_ai_model_onnx_wire_matches(kind, field, wire))
+            return cli_ai_model_malformed(validator->ctx, "ONNX protobuf field has an invalid wire type");
+
+        if (kind == CLI_AI_MODEL_ONNX_MODEL) {
+            if (field == 1 && wire == 0)
+                has_ir_version = true;
+            else if (field == 8 && wire == 2)
+                has_opset_import = true;
+            else if (field == 7 && wire == 2)
+                has_graph = true;
+        } else if (kind == CLI_AI_MODEL_ONNX_OPERATOR_SET && field == 2 && wire == 0) {
+            has_opset_version = true;
+        }
+
+        switch (wire) {
+            case 0:
+                status = cli_ai_model_onnx_varint(validator, &offset, end, &i);
+                if (status != CL_SUCCESS)
+                    return status;
+                break;
+            case 1:
+                if (end - offset < sizeof(uint64_t))
+                    return cli_ai_model_malformed(validator->ctx, "ONNX protobuf fixed64 field is truncated");
+                status = cli_ai_model_skip(validator->ctx, &offset, sizeof(uint64_t));
+                if (status != CL_SUCCESS)
+                    return status;
+                break;
+            case 2:
+                status = cli_ai_model_onnx_varint(validator, &offset, end, &length);
+                if (status != CL_SUCCESS)
+                    return status;
+                if (length > end - offset)
+                    return cli_ai_model_malformed(validator->ctx, "ONNX protobuf field exceeds the input");
+                child_end = offset + length;
+                if (cli_ai_model_onnx_message_field(kind, field)) {
+                    status = cli_ai_model_onnx_message(validator,
+                                                       offset,
+                                                       child_end,
+                                                       cli_ai_model_onnx_child_kind(kind, field),
+                                                       depth + 1);
+                    if (status != CL_SUCCESS)
+                        return status;
+                }
+                status = cli_ai_model_skip(validator->ctx, &offset, length);
+                if (status != CL_SUCCESS)
+                    return status;
+                break;
+            case 5:
+                if (end - offset < sizeof(uint32_t))
+                    return cli_ai_model_malformed(validator->ctx, "ONNX protobuf fixed32 field is truncated");
+                status = cli_ai_model_skip(validator->ctx, &offset, sizeof(uint32_t));
+                if (status != CL_SUCCESS)
+                    return status;
+                break;
+            default:
+                return cli_ai_model_malformed(validator->ctx, "ONNX protobuf field wire type is unsupported");
+        }
+    }
+
+    if (kind == CLI_AI_MODEL_ONNX_MODEL &&
+        (!has_ir_version || !has_opset_import || !has_graph))
+        return cli_ai_model_malformed(validator->ctx, "ONNX ModelProto is missing a required field");
+    if (kind == CLI_AI_MODEL_ONNX_OPERATOR_SET && !has_opset_version)
+        return cli_ai_model_malformed(validator->ctx, "ONNX OperatorSetIdProto is missing its version");
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_ai_model_parse_onnx(cli_ctx *ctx)
+{
+    cli_ai_model_onnx_validator_t validator;
+
+    if (!ctx || !ctx->fmap)
+        return CL_ENULLARG;
+    validator.ctx      = ctx;
+    validator.file_len = (uint64_t)ctx->fmap->len;
+    validator.fields   = 0;
+    return cli_ai_model_onnx_message(&validator,
+                                     0,
+                                     validator.file_len,
+                                     CLI_AI_MODEL_ONNX_MODEL,
+                                     0);
+}
+
+static cl_error_t cli_ai_model_parse_gguf(cli_ctx *ctx, uint64_t offset)
+{
+    const char alignment_name[] = "general.alignment";
+    uint64_t file_len;
+    uint64_t tensor_count;
+    uint64_t metadata_count;
+    uint64_t key_size;
+    uint64_t expected_tensor_offset = 0;
+    uint64_t required_tensor_end;
+    uint64_t data_offset;
+    uint64_t remainder;
+    uint64_t tensor_bytes;
+    uint64_t tensor_offset;
+    uint64_t padded_tensor_bytes;
+    uint64_t tensor_blocks;
+    uint64_t elements;
+    uint64_t first_dimension = 1;
+    uint64_t dimension;
+    uint32_t version;
+    uint32_t alignment = 32;
+    uint32_t value_type;
+    uint32_t dimensions;
+    uint32_t tensor_type;
+    uint32_t block_size;
+    uint32_t block_bytes;
+    uint32_t dimension_index;
+    uint8_t key[sizeof(alignment_name)];
+    bool alignment_seen = false;
+    cl_error_t status;
+    uint64_t i;
+
+    file_len = (uint64_t)ctx->fmap->len;
+    required_tensor_end = 0;
+    status   = cli_ai_model_get_u32(ctx, &offset, &version);
+    if (status != CL_SUCCESS)
+        return status;
+    if (version < 1 || version > 3)
+        return cli_ai_model_malformed(ctx, "GGUF version is unsupported");
+
+    status = cli_ai_model_get_u64(ctx, &offset, &tensor_count);
+    if (status != CL_SUCCESS)
+        return status;
+    status = cli_ai_model_get_u64(ctx, &offset, &metadata_count);
+    if (status != CL_SUCCESS)
+        return status;
+
+    /* A metadata entry is at least an 8-byte string length, followed by a
+     * 4-byte value type. Reject impossible counts before iteration. */
+    if (metadata_count > (file_len - offset) / 12)
+        return cli_ai_model_malformed(ctx, "GGUF metadata count exceeds the input");
+
+    for (i = 0; i < metadata_count; i++) {
+        bool is_alignment_key = false;
+
+        status = cli_ai_model_get_u64(ctx, &offset, &key_size);
+        if (status != CL_SUCCESS)
+            return status;
+        if (key_size == 0)
+            return cli_ai_model_malformed(ctx, "GGUF metadata key is empty");
+        if (key_size > file_len - offset)
+            return cli_ai_model_malformed(ctx, "GGUF metadata key exceeds the input");
+
+        if (key_size < sizeof(key)) {
+            status = cli_ai_model_read(ctx, &offset, key, (size_t)key_size);
+            if (status != CL_SUCCESS)
+                return status;
+            key[key_size] = '\0';
+            is_alignment_key = key_size == sizeof(alignment_name) - 1 &&
+                               memcmp(key, alignment_name, sizeof(alignment_name) - 1) == 0;
+        } else {
+            status = cli_ai_model_skip(ctx, &offset, key_size);
+            if (status != CL_SUCCESS)
+                return status;
+        }
+
+        status = cli_ai_model_get_u32(ctx, &offset, &value_type);
+        if (status != CL_SUCCESS)
+            return status;
+
+        if (is_alignment_key) {
+            if (alignment_seen)
+                return cli_ai_model_malformed(ctx, "GGUF metadata contains duplicate tensor alignment keys");
+            alignment_seen = true;
+            if (value_type != 4)
+                return cli_ai_model_malformed(ctx, "GGUF tensor alignment has the wrong type");
+            status = cli_ai_model_get_u32(ctx, &offset, &alignment);
+            if (status != CL_SUCCESS)
+                return status;
+            if (alignment < 8 || (alignment & (alignment - 1)) != 0 || alignment > (1U << 20))
+                return cli_ai_model_malformed(ctx, "GGUF tensor alignment is invalid");
+        } else {
+            status = cli_ai_model_skip_gguf_value(ctx, &offset, value_type, 0);
+            if (status != CL_SUCCESS)
+                return status;
+        }
+    }
+
+    /* A tensor descriptor is at least an empty name, dimension count, type,
+     * and data offset. Dimensions and names are checked again per entry. */
+#define CLI_AI_MODEL_MAX_TENSOR_NAME 64U
+    if (tensor_count > (file_len - offset) / 24)
+        return cli_ai_model_malformed(ctx, "GGUF tensor count exceeds the input");
+
+    for (i = 0; i < tensor_count; i++) {
+        uint64_t name_size;
+
+        status = cli_ai_model_get_u64(ctx, &offset, &name_size);
+        if (status != CL_SUCCESS)
+            return status;
+        if (name_size >= CLI_AI_MODEL_MAX_TENSOR_NAME)
+            return cli_ai_model_malformed(ctx, "GGUF tensor name exceeds the format limit");
+        status = cli_ai_model_skip(ctx, &offset, name_size);
+        if (status != CL_SUCCESS)
+            return status;
+        status = cli_ai_model_get_u32(ctx, &offset, &dimensions);
+        if (status != CL_SUCCESS)
+            return status;
+        /* GGML represents a scalar tensor with zero dimensions; only the
+         * upper rank bound is format-invalid here. */
+        if (dimensions > 4 ||
+            (uint64_t)dimensions > (file_len - offset) / sizeof(uint64_t))
+            return cli_ai_model_malformed(ctx, "GGUF tensor dimensions exceed the input");
+
+        elements = 1;
+        for (dimension_index = 0; dimension_index < dimensions; dimension_index++) {
+            status = cli_ai_model_get_u64(ctx, &offset, &dimension);
+            if (status != CL_SUCCESS)
+                return status;
+            if (dimension > (UINT64_MAX >> 1))
+                return cli_ai_model_malformed(ctx, "GGUF tensor dimension exceeds the signed ggml range");
+            if (dimension_index == 0)
+                first_dimension = dimension;
+            /* GGML permits zero-element tensors. Preserve the zero product
+             * after reading the complete shape while retaining overflow
+             * checks for non-zero dimensions. */
+            if (dimension == 0) {
+                elements = 0;
+            } else if (elements != 0) {
+                if (elements > UINT64_MAX / dimension)
+                    return cli_ai_model_malformed(ctx, "GGUF tensor shape is invalid");
+                elements *= dimension;
+            }
+        }
+
+        status = cli_ai_model_get_u32(ctx, &offset, &tensor_type);
+        if (status != CL_SUCCESS)
+            return status;
+        if (!cli_ai_model_gguf_tensor_format(tensor_type, &block_size, &block_bytes))
+            return cli_ai_model_malformed(ctx, "GGUF tensor type is unsupported");
+        if (first_dimension % block_size != 0)
+            return cli_ai_model_malformed(ctx, "GGUF tensor row shape is not aligned to its block size");
+        if (elements % block_size != 0)
+            return cli_ai_model_malformed(ctx, "GGUF tensor shape is not aligned to its block size");
+        tensor_blocks = elements / block_size;
+        if (tensor_blocks > UINT64_MAX / block_bytes)
+            return cli_ai_model_malformed(ctx, "GGUF tensor size overflows");
+        tensor_bytes = tensor_blocks * block_bytes;
+
+        status = cli_ai_model_get_u64(ctx, &offset, &tensor_offset);
+        if (status != CL_SUCCESS)
+            return status;
+        /* GGUF tensor offsets are relative to the tensor-data blob. The
+         * reference reader requires each descriptor to begin immediately
+         * after the preceding tensor's alignment-padded range; accepting a
+         * hole or overlap would make the model layout ambiguous. */
+        if (tensor_offset != expected_tensor_offset)
+            return cli_ai_model_malformed(ctx, "GGUF tensor data offsets are not contiguous");
+        remainder           = tensor_bytes % alignment;
+        padded_tensor_bytes = tensor_bytes;
+        if (remainder != 0) {
+            if (padded_tensor_bytes > UINT64_MAX - (alignment - remainder))
+                return cli_ai_model_malformed(ctx, "GGUF tensor data offset overflows");
+            padded_tensor_bytes += alignment - remainder;
+        }
+        if (expected_tensor_offset > UINT64_MAX - padded_tensor_bytes)
+            return cli_ai_model_malformed(ctx, "GGUF tensor data offset overflows");
+        if (expected_tensor_offset > UINT64_MAX - tensor_bytes)
+            return cli_ai_model_malformed(ctx, "GGUF tensor data offset overflows");
+        required_tensor_end = expected_tensor_offset + tensor_bytes;
+        expected_tensor_offset += padded_tensor_bytes;
+    }
+
+    data_offset = offset;
+    remainder   = data_offset % alignment;
+    if (remainder != 0) {
+        uint64_t padding = alignment - remainder;
+        if (data_offset > UINT64_MAX - padding)
+            return cli_ai_model_malformed(ctx, "GGUF tensor data offset overflows");
+        data_offset += padding;
+    }
+    /* Alignment is required before each tensor, but the file need not carry
+     * padding after its final tensor. Check the actual final payload end
+     * rather than the padded offset reserved for a possible next tensor. */
+    if (data_offset > file_len || required_tensor_end > file_len - data_offset)
+        return cli_ai_model_malformed(ctx, "GGUF tensor data exceeds the input");
+
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_scan_ai_model(cli_ctx *ctx)
+{
+    uint8_t magic[4];
+    uint8_t identifier[4];
+    uint64_t offset = 0;
+    cl_error_t status;
+
+    status = cli_ai_model_read(ctx, &offset, magic, sizeof(magic));
+    if (status != CL_SUCCESS)
+        return status;
+
+    if (memcmp(magic, "GGUF", sizeof(magic)) != 0)
+    {
+        if (ctx->fmap->len >= 8) {
+            offset = 4;
+            status = cli_ai_model_read(ctx, &offset, identifier, sizeof(identifier));
+            if (status != CL_SUCCESS)
+                return status;
+            if (memcmp(identifier, "TFL3", sizeof(identifier)) == 0)
+                return cli_ai_model_parse_tflite(ctx);
+        }
+        return cli_ai_model_parse_onnx(ctx);
+    }
+
+    return cli_ai_model_parse_gguf(ctx, offset);
+}
+
+/* Python bytecode files contain a small version-dependent header followed by
+ * a marshal-encoded code object. The scanner does not execute bytecode or
+ * materialize marshal strings; it only walks the bounded object graph so a
+ * recognized .pyc is not reported clean after inspecting a raw prefix. */
+#define CLI_PYTHON_MAX_OBJECTS 1048576U
+#define CLI_PYTHON_MAX_DEPTH   64U
+
+typedef struct cli_python_reader {
+    cli_ctx *ctx;
+    uint64_t file_len;
+    uint64_t offset;
+    uint64_t objects;
+    uint64_t references;
+} cli_python_reader_t;
+
+typedef struct cli_python_code_layout {
+    unsigned int leading_ints;
+    unsigned int object_count;
+    bool modern_line_tables;
+} cli_python_code_layout_t;
+
+static cl_error_t cli_python_read(cli_python_reader_t *reader, void *buffer, size_t size)
+{
+    cl_error_t status;
+
+    if (!reader || !reader->ctx || !reader->ctx->fmap || (!buffer && size != 0))
+        return CL_ENULLARG;
+    if (reader->offset > reader->file_len || (uint64_t)size > reader->file_len - reader->offset)
+        return CL_EPARSE;
+
+    status = cli_checktimelimit(reader->ctx);
+    if (status != CL_SUCCESS)
+        return status;
+    {
+        size_t bytes_read = fmap_readn(reader->ctx->fmap, buffer, (size_t)reader->offset, size);
+
+        if (bytes_read == (size_t)-1) {
+            cli_mark_scan_incomplete(reader->ctx, "Python compiled bytecode input backing read failed");
+            return CL_EREAD;
+        }
+        if (bytes_read != size)
+            return CL_EPARSE;
+    }
+
+    reader->offset += (uint64_t)size;
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_python_skip(cli_python_reader_t *reader, uint64_t size)
+{
+    cl_error_t status;
+
+    if (!reader || !reader->ctx || !reader->ctx->fmap || reader->offset > reader->file_len ||
+        size > reader->file_len - reader->offset)
+        return CL_EPARSE;
+
+    status = cli_checktimelimit(reader->ctx);
+    if (status != CL_SUCCESS)
+        return status;
+    reader->offset += size;
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_python_u8(cli_python_reader_t *reader, uint8_t *value)
+{
+    return cli_python_read(reader, value, sizeof(*value));
+}
+
+static cl_error_t cli_python_u32(cli_python_reader_t *reader, uint32_t *value)
+{
+    uint8_t bytes[sizeof(uint32_t)];
+    cl_error_t status;
+
+    status = cli_python_read(reader, bytes, sizeof(bytes));
+    if (status != CL_SUCCESS)
+        return status;
+    *value = ((uint32_t)bytes[0]) |
+             ((uint32_t)bytes[1] << 8) |
+             ((uint32_t)bytes[2] << 16) |
+             ((uint32_t)bytes[3] << 24);
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_python_i32(cli_python_reader_t *reader, int64_t *value)
+{
+    uint32_t raw;
+    cl_error_t status;
+
+    status = cli_python_u32(reader, &raw);
+    if (status != CL_SUCCESS)
+        return status;
+    if (raw & 0x80000000U)
+        *value = -((int64_t)((~raw) + 1U));
+    else
+        *value = (int64_t)raw;
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_python_skip_length(cli_python_reader_t *reader)
+{
+    int64_t length;
+    cl_error_t status;
+
+    status = cli_python_i32(reader, &length);
+    if (status != CL_SUCCESS)
+        return status;
+    if (length < 0)
+        return CL_EPARSE;
+    return cli_python_skip(reader, (uint64_t)length);
+}
+
+static cl_error_t cli_python_skip_object(cli_python_reader_t *reader,
+                                         unsigned int depth,
+                                         const cli_python_code_layout_t *layout);
+
+static cl_error_t cli_python_account_object(cli_python_reader_t *reader, uint8_t type)
+{
+    if (!reader || reader->objects >= CLI_PYTHON_MAX_OBJECTS)
+        return CL_EPARSE;
+    reader->objects++;
+    if (type & 0x80U) {
+        if (reader->references >= CLI_PYTHON_MAX_OBJECTS)
+            return CL_EPARSE;
+        reader->references++;
+    }
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_python_skip_object_type(cli_python_reader_t *reader,
+                                              uint8_t encoded_type,
+                                              unsigned int depth,
+                                              const cli_python_code_layout_t *layout)
+{
+    uint8_t type = encoded_type & 0x7fU; /* marshal FLAG_REF */
+    uint8_t length;
+    int64_t count;
+    int64_t digits;
+    uint64_t i;
+    cl_error_t status;
+
+    if (depth > CLI_PYTHON_MAX_DEPTH)
+        return CL_EPARSE;
+    if (type == 'r' && (encoded_type & 0x80U))
+        return CL_EPARSE;
+
+    switch (type) {
+        case 'N': /* None */
+        case 'F': /* False */
+        case 'T': /* True */
+        case 'S': /* StopIteration */
+        case '.': /* Ellipsis */
+            return CL_SUCCESS;
+
+        case 'r': { /* reference */
+            uint32_t reference;
+
+            status = cli_python_u32(reader, &reference);
+            if (status != CL_SUCCESS)
+                return status;
+            return reference < reader->references ? CL_SUCCESS : CL_EPARSE;
+        }
+
+        case 'R': { /* string reference */
+            uint32_t reference;
+
+            status = cli_python_u32(reader, &reference);
+            if (status != CL_SUCCESS)
+                return status;
+            /* TYPE_STRINGREF indexes the same bounded marshal reference
+             * table used by flagged objects. Do not accept a forward or
+             * otherwise out-of-range reference while skipping the object. */
+            return reference < reader->references ? CL_SUCCESS : CL_EPARSE;
+        }
+
+        case 'i': /* 32-bit integer */
+            return cli_python_skip(reader, sizeof(uint32_t));
+        case 'I': /* 64-bit integer */
+            return cli_python_skip(reader, sizeof(uint64_t));
+        case 'l': /* arbitrary precision integer */
+            status = cli_python_i32(reader, &digits);
+            if (status != CL_SUCCESS)
+                return status;
+            if (digits < 0)
+                digits = -digits;
+            if ((uint64_t)digits > UINT64_MAX / 2U)
+                return CL_EPARSE;
+            return cli_python_skip(reader, (uint64_t)digits * 2U);
+        case 'f': /* legacy textual float */
+        case 'x': /* legacy textual complex */
+            status = cli_python_u8(reader, &length);
+            if (status != CL_SUCCESS)
+                return status;
+            status = cli_python_skip(reader, length);
+            if (status != CL_SUCCESS || type != 'x')
+                return status;
+            status = cli_python_u8(reader, &length);
+            if (status != CL_SUCCESS)
+                return status;
+            return cli_python_skip(reader, length);
+        case 'g': /* binary float */
+            return cli_python_skip(reader, sizeof(double));
+        case 'y': /* binary complex */
+            return cli_python_skip(reader, sizeof(double) * 2U);
+
+        case 's': /* bytes */
+        case 't': /* interned bytes */
+        case 'u': /* unicode */
+        case 'a': /* ASCII */
+        case 'A': /* interned ASCII */
+            return cli_python_skip_length(reader);
+        case 'z': /* short ASCII */
+        case 'Z': /* interned short ASCII */
+            status = cli_python_u8(reader, &length);
+            if (status != CL_SUCCESS)
+                return status;
+            return cli_python_skip(reader, length);
+
+        case '(':
+        case '[':
+        case '<':
+        case '>':
+            status = cli_python_i32(reader, &count);
+            if (status != CL_SUCCESS)
+                return status;
+            if (count < 0)
+                return CL_EPARSE;
+            for (i = 0; i < (uint64_t)count; i++) {
+                status = cli_python_skip_object(reader, depth + 1U, layout);
+                if (status != CL_SUCCESS)
+                    return status;
+            }
+            return CL_SUCCESS;
+
+        case ')': /* small tuple */
+            status = cli_python_u8(reader, &length);
+            if (status != CL_SUCCESS)
+                return status;
+            for (i = 0; i < length; i++) {
+                status = cli_python_skip_object(reader, depth + 1U, layout);
+                if (status != CL_SUCCESS)
+                    return status;
+            }
+            return CL_SUCCESS;
+
+        case '{': /* dictionary, terminated by TYPE_NULL */
+        case '}': /* frozendict, terminated by TYPE_NULL */
+            for (;;) {
+                status = cli_python_u8(reader, &length);
+                if (status != CL_SUCCESS)
+                    return status;
+                if (length == 0)
+                    return CL_SUCCESS;
+                status = cli_python_account_object(reader, length);
+                if (status != CL_SUCCESS)
+                    return status;
+                status = cli_python_skip_object_type(reader, length, depth + 1U, layout);
+                if (status != CL_SUCCESS)
+                    return status;
+                status = cli_python_skip_object(reader, depth + 1U, layout);
+                if (status != CL_SUCCESS)
+                    return status;
+            }
+
+        case ':': /* slice (marshal protocol version 5+) */
+            for (i = 0; i < 3U; i++) {
+                status = cli_python_skip_object(reader, depth + 1U, layout);
+                if (status != CL_SUCCESS)
+                    return status;
+            }
+            return CL_SUCCESS;
+
+        case 'c': /* code object */
+            if (!layout)
+                return CL_EPARSE;
+            for (i = 0; i < layout->leading_ints; i++) {
+                status = cli_python_skip(reader, sizeof(uint32_t));
+                if (status != CL_SUCCESS)
+                    return status;
+            }
+            /* The layout-specific eight object fields include code,
+             * constants, names, local-variable metadata, filename, and
+             * name; modern layouts use locals-plus metadata and add qualname. */
+            for (i = 0; i < layout->object_count; i++) {
+                status = cli_python_skip_object(reader, depth + 1U, layout);
+                if (status != CL_SUCCESS)
+                    return status;
+            }
+            status = cli_python_skip(reader, sizeof(uint32_t)); /* first line */
+            if (status != CL_SUCCESS)
+                return status;
+            status = cli_python_skip_object(reader, depth + 1U, layout); /* line table */
+            if (status != CL_SUCCESS || !layout->modern_line_tables)
+                return status;
+            return cli_python_skip_object(reader, depth + 1U, layout); /* exception table */
+
+        default:
+            return CL_EPARSE;
+    }
+}
+
+static cl_error_t cli_python_skip_object(cli_python_reader_t *reader,
+                                         unsigned int depth,
+                                         const cli_python_code_layout_t *layout)
+{
+    uint8_t type;
+    cl_error_t status;
+
+    status = cli_python_u8(reader, &type);
+    if (status != CL_SUCCESS || type == 0)
+        return status == CL_SUCCESS ? CL_EPARSE : status;
+    status = cli_python_account_object(reader, type);
+    if (status != CL_SUCCESS)
+        return status;
+    return cli_python_skip_object_type(reader, type, depth, layout);
+}
+
+static cl_error_t cli_python_try_layout(cli_ctx *ctx,
+                                        uint64_t file_len,
+                                        size_t header_size,
+                                        const cli_python_code_layout_t *layout)
+{
+    cli_python_reader_t reader;
+    uint8_t type;
+    cl_error_t status;
+
+    if ((uint64_t)header_size > file_len)
+        return CL_EPARSE;
+
+    reader.ctx      = ctx;
+    reader.file_len = file_len;
+    reader.offset   = header_size;
+    reader.objects   = 0;
+    reader.references = 0;
+
+    status = cli_python_u8(&reader, &type);
+    if (status != CL_SUCCESS)
+        return status;
+    if ((type & 0x7fU) != 'c')
+        return CL_EPARSE;
+    status = cli_python_account_object(&reader, type);
+    if (status != CL_SUCCESS)
+        return status;
+    status = cli_python_skip_object_type(&reader, type, 0, layout);
+    if (status != CL_SUCCESS)
+        return status;
+    return reader.offset == file_len ? CL_SUCCESS : CL_EPARSE;
+}
+
+static cl_error_t cli_scan_python_compiled(cli_ctx *ctx)
+{
+    static const size_t header_sizes[] = {8U, 12U, 16U};
+    static const cli_python_code_layout_t layouts[] = {
+        {4U, 8U, false}, /* Python 2 and earlier */
+        {5U, 8U, false}, /* Python 3.0 through 3.7 */
+        {6U, 8U, false}, /* Python 3.8 through 3.10 */
+        {5U, 8U, true},  /* Python 3.11 and newer */
+    };
+    uint8_t magic[4];
+    uint64_t file_len;
+    cl_error_t status;
+    size_t header_index;
+    size_t layout_index;
+
+    if (!ctx || !ctx->fmap)
+        return CL_ENULLARG;
+    file_len = (uint64_t)ctx->fmap->len;
+    if (file_len < sizeof(magic))
+        goto malformed;
+
+    {
+        cli_python_reader_t reader = {ctx, file_len, 0, 0, 0};
+        status = cli_python_read(&reader, magic, sizeof(magic));
+    }
+    if (status != CL_SUCCESS)
+        return status;
+    if (magic[2] != 0x0d || magic[3] != 0x0a)
+        goto malformed;
+
+    for (header_index = 0; header_index < sizeof(header_sizes) / sizeof(header_sizes[0]); header_index++) {
+        for (layout_index = 0; layout_index < sizeof(layouts) / sizeof(layouts[0]); layout_index++) {
+            status = cli_python_try_layout(ctx, file_len, header_sizes[header_index], &layouts[layout_index]);
+            if (status == CL_SUCCESS)
+                return CL_SUCCESS;
+            if (status != CL_EPARSE)
+                return status;
+        }
+    }
+
+malformed:
+    cli_mark_scan_incomplete(ctx, "Python compiled bytecode is malformed or unsupported");
+    return CL_EPARSE;
+}
+
 static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
 {
     cl_error_t status          = CL_EPARSE;
@@ -7563,18 +9794,6 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
 
     filetype = cli_ftname(type);
 
-    /* Python bytecode is recognized by the magic table, but this fork has no
-     * bounded parser for its version-dependent code-object format. Keep raw
-     * matching available, while making a non-detecting result explicitly
-     * incomplete instead of presenting raw-only coverage as a clean deep scan. */
-    if (type == CL_TYPE_PYTHON_COMPILED) {
-        cli_mark_scan_incomplete(ctx, "Python compiled bytecode parser is unsupported");
-        status = CL_EPARSE;
-    }
-    if (type == CL_TYPE_AI_MODEL) {
-        cli_mark_scan_incomplete(ctx, "AI model parser is unsupported");
-        status = CL_EPARSE;
-    }
     if (type == CL_TYPE_IGNORED) {
         cli_mark_scan_incomplete(ctx, "recognized ignored file type parser is unsupported");
         status = CL_EPARSE;
@@ -7726,7 +9945,11 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
     // If none of the scan options are enabled, then we can skip parsing and just do a raw pattern match.
     // For this check, we don't care if the CL_SCAN_GENERAL_ALLMATCHES option is enabled, hence the `~`.
     if (!((ctx->options->general & ~CL_SCAN_GENERAL_ALLMATCHES) || (ctx->options->parse) || (ctx->options->heuristic) || (ctx->options->mail) || (ctx->options->dev))) {
-        status = cli_scan_fmap(ctx, CL_TYPE_ANY, false, NULL, AC_SCAN_VIR, NULL);
+        /* A recognized type may already have recorded a required parser
+         * failure above. Raw-only mode still supplies malware matching, but
+         * a clean raw pass must not erase that incomplete status. */
+        ret = cli_scan_fmap(ctx, CL_TYPE_ANY, false, NULL, AC_SCAN_VIR, NULL);
+        status = cli_merge_scan_status(status, ret);
         // It doesn't matter what was returned, always go to the end after this. Raw mode! No parsing files!
         goto done;
     }
@@ -8324,7 +10547,14 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
             break;
 
         case CL_TYPE_AI_MODEL:
+            ret = cli_scan_ai_model(ctx);
+            break;
+
         case CL_TYPE_PYTHON_COMPILED:
+            ret = cli_merge_scan_status(cli_scan_python_compiled(ctx),
+                                         cli_scan_fmap(ctx, CL_TYPE_OTHER, false, NULL, AC_SCAN_VIR, NULL));
+            break;
+
         case CL_TYPE_BINARY_DATA:
             ret = cli_scan_fmap(ctx, CL_TYPE_OTHER, false, NULL, AC_SCAN_VIR, NULL);
             break;

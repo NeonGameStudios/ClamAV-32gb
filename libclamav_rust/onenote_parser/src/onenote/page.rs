@@ -5,6 +5,7 @@ use crate::one::property_set::{page_manifest_node, page_metadata, page_node, tit
 use crate::onenote::outline::{parse_outline, Outline};
 use crate::onenote::page_content::{parse_page_content, PageContent};
 use crate::onestore::object_space::ObjectSpace;
+use crate::reader::collect_results;
 
 /// A page.
 ///
@@ -157,11 +158,11 @@ pub(crate) fn parse_page(page_space: &ObjectSpace) -> Result<Page> {
         .transpose()?;
     let level = metadata.page_level;
 
-    let contents = data
-        .content
-        .into_iter()
-        .map(|content_id| parse_page_content(content_id, page_space))
-        .collect::<Result<_>>()?;
+    let contents = collect_results(
+        data.content
+            .into_iter()
+            .map(|content_id| parse_page_content(content_id, page_space)),
+    )?;
 
     Ok(Page {
         title,
@@ -177,11 +178,12 @@ fn parse_title(title_id: ExGuid, space: &ObjectSpace) -> Result<Title> {
         .get_object(title_id)
         .ok_or_else(|| ErrorKind::MalformedOneNoteData("title object is missing".into()))?;
     let title = title_node::parse(title_object)?;
-    let contents = title
-        .children
-        .into_iter()
-        .map(|outline_id| parse_outline(outline_id, space))
-        .collect::<Result<_>>()?;
+    let contents = collect_results(
+        title
+            .children
+            .into_iter()
+            .map(|outline_id| parse_outline(outline_id, space)),
+    )?;
 
     Ok(Title {
         contents,

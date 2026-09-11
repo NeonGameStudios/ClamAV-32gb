@@ -1,10 +1,9 @@
 use crate::errors::{ErrorKind, Result};
 use crate::one::property::PropertyType;
 use crate::onestore::object::Object;
-use crate::reader::Reader;
+use crate::reader::{copy_bytes, Reader};
 use crate::shared::guid::Guid;
 use crate::utils::Utf16ToString;
-use encoding_rs::mem::decode_latin1;
 use std::mem::size_of;
 
 pub(crate) fn parse_bool(prop_type: PropertyType, object: &Object) -> Result<Option<bool>> {
@@ -85,15 +84,7 @@ pub(crate) fn parse_vec(prop_type: PropertyType, object: &Object) -> Result<Opti
         None => return Ok(None),
     };
 
-    let mut value = Vec::new();
-    value
-        .try_reserve_exact(data.len())
-        .map_err(|_| ErrorKind::AllocationFailed {
-            requested: data.len(),
-        })?;
-    value.extend_from_slice(data);
-
-    Ok(Some(value))
+    Ok(Some(copy_bytes(data)?))
 }
 
 pub(crate) fn parse_vec_u16(prop_type: PropertyType, object: &Object) -> Result<Option<Vec<u16>>> {
@@ -103,6 +94,13 @@ pub(crate) fn parse_vec_u16(prop_type: PropertyType, object: &Object) -> Result<
         })?,
         None => return Ok(None),
     };
+
+    if data.len() % 2 != 0 {
+        return Err(ErrorKind::MalformedOneNoteFileData(
+            "u16 vector has an odd byte length".into(),
+        )
+        .into());
+    }
 
     let mut vec = reserve_collection::<u16>(data.len() / 2)?;
     for value in data.chunks_exact(2) {
@@ -119,6 +117,13 @@ pub(crate) fn parse_vec_u32(prop_type: PropertyType, object: &Object) -> Result<
             .ok_or_else(|| ErrorKind::MalformedOneNoteFileData("vec value is not a vec".into()))?,
         None => return Ok(None),
     };
+
+    if data.len() % 4 != 0 {
+        return Err(ErrorKind::MalformedOneNoteFileData(
+            "u32 vector is not aligned".into(),
+        )
+        .into());
+    }
 
     let mut vec = reserve_collection::<u32>(data.len() / 4)?;
     for value in data.chunks_exact(4) {
@@ -158,9 +163,39 @@ pub(crate) fn parse_ascii(prop_type: PropertyType, object: &Object) -> Result<Op
         None => return Ok(None),
     };
 
-    let text = decode_latin1(data).to_string();
+    let text = decode_latin1_bounded(data, Reader::MAX_COLLECTION_BYTES)?;
 
     Ok(Some(text))
+}
+
+fn decode_latin1_bounded(data: &[u8], max_bytes: usize) -> Result<String> {
+    let output_len = data.iter().try_fold(0usize, |length, byte| {
+        length
+            .checked_add(if *byte < 0x80 { 1 } else { 2 })
+            .ok_or(ErrorKind::CollectionLimit {
+                requested: usize::MAX,
+                max: max_bytes,
+            })
+    })?;
+    if output_len > max_bytes {
+        return Err(ErrorKind::CollectionLimit {
+            requested: output_len,
+            max: max_bytes,
+        }
+        .into());
+    }
+
+    let mut output = String::new();
+    output
+        .try_reserve_exact(output_len)
+        .map_err(|_| ErrorKind::AllocationFailed {
+            requested: output_len,
+        })?;
+    for byte in data {
+        output.push(char::from(*byte));
+    }
+
+    Ok(output)
 }
 
 pub(crate) fn parse_string(prop_type: PropertyType, object: &Object) -> Result<Option<String>> {
@@ -171,9 +206,11 @@ pub(crate) fn parse_string(prop_type: PropertyType, object: &Object) -> Result<O
         None => return Ok(None),
     };
 
-    let text = data
-        .utf16_to_string()
-        .map_err(|_| ErrorKind::MalformedOneNoteFileData("invalid string".into()))?;
+    // Utf16ToString already classifies malformed input separately from the
+    // parser-owned collection/allocation limits. Preserve that distinction so
+    // a bounded refusal remains visible to the application instead of being
+    // relabeled as ordinary malformed content.
+    let text = data.utf16_to_string()?;
 
     Ok(Some(text))
 }
@@ -191,7 +228,7 @@ pub(crate) fn parse_guid(prop_type: PropertyType, object: &Object) -> Result<Opt
 
 #[cfg(test)]
 mod tests {
-    use super::reserve_collection;
+    use super::{decode_latin1_bounded, reserve_collection};
     use crate::reader::Reader;
     use std::mem::size_of;
 
@@ -201,5 +238,14 @@ mod tests {
         let error = reserve_collection::<u32>(count).unwrap_err();
 
         assert!(error.is_resource_limit());
+    }
+
+    #[test]
+    fn latin1_conversion_is_bounded_and_preserves_byte_values() {
+        assert_eq!(
+            decode_latin1_bounded(&[b'A', 0x80, 0xFF], 8).unwrap(),
+            "A\u{0080}\u{00FF}"
+        );
+        assert!(decode_latin1_bounded(&[0xFF], 1).is_err());
     }
 }

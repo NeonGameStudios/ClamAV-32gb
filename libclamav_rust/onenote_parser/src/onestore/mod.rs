@@ -1,5 +1,6 @@
 use crate::errors::{ErrorKind, Result};
 use crate::fsshttpb::data::cell_id::CellId;
+use crate::fsshttpb::data::exguid::ExGuid;
 use crate::fsshttpb::data_element::storage_index::StorageIndex;
 use crate::fsshttpb::data_element::storage_manifest::StorageManifest;
 use crate::fsshttpb::packaging::OneStorePackaging;
@@ -46,11 +47,11 @@ pub(crate) fn parse_store(package: &OneStorePackaging) -> Result<OneStore> {
     // [ONESTORE] 2.7.1: Parse storage manifest
     let storage_index = package
         .data_element_package
-        .find_storage_index()
+        .find_storage_index(package.storage_index)
         .ok_or_else(|| ErrorKind::MalformedOneStoreData("storage index is missing".into()))?;
     let storage_manifest = package
         .data_element_package
-        .find_storage_manifest()
+        .find_storage_manifest(storage_index)?
         .ok_or_else(|| ErrorKind::MalformedOneStoreData("storage manifest is missing".into()))?;
 
     let header_cell_id = find_header_cell_id(storage_manifest)?;
@@ -138,17 +139,79 @@ fn parse_object_space<'a, 'b>(
 }
 
 fn find_header_cell_id(manifest: &StorageManifest) -> Result<CellId> {
-    manifest
+    let cell = manifest
         .roots
         .get(&exguid!({{1A5A319C-C26B-41AA-B9C5-9BD8C44E07D4}, 1}))
         .copied()
-        .ok_or_else(|| ErrorKind::MalformedOneStoreData("no header cell root".into()).into())
+        .ok_or_else(|| ErrorKind::MalformedOneStoreData("no header cell root".into()))?;
+
+    let expected = CellId(
+        exguid!({{84DEFAB9-AAA3-4A0D-A3A8-520C77AC7073}, 1}),
+        exguid!({{111E4CF3-7FEF-4087-AF6A-B9544ACD334D}, 1}),
+    );
+    if cell != expected {
+        return Err(ErrorKind::MalformedOneStoreData(
+            "header cell root has an unexpected cell id".into(),
+        )
+        .into());
+    }
+
+    Ok(cell)
 }
 
 fn find_data_root_cell_id(manifest: &StorageManifest) -> Result<CellId> {
-    manifest
+    let cell = manifest
         .roots
         .get(&exguid!({{84DEFAB9-AAA3-4A0D-A3A8-520C77AC7073}, 2}))
         .copied()
-        .ok_or_else(|| ErrorKind::MalformedOneStoreData("no header cell root".into()).into())
+        .ok_or_else(|| ErrorKind::MalformedOneStoreData("no data root cell".into()))?;
+
+    if cell.0 != exguid!({{84DEFAB9-AAA3-4A0D-A3A8-520C77AC7073}, 1}) {
+        return Err(ErrorKind::MalformedOneStoreData(
+            "data root has an unexpected object-space cell id".into(),
+        )
+        .into());
+    }
+
+    Ok(cell)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn manifest_with_root(root: ExGuid, cell: CellId) -> StorageManifest {
+        let mut roots = HashMap::new();
+        roots.insert(root, cell);
+        StorageManifest {
+            id: Guid::nil(),
+            roots,
+        }
+    }
+
+    #[test]
+    fn header_root_requires_the_specified_cell_id() {
+        let manifest = manifest_with_root(
+            exguid!({{1A5A319C-C26B-41AA-B9C5-9BD8C44E07D4}, 1}),
+            CellId(
+                exguid!({{84DEFAB9-AAA3-4A0D-A3A8-520C77AC7073}, 1}),
+                exguid!({{111E4CF3-7FEF-4087-AF6A-B9544ACD334D}, 2}),
+            ),
+        );
+
+        assert!(find_header_cell_id(&manifest).is_err());
+    }
+
+    #[test]
+    fn data_root_requires_the_specified_object_space_id() {
+        let manifest = manifest_with_root(
+            exguid!({{84DEFAB9-AAA3-4A0D-A3A8-520C77AC7073}, 2}),
+            CellId(
+                exguid!({{111E4CF3-7FEF-4087-AF6A-B9544ACD334D}, 1}),
+                exguid!({{111E4CF3-7FEF-4087-AF6A-B9544ACD334D}, 1}),
+            ),
+        );
+
+        assert!(find_data_root_cell_id(&manifest).is_err());
+    }
 }

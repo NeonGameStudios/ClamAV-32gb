@@ -75,6 +75,19 @@ remains blocked.
 
 State: `development-verified`
 
+Follow-on resource-phase binding correction (2026-09-10 UTC):
+
+- Acceptance records no longer satisfy the resource-evidence field with a
+  bare label such as `bounded` or `focused`. The validator requires structured
+  RSS/temporary budget tokens, or the explicit development-envelope
+  max-file/max-temp form; PCRE records additionally require the PCRE and
+  post-PCRE phase tokens.
+- Added a regression for the rejected bare-label case and updated the focused
+  synthetic/service records to use the producer format. Acceptance schema,
+  producer, development service, readiness, inventory, and full source-gate
+  checks pass. The authoritative records file remains empty; no capability was
+  promoted.
+
 Follow-on evidence-path boundary correction (2026-09-08): the shared
 acceptance validator, service workload verifier, runtime acceptance producer,
 and PDF evidence checker now reject symlink components before resolving
@@ -173,3 +186,13 @@ Development lifecycle evidence integration (2026-09-09):
 - The focused lifecycle test passed 5/5 and the complete local tools suite
   passed 145 tests with 2 expected skips. This remains development ARM64/64 MiB
   evidence and does not populate authoritative records or qualify a capability.
+
+Follow-on R04 lifecycle fixture-binding correction (2026-09-11): lifecycle-bound
+acceptance records now require a named `fixture_role` and the
+`provenance/service-inputs-before.json` identity sidecar. A retained fixture
+artifact alone cannot satisfy a record that claims daemon health/cleanup
+lifecycle evidence. Added regressions for missing role and missing sidecar;
+the focused acceptance schema passes 12/12, the full tools suite passes
+145 tests with 2 expected skips, and the complete source guard passes. The
+authoritative acceptance-record file remains empty; no capability status was
+promoted and certified Linux x86-64/full-size qualification remains blocked.

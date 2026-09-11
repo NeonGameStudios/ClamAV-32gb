@@ -195,6 +195,9 @@ class SnapshotTests(unittest.TestCase):
         (repo / "runtime.c").write_text("int runtime = 1;\n", encoding="utf-8")
         (repo / "32gb-current-snapshot.md").write_text("status one\n", encoding="utf-8")
         (repo / "docs" / "largefile-task-ledger.md").write_text("task one\n", encoding="utf-8")
+        receipt_dir = repo / "docs" / "largefile-task-receipts"
+        receipt_dir.mkdir()
+        (receipt_dir / "task-one.md").write_text("receipt one\n", encoding="utf-8")
         environment = os.environ | {
             "GIT_AUTHOR_NAME": "snapshot-test",
             "GIT_AUTHOR_EMAIL": "snapshot-test@example.invalid",
@@ -212,6 +215,7 @@ class SnapshotTests(unittest.TestCase):
         )
         (repo / "32gb-current-snapshot.md").write_text("status two\n", encoding="utf-8")
         (repo / "docs" / "largefile-task-ledger.md").write_text("task two\n", encoding="utf-8")
+        (receipt_dir / "task-one.md").write_text("receipt two\n", encoding="utf-8")
         second = self.root / "manifest-two.txt"
         subprocess.run(
             ["sh", "tools/largefile_source_manifest.sh", str(repo), str(second)],

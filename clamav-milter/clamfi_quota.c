@@ -52,3 +52,12 @@ int clamfi_reject_message_size(size_t source_length, size_t *output_size)
     *output_size = source_length * 4U + 1U;
     return *output_size <= (size_t)CLI_MAX_ALLOCATION;
 }
+
+int clamfi_scan_reply_size(size_t alert_length, size_t *output_size)
+{
+    if (NULL == output_size || alert_length > SIZE_MAX - sizeof("stream:  FOUND\n"))
+        return 0;
+
+    *output_size = alert_length + sizeof("stream:  FOUND\n");
+    return *output_size <= (size_t)CLI_MAX_ALLOCATION;
+}

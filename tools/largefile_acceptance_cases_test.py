@@ -71,7 +71,8 @@ class AcceptanceCaseTests(unittest.TestCase):
             "fixture_sha256": "d" * 64, "oracle_sha256": "e" * 64, "database_sha256": "f" * 64,
             "exit_code": "1", "verdict": "DETECTED", "completion": "DETECTION_TERMINATED",
             "reason": "exact tail marker", "alert_signature": "Test.Signature", "alert_offset": "34359738304",
-            "sanitizer": "release", "resource_phase": "pcre<=40g;post-pcre<12g",
+            "sanitizer": "release",
+            "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<=12582912;temporary<=68719476736",
             "health": "pass", "cleanup": "pass", "artifacts": "logs/pcre.txt",
         })
         with records.open("w", newline="", encoding="utf-8") as stream:
@@ -82,12 +83,34 @@ class AcceptanceCaseTests(unittest.TestCase):
         self.assertEqual(cases.validate_records(records, mapping), 1)
         with self.assertRaisesRegex(ValueError, "missing required cases"):
             cases.validate_records(records, mapping, ("matcher", "pcre"))
+        row["resource_phase"] = "focused"
+        with records.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=cases.RECORD_HEADER,
+                                    delimiter="\t", lineterminator="\n")
+            writer.writeheader()
+            writer.writerow(row)
+        with self.assertRaisesRegex(ValueError, "structured resource phases"):
+            cases.validate_records(records, mapping)
+        row["resource_phase"] = (
+            "rss<=33554432;pcre<=41943040;post-pcre<=12582912;"
+            "temporary<=68719476736"
+        )
         row["alert_offset"] = "-"
         with records.open("w", newline="", encoding="utf-8") as stream:
             writer = csv.DictWriter(stream, fieldnames=cases.RECORD_HEADER, delimiter="\t", lineterminator="\n")
             writer.writeheader()
             writer.writerow(row)
         with self.assertRaisesRegex(ValueError, "exact alert binding"):
+            cases.validate_records(records, mapping)
+
+        row["alert_offset"] = "7"
+        row["resource_phase"] += ";unreviewed=1"
+        with records.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=cases.RECORD_HEADER,
+                                    delimiter="\t", lineterminator="\n")
+            writer.writeheader()
+            writer.writerow(row)
+        with self.assertRaisesRegex(ValueError, "invalid resource phase token"):
             cases.validate_records(records, mapping)
 
     def test_case_suffix_rejects_contradictory_completion(self):
@@ -100,7 +123,8 @@ class AcceptanceCaseTests(unittest.TestCase):
             "fixture_sha256": "d" * 64, "oracle_sha256": "e" * 64, "database_sha256": "f" * 64,
             "exit_code": "0", "verdict": "CLEAN", "completion": "COMPLETE",
             "reason": "contradictory control", "alert_signature": "-", "alert_offset": "-",
-            "sanitizer": "release", "resource_phase": "bounded",
+            "sanitizer": "release",
+            "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<=12582912;temporary<=68719476736",
             "health": "pass", "cleanup": "pass", "artifacts": "logs/scan.txt",
         })
         with records.open("w", newline="", encoding="utf-8") as stream:
@@ -128,7 +152,8 @@ class AcceptanceCaseTests(unittest.TestCase):
             "fixture_sha256": "d" * 64, "oracle_sha256": "e" * 64, "database_sha256": "f" * 64,
             "exit_code": "1", "verdict": "DETECTED", "completion": "DETECTION_TERMINATED",
             "reason": "contradictory generic completion", "alert_signature": "Test.Signature",
-            "alert_offset": "7", "sanitizer": "release", "resource_phase": "bounded",
+            "alert_offset": "7", "sanitizer": "release",
+            "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<=12582912;temporary<=68719476736",
             "health": "pass", "cleanup": "pass", "artifacts": "logs/scan.txt",
         })
         with records.open("w", newline="", encoding="utf-8") as stream:
@@ -185,7 +210,8 @@ class AcceptanceCaseTests(unittest.TestCase):
             "database_sha256": cases.sha256(evidence / "database.txt"),
             "exit_code": "1", "verdict": "DETECTED", "completion": "DETECTION_TERMINATED",
             "reason": "late marker", "alert_signature": "Test.Signature", "alert_offset": "7",
-            "sanitizer": "release", "resource_phase": "bounded",
+            "sanitizer": "release",
+            "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<=12582912;temporary<=68719476736",
             "health": "pass", "cleanup": "pass", "artifacts": ",".join(artifact_names),
         })
         with records.open("w", newline="", encoding="utf-8") as stream:
@@ -251,7 +277,8 @@ class AcceptanceCaseTests(unittest.TestCase):
             "database_sha256": cases.sha256(evidence / "database.txt"),
             "exit_code": "1", "verdict": "DETECTED", "completion": "DETECTION_TERMINATED",
             "reason": "late marker", "alert_signature": "Test.Signature", "alert_offset": "7",
-            "sanitizer": "release", "resource_phase": "bounded",
+            "sanitizer": "release",
+            "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<=12582912;temporary<=68719476736",
             "health": "pass", "cleanup": "pass",
             "artifacts": ",".join(artifact_names),
         })
@@ -285,7 +312,9 @@ class AcceptanceCaseTests(unittest.TestCase):
             encoding="utf-8",
         )
         row["resource_phase"] = (
-            "bounded;daemon-health=ping-before-and-after;cleanup=lifecycle-verified"
+            "rss<=33554432;pcre<=41943040;post-pcre<=12582912;"
+            "temporary<=68719476736;daemon-health=ping-before-and-after;"
+            "cleanup=lifecycle-verified"
         )
         row["artifacts"] += ",provenance/service-lifecycle-detection.tsv"
         with records.open("w", newline="", encoding="utf-8") as stream:
@@ -294,6 +323,21 @@ class AcceptanceCaseTests(unittest.TestCase):
             writer.writeheader()
             writer.writerow(row)
         self.assertEqual(cases.validate_records(records, mapping, evidence_root=evidence), 1)
+
+        row["fixture_role"] = "-"
+        with records.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=cases.RECORD_HEADER,
+                                    delimiter="\t", lineterminator="\n")
+            writer.writeheader()
+            writer.writerow(row)
+        with self.assertRaisesRegex(ValueError, "lacks a service fixture role"):
+            cases.validate_records(records, mapping, evidence_root=evidence)
+        row["fixture_role"] = "service-zip"
+        with records.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=cases.RECORD_HEADER,
+                                    delimiter="\t", lineterminator="\n")
+            writer.writeheader()
+            writer.writerow(row)
 
         lifecycle.write_text(
             lifecycle.read_text(encoding="utf-8").replace(
@@ -310,6 +354,29 @@ class AcceptanceCaseTests(unittest.TestCase):
             ),
             encoding="utf-8",
         )
+
+        row["artifacts"] = row["artifacts"].replace(
+            ",provenance/service-inputs-before.json", "",
+        )
+        with records.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=cases.RECORD_HEADER,
+                                    delimiter="\t", lineterminator="\n")
+            writer.writeheader()
+            writer.writerow(row)
+        (provenance / "service-inputs-before.json").unlink()
+        with self.assertRaisesRegex(ValueError, "lacks service input identity evidence"):
+            cases.validate_records(records, mapping, evidence_root=evidence)
+        (provenance / "service-inputs-before.json").write_text(
+            '{"version": 1, "inputs": {"service-zip": {"sha256": "' +
+            fixture_hash + '"}}}\n',
+            encoding="utf-8",
+        )
+        row["artifacts"] += ",provenance/service-inputs-before.json"
+        with records.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=cases.RECORD_HEADER,
+                                    delimiter="\t", lineterminator="\n")
+            writer.writeheader()
+            writer.writerow(row)
 
         (provenance / "service-inputs-before.json").write_text("[]\n", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "service input identity evidence is malformed"):
@@ -345,7 +412,7 @@ class AcceptanceCaseTests(unittest.TestCase):
                     "alert_offset": "-",
                     "reason": "focused R09 behavior result",
                     "sanitizer": "release",
-                    "resource_phase": "focused",
+                    "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<=12582912;temporary<=68719476736",
                     "health": "pass",
                     "cleanup": "pass",
                     "artifacts": "logs/r09.txt",

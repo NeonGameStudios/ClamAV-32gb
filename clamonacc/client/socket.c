@@ -25,6 +25,15 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#ifdef HAVE_FD_PASSING
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <sys/time.h>
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+#endif
 
 #include "clamav.h"
 #include "output.h"
@@ -74,19 +83,131 @@ cl_error_t onas_set_sock_only_once(struct onas_context *ctx, bool allow_fdpass)
  *
  * @return Returns socket descriptor on success, -1 on failure
  */
-int onas_get_sockd()
+#ifdef HAVE_FD_PASSING
+static uint64_t onas_connect_deadline(int64_t timeout_ms)
+{
+    struct timeval now;
+    uint64_t now_ms;
+    uint64_t wait_ms;
+
+    if (timeout_ms <= 0 || gettimeofday(&now, NULL) != 0)
+        return 0;
+
+    now_ms  = (uint64_t)now.tv_sec * 1000U + (uint64_t)now.tv_usec / 1000U;
+    wait_ms = (uint64_t)timeout_ms;
+    if (wait_ms > UINT64_MAX - now_ms)
+        return UINT64_MAX;
+    return now_ms + wait_ms;
+}
+
+static int onas_connect_wait(int sockd, uint64_t deadline_ms)
+{
+    struct timeval now;
+    struct timeval wait;
+    uint64_t now_ms;
+    uint64_t remaining_ms;
+    int result;
+
+    for (;;) {
+        fd_set writefds;
+        fd_set errorfds;
+
+        /* select() may modify both the fd sets and timeout, including when it
+         * is interrupted. Rebuild them from the absolute deadline for every
+         * retry so EINTR cannot turn a bounded connect into an unbounded one. */
+        if (gettimeofday(&now, NULL) != 0)
+            return -1;
+
+        now_ms = (uint64_t)now.tv_sec * 1000U + (uint64_t)now.tv_usec / 1000U;
+        if (deadline_ms == 0) {
+            remaining_ms = 0;
+        } else if (now_ms >= deadline_ms) {
+            errno = ETIMEDOUT;
+            return 0;
+        } else {
+            remaining_ms = deadline_ms - now_ms;
+        }
+
+        wait.tv_sec  = (long)(remaining_ms / 1000U);
+        wait.tv_usec = (long)((remaining_ms % 1000U) * 1000U);
+        FD_ZERO(&writefds);
+        FD_ZERO(&errorfds);
+        FD_SET(sockd, &writefds);
+        FD_SET(sockd, &errorfds);
+
+        result = select(sockd + 1, NULL, &writefds, &errorfds, &wait);
+        if (result >= 0 || errno != EINTR)
+            return result;
+    }
+}
+#endif
+
+int onas_get_sockd(int64_t timeout_ms, cl_error_t *ret_code)
 {
 
 #ifdef HAVE_FD_PASSING
 
     int sockd = 0;
+    int flags;
+    int wait_result;
+    int connect_error;
+    socklen_t connect_error_len;
+    uint64_t deadline_ms;
+
     if (onas_sock.written && (sockd = socket(AF_UNIX, SOCK_STREAM, 0)) >= 0) {
+        flags = fcntl(sockd, F_GETFL, 0);
+        if (flags < 0 || fcntl(sockd, F_SETFL, flags | O_NONBLOCK) < 0) {
+            logg(LOGG_ERROR, "ClamSock: Could not make the fd-passing socket nonblocking\n");
+            if (ret_code && *ret_code == CL_SUCCESS)
+                *ret_code = CL_ECREAT;
+            closesocket(sockd);
+            return -1;
+        }
+
+        deadline_ms = onas_connect_deadline(timeout_ms);
+#ifdef SO_NOSIGPIPE
+        {
+            int no_sigpipe = 1;
+            if (setsockopt(sockd, SOL_SOCKET, SO_NOSIGPIPE, &no_sigpipe, sizeof(no_sigpipe)) < 0) {
+                logg(LOGG_ERROR, "ClamSock: Could not disable SIGPIPE on the fd-passing socket\n");
+                if (ret_code && *ret_code == CL_SUCCESS)
+                    *ret_code = CL_ECREAT;
+                closesocket(sockd);
+                return -1;
+            }
+        }
+#endif
         if (connect(sockd, (struct sockaddr *)&onas_sock.sock, sizeof(onas_sock.sock)) == 0)
             return sockd;
-        else {
+
+        if (errno == EINPROGRESS) {
+            wait_result = onas_connect_wait(sockd, deadline_ms);
+            if (wait_result > 0) {
+                connect_error     = 0;
+                connect_error_len = sizeof(connect_error);
+                if (getsockopt(sockd, SOL_SOCKET, SO_ERROR, &connect_error, &connect_error_len) == 0 &&
+                    connect_error == 0)
+                    return sockd;
+                if (connect_error != 0)
+                    errno = connect_error;
+            } else if (wait_result == 0) {
+                logg(LOGG_ERROR, "ClamSock: Timed out connecting to clamd on LocalSocket\n");
+                if (ret_code && *ret_code == CL_SUCCESS)
+                    *ret_code = CL_ETIMEOUT;
+                closesocket(sockd);
+                return -1;
+            }
+        }
+
+        {
             logg(LOGG_ERROR, "ClamSock: Could not connect to clamd on LocalSocket \n");
+            if (ret_code && *ret_code == CL_SUCCESS)
+                *ret_code = CL_ECREAT;
             closesocket(sockd);
         }
+    }
+    else if (ret_code && *ret_code == CL_SUCCESS) {
+        *ret_code = CL_ECREAT;
     }
 #endif
     return -1;

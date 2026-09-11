@@ -1,7 +1,7 @@
 use crate::errors::{ErrorKind, Result};
 use crate::one::property::PropertyType;
 use crate::onestore::object::Object;
-use crate::reader::Reader;
+use crate::reader::{collect_results, Reader};
 use crate::shared::guid::Guid;
 
 /// The dimensions (X or Y) for an ink stoke with lower and upper limits.
@@ -21,9 +21,14 @@ impl InkDimension {
             None => return Ok(Vec::new()),
         };
 
-        data.chunks_exact(32)
-            .map(InkDimension::parse_entry)
-            .collect::<Result<Vec<_>>>()
+        if data.len() % 32 != 0 {
+            return Err(ErrorKind::MalformedOneNoteFileData(
+                "ink dimensions length is not a multiple of 32".into(),
+            )
+            .into());
+        }
+
+        collect_results(data.chunks_exact(32).map(InkDimension::parse_entry))
     }
 
     fn parse_entry(data: &[u8]) -> Result<InkDimension> {

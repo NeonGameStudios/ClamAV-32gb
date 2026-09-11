@@ -20,6 +20,7 @@ int main(void)
     uint64_t effective = 0;
     uint64_t next      = 0;
     size_t reject_size = 0;
+    size_t reply_size  = 0;
     uint64_t four_gib  = (uint64_t)4 * 1024 * 1024 * 1024;
     uint64_t thirty_two_gib = CLI_MAX_LARGE_FILESIZE;
 
@@ -44,6 +45,14 @@ int main(void)
     CHECK(!clamfi_reject_message_size((SIZE_MAX - 1U) / 4U + 1U, &reject_size), "RejectMsg size overflow was accepted");
     CHECK(!clamfi_reject_message_size((size_t)CLI_MAX_ALLOCATION, &reject_size), "over-limit RejectMsg was accepted");
     CHECK(!clamfi_reject_message_size(1, NULL), "NULL RejectMsg size output was accepted");
+
+    CHECK(clamfi_scan_reply_size(0, &reply_size), "empty scan alert was rejected");
+    CHECK(reply_size == sizeof("stream:  FOUND\n"), "empty scan alert size is incorrect");
+    CHECK(clamfi_scan_reply_size(7, &reply_size), "small scan alert was rejected");
+    CHECK(reply_size == 7 + sizeof("stream:  FOUND\n"), "small scan alert size is incorrect");
+    CHECK(!clamfi_scan_reply_size(SIZE_MAX, &reply_size), "scan alert size overflow was accepted");
+    CHECK(!clamfi_scan_reply_size((size_t)CLI_MAX_ALLOCATION, &reply_size), "over-limit scan alert was accepted");
+    CHECK(!clamfi_scan_reply_size(1, NULL), "NULL scan alert size output was accepted");
 
     return 0;
 }

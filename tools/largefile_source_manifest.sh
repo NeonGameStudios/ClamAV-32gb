@@ -53,13 +53,14 @@ if [ "$is_git_checkout" = yes ]; then
     # excluded here; generated dashboards remain narrowly excluded below.
     git -C "$root" ls-files --cached --others --exclude-standard | while IFS= read -r relative; do
         [ -n "$relative" ] || continue
-        # Generated status dashboards and the coordinator's task ledger are
-        # external run metadata.  Keeping them out of the immutable source
-        # identity prevents a regenerated dashboard from participating in a
-        # source-manifest fixed point.  Executable code, build settings,
-        # fixtures, verifiers, and the capability manifest remain included.
+        # Generated status dashboards, the coordinator's task ledger, and
+        # bounded task receipts are external run metadata. Keeping them out of
+        # the immutable source identity prevents evidence bookkeeping from
+        # participating in a source-manifest fixed point. Executable code,
+        # build settings, fixtures, verifiers, and the capability manifest
+        # remain included.
         case "$relative" in
-            32gb-current-snapshot.md|docs/largefile-task-ledger.md)
+            32gb-current-snapshot.md|docs/largefile-task-ledger.md|docs/largefile-task-receipts/*)
                 continue
                 ;;
         esac

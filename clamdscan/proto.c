@@ -486,7 +486,7 @@ int serial_client_scan(char *file, int scantype, int *infected, int *err, int ma
         if (cdata.printok)
             logg(LOGG_INFO, "%s: OK\n", file);
         return 0;
-    } else if (!cdata.files) {
+    } else if (!cdata.files && !cdata.errors) {
         logg(LOGG_INFO, "%s: No files scanned\n", file);
         return 0;
     }
@@ -514,29 +514,6 @@ struct client_parallel_data {
     unsigned int action_sources;
     unsigned int max_action_sources;
 };
-
-static int report_json_id(const char *json, uint32_t length, unsigned int *id)
-{
-    const char *field;
-    char *end = NULL;
-    unsigned long value;
-
-    if (!json || !id || length == 0)
-        return -1;
-    field = strstr(json, "\"id\":");
-    if (!field)
-        field = strstr(json, "\"id\": ");
-    if (!field)
-        return -1;
-    field = strchr(field, ':');
-    if (!field)
-        return -1;
-    value = strtoul(field + 1, &end, 10);
-    if (end == field + 1 || value > UINT_MAX)
-        return -1;
-    *id = (unsigned int)value;
-    return 0;
-}
 
 static int log_report_detection(const char *filename, const char *json, uint32_t json_length)
 {
@@ -580,7 +557,7 @@ static int dspreport(struct client_parallel_data *c)
         return 1;
     }
     free(terminator_json);
-    if (report_json_id(json, json_length, &rid) < 0 ||
+    if (scan_report_json_id(json, json_length, &rid) < 0 ||
         scan_report_json_status(json, json_length, &frame_infected, &frame_incomplete,
                                 &frame_status) < 0) {
         free(json);
@@ -638,9 +615,10 @@ static int dspresult(struct client_parallel_data *c)
 {
     const char *filename;
     action_source_t *action_source;
-    char *bol, *eol;
+    char *bol;
     unsigned int rid;
     int len;
+    cl_error_t reply_status;
     struct SCANID **id = NULL;
     struct RCVLN rcv;
 
@@ -649,10 +627,11 @@ static int dspresult(struct client_parallel_data *c)
 
     recvlninit(&rcv, c->sockd);
     do {
-        len = recvln(&rcv, &bol, &eol);
+        len = recvln(&rcv, &bol, NULL);
         if (len < 0) return 1;
         if (!len) return 2;
-        if ((rid = atoi(bol))) {
+        id = NULL;
+        if (parse_clamd_session_id(bol, &rid) == 0) {
             id = &c->ids;
             while (*id) {
                 if ((*id)->id == rid) break;
@@ -666,17 +645,22 @@ static int dspresult(struct client_parallel_data *c)
         }
         filename      = (*id)->file;
         action_source = (*id)->action_source;
+        reply_status = parse_clamd_legacy_reply(bol, (unsigned int)len);
+        if (reply_status == CL_EPARSE) {
+            logg(LOGG_ERROR, "Failed to parse reply\n");
+            return 1;
+        }
         if (len > 7) {
             char *colon = strrchr(bol, ':');
             if (!colon) {
                 logg(LOGG_ERROR, "Failed to parse reply\n");
                 return 1;
-            } else if (!memcmp(eol - 7, " FOUND", 6)) {
+            } else if (reply_status == CL_VIRUS) {
                 c->infected++;
                 c->printok = 0;
                 logg(LOGG_INFO, "%s%s\n", filename, colon);
                 if (action && (NULL != action_source)) action(action_source);
-            } else if (!memcmp(eol - 7, " ERROR", 6)) {
+            } else if (reply_status == CL_ERROR) {
                 c->errors++;
                 c->printok = 0;
                 logg(LOGG_INFO, "%s%s\n", filename, colon);

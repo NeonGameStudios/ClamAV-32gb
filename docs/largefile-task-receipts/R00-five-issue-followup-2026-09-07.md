@@ -335,3 +335,236 @@ inventory was refreshed after the vendored reader and build-script line
 changes. `sh tools/largefile_source_guards.sh` then passed with all 597
 capability rows, release-readiness controls, acceptance schemas, and source
 guards green; no capability status was promoted.
+
+Follow-on R09 GGUF current-format slice (2026-09-10): the bounded GGUF
+geometry table now recognizes the current GGML `TQ1_0`, `TQ2_0`, `MXFP4`,
+`NVFP4`, `Q1_0`, and `Q2_0` tensor IDs with their exact block sizes. The
+required-unsupported TCase adds a table-driven one-block admission regression
+for all six types. This is an implementation and source-contract advance for
+issue 2, with no claim of linked current-source execution or capability
+qualification; the certified runner, full model semantics, full-size
+materialization, acceptance records, and release gate remain open.
+
+Follow-on R09 raw-only status-boundary correction (2026-09-10): the
+`cli_magic_scan()` raw-only fast path now merges its matcher result with a
+previously recorded parser/incomplete status instead of overwriting it. This
+keeps recognized Python/ignored inputs fail-visible when parsing is disabled,
+while preserving a malware detection from the raw matcher. The full local
+tools suite passed 145 tests with 2 expected skips, the snapshot check passed,
+`git diff --check` passed, and `sh tools/largefile_source_guards.sh` passed.
+No capability was promoted; certified runner, full-size evidence, and linked
+current-source C execution remain open.
+
+Follow-on R09 bounded Python-bytecode parser (2026-09-10): recognized Python
+compiled inputs now pass through a non-executing marshal structural walker
+with bounded object count, recursion depth, length, reference, and fmap
+offset checks. The dispatcher merges the parser result with raw matching, so
+malware detection remains visible while malformed or unsupported marshal data
+remains incomplete and non-cacheable. Required-group fixtures cover truncated
+input, legacy and modern code-object layouts, and raw-detection precedence.
+The 145-test local tools
+suite (2 expected skips), snapshot check, `git diff --check`, and full source
+guard passed. No capability was promoted; independent format-8 fixtures,
+certified runner, full-size evidence, and linked current-source C execution
+remain open.
+
+Follow-on R04 lifecycle fixture-binding correction (2026-09-11): lifecycle-bound
+acceptance records now require a named `fixture_role` and the
+`provenance/service-inputs-before.json` identity sidecar. A retained fixture
+artifact alone cannot satisfy a record that claims daemon health/cleanup
+lifecycle evidence. Added regressions for missing role and missing sidecar;
+the focused acceptance schema passes 12/12, the full tools suite passes
+145 tests with 2 expected skips, and the complete source guard passes. The
+authoritative acceptance-record file remains empty; no capability status was
+promoted and certified Linux x86-64/full-size qualification remains blocked.
+
+Follow-on R09 GGUF row-shape refinement (2026-09-11): the bounded model
+geometry checker now validates the innermost row dimension against each
+quantization block size, rejecting a `16x2` Q4_0 tensor whose total element
+count would otherwise appear block-aligned. The required-group regression is
+registered and the source/control sweep passes. No fresh linked C execution is
+claimed because the available ARM64 Docker image lacks the test/development
+libraries and no package installation was authorized; full tensor semantics,
+certified x86-64, and release qualification remain open.
+
+Follow-on R09 GGUF tensor-name boundary refinement (2026-09-11): the bounded
+model parser now rejects names at the reference 64-byte `GGML_MAX_NAME` limit
+before skipping their payload. The regression uses a complete descriptor and
+payload so it exercises the name rule rather than truncation; the source/control
+sweep passes. No linked C execution is claimed because the available ARM64
+Docker image lacks the test/development libraries and no package installation
+was authorized.
+
+Follow-on R09 TFLite metadata-buffer vector coverage hardening (2026-09-11):
+the bounded FlatBuffer walk now explicitly documents and tests
+`Model.metadata_buffer` as a scalar `int32` vector, matching the schema, and
+keeps each buffer index out of the table-offset walker. The required-
+unsupported group adds a valid model with two buffer tables and metadata-buffer
+index one. Source/evidence guards remain green; linked current-source C
+execution, certified x86-64, full-size evidence, and release qualification
+remain open.
+
+Follow-on R09 TFLite metadata-buffer index-binding hardening (2026-09-11):
+the bounded FlatBuffer walk now checks every signed metadata-buffer entry
+against the declared buffers-vector count and rejects negative or out-of-range
+indices as incomplete. The required-unsupported group adds a fail-visible
+regression that changes the valid fixture's index to two while only entries
+zero and one exist, requiring `CL_EPARSE`, cleared verdict, and cache taint.
+Source/evidence guards remain green; linked current-source C execution,
+certified Linux x86-64, full-size evidence, and release qualification remain
+open.
+
+Follow-on R10 argument-separator parser hardening (2026-09-11): argument-
+taking clamd commands now require the protocol's literal space separator, so
+malformed `SCANfoo` input is rejected instead of being dispatched with its
+first path byte discarded. The existing daemon compatibility matrix covers
+the malformed form in prefixed NUL/newline and legacy packet modes and requires
+`UNKNOWN COMMAND`. Source/evidence guards and current-source daemon tests pass;
+certified/full-size ingress records and R04 qualification remain open.
+
+Follow-on R09 signed TFLite metadata-buffer index hardening (2026-09-11): the
+bounded FlatBuffer walk now decodes `Model.metadata_buffer` entries as signed
+`int32` values before buffer-count admission, explicitly rejecting negative
+indices. The required-unsupported group adds a valid-shape fixture with an
+`-1` entry and requires `CL_EPARSE`, a cleared verdict, and cache taint. Source
+and local control checks remain green; the linked ARM64 required-unsupported
+group passed 38/38. Certified Linux x86-64, full-size evidence, and release
+qualification remain open.
+
+Follow-on R09 fuzzy-image build correction (2026-09-11): a disposable
+current-source CMake build exposed an ambiguity in `u64::from(...)` after the
+pixel-count reservation added `num_traits::NumCast` to scope. The two `u32`
+image dimensions now widen explicitly before checked multiplication, restoring
+Rust compilation without changing the admission policy. The final disposable
+ARM64 current-source build and linked library/daemon checkpoint passed; no
+capability promotion or certified/full-size claim is made.
+
+Follow-on R09 TFLite compile correction (2026-09-11): the same disposable
+current-source build exposed a C redeclaration in the TFLite field helper: its
+local vtable offset reused the `field_offset` output-parameter name. The local
+was renamed to `vtable_field_offset`; behavior and admission policy are
+unchanged. The final ARM64 required-unsupported group passed 38/38; certified
+x86-64/full-size qualification remains open.
+
+Follow-on R09 AI-model test/build corrections (2026-09-11): AI-model unit
+fixtures now explicitly enable parser execution; GGUF final-payload admission
+no longer requires padding after the final tensor; and Python/GGUF raw-marker
+fixtures use their actual marker offsets while checking parser status separately
+from `verdict_out`. The linked ARM64 required-unsupported group passed 38/38;
+execution remains local development evidence only.
+
+Follow-on daemon protocol test cleanup (2026-09-11): the bounded legacy-reply
+parser now treats clamd's documented `Excluded` directory result as a clean
+skip, while continuing to reject unknown terminal text. The bounded path-request
+unit fixture now starts with the caller's normal clean-state `printok=1`, so it
+tests command framing without asserting an unrelated initial-state transition.
+With the build copied to a container-native filesystem, all 15/15 clamd tests
+passed after the correction. No certified x86-64 or full-size qualification
+claim is made.
+
+Follow-on R09 Python backing-read status hardening (2026-09-11): the bounded
+marshal reader now preserves an in-range fmap backing-read failure as
+`CL_EREAD` with sticky incomplete/non-cacheable state, while short/truncated
+marshal ranges remain `CL_EPARSE`. The public regression is registered in both
+ordinary and required-unsupported groups; host tests passed 147 with 2 expected
+skips, source guards passed with 597 capability bindings, and the refreshed
+inventory/snapshot checks passed. No linked current-source C execution is
+claimed because the available Docker images lack JSON-C and Check development
+headers; certified x86-64, full-size, sanitizer, production-service, and final
+release qualification remain open.
+
+Follow-on R10 on-access timeout normalization (2026-09-11): curl-backed
+on-access send/receive waits now normalize signed timeout inputs before the
+unsigned socket-wait helper, and curl-backed receive select failures preserve
+`CURLE_RECV_ERROR` instead of leaving `CURLE_AGAIN` as the terminal status.
+The existing descriptor-backed reader uses the same normalization. Host
+tests passed 147 with 2 expected skips; full source guards passed with 597
+capability bindings, refreshed snapshot/inventory checks passed, and the
+current source-manifest SHA-256 is
+`5183c325e03e21e3fd09e6f01723d4a1bc100104484857198fd3971daccaed94`. No
+capability promotion, remote execution, MCP-SSH, usage reset, commit, push,
+or workflow action was used.
+
+Follow-on R10 shared command-send width hardening (2026-09-11): `sendln()`
+now stores the native `ssize_t` result from `send()` while draining its
+unsigned wire-length input, preventing a large successful write from being
+misclassified through an `int` narrowing conversion. Source and host controls
+remain the verification basis; linked current-source runtime, certified
+x86-64, full-size service parity, and release qualification remain open.
+
+Follow-on R10 milter send deadline and spool-write retry (2026-09-11 UTC):
+`nc_send()` now establishes one deadline for a complete nonblocking payload
+instead of resetting the deadline after each partial write, and the local
+milter temp-file spool retries `EINTR` without abandoning the message. Source
+and host controls remain the verification basis; linked current-source
+milter execution, certified x86-64, full-size service parity, and release
+qualification remain open. The stable current source-manifest SHA-256 is
+`2e00bba6b8dadca33d8d5e17eca3679018ca48c37215ab4ab8d5ac1dcc98429a`.
+Receipt:
+`docs/largefile-task-receipts/R10-milter-send-deadline-spool-write-2026-09-11.md`.
+
+Follow-on R06 modern-reader boundary verification (2026-09-11): the current
+vendored OneNote parser compiled offline through a temporary out-of-tree
+manifest, passed 61/61 library tests, and passed 2/2 reader-boundary tests
+covering short reads and a logical `256 MiB + 1` input without materializing
+that size. The normal package test remains blocked by the uncached offline
+`insta` dev dependency; no qualification or capability promotion follows.
+
+Follow-on R10 milter compile correction (2026-09-11): restored the local
+`strerror_print` scratch buffer in `nc_send()` after the deadline hardening
+slice exposed a current-source compile defect. The disposable Docker
+toolchain passed warning-free syntax checking for `clamav-milter/netcode.c`,
+and the source guard now protects the error branch. No capability promotion
+or linked-runtime claim follows.
+
+Follow-on R10 milter deadline enforcement (2026-09-11 UTC): `nc_send()` now
+checks its single end-to-end deadline before every nonblocking `send()`, so a
+continuously writable socket cannot extend the timeout through repeated
+successful partial writes. The ten changed ingress units pass disposable
+warning-as-error syntax checks; host tooling passes 147 tests with 2 expected
+skips; source guards, inventory freshness, snapshot validation, and
+`git diff --check` pass. Refreshed source-manifest SHA-256:
+`7367697b6324da35cfa800e0f42c280b208f8ed9e6266e1b943411b907d935f7`.
+No capability promotion or release qualification follows.
+
+Follow-on R10 milter guard precision (2026-09-11 UTC): the source controls
+now prove that the deadline checks occur before the real `send()` and
+`sendmsg()` operations, rather than merely detecting a wait-loop check. The
+guard sweep, host suite (147 passed, 2 expected skips), focused syntax check,
+inventory/snapshot validation, and `git diff --check` passed. Refreshed
+source-manifest SHA-256:
+`07b9f9b1f92a71c9b361f004de4b3c5e0de413821231a3d4c4bb2adada8ce4d8`.
+No capability promotion or release qualification follows.
+
+Follow-on R10 milter FD-passing deadline enforcement (2026-09-11 UTC):
+`nc_sendmsg()` now checks its single end-to-end deadline before every
+`sendmsg()` retry, including repeated `EINTR` retries. The focused milter
+syntax check passed with warnings treated as errors; host tooling passed 147
+tests with 2 expected skips; source guards, inventory freshness, snapshot
+validation, and `git diff --check` passed. Refreshed source-manifest SHA-256:
+`77146a74752dec7e1bc49b30d32af4193ca46a86c92ff3a9df905690aab3981b`.
+No capability promotion or release qualification follows.
+
+Follow-on R10 on-access FD-pass timeout parity (2026-09-11 UTC): the local
+FILDES socket is now nonblocking; in-progress connect, command bytes, and the
+SCM_RIGHTS descriptor send are bounded by the configured
+`OnAccessCurlTimeout`, with deadline checks before the actual `send()` and
+`sendmsg()` operations and distinct timeout/write status. Focused on-access
+syntax checks passed with warnings treated as errors; the host suite passed
+147 with 2 expected skips; source guards, focused protocol/service controls,
+inventory, snapshots, acceptance map, and `git diff --check` passed. The
+current source-manifest SHA-256 is
+`1f16a6014a02be9857f41866926c15c39db282459d69baa9aaa3eb65923e4160`.
+No capability was promoted; certified x86-64, full-size service, R03 runner,
+R04 records, sanitizer, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R10-onaccess-fdpass-timeout-2026-09-11.md`.
+
+Follow-on R10 on-access FD-pass transport hardening (2026-09-11 UTC):
+interruptible connect and writable-send waits now rebuild their select state
+and remaining deadline after `EINTR`; raw FILDES command and descriptor sends
+also suppress `SIGPIPE` where the platform supports `MSG_NOSIGNAL` or
+`SO_NOSIGPIPE`. Focused warning-as-error syntax, host tests (147 passed, 2
+expected skips), source guards, inventory/snapshots, and `git diff --check`
+passed. Current source-manifest SHA-256:
+`3a29e00559104dd7328e4bd8e1bd264c38fc7f2e238cb3aafa2332433773a119`.
+No capability promotion or release qualification follows.

@@ -7,6 +7,7 @@ use crate::one::property::{simple, PropertyType};
 use crate::one::property_set::note_tag_container::Data as NoteTagData;
 use crate::one::property_set::PropertySetId;
 use crate::onestore::object::Object;
+use crate::reader::reserve_collection;
 
 /// A table.
 ///
@@ -45,18 +46,40 @@ pub(crate) fn parse(object: &Object) -> Result<Data> {
     let col_count = simple::parse_u32(PropertyType::ColumnCount, object)?
         .ok_or_else(|| ErrorKind::MalformedOneNoteFileData("table has no col count".into()))?;
     let cols_locked = simple::parse_vec(PropertyType::TableColumnsLocked, object)?
-        .map(|value| value.into_iter().skip(1).collect())
+        .map(|value| {
+            let mut cols_locked = Vec::new();
+            let values = value.into_iter().skip(1);
+            reserve_collection(&mut cols_locked, values.size_hint().0)?;
+            for value in values {
+                reserve_collection(&mut cols_locked, 1)?;
+                cols_locked.push(value);
+            }
+            Ok::<Vec<u8>, crate::errors::Error>(cols_locked)
+        })
+        .transpose()?
         .unwrap_or_default();
     let col_widths = simple::parse_vec(PropertyType::TableColumnWidths, object)?
         .map(|value| {
-            value
-                .into_iter()
-                .skip(1)
-                .collect::<Vec<_>>()
-                .chunks_exact(4)
-                .map(|v| f32::from_le_bytes([v[0], v[1], v[2], v[3]]))
-                .collect()
+            let value = value.get(1..).ok_or_else(|| {
+                ErrorKind::MalformedOneNoteFileData("table column widths are empty".into())
+            })?;
+            if value.len() % 4 != 0 {
+                return Err(ErrorKind::MalformedOneNoteFileData(
+                    "table column widths are not aligned".into(),
+                )
+                .into());
+            }
+            let mut col_widths = Vec::new();
+            reserve_collection(&mut col_widths, value.len() / 4)?;
+            for chunk in value.chunks_exact(4) {
+                reserve_collection(&mut col_widths, 1)?;
+                col_widths.push(f32::from_le_bytes([
+                    chunk[0], chunk[1], chunk[2], chunk[3],
+                ]));
+            }
+            Ok::<Vec<f32>, crate::errors::Error>(col_widths)
         })
+        .transpose()?
         .unwrap_or_default();
     let borders_visible =
         simple::parse_bool(PropertyType::TableBordersVisible, object)?.unwrap_or(true);

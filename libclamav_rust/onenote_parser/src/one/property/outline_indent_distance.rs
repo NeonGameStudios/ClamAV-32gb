@@ -1,7 +1,7 @@
 use crate::errors::{ErrorKind, Result};
 use crate::one::property::PropertyType;
 use crate::onestore::object::Object;
-use crate::reader::Reader;
+use crate::reader::{collect_results, Reader};
 
 #[derive(Debug, Clone)]
 pub struct OutlineIndentDistance(Vec<f32>);
@@ -27,9 +27,7 @@ impl OutlineIndentDistance {
         let count = reader.get_u8()?;
         reader.advance(3)?;
 
-        let distances = (0..count)
-            .map(|_| reader.get_f32())
-            .collect::<Result<Vec<_>>>()?;
+        let distances = collect_results((0..count).map(|_| reader.get_f32()))?;
 
         Ok(Some(OutlineIndentDistance(distances)))
     }

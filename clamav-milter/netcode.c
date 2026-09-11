@@ -152,14 +152,22 @@ static int nc_connect(int s, struct CP_ENTRY *cpe)
 int nc_send(int s, const void *buff, size_t len)
 {
     char *buf = (char *)buff;
+    time_t timeout = time(NULL) + TIMEOUT;
 
     while (len) {
+        /* A writable nonblocking socket can still accept a long sequence of
+         * partial sends. Check the same end-to-end deadline before each send,
+         * not only after EAGAIN, so forward progress cannot extend the
+         * milter's protocol timeout indefinitely. */
+        if (time(NULL) >= timeout) {
+            logg(LOGG_ERROR, "Failed to stream to clamd\n");
+            close(s);
+            return 1;
+        }
         /* send() returns ssize_t. Keep the native result width because the
          * milter may pass multi-gigabyte stream chunks to this helper. */
         ssize_t res    = send(s, buf, len, 0);
-        time_t timeout = time(NULL) + TIMEOUT;
         struct timeval tv;
-        char er[256];
 
         if (!res) {
             logg(LOGG_ERROR, "Connection closed while sending data\n");
@@ -174,27 +182,30 @@ int nc_send(int s, const void *buff, size_t len)
         if (errno == EINTR)
             continue;
         if (errno != EAGAIN && errno != EWOULDBLOCK) {
+            char er[256];
             strerror_print(LOGG_ERROR, "send failed");
             close(s);
             return 1;
         }
 
-        tv.tv_sec  = TIMEOUT;
-        tv.tv_usec = 0;
         while (1) {
             fd_set fds;
+            time_t now = time(NULL);
+
+            if (now >= timeout) {
+                logg(LOGG_ERROR, "Failed to stream to clamd\n");
+                close(s);
+                return 1;
+            }
+            tv.tv_sec  = timeout - now;
+            tv.tv_usec = 0;
 
             FD_ZERO(&fds);
             FD_SET(s, &fds);
             res = select(s + 1, NULL, &fds, NULL, &tv);
             if (res < 1) {
-                time_t now;
-
-                if (res == -1 && errno == EINTR && ((now = time(NULL)) < timeout)) {
-                    tv.tv_sec  = timeout - now;
-                    tv.tv_usec = 0;
+                if (res == -1 && errno == EINTR)
                     continue;
-                }
                 logg(LOGG_ERROR, "Failed to stream to clamd\n");
                 close(s);
                 return 1;
@@ -210,7 +221,8 @@ int nc_sendmsg(int s, int fd)
     struct iovec iov[1];
     struct msghdr msg;
     struct cmsghdr *cmsg;
-    int ret;
+    ssize_t sent;
+    time_t timeout = time(NULL) + TIMEOUT;
     unsigned char fdbuf[CMSG_SPACE(sizeof(int))];
     char dummy[] = "";
 
@@ -226,34 +238,84 @@ int nc_sendmsg(int s, int fd)
     cmsg->cmsg_level        = SOL_SOCKET;
     cmsg->cmsg_type         = SCM_RIGHTS;
     *(int *)CMSG_DATA(cmsg) = fd;
-    /* FIXME: nonblock code needed (?) */
+    while (1) {
+        /* EINTR is retryable, but an interrupted sendmsg loop must still
+         * honor the same end-to-end deadline as the EAGAIN wait path. */
+        time_t now = time(NULL);
 
-    if ((ret = sendmsg(s, &msg, 0)) == -1) {
-        char er[256];
-        strerror_print(LOGG_ERROR, "clamfi_eom: FD send failed");
-        close(s);
+        if (now >= timeout) {
+            logg(LOGG_ERROR, "clamfi_eom: timed out sending FD\n");
+            close(s);
+            return -1;
+        }
+        sent = sendmsg(s, &msg, 0);
+        if (sent >= 0) {
+            if (sent != (ssize_t)iov[0].iov_len) {
+                logg(LOGG_ERROR, "clamfi_eom: short FD send\n");
+                close(s);
+                return -1;
+            }
+            return (int)sent;
+        }
+        if (errno == EINTR)
+            continue;
+        if (errno != EAGAIN && errno != EWOULDBLOCK) {
+            char er[256];
+            strerror_print(LOGG_ERROR, "clamfi_eom: FD send failed");
+            close(s);
+            return -1;
+        }
+
+        while (1) {
+            fd_set fds;
+            struct timeval tv;
+            time_t now = time(NULL);
+            int ready;
+
+            if (now >= timeout) {
+                logg(LOGG_ERROR, "clamfi_eom: timed out waiting for FD send\n");
+                close(s);
+                return -1;
+            }
+            tv.tv_sec  = timeout - now;
+            tv.tv_usec = 0;
+            FD_ZERO(&fds);
+            FD_SET(s, &fds);
+            ready = select(s + 1, NULL, &fds, NULL, &tv);
+            if (ready > 0)
+                break;
+            if (ready < 0 && errno == EINTR)
+                continue;
+            logg(LOGG_ERROR, "clamfi_eom: failed to wait for FD send\n");
+            close(s);
+            return -1;
+        }
     }
-    return ret;
 }
 
 char *nc_recv(int s)
 {
     char buf[128], *ret = NULL;
-    time_t now, timeout = time(NULL) + readtimeout;
+    time_t now, timeout = readtimeout ? time(NULL) + readtimeout : 0;
     struct timeval tv;
     fd_set fds;
     ssize_t res;
     unsigned int len = 0;
 
     while (1) {
-        now = time(NULL);
-        if (now >= timeout) {
-            logg(LOGG_ERROR, "Timed out while reading clamd reply\n");
-            close(s);
-            return NULL;
+        /* ReadTimeout=0 means wait indefinitely.  Do not compare the current
+         * time with the zero sentinel, or the first reply read fails before
+         * select() gets a chance to block for clamd. */
+        if (readtimeout) {
+            now = time(NULL);
+            if (now >= timeout) {
+                logg(LOGG_ERROR, "Timed out while reading clamd reply\n");
+                close(s);
+                return NULL;
+            }
+            tv.tv_sec  = timeout - now;
+            tv.tv_usec = 0;
         }
-        tv.tv_sec  = timeout - now;
-        tv.tv_usec = 0;
 
         FD_ZERO(&fds);
         FD_SET(s, &fds);
@@ -416,6 +478,14 @@ int nc_recv_scan_report(int s, struct nc_scan_report *report)
             return -1;
         if (terminated)
             break;
+        /* A structured milter request has exactly one report object followed
+         * by the zero-length terminator. Do not merge a second frame into the
+         * first result, because that could turn contradictory outcomes into
+         * an apparently authoritative report. */
+        if (received) {
+            free(json);
+            return -1;
+        }
         if (scan_report_json_status(json, json_length, &frame_infected,
                                     &frame_incomplete, &frame_status) < 0) {
             free(json);

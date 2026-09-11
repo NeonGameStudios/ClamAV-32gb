@@ -24,8 +24,16 @@ pub(crate) fn parse(object: &Object) -> Result<Data> {
             ErrorKind::MalformedOneNoteFileData("ink data node has no strokes".into())
         })?;
     let bounding_box = simple::parse_vec_u32(PropertyType::InkBoundingBox, object)?
-        .filter(|values| values.len() == 4)
-        .map(|values| [values[0], values[1], values[2], values[3]]);
+        .map(|values| {
+            if values.len() != 4 {
+                return Err(ErrorKind::MalformedOneNoteFileData(
+                    "ink bounding box must contain four values".into(),
+                )
+                .into());
+            }
+            Ok::<[u32; 4], crate::errors::Error>([values[0], values[1], values[2], values[3]])
+        })
+        .transpose()?;
 
     Ok(Data {
         strokes,

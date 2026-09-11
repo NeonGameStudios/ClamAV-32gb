@@ -7,6 +7,24 @@ use crate::fsshttpb::data::stream_object::ObjectHeader;
 use crate::fsshttpb::data_element::DataElement;
 use crate::Reader;
 use std::collections::HashMap;
+use std::hash::Hash;
+
+fn insert_unique<K: Eq + Hash, V>(
+    values: &mut HashMap<K, V>,
+    key: K,
+    value: V,
+    kind: &'static str,
+) -> Result<()> {
+    if values.contains_key(&key) {
+        return Err(ErrorKind::MalformedFssHttpBData(
+            format!("duplicate storage index {kind}").into(),
+        )
+        .into());
+    }
+
+    values.insert(key, value);
+    Ok(())
+}
 
 /// A storage index.
 ///
@@ -75,13 +93,18 @@ impl DataElement {
                     reader.reserve_next_map(&mut cell_mappings)?;
                     let (id, mapping) = Self::parse_storage_index_cell_mapping(reader)?;
 
-                    cell_mappings.insert(id, mapping);
+                    insert_unique(&mut cell_mappings, id, mapping, "cell mapping")?;
                 }
                 ObjectType::StorageIndexRevisionMapping => {
                     reader.reserve_next_map(&mut revision_mappings)?;
                     let (id, mapping) = Self::parse_storage_index_revision_mapping(reader)?;
 
-                    revision_mappings.insert(id, mapping);
+                    insert_unique(
+                        &mut revision_mappings,
+                        id,
+                        mapping,
+                        "revision mapping",
+                    )?;
                 }
                 _ => {
                     return Err(ErrorKind::MalformedFssHttpBData(
@@ -137,5 +160,20 @@ impl DataElement {
         };
 
         Ok((id, mapping))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::insert_unique;
+    use std::collections::HashMap;
+
+    #[test]
+    fn duplicate_storage_index_mapping_is_rejected() {
+        let mut values = HashMap::new();
+        insert_unique(&mut values, 7u8, 1u8, "cell mapping").unwrap();
+
+        assert!(insert_unique(&mut values, 7u8, 2u8, "cell mapping").is_err());
+        assert_eq!(values.get(&7), Some(&1));
     }
 }

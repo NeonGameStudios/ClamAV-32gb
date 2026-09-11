@@ -119,11 +119,16 @@ enum commands parse_command(const char *cmd, const char **argument, int oldstyle
         if (!strncmp(cmd, commands[i].cmd, len)) {
             const char *arg = cmd + len;
             if (commands[i].need_arg) {
+                if (*arg != ' ') { /* missing argument separator */
+                    logg(LOGG_DEBUG_NV, "Command %s is missing its argument separator!\n", commands[i].cmd);
+                    return COMMAND_UNKNOWN;
+                }
+                arg++;
                 if (!*arg) { /* missing argument */
                     logg(LOGG_DEBUG_NV, "Command %s missing argument!\n", commands[i].cmd);
                     return COMMAND_UNKNOWN;
                 }
-                *argument = arg + 1;
+                *argument = arg;
             } else {
                 if (*arg) { /* extra stuff after command */
                     logg(LOGG_DEBUG_NV, "Command %s has trailing garbage!\n", commands[i].cmd);

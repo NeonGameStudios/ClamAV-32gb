@@ -134,6 +134,30 @@ fn reader_error(error: io::Error) -> Error {
     }
 }
 
+fn read_retry<R: Read + ?Sized>(reader: &mut R, buffer: &mut [u8]) -> io::Result<usize> {
+    loop {
+        match reader.read(buffer) {
+            Ok(read) => return Ok(read),
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+            Err(error) => return Err(error),
+        }
+    }
+}
+
+fn read_exact_retry<R: Read + ?Sized>(reader: &mut R, mut buffer: &mut [u8]) -> io::Result<()> {
+    while !buffer.is_empty() {
+        let read = read_retry(reader, buffer)?;
+        if read == 0 {
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "failed to fill the requested buffer",
+            ));
+        }
+        buffer = &mut buffer[read..];
+    }
+    Ok(())
+}
+
 fn parser_error(error: onenote_parser::errors::Error) -> Error {
     if error.is_resource_limit() {
         return Error::ResourceLimit(error.to_string());
@@ -142,6 +166,10 @@ fn parser_error(error: onenote_parser::errors::Error) -> Error {
         Some(error) => reader_error(error),
         None => Error::Parse,
     }
+}
+
+fn should_try_legacy_fallback(error: &Error) -> bool {
+    matches!(error, Error::Format | Error::Parse)
 }
 
 fn scan_section<F>(section: &onenote_parser::section::Section, callback: &mut F)
@@ -225,6 +253,24 @@ where
     R: std::io::Read + std::io::Seek,
     S: LegacyAttachmentSink,
 {
+    let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+        scan_legacy_reader_inner(reader, file_len, sink)
+    }));
+
+    match result {
+        Ok(result) => result,
+        Err(_) => {
+            let _ = panic::catch_unwind(panic::AssertUnwindSafe(|| sink.abort()));
+            Err(Error::OneNoteParserPanic)
+        }
+    }
+}
+
+fn scan_legacy_reader_inner<R, S>(reader: &mut R, file_len: u64, sink: &mut S) -> Result<(), Error>
+where
+    R: std::io::Read + std::io::Seek,
+    S: LegacyAttachmentSink,
+{
     use std::io::SeekFrom;
 
     if file_len < ONE_MAGIC.len() as u64 {
@@ -235,7 +281,7 @@ where
     reader
         .seek(SeekFrom::Start(0))
         .map_err(reader_error)?;
-    reader.read_exact(&mut magic).map_err(reader_error)?;
+    read_exact_retry(reader, &mut magic).map_err(reader_error)?;
     if !is_legacy_magic(&magic) {
         return Err(Error::Format);
     }
@@ -260,8 +306,7 @@ where
                 break;
             }
             let request = remaining.min((scan_buffer.len() - valid) as u64) as usize;
-            let read = reader
-                .read(&mut scan_buffer[valid..valid + request])
+            let read = read_retry(reader, &mut scan_buffer[valid..valid + request])
                 .map_err(reader_error)?;
             if read == 0 {
                 reached_eof = true;
@@ -287,7 +332,9 @@ where
             if valid <= overlap {
                 break;
             }
-            scan_start = scan_start.saturating_add((valid - overlap) as u64);
+            scan_start = scan_start
+                .checked_add((valid - overlap) as u64)
+                .ok_or(Error::Format)?;
             continue;
         };
 
@@ -305,7 +352,7 @@ where
         reader
             .seek(SeekFrom::Start(header_start))
             .map_err(reader_error)?;
-        reader.read_exact(&mut header).map_err(reader_error)?;
+        read_exact_retry(reader, &mut header).map_err(reader_error)?;
         let data_length = u32::from_le_bytes(
             header[16..20].try_into().map_err(|_| Error::Parse)?,
         ) as u64;
@@ -314,7 +361,10 @@ where
             return Err(Error::Parse);
         }
 
-        sink.begin()?;
+        if let Err(error) = sink.begin() {
+            sink.abort();
+            return Err(error);
+        }
         if let Err(error) = reader.seek(SeekFrom::Start(header_end)) {
             sink.abort();
             return Err(reader_error(error));
@@ -323,7 +373,7 @@ where
         let mut payload = [0u8; CHUNK];
         while remaining != 0 {
             let requested = remaining.min(payload.len() as u64) as usize;
-            let read = match reader.read(&mut payload[..requested]) {
+            let read = match read_retry(reader, &mut payload[..requested]) {
                 Ok(read) => read,
                 Err(error) => {
                     sink.abort();
@@ -371,7 +421,7 @@ impl<'a> OneNote<'a> {
             let mut parser = onenote_parser::Parser::new();
             let section = parser
                 .parse_section_buffer(data, filename)
-                .map_err(|_| Error::Parse)?;
+                .map_err(parser_error)?;
             scan_section(&section, callback);
             Ok(())
         }
@@ -382,20 +432,26 @@ impl<'a> OneNote<'a> {
 
         match modern {
             Ok(Ok(())) => return Ok(()),
-            Ok(Err(_)) => {}
+            Ok(Err(error)) => {
+                let modern_error = error;
+
+                if !should_try_legacy_fallback(&modern_error) {
+                    return Err(modern_error);
+                }
+
+                let file_magic = data.get(0..16).ok_or(Error::Format)?;
+                if file_magic != ONE_MAGIC {
+                    return Err(Error::Format);
+                }
+
+                if find_bytes(data, FILE_DATA_STORE_OBJECT).is_none() {
+                    return Err(modern_error);
+                }
+
+                return scan_legacy_bytes(data, &mut callback);
+            }
             Err(_) => return Err(Error::OneNoteParserPanic),
         }
-
-        let file_magic = data.get(0..16).ok_or(Error::Format)?;
-        if file_magic != ONE_MAGIC {
-            return Err(Error::Format);
-        }
-
-        if find_bytes(data, FILE_DATA_STORE_OBJECT).is_none() {
-            return Err(Error::Parse);
-        }
-
-        scan_legacy_bytes(data, &mut callback)
     }
 
     /// Parse a OneNote document from a bounded sequential reader and hand
@@ -410,12 +466,16 @@ impl<'a> OneNote<'a> {
         R: Read,
         F: FnMut(Option<&str>, &[u8]) -> bool,
     {
-        let mut parser = onenote_parser::Parser::new();
-        let section = parser
-            .parse_section_reader(reader, filename)
-            .map_err(parser_error)?;
-        scan_section(&section, &mut callback);
-        Ok(())
+        let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+            let mut parser = onenote_parser::Parser::new();
+            let section = parser
+                .parse_section_reader(reader, filename)
+                .map_err(parser_error)?;
+            scan_section(&section, &mut callback);
+            Ok(())
+        }));
+
+        result.map_err(|_| Error::OneNoteParserPanic)?
     }
 
     /// Open a OneNote document given a slice bytes.
@@ -429,43 +489,43 @@ impl<'a> OneNote<'a> {
             let mut embedded_files: Vec<ExtractedFile> = vec![];
             let mut parser = onenote_parser::Parser::new();
 
-            if let Ok(section) = parser.parse_section_buffer(data, filename) {
-                // file appears to be OneStore 2.8 `.one` file.
-                section.page_series().iter().for_each(|page_series| {
-                    page_series.pages().iter().for_each(|page| {
-                        page.contents().iter().for_each(|page_content| {
-                            if let Some(page_outline) = page_content.outline() {
-                                page_outline.items().iter().for_each(|outline_item| {
-                                    outline_item.element().iter().for_each(|&outline_element| {
-                                        outline_element.contents().iter().for_each(|content| {
-                                            if let Some(embedded_file) = content.embedded_file() {
-                                                let data = embedded_file.data();
-                                                let name = embedded_file.filename();
+            let section = parser
+                .parse_section_buffer(data, filename)
+                .map_err(parser_error)?;
 
-                                                // If name is empty, set to None.
-                                                let name = if name.is_empty() {
-                                                    debug!("Found unnamed attached file of size {}-bytes", data.len());
-                                                    None
-                                                } else {
-                                                    debug!("Found attached file '{}' of size {}-bytes", name, data.len());
-                                                    Some(name.to_string())
-                                                };
+            // file appears to be OneStore 2.8 `.one` file.
+            section.page_series().iter().for_each(|page_series| {
+                page_series.pages().iter().for_each(|page| {
+                    page.contents().iter().for_each(|page_content| {
+                        if let Some(page_outline) = page_content.outline() {
+                            page_outline.items().iter().for_each(|outline_item| {
+                                outline_item.element().iter().for_each(|&outline_element| {
+                                    outline_element.contents().iter().for_each(|content| {
+                                        if let Some(embedded_file) = content.embedded_file() {
+                                            let data = embedded_file.data();
+                                            let name = embedded_file.filename();
 
-                                                embedded_files.push(ExtractedFile {
-                                                    name,
-                                                    data: data.to_vec(),
-                                                });
-                                            }
-                                        });
+                                            // If name is empty, set to None.
+                                            let name = if name.is_empty() {
+                                                debug!("Found unnamed attached file of size {}-bytes", data.len());
+                                                None
+                                            } else {
+                                                debug!("Found attached file '{}' of size {}-bytes", name, data.len());
+                                                Some(name.to_string())
+                                            };
+
+                                            embedded_files.push(ExtractedFile {
+                                                name,
+                                                data: data.to_vec(),
+                                            });
+                                        }
                                     });
                                 });
-                            }
-                        });
+                            });
+                        }
                     });
                 });
-            } else {
-                return Err(Error::Parse);
-            }
+            });
 
             Ok(embedded_files)
         }
@@ -479,37 +539,44 @@ impl<'a> OneNote<'a> {
         // Check if it panicked. If no panic, grab the parse result.
         let result = result_result.map_err(|_| Error::OneNoteParserPanic)?;
 
-        if let Ok(embedded_files) = result {
-            // Successfully parsed the OneNote file with the onenote_parser crate.
-            Ok(OneNote {
-                embedded_files,
-                ..Default::default()
-            })
-        } else {
-            debug!("Unable to parse OneNote file with onenote_parser crate. Trying a different method known to work with older office 2010 OneNote files to extract attachments.");
-
-            let embedded_files: Vec<ExtractedFile> = vec![];
-
-            // Verify that the OneNote document file magic is correct.
-            // We don't check this for the onenote_parser crate because it does this for us, and may add support for newer OneNote file formats in the future.
-            let file_magic = data.get(0..16).ok_or(Error::Format)?;
-            if file_magic != ONE_MAGIC {
-                return Err(Error::Format);
+        match result {
+            Ok(embedded_files) => {
+                // Successfully parsed the OneNote file with the onenote_parser crate.
+                Ok(OneNote {
+                    embedded_files,
+                    ..Default::default()
+                })
             }
+            Err(modern_error) => {
+                debug!("Unable to parse OneNote file with onenote_parser crate. Trying a different method known to work with older office 2010 OneNote files to extract attachments.");
 
-            /* The iterator API cannot report a malformed record from
-             * next_file(), so validate the complete legacy stream before
-             * returning an apparently empty compatibility iterator. */
-            if find_bytes(data, FILE_DATA_STORE_OBJECT).is_none() {
-                return Err(Error::Parse);
+                if !should_try_legacy_fallback(&modern_error) {
+                    return Err(modern_error);
+                }
+
+                let embedded_files: Vec<ExtractedFile> = vec![];
+
+                // Verify that the OneNote document file magic is correct.
+                // We don't check this for the onenote_parser crate because it does this for us, and may add support for newer OneNote file formats in the future.
+                let file_magic = data.get(0..16).ok_or(Error::Format)?;
+                if file_magic != ONE_MAGIC {
+                    return Err(Error::Format);
+                }
+
+                /* The iterator API cannot report a malformed record from
+                 * next_file(), so validate the complete legacy stream before
+                 * returning an apparently empty compatibility iterator. */
+                if find_bytes(data, FILE_DATA_STORE_OBJECT).is_none() {
+                    return Err(modern_error);
+                }
+                scan_legacy_bytes(data, &mut |_name, _data| true)?;
+
+                Ok(OneNote {
+                    embedded_files,
+                    remaining: Some(data),
+                    ..Default::default()
+                })
             }
-            scan_legacy_bytes(data, &mut |_name, _data| true)?;
-
-            Ok(OneNote {
-                embedded_files,
-                remaining: Some(data),
-                ..Default::default()
-            })
         }
     }
 
@@ -629,6 +696,25 @@ mod tests {
         max_read: usize,
     }
 
+    struct InterruptOnceReader {
+        inner: Cursor<Vec<u8>>,
+        interrupted: bool,
+    }
+
+    struct PanicReader;
+
+    impl Read for PanicReader {
+        fn read(&mut self, _buffer: &mut [u8]) -> io::Result<usize> {
+            panic!("synthetic OneNote reader panic")
+        }
+    }
+
+    impl Seek for PanicReader {
+        fn seek(&mut self, _from: SeekFrom) -> io::Result<u64> {
+            panic!("synthetic OneNote seek panic")
+        }
+    }
+
     impl Read for FailingReader {
         fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
             if self.inner.position() >= self.fail_at {
@@ -677,9 +763,26 @@ mod tests {
         }
     }
 
+    impl Read for InterruptOnceReader {
+        fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+            if !self.interrupted {
+                self.interrupted = true;
+                return Err(io::Error::new(io::ErrorKind::Interrupted, "retry"));
+            }
+            self.inner.read(buffer)
+        }
+    }
+
+    impl Seek for InterruptOnceReader {
+        fn seek(&mut self, from: SeekFrom) -> io::Result<u64> {
+            self.inner.seek(from)
+        }
+    }
+
     struct CollectSink {
         files: Vec<Vec<u8>>,
         current: Vec<u8>,
+        fail_begin: bool,
         fail_writes: bool,
         aborted: bool,
     }
@@ -689,6 +792,7 @@ mod tests {
             Self {
                 files: Vec::new(),
                 current: Vec::new(),
+                fail_begin: false,
                 fail_writes: false,
                 aborted: false,
             }
@@ -698,6 +802,9 @@ mod tests {
     impl LegacyAttachmentSink for CollectSink {
         fn begin(&mut self) -> Result<(), Error> {
             self.current.clear();
+            if self.fail_begin {
+                return Err(Error::Sink("synthetic sink begin failure".to_owned()));
+            }
             Ok(())
         }
 
@@ -772,6 +879,26 @@ mod tests {
     }
 
     #[test]
+    fn resource_failures_never_enter_legacy_fallback() {
+        assert!(!should_try_legacy_fallback(&Error::ResourceLimit(
+            "synthetic parser limit".to_owned()
+        )));
+        assert!(!should_try_legacy_fallback(&Error::ReadFailure(
+            "synthetic reader failure".to_owned()
+        )));
+        assert!(!should_try_legacy_fallback(&Error::Timeout(
+            "synthetic timeout".to_owned()
+        )));
+        assert!(!should_try_legacy_fallback(&Error::OneNoteParserPanic));
+    }
+
+    #[test]
+    fn only_format_and_parse_failures_enter_legacy_fallback() {
+        assert!(should_try_legacy_fallback(&Error::Format));
+        assert!(should_try_legacy_fallback(&Error::Parse));
+    }
+
+    #[test]
     fn from_bytes_rejects_truncated_legacy_attachment() {
         let mut fixture = legacy_fixture(b"attachment");
         fixture.truncate(fixture.len() - 1);
@@ -823,6 +950,22 @@ mod tests {
     }
 
     #[test]
+    fn legacy_reader_retries_interrupted_reads() {
+        let fixture = legacy_fixture(b"interrupted reads remain complete");
+        let mut reader = InterruptOnceReader {
+            inner: Cursor::new(fixture.clone()),
+            interrupted: false,
+        };
+        let mut sink = CollectSink::new();
+
+        scan_legacy_reader(&mut reader, fixture.len() as u64, &mut sink)
+            .expect("interrupted source reads should be retried");
+
+        assert_eq!(sink.files, vec![b"interrupted reads remain complete".to_vec()]);
+        assert!(!sink.aborted);
+    }
+
+    #[test]
     fn legacy_reader_finds_marker_across_scan_window_boundary() {
         let payload = b"boundary attachment";
         let mut fixture = ONE_MAGIC.to_vec();
@@ -841,11 +984,47 @@ mod tests {
     }
 
     #[test]
+    fn legacy_reader_finds_marker_after_scan_window() {
+        let payload = b"late attachment";
+        let mut fixture = ONE_MAGIC.to_vec();
+        fixture.extend(std::iter::repeat(0u8).take(1024 * 1024 + 128));
+        fixture.extend_from_slice(FILE_DATA_STORE_OBJECT);
+        fixture.extend_from_slice(&(payload.len() as u32).to_le_bytes());
+        fixture.extend_from_slice(&[0u8; 16]);
+        fixture.extend_from_slice(payload);
+
+        let mut reader = Cursor::new(fixture.clone());
+        let mut sink = CollectSink::new();
+        scan_legacy_reader(&mut reader, fixture.len() as u64, &mut sink)
+            .expect("late marker fixture should parse");
+
+        assert_eq!(sink.files, vec![payload.to_vec()]);
+        assert!(!sink.aborted);
+    }
+
+    #[test]
     fn legacy_reader_aborts_after_sink_failure() {
         let fixture = legacy_fixture(b"attachment");
         let mut reader = Cursor::new(fixture.clone());
         let mut sink = CollectSink {
             fail_writes: true,
+            ..CollectSink::new()
+        };
+
+        assert!(matches!(
+            scan_legacy_reader(&mut reader, fixture.len() as u64, &mut sink),
+            Err(Error::Sink(_))
+        ));
+        assert!(sink.aborted);
+        assert!(sink.files.is_empty());
+    }
+
+    #[test]
+    fn legacy_reader_aborts_after_sink_begin_failure() {
+        let fixture = legacy_fixture(b"attachment");
+        let mut reader = Cursor::new(fixture.clone());
+        let mut sink = CollectSink {
+            fail_begin: true,
             ..CollectSink::new()
         };
 
@@ -921,5 +1100,25 @@ mod tests {
         .expect("declared extent should bound legacy scanning");
         assert!(sink.files.is_empty());
         assert!(!sink.aborted);
+    }
+
+    #[test]
+    fn modern_reader_contains_source_reader_panics() {
+        assert!(matches!(
+            OneNote::scan_reader(PanicReader, Path::new("panic.one"), |_name, _data| true),
+            Err(Error::OneNoteParserPanic)
+        ));
+    }
+
+    #[test]
+    fn legacy_reader_contains_source_reader_panics_and_aborts_sink() {
+        let mut reader = PanicReader;
+        let mut sink = CollectSink::new();
+
+        assert!(matches!(
+            scan_legacy_reader(&mut reader, ONE_MAGIC.len() as u64, &mut sink),
+            Err(Error::OneNoteParserPanic)
+        ));
+        assert!(sink.aborted);
     }
 }

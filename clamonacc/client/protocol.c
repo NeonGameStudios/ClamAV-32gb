@@ -32,6 +32,7 @@
 /* must be first because it may define _XOPEN_SOURCE */
 #include "fdpassing.h"
 #include <stdio.h>
+#include <stdint.h>
 #include <curl/curl.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -43,6 +44,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/types.h>
+#ifdef HAVE_FD_PASSING
+#include <sys/time.h>
+#endif
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
@@ -70,6 +74,20 @@
 
 static const char *scancmd[] = {"CONTSCAN", "MULTISCAN", "INSTREAM", "FILDES", "ALLMATCHSCAN"};
 
+/* A signal must not turn a resumable source read into a truncated scan.  Keep
+ * the retry local to the on-access stream path so genuine read failures still
+ * retain their CL_EREAD classification at every call site. */
+static ssize_t onas_read_retry(int fd, void *buffer, size_t length)
+{
+    ssize_t bytes;
+
+    do {
+        bytes = read(fd, buffer, length);
+    } while (bytes < 0 && errno == EINTR);
+
+    return bytes;
+}
+
 /* Issues an INSTREAM command to clamd and streams the given file
  * Returns >0 on success, 0 soft fail, -1 hard fail */
 static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t timeout, uint64_t maxstream, bool action_stream, cl_error_t *ret_code)
@@ -78,14 +96,17 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
     uint64_t len;
     int ret        = 1;
     int close_flag = 0;
+    bool known_size;
     STATBUF statbuf;
     uint64_t bytesRead     = 0;
     const char zINSTREAM[] = "zINSTREAMREPORT";
 
-    /* The public option contract maps zero to the bounded 32-GiB ceiling.
-     * Keep this boundary defensive for callers that construct the on-access
-     * context directly instead of going through optparser. */
-    if (maxstream == 0)
+    /* The public option contract maps zero to the bounded 32-GiB ceiling and
+     * rejects larger values. Keep both sides defensive for callers that
+     * construct the on-access context directly instead of going through
+     * optparser; otherwise an unknown-size stream could bypass the hard
+     * ingress ceiling even though regular-file preflight is bounded. */
+    if (maxstream == 0 || maxstream > CLI_MAX_LARGE_FILESIZE)
         maxstream = CLI_MAX_LARGE_FILESIZE;
 
     if (-1 == fd) {
@@ -113,7 +134,17 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
         goto strm_out;
     }
 
-    if ((uint64_t)statbuf.st_size > maxstream) {
+    if (statbuf.st_size < 0) {
+        logg(LOGG_ERROR, "%s: On-access stream input has an invalid negative size. ERROR\n",
+             filename ? filename : "FD");
+        if (ret_code)
+            *ret_code = CL_ESTAT;
+        ret = -1;
+        goto strm_out;
+    }
+
+    known_size = S_ISREG(statbuf.st_mode);
+    if (known_size && (uint64_t)statbuf.st_size > maxstream) {
         logg(LOGG_ERROR, "%s: File size exceeds the effective on-access stream limit; refusing to send a truncated stream. ERROR\n",
              filename ? filename : "FD");
         if (ret_code)
@@ -122,7 +153,7 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
         goto strm_out;
     }
 
-    if (S_ISREG(statbuf.st_mode) && lseek(fd, 0, SEEK_SET) == (off_t)-1) {
+    if (known_size && lseek(fd, 0, SEEK_SET) == (off_t)-1) {
         logg(LOGG_ERROR, "%s: Failed to rewind the on-access stream input. ERROR\n",
              filename ? filename : "FD");
         if (ret_code)
@@ -136,11 +167,15 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
         goto strm_out;
     }
 
-    len = statbuf.st_size;
+    /* Regular files have an admitted length. Pipes and other non-regular
+     * descriptors are unknown-size streams and must be consumed up to the
+     * bounded ceiling instead of being mistaken for empty files because
+     * fstat().st_size is zero. */
+    len = known_size ? (uint64_t)statbuf.st_size : maxstream;
     while (bytesRead < len) {
         uint64_t remaining = len - bytesRead;
         size_t read_len    = (remaining < sizeof(buf)) ? (size_t)remaining : sizeof(buf);
-        ssize_t bytes      = read(fd, buf, read_len);
+        ssize_t bytes      = onas_read_retry(fd, buf, read_len);
         uint32_t chunk_len;
 
         if (bytes < 0) {
@@ -154,6 +189,16 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
             ret = -1;
             goto strm_out;
         } else if (0 == bytes) {
+            if (known_size) {
+                logg(LOGG_ERROR, "%s: Regular stream input ended before its admitted size. ERROR\n",
+                     filename ? filename : "FD");
+                if (ret_code)
+                    *ret_code = CL_EREAD;
+                ret = -1;
+                goto strm_out;
+            }
+            /* EOF is the normal completion signal for pipes and other
+             * unknown-size descriptors; do not send a zero-length chunk. */
             break;
         }
         bytesRead += bytes;
@@ -166,7 +211,7 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
         }
     }
 
-    if (bytesRead < len) {
+    if (known_size && bytesRead < len) {
         logg(LOGG_ERROR, "%s: File changed while streaming; refusing to send a partial INSTREAM chunk. ERROR\n",
              filename ? filename : "FD");
         if (ret_code) {
@@ -180,8 +225,8 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
      * ordinary on-access stream after the original length and report a clean
      * prefix; quarantine/action streams already used this check, but the
      * completeness invariant applies to every stream. */
-    if (S_ISREG(statbuf.st_mode) && (bytesRead == len)) {
-        ssize_t bytes = read(fd, buf, 1);
+    if (known_size && (bytesRead == len)) {
+        ssize_t bytes = onas_read_retry(fd, buf, 1);
 
         if (bytes < 0) {
             logg(LOGG_ERROR, "Failed to read from %s.\n", filename ? filename : "FD");
@@ -208,6 +253,30 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
         }
     }
 
+    /* Unknown-size inputs are admitted one byte at a time beyond the final
+     * full chunk.  If another byte exists, close the request without sending
+     * a terminator so the daemon cannot mistake the bounded prefix for a
+     * complete clean scan. */
+    if (!known_size && bytesRead == len) {
+        ssize_t bytes = onas_read_retry(fd, buf, 1);
+
+        if (bytes > 0) {
+            logg(LOGG_ERROR, "%s: Unknown-size input exceeds the effective on-access stream limit; refusing to send a truncated stream. ERROR\n",
+                 filename ? filename : "FD");
+            if (ret_code)
+                *ret_code = CL_EMAXSIZE;
+            ret = -1;
+            goto strm_out;
+        }
+        if (bytes < 0) {
+            logg(LOGG_ERROR, "Failed to read from %s.\n", filename ? filename : "FD");
+            if (ret_code)
+                *ret_code = CL_EREAD;
+            ret = -1;
+            goto strm_out;
+        }
+    }
+
     *buf = 0;
     if (onas_sendln(curl, (const char *)buf, 4, timeout, ret_code)) {
         ret = -1;
@@ -222,7 +291,132 @@ strm_out:
 }
 
 #ifdef HAVE_FD_PASSING
-static int onas_send_fdpass(int sockd, int fd)
+static uint64_t onas_fdpass_deadline(int64_t timeout_ms)
+{
+    struct timeval now;
+    uint64_t now_ms;
+    uint64_t wait_ms;
+
+    if (timeout_ms <= 0 || gettimeofday(&now, NULL) != 0)
+        return 0;
+
+    now_ms  = (uint64_t)now.tv_sec * 1000U + (uint64_t)now.tv_usec / 1000U;
+    wait_ms = (uint64_t)timeout_ms;
+    if (wait_ms > UINT64_MAX - now_ms)
+        return UINT64_MAX;
+    return now_ms + wait_ms;
+}
+
+static int onas_fdpass_wait_writable(int sockd, uint64_t deadline_ms)
+{
+    struct timeval now;
+    struct timeval wait;
+    uint64_t now_ms;
+    uint64_t remaining_ms;
+    int result;
+
+    for (;;) {
+        fd_set writefds;
+        fd_set errorfds;
+
+        /* Reinitialize select's mutable arguments after every EINTR and
+         * recompute the remaining time from the operation deadline. */
+        if (gettimeofday(&now, NULL) != 0)
+            return -1;
+
+        now_ms = (uint64_t)now.tv_sec * 1000U + (uint64_t)now.tv_usec / 1000U;
+        if (deadline_ms == 0) {
+            remaining_ms = 0;
+        } else if (now_ms >= deadline_ms) {
+            errno = ETIMEDOUT;
+            return 0;
+        } else {
+            remaining_ms = deadline_ms - now_ms;
+        }
+
+        wait.tv_sec  = (long)(remaining_ms / 1000U);
+        wait.tv_usec = (long)((remaining_ms % 1000U) * 1000U);
+        FD_ZERO(&writefds);
+        FD_ZERO(&errorfds);
+        FD_SET(sockd, &writefds);
+        FD_SET(sockd, &errorfds);
+
+        result = select(sockd + 1, NULL, &writefds, &errorfds, &wait);
+        if (result >= 0 || errno != EINTR)
+            return result;
+    }
+}
+
+static int onas_fdpass_deadline_reached(uint64_t deadline_ms)
+{
+    struct timeval now;
+    uint64_t now_ms;
+
+    if (!deadline_ms || gettimeofday(&now, NULL) != 0)
+        return 0;
+
+    now_ms = (uint64_t)now.tv_sec * 1000U + (uint64_t)now.tv_usec / 1000U;
+    return now_ms >= deadline_ms;
+}
+
+static int onas_fdpass_send_bytes(int sockd, const void *buffer, size_t length,
+                                  int64_t timeout_ms, cl_error_t *ret_code)
+{
+    const char *cursor = (const char *)buffer;
+    size_t remaining   = length;
+    uint64_t deadline_ms;
+
+    if (!buffer || sockd < 0)
+        return -1;
+
+    deadline_ms = onas_fdpass_deadline(timeout_ms);
+    while (remaining) {
+        ssize_t sent;
+
+        do {
+            if (onas_fdpass_deadline_reached(deadline_ms)) {
+                logg(LOGG_ERROR, "ClamCom: TIMEOUT while sending on fd-passing socket\n");
+                if (ret_code && *ret_code == CL_SUCCESS)
+                    *ret_code = CL_ETIMEOUT;
+                return -1;
+            }
+#ifdef MSG_NOSIGNAL
+            sent = send(sockd, cursor, remaining, MSG_NOSIGNAL);
+#else
+            sent = send(sockd, cursor, remaining, 0);
+#endif
+        } while (sent < 0 && errno == EINTR);
+
+        if (sent > 0) {
+            cursor += sent;
+            remaining -= (size_t)sent;
+            continue;
+        }
+
+        if (sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            int wait_result = onas_fdpass_wait_writable(sockd, deadline_ms);
+            if (wait_result > 0)
+                continue;
+            if (wait_result == 0) {
+                logg(LOGG_ERROR, "ClamCom: TIMEOUT while waiting on fd-passing socket (send)\n");
+                if (ret_code && *ret_code == CL_SUCCESS)
+                    *ret_code = CL_ETIMEOUT;
+            } else if (ret_code && *ret_code == CL_SUCCESS) {
+                *ret_code = CL_EWRITE;
+            }
+            return -1;
+        }
+
+        logg(LOGG_ERROR, "Can't send to clamd over fd-passing socket: %s\n", strerror(errno));
+        if (ret_code && *ret_code == CL_SUCCESS)
+            *ret_code = CL_EWRITE;
+        return -1;
+    }
+
+    return 0;
+}
+
+static int onas_send_fdpass(int sockd, int fd, int64_t timeout_ms, cl_error_t *ret_code)
 {
 
     char dummy[] = "";
@@ -232,7 +426,7 @@ static int onas_send_fdpass(int sockd, int fd)
     unsigned char fdbuf[CMSG_SPACE(sizeof(int))];
     const char zFILDES[] = "zFILDESREPORT";
 
-    if (sendln(sockd, zFILDES, sizeof(zFILDES))) {
+    if (onas_fdpass_send_bytes(sockd, zFILDES, sizeof(zFILDES), timeout_ms, ret_code)) {
         return -1;
     }
 
@@ -251,10 +445,37 @@ static int onas_send_fdpass(int sockd, int fd)
 
     {
         ssize_t sent;
+        uint64_t deadline_ms = onas_fdpass_deadline(timeout_ms);
 
         do {
+            if (onas_fdpass_deadline_reached(deadline_ms)) {
+                logg(LOGG_ERROR, "ClamCom: TIMEOUT while sending FD on fd-passing socket\n");
+                if (ret_code && *ret_code == CL_SUCCESS)
+                    *ret_code = CL_ETIMEOUT;
+                return -1;
+            }
+#ifdef MSG_NOSIGNAL
+            sent = sendmsg(sockd, &msg, MSG_NOSIGNAL);
+#else
             sent = sendmsg(sockd, &msg, 0);
-        } while (sent == -1 && errno == EINTR);
+#endif
+            if (sent < 0 && errno == EINTR)
+                continue;
+            if (sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+                int wait_result = onas_fdpass_wait_writable(sockd, deadline_ms);
+                if (wait_result > 0)
+                    continue;
+                if (wait_result == 0) {
+                    logg(LOGG_ERROR, "ClamCom: TIMEOUT while waiting on fd-passing socket (sendmsg)\n");
+                    if (ret_code && *ret_code == CL_SUCCESS)
+                        *ret_code = CL_ETIMEOUT;
+                } else if (ret_code && *ret_code == CL_SUCCESS) {
+                    *ret_code = CL_EWRITE;
+                }
+                return -1;
+            }
+            break;
+        } while (1);
 
         if (sent != (ssize_t)iov[0].iov_len) {
             if (sent < 0) {
@@ -262,6 +483,8 @@ static int onas_send_fdpass(int sockd, int fd)
             } else {
                 logg(LOGG_ERROR, "FD send was incomplete (%zd of %zu bytes)\n", sent, iov[0].iov_len);
             }
+            if (ret_code && *ret_code == CL_SUCCESS)
+                *ret_code = CL_EWRITE;
             return -1;
         }
     }
@@ -272,7 +495,7 @@ static int onas_send_fdpass(int sockd, int fd)
 /* Issues a FILDES command and pass a FD to clamd
  * Returns >0 on success, 0 soft fail, -1 hard fail */
 static int onas_fdpass(const char *filename, int fd, int sockd, uint64_t maxstream,
-                       cl_error_t *ret_code)
+                       int64_t timeout_ms, cl_error_t *ret_code)
 {
     int ret        = 1;
     int close_flag = 0;
@@ -311,6 +534,15 @@ static int onas_fdpass(const char *filename, int fd, int sockd, uint64_t maxstre
         goto fd_out;
     }
 
+    if (statbuf.st_size < 0) {
+        logg(LOGG_ERROR, "%s: On-access FILDES input has an invalid negative size. ERROR\n",
+             filename ? filename : "FD");
+        if (ret_code)
+            *ret_code = CL_ESTAT;
+        ret = -1;
+        goto fd_out;
+    }
+
     if (S_ISREG(statbuf.st_mode) && (uint64_t)statbuf.st_size > maxstream) {
         logg(LOGG_ERROR, "%s: File size exceeds the effective on-access FILDES limit; refusing to pass the descriptor. ERROR\n",
              filename ? filename : "FD");
@@ -320,7 +552,7 @@ static int onas_fdpass(const char *filename, int fd, int sockd, uint64_t maxstre
         goto fd_out;
     }
 
-    ret = onas_send_fdpass(sockd, fd);
+    ret = onas_send_fdpass(sockd, fd, timeout_ms, ret_code);
 
     if (ret < 0) {
         logg(LOGG_DEBUG, "ClamProto: error when fdpassing\n");
@@ -345,6 +577,10 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
 {
     int infected = 0, len = 0, beenthere = 0;
     char *bol, *eol;
+    size_t command_len;
+    size_t command_prefix_len;
+    size_t filename_len;
+    int formatted_len;
     struct onas_rcvln rcv;
     STATBUF sb;
     int sockd                                                        = -1;
@@ -354,7 +590,7 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
 
 #ifdef HAVE_FD_PASSING
     if (FILDES == scantype) {
-        sockd = onas_get_sockd();
+        sockd = onas_get_sockd(timeout, ret_code);
     }
 #endif
 
@@ -377,8 +613,19 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
                 infected = -1;
                 goto done;
             }
-            len = strlen(filename) + strlen(scancmd[scantype]) + strlen("zREPORT ") + 1;
-            if (!(bol = malloc(len))) {
+            command_prefix_len = strlen(scancmd[scantype]) + strlen("zREPORT ");
+            filename_len       = strlen(filename);
+            if (filename_len > SIZE_MAX - command_prefix_len ||
+                filename_len + command_prefix_len == SIZE_MAX) {
+                logg(LOGG_ERROR, "Scan command length overflow for on-access path.\n");
+                if (ret_code) {
+                    *ret_code = CL_EMEM;
+                }
+                infected = -1;
+                goto done;
+            }
+            command_len = filename_len + command_prefix_len + 1;
+            if (!(bol = malloc(command_len))) {
                 logg(LOGG_ERROR, "Cannot allocate a command buffer: %s\n", strerror(errno));
                 if (ret_code) {
                     *ret_code = CL_EMEM;
@@ -386,8 +633,17 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
                 infected = -1;
                 goto done;
             }
-            sprintf(bol, "z%sREPORT %s", scancmd[scantype], filename);
-            if (onas_sendln(curl, bol, len, timeout, ret_code)) {
+            formatted_len = snprintf(bol, command_len, "z%sREPORT %s", scancmd[scantype], filename);
+            if (formatted_len < 0 || (size_t)formatted_len >= command_len) {
+                logg(LOGG_ERROR, "Cannot format the on-access scan command.\n");
+                free(bol);
+                if (ret_code) {
+                    *ret_code = CL_EFORMAT;
+                }
+                infected = -1;
+                goto done;
+            }
+            if (onas_sendln(curl, bol, command_len, timeout, ret_code)) {
                 if (ret_code && *ret_code == CL_SUCCESS) {
                     *ret_code = CL_EWRITE;
                 }
@@ -405,7 +661,7 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
 #ifdef HAVE_FD_PASSING
         case FILDES:
             /* NULL filename safe in send_fdpass() */
-            len = onas_fdpass(display_filename, scan_fd, sockd, maxstream, ret_code);
+            len = onas_fdpass(display_filename, scan_fd, sockd, maxstream, timeout, ret_code);
             break;
 #endif
     }

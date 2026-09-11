@@ -1,7 +1,8 @@
 use insta::assert_debug_snapshot;
 use onenote_parser::Parser;
 use std::{
-    io::{self, Read},
+    fs::OpenOptions,
+    io::{self, Read, Write},
     path::{Path, PathBuf},
 };
 
@@ -120,4 +121,30 @@ fn test_parse_section_reader_accepts_logical_input_above_former_cap() {
         .unwrap();
 
     assert_eq!(section.display_name(), "New Section 1");
+}
+
+#[test]
+fn test_parse_section_path_reads_before_large_file_rejection() {
+    let path = std::env::temp_dir().join(format!(
+        "onenote-path-streaming-{}.one",
+        std::process::id()
+    ));
+    let mut file = OpenOptions::new()
+        .create(true)
+        .truncate(true)
+        .write(true)
+        .open(&path)
+        .unwrap();
+    file.write_all(&[0; 32]).unwrap();
+    file.set_len((256 * 1024 * 1024 + 1) as u64).unwrap();
+    drop(file);
+
+    let result = Parser::new().parse_section(&path);
+    std::fs::remove_file(&path).unwrap();
+
+    let error = result.expect_err("zero-filled input is not a valid section");
+    assert!(
+        !error.is_resource_limit(),
+        "path parser rejected the file by whole-file size before parsing: {error}"
+    );
 }

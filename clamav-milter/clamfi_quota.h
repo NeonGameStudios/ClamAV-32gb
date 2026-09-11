@@ -18,5 +18,6 @@ enum clamfi_quota_result {
 int clamfi_normalize_maxfilesize(uint64_t configured, uint64_t *effective);
 enum clamfi_quota_result clamfi_quota_add(uint64_t current, uint64_t limit, size_t requested, uint64_t *next);
 int clamfi_reject_message_size(size_t source_length, size_t *output_size);
+int clamfi_scan_reply_size(size_t alert_length, size_t *output_size);
 
 #endif

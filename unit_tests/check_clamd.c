@@ -205,6 +205,84 @@ START_TEST(test_scan_report_json_status_accepts_library_reports)
 }
 END_TEST
 
+START_TEST(test_scan_report_json_id_requires_top_level_unsigned_integer)
+{
+    static const char top_level[] = "{\"id\":7,\"metadata\":{\"id\":99}}";
+    static const char nested_only[] = "{\"metadata\":{\"id\":7}}";
+    static const char string_id[] = "{\"last_alert\":\"payload \\\"id\\\": 7\"}";
+    static const char negative[] = "{\"id\":-1}";
+    static const char too_large[] = "{\"id\":4294967296}";
+    static const char wrong_type[] = "{\"id\":\"7\"}";
+    static const char malformed[] = "{\"id\":7";
+    static const char duplicate_id[] = "{\"id\":7,\"id\":8}";
+    static const char escaped_duplicate_id[] = "{\"id\":7,\"\\u0069d\":8}";
+    const char *invalid[] = {nested_only, string_id, negative, too_large, wrong_type, malformed,
+                             duplicate_id, escaped_duplicate_id};
+    unsigned int id = UINT_MAX;
+    size_t i;
+
+    ck_assert_int_eq(scan_report_json_id(top_level, (uint32_t)strlen(top_level), &id), 0);
+    ck_assert_uint_eq(id, 7);
+
+    for (i = 0; i < sizeof(invalid) / sizeof(invalid[0]); i++) {
+        id = UINT_MAX;
+        ck_assert_int_eq(scan_report_json_id(invalid[i], (uint32_t)strlen(invalid[i]), &id), -1);
+        ck_assert_uint_eq(id, UINT_MAX);
+    }
+}
+END_TEST
+
+START_TEST(test_clamd_session_id_requires_strict_decimal_prefix)
+{
+    static const char valid[] = "7: file: OK";
+    static const char *invalid[] = {
+        "0: file: OK",
+        "-1: file: OK",
+        "+7: file: OK",
+        " 7: file: OK",
+        "7garbage: file: OK",
+        "7",
+        "999999999999999999999999999999999999999999: file: OK",
+    };
+    unsigned int id = UINT_MAX;
+    size_t i;
+
+    ck_assert_int_eq(parse_clamd_session_id(valid, &id), 0);
+    ck_assert_uint_eq(id, 7);
+
+    for (i = 0; i < sizeof(invalid) / sizeof(invalid[0]); i++) {
+        id = UINT_MAX;
+        ck_assert_int_eq(parse_clamd_session_id(invalid[i], &id), -1);
+        ck_assert_uint_eq(id, UINT_MAX);
+    }
+}
+END_TEST
+
+START_TEST(test_clamd_legacy_reply_requires_known_terminal)
+{
+    static const char clean[]     = "1: fixture: OK";
+    static const char excluded[]  = "1: fixture: Excluded";
+    static const char detection[] = "1: fixture: Test.Detection FOUND";
+    static const char failure[]   = "1: fixture: ERROR";
+    static const char unknown[]   = "1: fixture: MAYBE";
+    static const char trailing[]  = "1: fixture: OK trailing";
+    static const char short_clean[] = "OK";
+    static const char short_detection[] = " FOUND";
+    static const char short_failure[] = " ERROR";
+
+    ck_assert_int_eq(parse_clamd_legacy_reply(clean, (unsigned int)sizeof(clean)), CL_SUCCESS);
+    ck_assert_int_eq(parse_clamd_legacy_reply(excluded, (unsigned int)sizeof(excluded)), CL_SUCCESS);
+    ck_assert_int_eq(parse_clamd_legacy_reply(detection, (unsigned int)sizeof(detection)), CL_VIRUS);
+    ck_assert_int_eq(parse_clamd_legacy_reply(failure, (unsigned int)sizeof(failure)), CL_ERROR);
+    ck_assert_int_eq(parse_clamd_legacy_reply(unknown, (unsigned int)sizeof(unknown)), CL_EPARSE);
+    ck_assert_int_eq(parse_clamd_legacy_reply(trailing, (unsigned int)sizeof(trailing)), CL_EPARSE);
+    ck_assert_int_eq(parse_clamd_legacy_reply(short_clean, (unsigned int)sizeof(short_clean)), CL_EPARSE);
+    ck_assert_int_eq(parse_clamd_legacy_reply(short_detection, (unsigned int)sizeof(short_detection)), CL_EPARSE);
+    ck_assert_int_eq(parse_clamd_legacy_reply(short_failure, (unsigned int)sizeof(short_failure)), CL_EPARSE);
+    ck_assert_int_eq(parse_clamd_legacy_reply(clean, (unsigned int)sizeof(clean) - 1U), CL_EPARSE);
+}
+END_TEST
+
 START_TEST(test_scan_report_json_status_accepts_dispatch_failure_fallback)
 {
     static const char fallback[] =
@@ -250,6 +328,25 @@ START_TEST(test_scan_report_json_status_preserves_string_incomplete_status)
     ck_assert_int_eq(infected, 0);
     ck_assert_int_eq(incomplete, 1);
     ck_assert_int_eq(status, CL_EPARSE);
+}
+END_TEST
+
+START_TEST(test_scan_report_json_status_requires_version_for_numeric_verdict)
+{
+    static const char missing_version[] =
+        "{\"status\":0,\"verdict\":0,\"completion\":\"COMPLETE\"}";
+    static const char wrong_version[] =
+        "{\"version\":2,\"status\":0,\"verdict\":0,\"completion\":\"COMPLETE\"}";
+    int infected = -1;
+    int incomplete = -1;
+    cl_error_t status = CL_ERROR;
+
+    ck_assert_int_eq(scan_report_json_status(missing_version, (uint32_t)strlen(missing_version),
+                                             &infected, &incomplete, &status),
+                     -1);
+    ck_assert_int_eq(scan_report_json_status(wrong_version, (uint32_t)strlen(wrong_version),
+                                             &infected, &incomplete, &status),
+                     -1);
 }
 END_TEST
 
@@ -307,10 +404,15 @@ START_TEST(test_scan_report_json_status_rejects_contradictory_reports)
         "{\"status\":0,\"verdict\":\"infected\",\"completion\":\"UNKNOWN\"}";
     static const char string_incomplete_detection_completion[] =
         "{\"status\":35,\"verdict\":\"incomplete\",\"completion\":\"DETECTION_TERMINATED\"}";
+    static const char duplicate_verdict[] =
+        "{\"status\":0,\"verdict\":0,\"verdict\":2,\"completion\":\"COMPLETE\"}";
+    static const char escaped_duplicate_status[] =
+        "{\"status\":0,\"\\u0073tatus\":35,\"verdict\":0,\"completion\":\"RESOURCE_FAILURE\"}";
     const char *reports[] = {nested, clean_error, clean_missing_status, clean_detection, detected_complete,
                              clean_incomplete, detected_incomplete, invalid_incomplete,
                              detected_unknown_completion, incomplete_unknown_completion,
-                             string_infected_unknown_completion, string_incomplete_detection_completion};
+                             string_infected_unknown_completion, string_incomplete_detection_completion,
+                             duplicate_verdict, escaped_duplicate_status};
     size_t i;
 
     for (i = 0; i < sizeof(reports) / sizeof(reports[0]); i++) {
@@ -562,6 +664,55 @@ START_TEST(test_dsreport_path_request_accepts_sendln_success)
     unlink(log_path);
     logg_file = old_logg_file;
     mprintf_disabled = old_mprintf_disabled;
+}
+END_TEST
+
+START_TEST(test_dsreport_rejects_multiple_report_frames)
+{
+    static const char report[] =
+        "{\"version\":1,\"status\":0,\"verdict\":0,\"completion\":\"COMPLETE\"}";
+    int pair[2];
+    pid_t child;
+    int child_status;
+    uint32_t frame_length;
+    uint32_t terminator = 0;
+    int infected = 0;
+    int incomplete = 0;
+    int errors = 0;
+    char command[128];
+    ssize_t received;
+
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, pair), 0);
+    child = fork();
+    ck_assert_msg(child >= 0, "fork() failed: %s", strerror(errno));
+    if (child == 0) {
+        close(pair[0]);
+        received = recv(pair[1], command, sizeof(command), 0);
+        if (received <= 0 || !memchr(command, '\0', (size_t)received) ||
+            strcmp(command, "zCONTSCANREPORT /tmp/clamav-report-fixture") != 0)
+            _exit(1);
+
+        frame_length = htonl((uint32_t)strlen(report));
+        if (send(pair[1], &frame_length, sizeof(frame_length), 0) != (ssize_t)sizeof(frame_length) ||
+            send(pair[1], report, strlen(report), 0) != (ssize_t)strlen(report) ||
+            send(pair[1], &frame_length, sizeof(frame_length), 0) != (ssize_t)sizeof(frame_length) ||
+            send(pair[1], report, strlen(report), 0) != (ssize_t)strlen(report) ||
+            send(pair[1], &terminator, sizeof(terminator), 0) != (ssize_t)sizeof(terminator))
+            _exit(1);
+        close(pair[1]);
+        _exit(0);
+    }
+
+    close(pair[1]);
+    ck_assert_int_eq(dsreport(pair[0], CONT, "/tmp/clamav-report-fixture", NULL, false, NULL,
+                              &infected, &incomplete, &errors, NULL), -1);
+    close(pair[0]);
+    ck_assert_int_eq(waitpid(child, &child_status, 0), child);
+    ck_assert(WIFEXITED(child_status));
+    ck_assert_int_eq(WEXITSTATUS(child_status), 0);
+    ck_assert_int_eq(infected, 0);
+    ck_assert_int_eq(incomplete, 0);
+    ck_assert_int_eq(errors, 0);
 }
 END_TEST
 
@@ -1631,6 +1782,53 @@ START_TEST(test_dsresult_error_updates_error_counter)
     close(sockets[1]);
 }
 END_TEST
+
+START_TEST(test_dsresult_path_request_uses_bounded_command)
+{
+    int sockets[2];
+    pid_t child;
+    int child_status;
+    int printok = 1;
+    int errors = 0;
+    int infected;
+    static const char expected_command[] = "zCONTSCAN /tmp/clamav-dsresult-fixture";
+    static const char response[] = "input: OK";
+
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+    child = fork();
+    ck_assert_msg(child >= 0, "fork() failed: %s", strerror(errno));
+    if (child == 0) {
+        char command[sizeof(expected_command)];
+        size_t received_total = 0;
+
+        close(sockets[0]);
+        while (received_total < sizeof(command)) {
+            ssize_t received = recv(sockets[1], command + received_total,
+                                    sizeof(command) - received_total, 0);
+            if (received <= 0)
+                _exit(1);
+            received_total += (size_t)received;
+        }
+        if (memcmp(command, expected_command, sizeof(expected_command)) != 0)
+            _exit(1);
+        if (send(sockets[1], response, sizeof(response), 0) != (ssize_t)sizeof(response))
+            _exit(1);
+        close(sockets[1]);
+        _exit(0);
+    }
+
+    close(sockets[1]);
+    infected = dsresult(sockets[0], CONT, "/tmp/clamav-dsresult-fixture", NULL, false,
+                        &printok, &errors, NULL);
+    close(sockets[0]);
+    ck_assert_int_eq(waitpid(child, &child_status, 0), child);
+    ck_assert(WIFEXITED(child_status));
+    ck_assert_int_eq(WEXITSTATUS(child_status), 0);
+    ck_assert_int_eq(infected, 0);
+    ck_assert_int_eq(printok, 1);
+    ck_assert_int_eq(errors, 0);
+}
+END_TEST
 #endif
 #ifndef _WIN32
 #define SOCKET "clamd-test.socket"
@@ -1766,6 +1964,7 @@ static struct basic_test {
     {"MULTISCAN " NONEXISTENT, NULL, NONEXISTENT_REPLY, 1, 0, IDS_REJECT},
     /* commands with invalid/missing arguments */
     {"SCAN", NULL, UNKNOWN_REPLY, 1, 0, IDS_REJECT},
+    {"SCANfoo", NULL, UNKNOWN_REPLY, 1, 0, IDS_REJECT},
     {"CONTSCAN", NULL, UNKNOWN_REPLY, 1, 0, IDS_REJECT},
     {"MULTISCAN", NULL, UNKNOWN_REPLY, 1, 0, IDS_REJECT},
     /* commands with invalid data */
@@ -2486,8 +2685,12 @@ static Suite *test_clamd_suite(void)
     suite_add_tcase(s, tc_parser);
     tcase_add_test(tc_parser, test_maxscantime_parser_rejects_narrowing);
     tcase_add_test(tc_parser, test_scan_report_json_status_accepts_library_reports);
+    tcase_add_test(tc_parser, test_scan_report_json_id_requires_top_level_unsigned_integer);
+    tcase_add_test(tc_parser, test_clamd_session_id_requires_strict_decimal_prefix);
+    tcase_add_test(tc_parser, test_clamd_legacy_reply_requires_known_terminal);
     tcase_add_test(tc_parser, test_scan_report_json_status_accepts_dispatch_failure_fallback);
     tcase_add_test(tc_parser, test_scan_report_json_status_preserves_string_incomplete_status);
+    tcase_add_test(tc_parser, test_scan_report_json_status_requires_version_for_numeric_verdict);
     tcase_add_test(tc_parser, test_scan_report_json_status_rejects_legacy_clean_fallback);
     tcase_add_test(tc_parser, test_scan_report_fallback_completion_classes);
     tcase_add_test(tc_parser, test_scan_report_json_status_rejects_contradictory_reports);
@@ -2496,6 +2699,7 @@ static Suite *test_clamd_suite(void)
 #ifndef _WIN32
     tcase_add_test(tc_parser, test_scan_report_frames_are_bounded_and_fragment_safe);
     tcase_add_test(tc_parser, test_dsreport_path_request_accepts_sendln_success);
+    tcase_add_test(tc_parser, test_dsreport_rejects_multiple_report_frames);
 #endif
     tcase_add_test(tc_parser, test_maxscantime_cli_boundaries);
     tcase_add_test(tc_parser, test_stream_limit_zero_selects_large_file_ceiling);
@@ -2522,6 +2726,7 @@ static Suite *test_clamd_suite(void)
     suite_add_tcase(s, tc_client);
 #ifndef _WIN32
     tcase_add_test(tc_client, test_dsresult_error_updates_error_counter);
+    tcase_add_test(tc_client, test_dsresult_path_request_uses_bounded_command);
 #endif
     tcase_add_test(tc_client, test_stream_client_rejects_over_limit);
     tcase_add_test(tc_client, test_dsreport_stream_preserves_over_limit_fallback);

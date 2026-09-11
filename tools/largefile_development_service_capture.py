@@ -100,6 +100,27 @@ def write_fixture(path: Path, outcome: str) -> None:
         fail(f"unknown service outcome: {outcome}")
 
 
+def write_service_input_identity(path: Path, fixtures: dict[str, Path]) -> None:
+    """Retain the exact small fixtures bound to lifecycle service records."""
+    inputs = {}
+    for role, fixture in sorted(fixtures.items()):
+        info = require_file(fixture, f"{role} service fixture").stat()
+        blocks = getattr(info, "st_blocks", None)
+        allocated = blocks * 512 if type(blocks) is int and blocks >= 0 else None
+        inputs[role] = {
+            "input": str(fixture.resolve()),
+            "size": info.st_size,
+            "sha256": sha256(fixture),
+            "allocated_bytes": allocated,
+            "first_hole": None,
+        }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps({"version": 1, "inputs": inputs}, sort_keys=True, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+
+
 def write_oracle(path: Path, fixture: Path, outcome: str, file_type: str) -> None:
     expected_size = fixture.stat().st_size
     expected_hash = sha256(fixture)
@@ -413,6 +434,7 @@ def make_record(
     record_kind: str = "clamd",
     record_id: str | None = None,
     artifact_prefix: str = "",
+    service_input_artifacts: tuple[Path, Path] | None = None,
 ) -> dict[str, str]:
     completion = str(report["completion"])
     identifier = record_id or capability
@@ -430,6 +452,11 @@ def make_record(
         fixture_rel, database_rel, oracle_rel, config_rel, source_rel,
         build_rel, daemon_rel, log_rel, report_rel,
     ]
+    if service_input_artifacts is not None:
+        artifacts.extend(
+            path.relative_to(output).as_posix()
+            for path in service_input_artifacts
+        )
     numeric = {field: str(report[field]) for field in REPORT_NUMERIC_FIELDS}
     signature = report.get("last_alert") or "-"
     offset = str(report["last_alert_offset"]) if report.get("last_alert_offset") is not None else "-"
@@ -500,6 +527,14 @@ def capture(
     write_fixture(detection_fixture, "detection")
     write_fixture(clean_fixture, "clean")
     write_fixture(limit_fixture, "limit")
+    fixture_identities = {
+        "service-development-clean": clean_fixture,
+        "service-development-detection": detection_fixture,
+        "service-development-limit": limit_fixture,
+    }
+    service_inputs_before = output / "provenance/service-inputs-before.json"
+    service_inputs_after = output / "provenance/service-inputs-after.json"
+    write_service_input_identity(service_inputs_before, fixture_identities)
     # Keep the detection and benign databases in separate directories.  ClamD
     # loads every database file in DatabaseDirectory, so sharing a directory
     # would make the supposedly clean case load the detection signature too.
@@ -572,6 +607,7 @@ def capture(
                         output, capability, mode, outcome, fixture, database,
                         oracle_path, config, report, source_manifest,
                         build_identity, daemon_log,
+                        service_input_artifacts=(service_inputs_before, service_inputs_after),
                     )
                     records.append(record)
                     outcome_records.append(record)
@@ -588,6 +624,7 @@ def capture(
                             oracle_path, config, report, source_manifest,
                             build_identity, daemon_log, record_kind="clamdscan",
                             record_id=capability, artifact_prefix="client-",
+                            service_input_artifacts=(service_inputs_before, service_inputs_after),
                         )
                         records.append(record)
                         outcome_records.append(record)
@@ -628,6 +665,10 @@ def capture(
             else:
                 path.unlink()
         native_temp.rmdir()
+
+    write_service_input_identity(service_inputs_after, fixture_identities)
+    if service_inputs_before.read_bytes() != service_inputs_after.read_bytes():
+        fail("service fixture identity changed during development capture")
 
     records_path = output / "provenance/acceptance-cases.tsv"
     with records_path.open("w", newline="", encoding="utf-8") as stream:

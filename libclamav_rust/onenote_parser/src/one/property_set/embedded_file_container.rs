@@ -1,6 +1,7 @@
 use crate::errors::{ErrorKind, Result};
 use crate::one::property_set::PropertySetId;
 use crate::onestore::object::Object;
+use crate::reader::copy_bytes;
 
 /// An embedded file data container.
 ///
@@ -24,12 +25,12 @@ pub(crate) fn parse(object: &Object) -> Result<Data> {
         .into());
     }
 
-    let data = object
+    let file_data = object
         .file_data()
         .ok_or_else(|| {
             ErrorKind::MalformedOneNoteFileData("embedded file container has no data".into())
-        })?
-        .to_vec();
+        })?;
+    let data = copy_bytes(file_data)?;
 
     Ok(Data(data))
 }

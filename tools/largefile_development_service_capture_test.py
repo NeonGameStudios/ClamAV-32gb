@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import csv
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,6 +10,33 @@ import largefile_development_service_capture as capture
 
 
 class DevelopmentServiceCaptureTests(unittest.TestCase):
+    def test_service_input_identity_is_versioned_and_hash_bound(self):
+        with tempfile.TemporaryDirectory(prefix="largefile-service-inputs-") as temp:
+            root = Path(temp)
+            clean = root / "clean.bin"
+            detection = root / "detection.bin"
+            clean.write_bytes(b"clean fixture")
+            detection.write_bytes(b"detection fixture")
+            identity = root / "provenance/service-inputs-before.json"
+
+            capture.write_service_input_identity(
+                identity,
+                {
+                    "service-development-clean": clean,
+                    "service-development-detection": detection,
+                },
+            )
+            evidence = json.loads(identity.read_text(encoding="utf-8"))
+            self.assertEqual(evidence["version"], 1)
+            self.assertEqual(
+                evidence["inputs"]["service-development-clean"]["sha256"],
+                capture.sha256(clean),
+            )
+            self.assertEqual(
+                evidence["inputs"]["service-development-detection"]["size"],
+                detection.stat().st_size,
+            )
+
     def test_report_record_uses_embedded_detection_outcome(self):
         with tempfile.TemporaryDirectory(prefix="largefile-service-capture-") as temp:
             root = Path(temp)

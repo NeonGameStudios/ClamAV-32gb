@@ -7,6 +7,7 @@ use crate::fsshttpb::data::object_types::ObjectType;
 use crate::fsshttpb::data::stream_object::ObjectHeader;
 use crate::fsshttpb::data_element::DataElement;
 use crate::Reader;
+use std::convert::TryFrom;
 use std::fmt;
 
 /// An object group.
@@ -58,6 +59,71 @@ impl ObjectGroupDeclaration {
             ObjectGroupDeclaration::Blob { object_id, .. } => *object_id,
         }
     }
+
+    fn validate_data(&self, data: &ObjectGroupData) -> Result<()> {
+        let (
+            declared_object_count,
+            declared_cell_count,
+            object_count,
+            cell_count,
+        ) = match (self, data) {
+            (
+                ObjectGroupDeclaration::Object {
+                    object_reference_count,
+                    cell_reference_count,
+                    ..
+                },
+                ObjectGroupData::Object { group, cells, .. }
+                | ObjectGroupData::ObjectExcluded { group, cells, .. },
+            ) => (
+                *object_reference_count,
+                *cell_reference_count,
+                group.len(),
+                cells.len(),
+            ),
+            (
+                ObjectGroupDeclaration::Blob {
+                    object_reference_count,
+                    cell_reference_count,
+                    ..
+                },
+                ObjectGroupData::BlobReference {
+                    objects,
+                    cells,
+                    ..
+                },
+            ) => (
+                *object_reference_count,
+                *cell_reference_count,
+                objects.len(),
+                cells.len(),
+            ),
+            (ObjectGroupDeclaration::Object { .. }, ObjectGroupData::BlobReference { .. })
+            | (ObjectGroupDeclaration::Blob { .. }, ObjectGroupData::Object { .. })
+            | (ObjectGroupDeclaration::Blob { .. }, ObjectGroupData::ObjectExcluded { .. }) => {
+                return Err(ErrorKind::MalformedFssHttpBData(
+                    "object group declaration/data variants do not match".into(),
+                )
+                .into())
+            }
+        };
+
+        let object_count = u64::try_from(object_count).map_err(|_| {
+            ErrorKind::MalformedFssHttpBData("object reference count is not representable".into())
+        })?;
+        let cell_count = u64::try_from(cell_count).map_err(|_| {
+            ErrorKind::MalformedFssHttpBData("cell reference count is not representable".into())
+        })?;
+
+        if object_count != declared_object_count || cell_count != declared_cell_count {
+            return Err(ErrorKind::MalformedFssHttpBData(
+                "object group reference counts do not match declaration".into(),
+            )
+            .into());
+        }
+
+        Ok(())
+    }
 }
 
 /// An object group's metadata.
@@ -81,16 +147,23 @@ pub(crate) enum ObjectChangeFrequency {
 }
 
 impl ObjectChangeFrequency {
-    fn parse(value: u64) -> ObjectChangeFrequency {
+    fn parse(value: u64) -> Result<ObjectChangeFrequency> {
         match value {
-            x if x == ObjectChangeFrequency::Unknown as u64 => ObjectChangeFrequency::Unknown,
-            x if x == ObjectChangeFrequency::Frequent as u64 => ObjectChangeFrequency::Frequent,
-            x if x == ObjectChangeFrequency::Infrequent as u64 => ObjectChangeFrequency::Infrequent,
-            x if x == ObjectChangeFrequency::Independent as u64 => {
-                ObjectChangeFrequency::Independent
+            x if x == ObjectChangeFrequency::Unknown as u64 => Ok(ObjectChangeFrequency::Unknown),
+            x if x == ObjectChangeFrequency::Frequent as u64 => {
+                Ok(ObjectChangeFrequency::Frequent)
             }
-            x if x == ObjectChangeFrequency::Custom as u64 => ObjectChangeFrequency::Custom,
-            x => panic!("unexpected change frequency: {}", x),
+            x if x == ObjectChangeFrequency::Infrequent as u64 => {
+                Ok(ObjectChangeFrequency::Infrequent)
+            }
+            x if x == ObjectChangeFrequency::Independent as u64 => {
+                Ok(ObjectChangeFrequency::Independent)
+            }
+            x if x == ObjectChangeFrequency::Custom as u64 => Ok(ObjectChangeFrequency::Custom),
+            x => Err(ErrorKind::MalformedFssHttpBData(
+                format!("unexpected change frequency: {}", x).into(),
+            )
+            .into()),
         }
     }
 }
@@ -196,6 +269,16 @@ impl DataElement {
         }
         let objects = DataElement::parse_object_group_data(reader)?;
 
+        if declarations.len() != objects.len() {
+            return Err(ErrorKind::MalformedFssHttpBData(
+                "object declaration/data counts do not match".into(),
+            )
+            .into());
+        }
+        for (declaration, data) in declarations.iter().zip(objects.iter()) {
+            declaration.validate_data(data)?;
+        }
+
         ObjectHeader::try_parse_end_8(reader, ObjectType::DataElement)?;
 
         Ok(ObjectGroup {
@@ -277,7 +360,7 @@ impl DataElement {
 
             let frequency = CompactU64::parse(reader)?;
             declarations.push(ObjectGroupMetadata {
-                change_frequency: ObjectChangeFrequency::parse(frequency.value()),
+                change_frequency: ObjectChangeFrequency::parse(frequency.value())?,
             })
         }
 
@@ -335,5 +418,82 @@ impl DataElement {
         ObjectHeader::try_parse_end_8(reader, ObjectType::ObjectGroupData)?;
 
         Ok(objects)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ObjectChangeFrequency, ObjectGroupData, ObjectGroupDeclaration};
+    use crate::fsshttpb::data::cell_id::CellId;
+    use crate::fsshttpb::data::exguid::ExGuid;
+    use crate::shared::guid::Guid;
+
+    fn test_id() -> ExGuid {
+        ExGuid {
+            guid: Guid::nil(),
+            value: 0,
+        }
+    }
+
+    #[test]
+    fn parse_rejects_unknown_change_frequency() {
+        assert!(ObjectChangeFrequency::parse(u64::MAX).is_err());
+    }
+
+    #[test]
+    fn declaration_accepts_matching_object_reference_counts() {
+        let id = test_id();
+        let declaration = ObjectGroupDeclaration::Object {
+            object_id: id,
+            partition_id: 1,
+            data_size: 0,
+            object_reference_count: 1,
+            cell_reference_count: 1,
+        };
+        let data = ObjectGroupData::Object {
+            group: vec![id],
+            cells: vec![CellId(id, id)],
+            data: Vec::new(),
+        };
+
+        assert!(declaration.validate_data(&data).is_ok());
+    }
+
+    #[test]
+    fn declaration_rejects_mismatched_object_reference_counts() {
+        let id = test_id();
+        let declaration = ObjectGroupDeclaration::Object {
+            object_id: id,
+            partition_id: 1,
+            data_size: 0,
+            object_reference_count: 2,
+            cell_reference_count: 1,
+        };
+        let data = ObjectGroupData::Object {
+            group: vec![id],
+            cells: vec![CellId(id, id)],
+            data: Vec::new(),
+        };
+
+        assert!(declaration.validate_data(&data).is_err());
+    }
+
+    #[test]
+    fn blob_declaration_rejects_non_blob_data() {
+        let id = test_id();
+        let declaration = ObjectGroupDeclaration::Blob {
+            object_id: id,
+            blob_id: id,
+            partition_id: 2,
+            object_reference_count: 0,
+            cell_reference_count: 0,
+        };
+        let data = ObjectGroupData::ObjectExcluded {
+            group: Vec::new(),
+            cells: Vec::new(),
+            size: 0,
+        };
+
+        assert!(declaration.validate_data(&data).is_err());
     }
 }

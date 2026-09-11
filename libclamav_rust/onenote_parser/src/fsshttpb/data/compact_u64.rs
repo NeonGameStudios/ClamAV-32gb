@@ -102,7 +102,10 @@ impl CompactU64 {
             return Ok(CompactU64(reader.get_u64()?));
         }
 
-        panic!("unexpected compact u64 type: {:x}", first_byte)
+        Err(ErrorKind::MalformedFssHttpBData(
+            format!("unexpected compact u64 type: {:x}", first_byte).into(),
+        )
+        .into())
     }
 }
 
@@ -120,68 +123,35 @@ mod test {
     }
 
     #[test]
-    fn test_7_bit() {
-        assert_eq!(
-            CompactU64::parse(&mut Reader::new(&[0u8])).unwrap().value(),
-            0
-        );
-    }
+    fn test_all_supported_widths() {
+        let cases = [
+            (1usize, 0x55u64),
+            (2, 0x1234),
+            (3, 0x12345),
+            (4, 0x1234567),
+            (5, 0x123456789),
+            (6, 0x123456789a),
+            (7, 0x123456789ab),
+            (8, u64::MAX),
+        ];
 
-    #[test]
-    fn test_14_bit() {
-        assert_eq!(
-            CompactU64::parse(&mut Reader::new(&[0u8])).unwrap().value(),
-            0
-        );
-    }
+        for (width, expected) in cases {
+            let encoded = if width == 8 {
+                let mut encoded = vec![0x80];
+                encoded.extend_from_slice(&expected.to_le_bytes());
+                encoded
+            } else {
+                let value = (expected << width) | (1u64 << (width - 1));
+                value.to_le_bytes()[..width].to_vec()
+            };
 
-    #[test]
-    fn test_21_bit() {
-        assert_eq!(
-            CompactU64::parse(&mut Reader::new(&[0xd4u8, 0x8b, 0x10]))
-                .unwrap()
-                .value(),
-            135546
-        );
-    }
-
-    #[test]
-    fn test_28_bit() {
-        assert_eq!(
-            CompactU64::parse(&mut Reader::new(&[0u8])).unwrap().value(),
-            0
-        );
-    }
-
-    #[test]
-    fn test_35_bit() {
-        assert_eq!(
-            CompactU64::parse(&mut Reader::new(&[0u8])).unwrap().value(),
-            0
-        );
-    }
-
-    #[test]
-    fn test_42_bit() {
-        assert_eq!(
-            CompactU64::parse(&mut Reader::new(&[0u8])).unwrap().value(),
-            0
-        );
-    }
-
-    #[test]
-    fn test_49_bit() {
-        assert_eq!(
-            CompactU64::parse(&mut Reader::new(&[0u8])).unwrap().value(),
-            0
-        );
-    }
-
-    #[test]
-    fn test_64_bit() {
-        assert_eq!(
-            CompactU64::parse(&mut Reader::new(&[0u8])).unwrap().value(),
-            0
-        );
+            assert_eq!(
+                CompactU64::parse(&mut Reader::new(&encoded))
+                    .unwrap()
+                    .value(),
+                expected,
+                "compact-u64 width {width}"
+            );
+        }
     }
 }

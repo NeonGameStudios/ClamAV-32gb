@@ -3,7 +3,9 @@ use crate::fsshttpb::data::exguid::ExGuid;
 use crate::fsshttpb::data::object_types::ObjectType;
 use crate::fsshttpb::data::stream_object::ObjectHeader;
 use crate::fsshttpb::data_element::DataElement;
+use crate::reader::reserve_collection_set;
 use crate::Reader;
+use std::collections::HashSet;
 
 /// A revision manifest.
 ///
@@ -25,6 +27,21 @@ pub(crate) struct RevisionManifestRootDeclare {
     pub(crate) object_id: ExGuid,
 }
 
+fn insert_unique_group_reference(
+    references: &mut HashSet<ExGuid>,
+    reference: ExGuid,
+) -> Result<()> {
+    reserve_collection_set(references, 1)?;
+    if !references.insert(reference) {
+        return Err(ErrorKind::MalformedFssHttpBData(
+            "duplicate revision manifest group reference".into(),
+        )
+        .into());
+    }
+
+    Ok(())
+}
+
 impl RevisionManifestRootDeclare {
     fn parse(reader: Reader) -> Result<RevisionManifestRootDeclare> {
         let root_id = ExGuid::parse(reader)?;
@@ -43,6 +60,7 @@ impl DataElement {
 
         let mut root_declare = vec![];
         let mut group_references = vec![];
+        let mut referenced_groups = HashSet::new();
 
         loop {
             if ObjectHeader::has_end_8(reader, ObjectType::DataElement)? {
@@ -58,7 +76,9 @@ impl DataElement {
                 }
                 ObjectType::RevisionManifestGroupReference => {
                     reader.reserve_next_vec(&mut group_references)?;
-                    group_references.push(ExGuid::parse(reader)?)
+                    let group_id = ExGuid::parse(reader)?;
+                    insert_unique_group_reference(&mut referenced_groups, group_id)?;
+                    group_references.push(group_id)
                 }
                 _ => {
                     return Err(ErrorKind::MalformedFssHttpBData(
@@ -79,5 +99,26 @@ impl DataElement {
         };
 
         Ok(manifest)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::insert_unique_group_reference;
+    use crate::shared::guid::Guid;
+    use crate::fsshttpb::data::exguid::ExGuid;
+    use std::collections::HashSet;
+
+    #[test]
+    fn duplicate_revision_manifest_group_reference_is_rejected() {
+        let group_id = ExGuid::from_guid(
+            Guid::from_str("AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE").unwrap(),
+            1,
+        );
+        let mut references = HashSet::new();
+
+        insert_unique_group_reference(&mut references, group_id).unwrap();
+        assert!(insert_unique_group_reference(&mut references, group_id).is_err());
+        assert_eq!(references.len(), 1);
     }
 }

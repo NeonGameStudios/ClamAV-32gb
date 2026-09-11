@@ -3,12 +3,11 @@ use crate::fsshttpb::packaging::OneStorePackaging;
 use crate::onenote::notebook::Notebook;
 use crate::onenote::section::{Section, SectionEntry, SectionGroup};
 use crate::onestore::parse_store;
-use crate::reader::Reader;
-use std::convert::TryFrom;
+use crate::reader::{reserve_collection, Reader};
 use std::ffi::OsStr;
 use std::fs::File;
-use std::io::{BufReader, Read};
-use std::path::Path;
+use std::io::{self, Read};
+use std::path::{Component, Path, PathBuf};
 
 pub(crate) mod content;
 pub(crate) mod embedded_file;
@@ -29,6 +28,28 @@ pub(crate) mod table;
 /// The OneNote file parser.
 pub struct Parser;
 
+fn resolve_toc_path(base_dir: &Path, name: &str) -> Result<PathBuf> {
+    let relative = Path::new(name);
+    if name.is_empty()
+        || relative.is_absolute()
+        || relative.components().any(|component| {
+            matches!(
+                component,
+                Component::Prefix(_)
+                    | Component::RootDir
+                    | Component::CurDir
+                    | Component::ParentDir
+            )
+        })
+    {
+        return Err(ErrorKind::MalformedOneNoteFileData(
+            "table of contents entry is not a safe relative path".into(),
+        )
+        .into());
+    }
+    Ok(base_dir.join(relative))
+}
+
 impl Parser {
     /// Create a new OneNote file parser.
     pub fn new() -> Parser {
@@ -41,9 +62,19 @@ impl Parser {
     /// table of contents of the notebook as well as all contained
     /// sections from the folder that the table of contents file is in.
     pub fn parse_notebook(&mut self, path: &Path) -> Result<Notebook> {
+        self.parse_notebook_at_depth(path, 0)
+    }
+
+    fn parse_notebook_at_depth(&mut self, path: &Path, depth: usize) -> Result<Notebook> {
+        Reader::check_recursion_depth(depth)?;
         let file = File::open(path)?;
-        let data = Parser::read(file)?;
-        let packaging = OneStorePackaging::parse(&mut Reader::new(data.as_slice()))?;
+        let packaging = OneStorePackaging::parse(&mut Reader::from_reader(file))?;
+        if packaging.cell_schema != guid!({E4DBFD38-E5C7-408B-A8A1-0E7B421E1F5F}) {
+            return Err(ErrorKind::NotATocFile {
+                file: path.to_string_lossy().to_string(),
+            }
+            .into());
+        }
         let store = parse_store(&packaging)?;
 
         if store.schema_guid() != guid!({E4DBFD38-E5C7-408B-A8A1-0E7B421E1F5F}) {
@@ -53,26 +84,42 @@ impl Parser {
             .into());
         }
 
-        let base_dir = path.parent().expect("no base dir found");
-        let sections = notebook::parse_toc(store.data_root())?
-            .iter()
-            .map(|name| {
-                let mut file = base_dir.to_path_buf();
-                file.push(name);
+        let base_dir = path.parent().ok_or_else(|| {
+            ErrorKind::MalformedOneNoteFileData("notebook path has no parent directory".into())
+        })?;
+        let mut sections = Vec::new();
+        for name in notebook::parse_toc(store.data_root())? {
+            let section_path = resolve_toc_path(base_dir, &name)?;
 
-                file
-            })
-            .filter(|p| p.exists())
-            .filter(|p| !p.ends_with("OneNote_RecycleBin"))
-            .map(|path| {
-                if path.is_file() {
-                    self.parse_section(&path).map(SectionEntry::Section)
-                } else {
-                    self.parse_section_group(&path)
-                        .map(SectionEntry::SectionGroup)
+            if section_path.ends_with("OneNote_RecycleBin") {
+                continue;
+            }
+
+            let metadata = match std::fs::symlink_metadata(&section_path) {
+                Ok(metadata) => metadata,
+                Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                    // Deleted sections can remain in a notebook TOC. Preserve
+                    // the upstream compatibility behavior for that case, but
+                    // do not hide permission or other metadata failures.
+                    continue;
                 }
-            })
-            .collect::<Result<_>>()?;
+                Err(error) => return Err(error.into()),
+            };
+
+            let entry = if metadata.is_file() {
+                self.parse_section(&section_path).map(SectionEntry::Section)?
+            } else if metadata.is_dir() {
+                self.parse_section_group(&section_path, depth)
+                    .map(SectionEntry::SectionGroup)?
+            } else {
+                return Err(ErrorKind::MalformedOneNoteFileData(
+                    "table of contents entry is neither a section file nor a section group".into(),
+                )
+                .into());
+            };
+            reserve_collection(&mut sections, 1)?;
+            sections.push(entry);
+        }
 
         Ok(Notebook { entries: sections })
     }
@@ -82,6 +129,12 @@ impl Parser {
     /// The `data` argument must contain a OneNote section.
     pub fn parse_section_buffer(&mut self, data: &[u8], file_name: &Path) -> Result<Section> {
         let packaging = OneStorePackaging::parse(&mut Reader::new(data))?;
+        if packaging.cell_schema != guid!({1F937CB4-B26F-445F-B9F8-17E20160E461}) {
+            return Err(ErrorKind::NotASectionFile {
+                file: file_name.to_string_lossy().into_owned(),
+            }
+            .into());
+        }
         let store = parse_store(&packaging)?;
 
         if store.schema_guid() != guid!({1F937CB4-B26F-445F-B9F8-17E20160E461}) {
@@ -110,6 +163,12 @@ impl Parser {
     ) -> Result<Section> {
         let mut reader = Reader::from_reader(reader);
         let packaging = OneStorePackaging::parse(&mut reader)?;
+        if packaging.cell_schema != guid!({1F937CB4-B26F-445F-B9F8-17E20160E461}) {
+            return Err(ErrorKind::NotASectionFile {
+                file: file_name.to_string_lossy().into_owned(),
+            }
+            .into());
+        }
         let store = parse_store(&packaging)?;
 
         if store.schema_guid() != guid!({1F937CB4-B26F-445F-B9F8-17E20160E461}) {
@@ -131,8 +190,13 @@ impl Parser {
     /// OneNote section.
     pub fn parse_section(&mut self, path: &Path) -> Result<Section> {
         let file = File::open(path)?;
-        let data = Parser::read(file)?;
-        let packaging = OneStorePackaging::parse(&mut Reader::new(data.as_slice()))?;
+        let packaging = OneStorePackaging::parse(&mut Reader::from_reader(file))?;
+        if packaging.cell_schema != guid!({1F937CB4-B26F-445F-B9F8-17E20160E461}) {
+            return Err(ErrorKind::NotASectionFile {
+                file: path.to_string_lossy().to_string(),
+            }
+            .into());
+        }
         let store = parse_store(&packaging)?;
 
         if store.schema_guid() != guid!({1F937CB4-B26F-445F-B9F8-17E20160E461}) {
@@ -145,30 +209,40 @@ impl Parser {
         section::parse_section(
             store,
             path.file_name()
-                .expect("file without file name")
+                .ok_or_else(|| {
+                    ErrorKind::MalformedOneNoteFileData("section path has no file name".into())
+                })?
                 .to_string_lossy()
                 .to_string(),
         )
     }
 
-    fn parse_section_group(&mut self, path: &Path) -> Result<SectionGroup> {
+    fn parse_section_group(&mut self, path: &Path, depth: usize) -> Result<SectionGroup> {
         let display_name = path
             .file_name()
-            .expect("file without file name")
+            .ok_or_else(|| {
+                ErrorKind::MalformedOneNoteFileData(
+                    "section-group path has no file name".into(),
+                )
+            })?
             .to_string_lossy()
             .to_string();
 
         for entry in path.read_dir()? {
             let entry = entry?;
+            let file_type = entry.file_type()?;
+            if file_type.is_symlink() {
+                continue;
+            }
             let is_toc = entry
                 .path()
                 .extension()
                 .map(|ext| ext == OsStr::new("onetoc2"))
                 .unwrap_or_default();
 
-            if is_toc {
+            if is_toc && file_type.is_file() {
                 return self
-                    .parse_notebook(&entry.path())
+                    .parse_notebook_at_depth(&entry.path(), depth + 1)
                     .map(|group| SectionGroup {
                         display_name,
                         entries: group.entries,
@@ -182,54 +256,32 @@ impl Parser {
         .into())
     }
 
-    fn read(file: File) -> Result<Vec<u8>> {
-        let size = usize::try_from(file.metadata()?.len()).map_err(|_| {
-            ErrorKind::ResourceLimit {
-                requested: usize::MAX,
-                max: Reader::MAX_MATERIALIZED_BYTES,
-            }
-        })?;
-        if size > Reader::MAX_MATERIALIZED_BYTES {
-            return Err(ErrorKind::ResourceLimit {
-                requested: size,
-                max: Reader::MAX_MATERIALIZED_BYTES,
-            }
-            .into());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::resolve_toc_path;
+    use std::path::Path;
+
+    #[test]
+    fn toc_path_accepts_a_plain_relative_name() {
+        assert_eq!(
+            resolve_toc_path(Path::new("/tmp/notebook"), "section.one").unwrap(),
+            Path::new("/tmp/notebook/section.one")
+        );
+    }
+
+    #[test]
+    fn toc_path_rejects_absolute_and_parent_entries() {
+        for name in [
+            "",
+            "/tmp/outside.one",
+            "../outside.one",
+            "group/../outside.one",
+            ".",
+        ] {
+            assert!(resolve_toc_path(Path::new("/tmp/notebook"), name).is_err());
         }
-
-        let mut buf = BufReader::new(file);
-        let mut data = Vec::new();
-        data.try_reserve_exact(size)
-            .map_err(|_| ErrorKind::AllocationFailed { requested: size })?;
-
-        let mut chunk = [0; Reader::REFILL_SIZE];
-        loop {
-            let read = buf.read(&mut chunk)?;
-            if read == 0 {
-                break;
-            }
-
-            let requested = data
-                .len()
-                .checked_add(read)
-                .ok_or(ErrorKind::ResourceLimit {
-                    requested: usize::MAX,
-                    max: Reader::MAX_MATERIALIZED_BYTES,
-                })?;
-            if requested > Reader::MAX_MATERIALIZED_BYTES {
-                return Err(ErrorKind::ResourceLimit {
-                    requested,
-                    max: Reader::MAX_MATERIALIZED_BYTES,
-                }
-                .into());
-            }
-
-            data.try_reserve_exact(read)
-                .map_err(|_| ErrorKind::AllocationFailed { requested })?;
-            data.extend_from_slice(&chunk[..read]);
-        }
-
-        Ok(data)
     }
 }
 

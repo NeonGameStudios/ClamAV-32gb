@@ -4,6 +4,7 @@ use crate::one::property_set::{section_metadata_node, section_node};
 use crate::onenote::page_series::{parse_page_series, PageSeries};
 use crate::onestore::object_space::ObjectSpace;
 use crate::onestore::OneStore;
+use crate::reader::collect_results;
 
 /// An entry in a section list.
 #[allow(missing_docs)]
@@ -72,11 +73,12 @@ pub(crate) fn parse_section(store: OneStore, filename: String) -> Result<Section
         .trim_end_matches(".one")
         .to_string();
 
-    let page_series = content
-        .page_series
-        .into_iter()
-        .map(|page_series_id| parse_page_series(page_series_id, &store))
-        .collect::<Result<_>>()?;
+    let page_series = collect_results(
+        content
+            .page_series
+            .into_iter()
+            .map(|page_series_id| parse_page_series(page_series_id, &store)),
+    )?;
 
     Ok(Section {
         display_name,

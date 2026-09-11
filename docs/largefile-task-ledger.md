@@ -1129,3 +1129,1333 @@ path lengths return parser errors rather than reaching arithmetic or slice
 panics. The focused parser suite remains 21 unit, 4 integration, and 1
 ignored doctest; consumer compile, materialized late-content evidence, and
 full parser quota qualification remain open.
+
+R06 shared reference-resolution safety refinement (2026-09-10): object and
+object-space reference arrays now use bounded fallible output vectors;
+reference-count aggregation detects overflow; and missing object-space
+mappings are propagated instead of silently discarded. Embedded-ink and
+note-tag property-set adapters use the same bounded compact-ID path. The
+isolated offline parser-library check and its 21 unit tests passed. The full
+workspace consumer build remains blocked on the host's absent OpenSSL
+development headers; integration snapshots, materialized late-content
+evidence, and full parser quota qualification remain open.
+
+R06 high-level parse-result collection safety refinement (2026-09-10):
+outline, page, table, section, page-series, image, and UTF-16 conversion
+paths now use the shared bounded, fallible parser-result collector instead of
+infallible result-collection growth. The isolated offline parser-library
+check and its 21 unit tests passed; source guards, inventory freshness,
+snapshot validation, and `git diff --check` passed across all 597 capability
+entries. Consumer compilation, materialized late-content evidence,
+integration snapshot rerun, and full parser quota qualification remain open.
+
+R06 remaining parser collection safety refinement (2026-09-10): removed the
+final infallible result/derived-vector collections across notebook loading,
+FSSHTTP object lookup, rich text, table properties, outline indentation, ink
+dimensions, number-list UTF-16 output, and signed ink paths. Non-aligned table
+width and ink-dimension payloads are now explicit parser errors. The isolated
+offline parser-library check and its 21 unit tests passed; all 597 source
+guards, inventory freshness, snapshot validation, and `git diff --check`
+passed. Snapshot integration rerun, consumer compilation, materialized
+late-content evidence, and full parser quota qualification remain open.
+
+R06 format-width and UTF-16 fail-visible refinement (2026-09-10): UTF-16
+conversion rejects odd-width and invalid-surrogate payloads instead of
+silently truncating or panicking; u16/u32 property vectors reject non-aligned
+payloads before conversion. The isolated offline parser-library suite passed
+23 unit tests; all 597 source guards, inventory freshness, snapshot
+validation, and `git diff --check` passed. Snapshot integration rerun,
+consumer compilation, materialized late-content evidence, and full parser
+quota qualification remain open.
+
+R06 checked rich-text reference refinement (2026-09-10): embedded-object
+resolution now checks the derived text-run reference index and returns a
+malformed parser error for style/object count disagreement instead of
+indexing out of bounds. The isolated offline parser-library suite passed 23
+unit tests; all 597 source guards, inventory freshness, snapshot validation,
+and `git diff --check` passed. Full consumer compilation, snapshot
+integration rerun, materialized late-content evidence, and full parser quota
+qualification remain open.
+
+R06 OneStore mapping identity refinement (2026-09-10): storage-index cell and
+revision mappings, plus storage-manifest root declarations, now reject
+duplicate keys rather than silently replacing an earlier keyed record. The
+standalone current-source parser harness passed 45/45 unit tests, 4/4
+reader-boundary tests, and the sparse path-streaming test. The full package
+check remains blocked before compilation by the missing offline `insta` cache
+entry; consumer compilation, materialized late-content evidence, snapshot
+integration, and full parser quota qualification remain open.
+
+R06 revision-root precedence refinement (2026-09-10): revision-chain merging
+now preserves a newer revision's root when a base revision supplies the same
+role, while duplicate root roles within one manifest are rejected as malformed
+OneStore data. The standalone current-source parser harness passed 48/48 unit
+tests, 4/4 reader-boundary tests, and the sparse path-streaming test. The full
+package check remains blocked before compilation by the missing offline `insta`
+cache entry; consumer compilation, materialized late-content evidence,
+snapshot integration, and full parser quota qualification remain open.
+
+R06 revision-manifest group-reference identity refinement (2026-09-10):
+duplicate object-group references now fail closed during FSSHTTPB parsing
+instead of being reprocessed. The standalone current-source parser harness
+passed 48/48 unit tests, 4/4 reader-boundary tests, and the sparse
+path-streaming test. Full package compile, consumer qualification, materialized
+late-content evidence, snapshot integration, and full parser quota
+qualification remain open.
+
+R06 reader-boundary disposable integration verification (2026-09-10): a
+standalone current-source harness ran the two reader-boundary cases against
+the real `New Section 1.one` sample; short reads matched buffer parsing and a
+256 MiB-plus logical stream completed without reading its padding. Both tests
+passed. Snapshot integration remains unavailable because the host cache lacks
+`insta`.
+
+R06 bounded raw property-vector copy refinement (2026-09-10):
+`one::property::simple::parse_vec` now uses the shared bounded collection
+helper for raw byte-vector allocation, keeping that path under the typed
+64 MiB collection budget. The isolated offline parser-library suite passed 23
+unit tests and the disposable reader-boundary harness passed both integration
+cases; all 597 source guards, inventory freshness, snapshot validation, and
+`git diff --check` passed. Full consumer compilation remains blocked by the
+host's absent OpenSSL development headers; materialized late-content evidence,
+snapshot integration, and full parser quota qualification remain open.
+
+R06 fail-closed malformed enum and path refinement (2026-09-10): unknown
+note-tag shapes and object-group change frequencies now return typed malformed
+data errors instead of panicking; notebook, section, and section-group path
+metadata checks no longer use input-dependent `expect` calls. The isolated
+offline parser-library suite passed 25 unit tests and the disposable
+reader-boundary harness passed both integration cases; all 597 source guards,
+inventory freshness, snapshot validation, and `git diff --check` passed. Full
+consumer compilation remains blocked by the host's absent OpenSSL development
+headers; a direct offline consumer recheck also stops earlier because the
+locked `insta` crate is absent from the host cache. Materialized late-content
+evidence, snapshot integration, and full parser quota qualification remain
+open.
+
+R06 fail-closed reference-range and ink-shape refinement (2026-09-10): object
+and object-space reference arrays now reject overflow or out-of-stream ranges,
+and missing object mappings are errors rather than silently discarded IDs. Ink
+bounding-box vectors must contain exactly four values. Four direct malformed
+range regressions were added; the isolated offline parser-library suite
+passed 29 unit tests and the disposable reader-boundary harness passed both
+integration cases. All 597 source guards, inventory freshness, snapshot
+validation, and `git diff --check` passed. Full consumer compilation remains
+blocked by the host's absent OpenSSL development headers; materialized
+late-content evidence, snapshot integration, and full parser quota
+qualification remain open.
+
+R06 checked OneNote recursion-boundary refinement (2026-09-10): recursive TOC
+traversal now enforces a shared 1024-level limit, and OneStore revision-base
+traversal rejects cyclic manifests while bounding its visited set. The new
+typed recursion-limit error is classified as a resource-limit failure. The
+isolated offline parser-library suite passed 30 unit tests and the disposable
+reader-boundary harness passed both integration cases; all 597 source guards,
+inventory freshness, snapshot validation, and `git diff --check` passed. Full
+consumer compilation remains blocked by absent host OpenSSL development
+headers and the missing locked `insta` cache entry; materialized late-content
+evidence, snapshot integration, and full parser quota qualification remain
+open.
+
+R06 checked FSSHTTPB payload-width refinement (2026-09-10): binary-item and
+data-element-fragment `u64` payload sizes now pass through a checked
+`read_vec_u64` conversion before materialization, and the compact-u64
+defensive fallback returns a typed malformed-data error. The isolated offline
+parser-library suite passed 31 unit tests and the disposable reader-boundary
+harness passed both integration cases; all 597 source guards, inventory
+freshness, snapshot validation, and `git diff --check` passed. Full consumer
+compilation remains blocked by absent host OpenSSL development headers and the
+missing locked `insta` cache entry; materialized late-content evidence,
+snapshot integration, and full parser quota qualification remain open.
+
+R06 OneStore property-vector width refinement (2026-09-10): the format's
+`u32` byte-vector length now crosses the parser boundary through the checked
+`u64` payload helper instead of an unchecked `as usize` narrowing. A direct
+oversized-declaration regression was added. The isolated offline parser suite
+passed 32 unit tests and the disposable reader-boundary harness passed both
+integration cases; the full source/evidence guard passed all 597 capability
+entries and the inventory, snapshot, and diff checks. Consumer compilation,
+materialized late-content evidence, snapshot integration, and full parser
+quota qualification remain open.
+
+R06 bounded stream-window refinement (2026-09-10): stream reads larger than
+the 64 KiB refill window now fail with a typed resource-limit error before any
+buffer growth, preserving the reader's bounded sequential contract. The
+isolated offline parser suite passed 33 unit tests and the disposable
+reader-boundary harness passed both integration cases; the full source/evidence
+guard passed all 597 capability entries and the inventory, snapshot, and diff
+checks. Consumer compilation, materialized late-content evidence, snapshot
+integration, and full parser quota qualification remain open.
+
+R06 reader fault-boundary disposable verification (2026-09-10): the
+standalone reader harness added deterministic mid-input truncation and source
+read-failure cases. All four reader-boundary cases passed: short reads match
+buffer parsing, logical input above the former cap completes, truncation is
+reported as an unexpected EOF, and an injected source error remains an I/O
+failure. This is development evidence only; consumer compilation,
+materialized late-content evidence, snapshot integration, and full parser
+quota qualification remain open.
+
+R06 bounded embedded-data copy refinement (2026-09-10): embedded-file,
+picture-container, and raw property-vector copies now use one fallible helper
+under the 64 MiB derived-data budget instead of plain `to_vec()` duplication.
+The isolated offline parser suite passed 34 unit tests and the disposable
+reader-boundary harness passed all four cases; the full source/evidence guard
+passed all 597 capability entries, with inventory, snapshot, and diff checks
+clean. Consumer compilation, materialized late-content evidence, snapshot
+integration, and full parser quota qualification remain open.
+
+R06 checked data-element-fragment chunk refinement (2026-09-10):
+`DataElementFragment` now validates the checked `offset + length` chunk range
+against the declared total element size and reads only the declared chunk
+length. A focused parser test proves a one-byte late chunk with a logical
+total above 256 MiB does not become a contiguous allocation request; malformed
+ranges remain fail-visible. The isolated offline parser suite passed 38 unit
+tests and the disposable reader-boundary harness passed all four cases.
+Consumer compilation, materialized late-content evidence, snapshot
+integration, and full parser quota qualification remain open.
+
+R06 bounded Latin-1 property conversion refinement (2026-09-10):
+ASCII/Latin-1 property conversion now checks the resulting UTF-8 size against
+the 64 MiB derived-data budget and uses fallible string reservation while
+preserving byte-to-character behavior. The isolated offline parser suite
+passed 39 unit tests and the disposable reader-boundary harness passed all
+four cases. Source guards, inventory freshness, snapshot validation, and
+`git diff --check` passed. Consumer compilation, materialized late-content
+evidence, snapshot integration, and full parser quota qualification remain
+open.
+
+R06 OneStore packaging identity/version compatibility refinement (2026-09-10):
+the packaging parser no longer requires `guidFile` to equal
+`guidLegacyFileVersion`; the format defines these as independent package-store
+identity and version GUIDs. Required fixed file-type and file-format GUIDs are
+validated independently. A minimal packaging regression parses distinct
+identity/version GUIDs and rejects invalid fixed GUIDs. The isolated offline
+parser suite passed 41 unit tests and the disposable reader-boundary harness
+passed all four cases. Consumer compilation, materialized late-content
+evidence, snapshot integration, and full parser quota qualification remain
+open.
+
+R06 Data Element Fragment completion-marker refinement (2026-09-10): fragment
+parsing now requires the format-defined Data Element End marker after the
+opaque chunk. A focused regression rejects a truncated fragment with the
+marker removed, while the large-logical-offset chunk case remains valid. The
+isolated offline parser suite passed 42 unit tests and the disposable
+reader-boundary harness passed all four cases. Consumer compilation,
+materialized late-content evidence, snapshot integration, and full parser
+quota qualification remain open.
+
+R06 OneNote byte-slice parser-error preservation refinement (2026-09-10): the
+public `scan_bytes` modern-parser attempt now preserves typed parser errors,
+including resource-limit failures, instead of collapsing every failure to
+generic `Parse`; a valid legacy marker still takes the compatibility path.
+Source guards and the existing malformed modern fallback regression cover the
+change. The parser-library suite remains 42/42 and the reader-boundary harness
+remains 4/4. Consumer compilation, materialized late-content evidence,
+snapshot integration, and full parser quota qualification remain open.
+
+R06 OneStore root and packaging-schema validation refinement (2026-09-10):
+the parser now validates the packaging cell-schema GUID against the two
+format-defined OneNote types, requires the specified header Cell ID, and
+requires the data-root Cell ID to identify the specified root object-space
+GUID. The public byte-slice compatibility path also preserves typed parser
+errors through its legacy fallback decision. The standalone current-source
+parser harness passed 45/45 unit tests and the reader-boundary harness passed
+4/4; the full source/evidence guard passed all 597 capability entries, with
+inventory, snapshot, and diff checks clean. Consumer compilation,
+materialized late-content evidence, snapshot integration, and full parser
+quota qualification remain open.
+
+R06 byte-slice fallback and CompactU64 coverage refinement (2026-09-10):
+`scan_bytes` and `from_bytes` now restrict legacy fallback to format/parse
+failures, preserving resource-limit, I/O, timeout, sink, and panic failures
+instead of allowing a coincidental legacy marker to mask an incomplete modern
+parse. CompactU64 tests now exercise representative values through all eight
+supported wire widths. The standalone current-source parser harness passed
+38/38 unit tests and 4/4 reader-boundary tests; the acceptance-case suite
+passed. Consumer compilation, materialized late-content evidence, snapshot
+integration, and full parser quota qualification remain open.
+
+R06 path/notebook sequential-reader refinement (2026-09-10): the public
+`Parser::parse_section` and `Parser::parse_notebook` APIs now parse opened files
+through the bounded sequential `Reader` instead of first materializing the
+whole file. Existing schema, filename, and section-group behavior is retained;
+the borrowed-slice API remains explicitly bounded. The disposable current-
+source parser harness passed 38/38 unit tests and 4/4 reader-boundary tests.
+The full parser package check remains blocked before compilation by the missing
+offline `insta` cache entry and absent host OpenSSL development headers;
+materialized late-content evidence, snapshot integration, and full parser
+quota qualification remain open.
+
+R06 object-group declaration/data consistency refinement (2026-09-10): the
+vendored FSSHTTPB parser now rejects object-group declaration/data variant
+mismatches and object/cell reference counts that disagree with their parsed
+data arrays, at the package parse boundary. OneStore object-space construction
+also rejects duplicate object/partition declaration keys instead of silently
+overwriting the earlier data. The standalone current-source parser harness
+passed 41/41 unit tests, 4/4 reader-boundary tests, and the sparse path-
+streaming test. The full parser package check remains blocked before
+compilation by the missing offline `insta` cache entry; consumer compilation,
+materialized late-content evidence, snapshot integration, and full parser
+quota qualification remain open.
+
+R06 FSSHTTPB duplicate-identifier refinement (2026-09-10): all seven typed
+data-element package maps now reject duplicate element identifiers rather than
+silently replacing an earlier parsed object. The focused current-source
+parser harness passed 42/42 unit tests, 4/4 reader-boundary tests, and the
+sparse path-streaming test. The full package check remains blocked before
+compilation by the missing offline `insta` cache entry; consumer compilation,
+materialized late-content evidence, snapshot integration, and full parser
+quota qualification remain open.
+
+R06 OneStore property-set identity refinement (2026-09-10): property-set
+parsing now rejects duplicate property identifiers instead of overwriting the
+earlier value and its position metadata. The standalone current-source parser
+harness passed 43/43 unit tests, 4/4 reader-boundary tests, and the sparse
+path-streaming test. The full package check remains blocked before compilation
+by the missing offline `insta` cache entry; consumer compilation,
+materialized late-content evidence, snapshot integration, and full parser
+quota qualification remain open.
+
+R10 IDSESSION report-correlation hardening (2026-09-10): clamdscan now parses
+the structured report's top-level numeric request ID through the shared JSON
+parser instead of a substring search that could match an ID embedded in a
+nested object or alert text. Negative, out-of-range, wrong-type, nested-only,
+and malformed IDs are rejected without modifying the caller's output. The
+source gate and diff checks pass; current-source client execution remains
+development-only, and certified R10/R04 evidence remains open.
+
+R10 legacy IDSESSION correlation hardening (2026-09-10): the text-reply path
+ now parses a positive decimal session ID only when the numeric prefix is
+ immediately followed by the protocol colon. This removes `atoi()` prefix
+ acceptance and resets the lookup pointer before every reply, so malformed or
+ zero-prefixed replies cannot reuse a prior request entry. Focused parser
+ regressions, source guards and consistency checks remain development evidence;
+ certified R10/R04 evidence remains open.
+
+R10 regular-stream mutation hardening (2026-09-10): the client stream sender
+ now treats a regular descriptor's admitted `fstat()` size as an exact byte
+ budget. Early EOF and growth after the admitted boundary fail before the
+ terminator is sent, preventing a changed descriptor from becoming a clean
+ prefix scan. The source guard and parser/protocol checks remain development
+ evidence; certified R10/R04 evidence remains open.
+
+R10 milter structured-frame cardinality hardening (2026-09-10): the milter
+report receiver now accepts exactly one JSON report object for each
+`INSTREAMREPORT`/`FILDESREPORT` request and requires its zero-length
+terminator. A second frame is rejected instead of being merged into the
+first result, preventing contradictory outcomes from being normalized into a
+successful-looking milter decision. The source gate remains development
+evidence; certified R10/R04 evidence remains open.
+
+R10 shared structured-client frame cardinality hardening (2026-09-10): the
+common `dsreport()` path now applies the same one-object-plus-terminator
+contract used by `clamdscan` and the milter. A second frame is rejected before
+it can increment detection/incomplete counters or be written as accepted
+report output. A focused `check_clamd` regression covers the rejection; the
+source gate remains development evidence and certified R10/R04 evidence
+remains open.
+
+R10 structured-report duplicate-key hardening (2026-09-10): the shared JSON
+report parser now rejects duplicate top-level object names before JSON-C can
+collapse them to one value, including escaped spellings of the same key. The
+parser also rejects report lengths that cannot be represented by JSON-C's
+signed-length API. Focused ID/status regressions, source guards, inventory,
+snapshot validation, and `git diff --check` pass; no certified or full-size
+R10/R04 evidence is claimed.
+
+R06 notebook traversal failure-visibility refinement (2026-09-10): notebook
+TOC traversal still skips genuinely deleted section paths for compatibility,
+but now propagates metadata errors other than `NotFound` and rejects TOC
+entries that are neither regular section files nor directories. This prevents
+permission and special-file failures from silently becoming a partial,
+successful notebook. The focused standalone parser suite remains 48/48;
+source guards and diff checks pass, while consumer compilation, materialized
+late-content evidence, and full parser quota qualification remain open.
+
+R10 on-access unknown-size stream ceiling hardening (2026-09-10): the private
+on-access stream sender now clamps both zero and above-ceiling direct-call
+limits to the certified 32-GiB ingress ceiling. This closes a defense-in-depth
+gap for non-regular descriptors whose context bypasses option parsing; regular
+file preflight and the descriptor-passing path already enforce the same bound.
+The source gate and diff checks remain required; no certified on-access or R04
+acceptance evidence is claimed.
+
+R06 OneStore reference-count narrowing hardening (2026-09-10): object and
+object-space predecessor reference counts now use checked `u32` to `usize`
+conversion instead of unchecked casts before offset arithmetic. This keeps
+cross-target parser behavior fail-closed and preserves the existing checked
+range/overflow validation. Focused regressions and the full source gate pass;
+no certified parser or R04 acceptance evidence is claimed.
+
+R10 on-access stat classification hardening (2026-09-10): on-access stream and
+FILDES ingress now reject negative `fstat()` sizes as `CL_ESTAT` before applying
+the 32-GiB limit. This keeps invalid source metadata distinct from a genuine
+size admission refusal and matches the shared client-side descriptor contract.
+Source guards and diff checks remain required; no certified on-access or R04
+acceptance evidence is claimed.
+
+R10 on-access entry-point stat classification hardening (2026-09-10): the
+scan-thread entry point now rejects a caller-supplied negative `st_size` as
+`CL_ESTAT` before the signed value can be cast for the effective-limit check.
+This closes the pre-protocol path that could otherwise relabel malformed
+metadata as `CL_EMAXSIZE`. Source guards and diff checks remain required; no
+certified on-access or R04 acceptance evidence is claimed.
+
+R10 on-access worker stat classification hardening (2026-09-10): directory
+extra-scans and permission-event preflight now reject negative `st_size` values
+as `CL_ESTAT` before their local size-limit comparisons. The worker clears the
+scan action for malformed metadata, keeping inotify and fanotify paths
+fail-visible without unsigned-wrap classification. Source guards and diff
+checks remain required; no certified on-access or R04 acceptance evidence is
+claimed.
+
+R10 unknown-size on-access stream parity (2026-09-10): non-regular on-access
+descriptors now stream to EOF under the bounded ceiling instead of treating
+`fstat().st_size == 0` as an empty input. A one-byte overflow probe returns
+`CL_EMAXSIZE` without sending a terminating frame, and source read failures
+remain `CL_EREAD`. Source guards and diff checks remain required; no certified
+on-access or R04 acceptance evidence is claimed.
+
+R10 on-access report cardinality hardening (2026-09-10): the on-access
+structured-report receiver now rejects a second nonzero report frame instead
+of merging multiple daemon responses into one verdict. It therefore enforces
+the one-report-plus-terminator protocol used by the other private clients.
+Source guards and diff checks remain required; no certified on-access or R04
+acceptance evidence is claimed.
+
+R06 nested OneNote traversal depth hardening (2026-09-10): outline groups,
+outline elements, table rows/cells, and table-contained content now share the
+vendored parser's checked recursion budget. This closes the outline/table
+object-graph cycle that could otherwise recurse without the TOC-only depth
+guard. Source guards and diff checks remain required; no certified parser or
+R04 acceptance evidence is claimed.
+
+R04 structured resource-phase binding (2026-09-10): acceptance records now
+reject bare resource labels and require measured RSS/temporary budget tokens,
+or the explicit development-envelope max-file/max-temp form. PCRE records also
+require the PCRE and post-PCRE phase tokens. Focused schema, producer, service,
+readiness, inventory, and source-gate checks pass; the authoritative records
+file remains empty and no capability was promoted.
+
+R09 fuzzy-image working-set admission hardening (2026-09-10): the reader-backed
+image path now derives its reservation from decoder pixel count plus declared
+output bytes and checked transform overhead, avoiding under-reservation for
+low-byte-per-pixel images while remaining independent of encoded source size.
+Focused R09/R04 controls and the full source gate pass. The two required R09
+matcher rows remain pending until certified implementation/evidence is
+available; offline Cargo compilation remains blocked by the uncached `insta`
+dependency.
+
+R06 packaging-reference binding (2026-09-10): OneStore parsing now resolves
+the storage index named by the FSSHTTPB packaging header instead of selecting
+an arbitrary first map entry. A focused two-index lookup regression, snapshot
+and inventory checks, and the full source gate pass. Consumer compilation,
+materialized late-content evidence, and full parser quota qualification remain
+open.
+
+R10/R13 on-access known-size early-EOF hardening (2026-09-10): the on-access
+INSTREAM sender now treats EOF before the admitted regular-file size as
+`CL_EREAD` and closes without a terminator, while retaining normal EOF for
+unknown-size descriptors. This prevents a shrinking regular file from
+entering a zero-length-chunk loop or being represented as a clean prefix.
+Source guards, inventory freshness, diff checks, and the full source gate pass;
+certified on-access and R04 evidence remain open.
+
+R06 nested OneStore property-set recursion hardening (2026-09-10): nested
+`PropertySet`/`PropertyValue` parsing now shares the checked parser depth
+budget. A 1024-depth development probe exposed that the previous nominal
+budget itself could exhaust the test thread stack; the shared budget is now
+128, still well above normal format nesting. The disposable current-source
+parser harness passed 49/49 unit tests, including deep nesting; full source
+guards pass, while consumer compilation and certified parser evidence remain
+open.
+
+R06 nested reference-count traversal refinement (2026-09-10): OneStore object
+and object-space reference-offset accounting now descends through both
+`ArrayOfPropertyValues` and child `PropertySet` nodes. The traversal is
+iterative and reserves its pending worklist through the parser collection
+budget, so deeply nested property graphs cannot overflow the call stack or
+silently omit references from the OIDs/OSIDs offsets. A 2048-level
+current-source regression passed for both reference kinds; the standalone
+parser harness passed 52/52 unit tests and the full source gate passed. This
+remains development verification only; consumer compilation, materialized
+late-content evidence, and certified parser/R04 qualification remain open.
+
+R06 storage-manifest mapping refinement (2026-09-10): OneStore parsing now
+resolves the storage manifest named by the storage-index manifest mapping. A
+package with no mapping remains compatible when it contains exactly one
+manifest, while ambiguous unmapped manifests and multiple mappings fail
+closed instead of selecting an arbitrary hash-map entry. The standalone
+current-source parser harness passed 55/55 unit tests and the full source
+inventory/guard checks passed. Consumer compilation, materialized late-content
+evidence, and certified parser/R04 qualification remain open.
+
+R09 GGUF structural-admission refinement (2026-09-10): recognized GGUF AI
+model files now pass through a bounded structural parser for versions 1--3.
+It validates metadata value types and nested-array depth, the optional
+`general.alignment` field, tensor descriptors, and aligned tensor-data
+offsets without materializing model payloads. ONNX/TensorFlow Lite recognition
+and malformed/truncated GGUF remain explicit incomplete/non-cacheable results,
+and the outer raw matcher remains mandatory. A valid minimal GGUF boundary and
+the non-GGUF unsupported boundary are registered in the required-unsupported
+development group; full tensor-shape/type validation and certified evidence
+remain open.
+
+The GGUF alignment check also enforces the format's minimum 8-byte alignment,
+with a required-group regression for a `general.alignment=4` metadata entry.
+This remains a bounded development refinement; no capability was promoted and
+certified parser or release evidence is still required.
+
+The same required group now proves a structurally valid GGUF can still return a
+raw signature detection from its payload area, keeping the outer matcher
+mandatory even when structural admission succeeds.
+
+R06 legacy reader-window arithmetic refinement (2026-09-10): corrected the
+reader's remaining-input calculation so a scan start is subtracted once, not
+twice. A late-marker regression now exercises a valid attachment beyond the
+first 1 MiB window; consumer compilation and certified OneNote qualification
+remain open.
+
+R10 on-access source-read interruption refinement (2026-09-10): the private
+on-access stream sender now retries `EINTR` for its chunk read and both
+boundary probes. Signals cannot turn a resumable source read into `CL_EREAD`,
+while genuine read failures remain fail-closed and no terminating frame is
+sent after a failed request. This is source/control evidence only; certified
+on-access and R04 acceptance evidence remain open.
+
+R10 on-access version-frame validation refinement (2026-09-10): the private
+version handshake now requires one complete NUL-terminated `ClamAV ` frame
+before printing or returning success. Empty, malformed, and absent replies
+remain fail-visible and use the caller's explicit local-version fallback.
+This is source/control evidence only; certified on-access and R04 acceptance
+evidence remain open.
+
+R10 legacy terminal-outcome validation refinement (2026-09-10): the shared
+legacy reply parser now admits only `OK`, `FOUND`, and `ERROR` terminal
+suffixes. Common `dsresult()` and IDSESSION `dspresult()` reject unknown or
+unterminated replies rather than correlating them and allowing malformed text
+to look clean. Focused parser coverage is development evidence only; certified
+R10 and R04 acceptance evidence remain open.
+
+R10 legacy short-reply shape refinement (2026-09-10): the shared legacy reply
+parser now also requires a colon-bearing clamd reply. Bare short `OK`,
+`FOUND`, and `ERROR` frames cannot pass the consumers' old length guard as an
+implicit clean result. Focused parser coverage is development evidence only;
+certified R10 and R04 acceptance evidence remain open.
+
+R10 clamdscan version-frame validation refinement (2026-09-10): the regular
+`clamdscan` version path now requires one nonempty `ClamAV ` response and
+returns its existing fallback status for absent, malformed, or repeated
+frames. This prevents arbitrary daemon text from being printed as a successful
+version result. Certified R10 and R04 acceptance evidence remain open.
+
+R10 clamdscan empty-walk failure return refinement (2026-09-10): the serial
+walker now returns failure when `cli_ftw()` records an error before visiting a
+file; only an error-free empty walk uses the historical “No files scanned”
+success result. Certified R10 and R04 acceptance evidence remain open.
+
+R10 reload-frame validation refinement (2026-09-10): `clamdscan` now requires
+ the exact NUL-terminated `RELOADING` response before reporting a successful
+ database reload; extra or missing response bytes remain fail-visible.
+
+R06 UTF-16 quota-error propagation refinement (2026-09-10): `simple::parse_string()`
+ now preserves typed collection/allocation failures returned by bounded UTF-16
+ conversion instead of relabeling them as generic malformed data. The
+ standalone current-source OneNote module harness passes 17/17, while the full
+ parser-package `insta` cache, host OpenSSL development headers, materialized
+late-content evidence, and certified parser qualification remain unavailable.
+
+R06 sequential-reader interruption refinement (2026-09-10): the vendored
+OneNote reader now retries `Interrupted` stream reads, preserving resumable
+source reads instead of surfacing a spurious parser I/O failure. The current
+source module harness remains 17/17; the parser-package `insta` cache, host
+OpenSSL development headers, materialized late-content evidence, and certified
+parser qualification remain unavailable.
+
+R06 legacy-reader interruption refinement (2026-09-10): the chunked legacy
+OneNote reader now retries interrupted magic, scan-window, header, and payload
+reads. The injected-interruption regression passes in the current-source
+module harness; certified parser and full-size evidence remain unavailable.
+
+R09 GGUF duplicate-alignment refinement (2026-09-10): the bounded GGUF parser
+now rejects repeated `general.alignment` metadata instead of silently letting a
+later value replace the earlier alignment. A required-group regression covers
+conflicting duplicate values; certified parser and full-size evidence remain
+unavailable.
+
+R09 GGUF tensor-layout refinement (2026-09-10): tensor offsets are now treated
+as relative to the tensor-data blob and must advance contiguously by each
+alignment-padded tensor size. A required-group overlap regression passes;
+certified parser and full-size evidence remain unavailable.
+
+R09 GGUF tensor-rank refinement (2026-09-10): tensor descriptors now reject
+rank values above the four-dimensional GGML limit before dimension-vector
+reads. A complete five-dimension descriptor regression is registered;
+certified parser and full-size evidence remain unavailable.
+
+R09 GGUF metadata-key refinement (2026-09-10): empty metadata keys now fail
+closed before value parsing, with a required-group regression registered;
+certified parser and full-size evidence remain unavailable.
+
+R09 GGUF quantized-tensor geometry refinement (2026-09-10): established GGML
+F32/F16, Q4/Q5/Q8, K/IQ, integer, and BF16 block geometries are now validated
+before checked contiguous tensor-layout accounting. Q4_0 valid and
+block-misaligned regressions are registered; full model semantics and
+qualification remain unavailable.
+
+R09 GGUF current-quantized-type refinement (2026-09-10): the bounded GGUF
+geometry table now admits the current TQ1_0, TQ2_0, MXFP4, NVFP4, Q1_0, and
+Q2_0 block formats with checked block-shape and byte-size accounting. A
+table-driven required-group regression covers one aligned block of every new
+type; linked, sanitizer, certified, and full-model qualification remain open.
+
+R09 raw-only status-boundary correction (2026-09-10): the `cli_magic_scan()`
+raw-only fast path now merges matcher status with a prior parser/incomplete
+status. A clean raw pass can no longer erase the fail-visible result for a
+recognized type whose required parser is unavailable, while a raw malware
+detection retains precedence. The local 145-test tools suite (2 expected
+skips), snapshot check, diff check, and full source guard passed; no capability
+was promoted and certified/full-size evidence remains open.
+
+R09 bounded Python-bytecode parser (2026-09-10): recognized Python compiled
+inputs now use a non-executing marshal structural walker with bounded object
+count, recursion depth, lengths, references, and fmap offsets. The parser
+supports legacy and modern code-object layouts and merges with raw matching;
+truncated input remains fail-visible and non-cacheable. Required-group tests
+cover truncated, legacy, modern, and raw-detection-precedence fixtures. The
+145-test local tools suite
+(2 expected skips), snapshot check, diff check, and full source guard passed;
+no capability was promoted and independent format-8, certified, full-size,
+and linked current-source evidence remain open.
+
+R09 Python-marshal reference-table hardening (2026-09-10): malformed
+`TYPE_REF|FLAG_REF` tokens are now rejected, dictionary keys are included in
+the bounded object/reference accounting, and valid references to flagged
+dictionary keys remain accepted. Focused regressions cover out-of-range,
+flagged, and dictionary-key references. The local 145-test tools suite
+(2 expected skips), fresh inventory/snapshot checks, diff check, and full
+source guard passed; current-source C linkage and certified/full-size
+qualification remain open.
+
+R10 on-access report-command length hardening (2026-09-10): on-access
+`CONTSCAN`/`MULTISCAN`/`ALLMATCHSCAN` report commands now use checked `size_t`
+length arithmetic and bounded `snprintf` construction. An overflowing or
+unrepresentable command is rejected before allocation or transport, removing
+the prior wrapped-length `sprintf` path. The local 145-test tools suite
+(2 expected skips), inventory/snapshot checks, diff check, and full source
+guard passed; host C syntax checking remains blocked by missing OpenSSL
+headers and certified R10 evidence remains open.
+
+R06 notebook TOC path and recursion hardening (2026-09-10): notebook TOC
+entries now admit only safe relative paths, inspect referenced entries with
+`symlink_metadata`, and refuse symlinked nested TOC files instead of following
+them. Nested notebook/group traversal shares the bounded parser recursion
+budget, preventing filesystem-backed TOC cycles from recursing indefinitely.
+The current-source OneNote module harness compiles and passes 18/18; the full
+parser test profile remains blocked by the uncached offline `insta` dependency,
+and consumer/certified qualification remains open.
+
+R09 TFLite structural-admission slice (2026-09-10): recognized `TFL3` model
+inputs now pass through a bounded FlatBuffer validator that checks the root
+table, signed vtable relation, field offsets, direct table-vector topology,
+string termination, and required nonempty subgraph vector without materializing
+model weights. Invalid root/vector boundaries remain incomplete and
+non-cacheable, the outer raw matcher remains mandatory, and ONNX remains an
+explicit unsupported boundary. The focused cases are registered but cannot be
+executed against a current-source C link on this host; full nested-model
+semantics, production model corpus, sanitizer, certified Linux x86-64, and
+release qualification remain open.
+
+R09 TFLite field-width refinement (2026-09-10): present Model-table fields now
+require the complete four-byte FlatBuffer uoffset to fit inside the table's
+declared object size, closing a malformed-table read boundary that previously
+could consume bytes beyond the declared object while still reaching a valid
+vector. The new `test_ai_model_tflite_field_width_is_fail_visible` regression
+is source-registered; the current-source C test binary is unavailable on this
+host, while nested-model semantics, production corpus, sanitizer, certified
+Linux x86-64, and release qualification remain open.
+
+R09 ONNX structural-admission slice (2026-09-10): recognized ONNX inputs now
+pass through a bounded protobuf wire-format walker. It requires the
+`ModelProto` IR version, graph, and operator-set import fields, including each
+operator-set version; checks field numbers, wire types, varint/fixed-width
+ranges, length-delimited ranges, and bounded nesting/field counts; and
+recursively validates known graph, node, attribute, tensor, sparse-tensor, and
+metadata message paths without copying model strings or tensor payloads.
+Skipped length-delimited payloads now checkpoint the shared scan deadline.
+Malformed/truncated ONNX remains incomplete and non-cacheable, while the outer
+raw matcher remains mandatory. The valid ModelProto, missing-graph,
+nested-truncation, and missing-operator-set-version regressions are registered
+but cannot be executed against a current-source C link on this host; full ONNX
+tensor/type/operator semantics, production corpus, sanitizer, certified Linux
+x86-64, and release qualification remain open.
+
+R06 modern-reader panic-boundary refinement (2026-09-10): the scanner-facing
+`OneNote::scan_reader` entry point now converts panics from the reader, parser,
+or extraction callback boundary into `OneNoteParserPanic`, matching the
+existing `scan_bytes` containment contract instead of allowing a direct Rust
+consumer to unwind. The standalone current-source OneNote harness compiled
+and passed 19/19 tests, including an injected reader-panic regression. This
+is implementation/development evidence only; consumer compilation,
+materialized late-content evidence, snapshot integration, certified runner,
+and full parser quota qualification remain open. No software, remote
+execution, Docker, usage reset, commit, push, or GitHub workflow action was
+used.
+
+R06 legacy-reader panic-boundary refinement (2026-09-10): the direct
+`scan_legacy_reader` API now converts panics from its reader or attachment sink
+into `OneNoteParserPanic` and invokes the sink abort hook before returning.
+The current-source module harness adds a regression for a panicking seek path
+and verifies sink cleanup; consumer compilation, materialized late-content
+evidence, certified runner, and full parser qualification remain open.
+
+R10 legacy path-command bounds refinement (2026-09-10): common `dsresult()`
+and `dsreport()` path requests now share a checked command builder that rejects
+size arithmetic overflow, lengths that cannot be represented by `sendln()`,
+allocation failure, and formatting truncation before transport. The legacy
+`sprintf` path is gone, and a registered `check_clamd` regression verifies the
+normal `CONTSCAN` wire command remains exact; current-source C execution,
+certified ingress, and R04 acceptance evidence remain open.
+
+R10 milter structured-reply size hardening (2026-09-10): infected structured
+milter reports now use a shared checked reply-size contract capped by
+`CLI_MAX_ALLOCATION` before allocation, and reject negative or truncated
+`snprintf()` results instead of continuing with a partial alert. The quota
+regression covers empty, normal, overflow, over-limit, and NULL-output cases;
+the linked test remains blocked on the host's missing OpenSSL development
+headers, while source guards and certified milter/R04 evidence remain open.
+
+R10 quarantine destination-path size hardening (2026-09-10): common move/copy
+and hard-link quarantine flows now share a checked destination-path builder.
+Directory/name/suffix arithmetic, suffix range, `INT_MAX` representability,
+allocation, and `snprintf()` truncation are rejected before a path is opened,
+linked, or returned; the prior `sprintf()` calls are gone. Inventory,
+snapshot, tools, and source guards passed. Current-source C execution,
+certified ingress, and R04 evidence remain open.
+
+R06 reader offset-overflow hardening (2026-09-10): the vendored OneNote
+reader-backed parser now checks buffer refill endpoints, truncation endpoints,
+and stream cursor advancement before using them for allocation or slicing.
+The focused `usize` overflow regression is registered and the source/evidence
+controls remain the available verification; the offline parser test profile is
+still blocked by the uncached `insta` dependency, while streaming embedded-file
+extraction, certified builds, and full-size R06 qualification remain open.
+
+R09 Python modern marshal-layout correction (2026-09-10): the bounded Python
+compiled-bytecode walker now models Python 3.11+ code objects with five leading
+integers and eight object fields, followed by the first-line, line-table, and
+exception-table objects. This corrects the earlier six-leading/nine-object
+interpretation and keeps the modern fixture aligned with CPython's removal of
+`co_nlocals` from the marshalled sequence. Source/evidence controls passed;
+direct C execution, independent format-8 evidence, certified builds, and
+production qualification remain open. Receipt:
+`docs/largefile-task-receipts/R09-python-modern-layout-2026-09-10.md`.
+
+R09 ONNX nested-message kind correction (2026-09-10): the bounded ONNX
+protobuf walker now uses an explicit opaque message kind for recognized
+length-delimited message families whose full schema is not interpreted. This
+prevents valid `NodeProto.metadata_props`, device-configuration, sparse-tensor,
+and newer model payloads from inheriting an unrelated `AttributeProto` or
+metadata field contract, while retaining bounded field, wire, length, depth,
+and deadline checks. The registered `test_ai_model_onnx_accepts_node_metadata_properties`
+fixture covers a valid nested metadata path; inventory, snapshot, diff, and
+full source guards passed. Current-source linked C execution, production ONNX
+corpus, sanitizer, certified Linux x86-64, and release qualification remain
+open. Receipt: `docs/largefile-task-receipts/R09-onnx-message-kind-correction-2026-09-10.md`.
+
+R09 GGUF scalar-rank compatibility correction (2026-09-10): the bounded GGUF
+validator now accepts rank-zero scalar tensors, which the reference ggml
+reader represents with implicit one-valued remaining dimensions. The existing
+maximum-rank and checked tensor-geometry/data-range rules remain in force; a
+new aligned scalar F32 fixture requires a clean cacheable result. Inventory,
+snapshot, diff, and source/evidence guards are refreshed after the correction.
+Complete GGUF semantics, production model corpus, sanitizer, certified Linux
+x86-64, and release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R09-gguf-scalar-rank-correction-2026-09-10.md`.
+
+R09 GGUF zero-element tensor compatibility correction (2026-09-10): the
+bounded GGUF validator now preserves a zero total element count for
+format-valid non-negative shapes instead of rejecting any zero dimension.
+Reference GGML accepts such tensors, including empty data sections; the new
+aligned F32 regression keeps the existing rank, type, block, offset, and range
+checks active. Inventory, snapshot, diff, and source/evidence guards remain
+the available development verification; complete GGUF semantics, certified
+builds, and release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R09-gguf-zero-element-tensor-2026-09-10.md`.
+
+R09 GGUF signed-dimension range hardening (2026-09-10): tensor dimensions
+above `INT64_MAX` are now rejected before zero-element product handling,
+matching the reference GGML reader's signed dimension storage and preventing
+high-bit values from being admitted as valid geometry. The new required-group
+regression requires a cleared verdict and non-cacheable parse failure;
+inventory, snapshot, diff, and source/evidence guards remain the available
+development verification. Complete GGUF semantics, certified builds, and
+release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R09-gguf-dimension-range-2026-09-10.md`.
+
+R04 lifecycle fixture-binding correction (2026-09-11): lifecycle-bound
+acceptance records now require a named `fixture_role` and the
+`provenance/service-inputs-before.json` identity sidecar. A retained fixture
+artifact alone cannot satisfy a record that claims daemon health/cleanup
+lifecycle evidence. Added regressions for missing role and missing sidecar;
+the focused acceptance schema passes 12/12, the full tools suite passes
+145 tests with 2 expected skips, and the complete source guard passes. The
+authoritative acceptance-record file remains empty; no capability status was
+promoted and certified Linux x86-64/full-size qualification remains blocked.
+
+R09 GGUF quantized row-shape refinement (2026-09-11): the bounded GGUF
+geometry checker now validates the innermost row dimension against the
+quantization block size, rejecting a `16x2` Q4_0 tensor whose total element
+count would otherwise appear block-aligned. The required-group regression is
+registered and the source/control sweep passes. No fresh linked C execution is
+claimed because the available ARM64 Docker image lacks the test/development
+libraries and no package installation was authorized; full tensor semantics,
+certified x86-64, and release qualification remain open.
+
+R09 GGUF tensor-name boundary refinement (2026-09-11): the bounded model
+parser now rejects names at the reference 64-byte `GGML_MAX_NAME` limit before
+skipping their payload. The regression uses a complete descriptor and payload
+so it exercises the name rule rather than truncation; the source/control sweep
+passes. No linked C execution is claimed because the available ARM64 Docker
+image lacks the test/development libraries and no package installation was
+authorized.
+
+R09 TFLite metadata-buffer vector coverage hardening (2026-09-11 UTC): the
+bounded FlatBuffer walk now explicitly documents and tests
+`Model.metadata_buffer` as a scalar `int32` vector, matching the schema, and
+keeps each buffer index out of the table-offset walker. The required-
+unsupported group adds a valid model with two buffer tables and metadata-buffer
+index one. Source/evidence guards remain green; linked current-source C
+execution, certified x86-64, full-size evidence, and release qualification
+remain open.
+
+R09 TFLite metadata-buffer index-binding hardening (2026-09-11 UTC): the
+bounded FlatBuffer walk now validates each signed `metadata_buffer` entry
+against the declared `buffers` vector count, rejecting negative and
+out-of-range indices as incomplete before accepting the model. The registered
+regression changes the valid two-buffer fixture to index two and requires
+`CL_EPARSE`, a cleared verdict, and cache taint. Source/evidence guards remain
+green; linked current-source C execution, certified x86-64, full-size
+evidence, and release qualification remain open.
+
+R10 argument-separator parser hardening (2026-09-11 UTC): argument-taking
+clamd commands now require the protocol's literal space separator before
+accepting a path, so malformed `SCANfoo` input cannot be matched as `SCAN` with
+the first path byte discarded. The existing daemon compatibility matrix adds
+that malformed form across prefixed NUL/newline and legacy packet modes and
+requires `UNKNOWN COMMAND`. Source/evidence guards remain green; a fresh
+current-source daemon binary, certified/full-size ingress records, and R04
+qualification remain open.
+
+R09 signed TFLite metadata-buffer index hardening (2026-09-11 UTC): the bounded
+FlatBuffer walk now decodes `Model.metadata_buffer` entries as signed `int32`
+values before buffer-count admission, explicitly rejecting negative indices.
+The required-unsupported group adds a valid-shape fixture with an `-1` entry
+and requires `CL_EPARSE`, a cleared verdict, and cache taint. Source/evidence
+guards remain the available verification; linked current-source C execution,
+certified Linux x86-64, full-size evidence, and release qualification remain
+open.
+
+R09 fuzzy-image build correction (2026-09-11 UTC): the disposable current-
+source CMake build exposed an ambiguity in `u64::from(...)` after the
+pixel-count reservation added `num_traits::NumCast` to scope. The two `u32`
+image dimensions now widen explicitly before checked multiplication, restoring
+Rust compilation without changing the admission policy. Fresh executable
+evidence remains in progress; no capability promotion or certified/full-size
+claim is made.
+
+R09 TFLite compile correction (2026-09-11 UTC): the disposable current-source
+CMake build exposed a C redeclaration in the TFLite field helper. The local
+vtable offset now uses `vtable_field_offset` instead of reusing the
+`field_offset` output-parameter name; behavior and admission policy are
+unchanged, and ARM64 executable evidence remains in progress.
+
+R09 AI-model test/build corrections (2026-09-11 UTC): AI-model unit fixtures
+now explicitly enable parser execution; GGUF final-payload admission no longer
+requires padding after the final tensor; and Python/GGUF raw-marker fixtures
+use their actual marker offsets while checking parser status separately from
+`verdict_out`. ARM64 execution remains local development evidence only.
+
+Current-source production-linked ARM64 parser checks (2026-09-11 UTC): the
+fresh CMake-linked test binary passes the required-unsupported group 38/38,
+the backend-enabled RAR group 11/11, the bounded fuzzy-image/GIF group 16/16,
+and each of `rust_onenote`, `onenote`, and `rust_map` 2/2. These reruns cover
+the current R09 implementation paths through the production C ABI after the
+TFLite, GGUF, AI-model, and fuzzy-image build/test corrections. They remain
+development evidence only: no certified x86-64, independent format-8,
+sanitizer, production-CVD/service, materialized-large-file, or release
+qualification evidence is present. Receipt:
+`docs/largefile-task-receipts/R09-production-linked-arm64-2026-09-11.md`.
+
+Daemon protocol test cleanup (2026-09-11 UTC): the bounded legacy-reply parser
+now accepts clamd's `Excluded` directory result as a clean skip while keeping
+unknown terminal text fail-closed. The bounded path-request unit fixture now
+uses the normal clean-state `printok=1`. The container-native clamd rerun had
+isolated 2 failures in these parser/test paths; current-source rebuild and
+rerun remain required. Certified x86-64/full-size qualification and R04
+service evidence remain open.
+
+Daemon protocol rerun correction (2026-09-11 UTC): after rebuilding the
+affected current-source targets, the focused `check_clamd` suite passed
+118/118 checks, including the bounded path-request case and `ExcludePath`
+legacy reply handling. The Python wrapper cases for `check_clamd` and
+`clamdscan_ExcludePath` each passed 1/1. The combined current-source linked
+CTest set (`libclamav`, `clamd`, and all `largefile_*` controls) passed 10/10;
+certified x86-64/full-size qualification and R04 service evidence remain
+open.
+
+R04/R10 development-service input-binding correction (2026-09-11 UTC): the
+current-source service capture initially exposed that lifecycle-bound records
+were missing the required `provenance/service-inputs-before.json` identity
+sidecar. The producer now retains version-1 before/after identities for each
+small development fixture, binds both sidecars into every direct structured
+and clamdscan record, and fails if the identities change during the capture.
+The focused producer/schema tests passed 6/6 and 12/12; the corrected
+current-source ARM64 daemon/client capture passed all 24 records, and an
+independent host-side verifier accepted 24/24 with matching before/after
+sidecars. This is development evidence only; no capability was promoted and
+certified x86-64, full-size, sanitizer, privileged, and release qualification
+remain open. Receipt:
+`docs/largefile-task-receipts/R10-development-service-input-binding-2026-09-11.md`.
+
+R04 development-capture trust-root correction (2026-09-11 UTC): the current
+source `clamscan` producer previously allowed an omitted CA directory to fail
+inside database loading with no structured report. It now defaults to the
+repository's existing test trust root and rejects a missing or symlinked
+explicit path before starting cases. Focused producer tests passed 2/2, the
+real disposable ARM64 capture without a CA argument wrote and independently
+validated all six file/stdin clean, detection, and limit records, and the
+service producer tests remained 6/6. This improves development reproducibility
+only; no capability was promoted and certified x86-64/full-size/sanitizer
+qualification remains open. Receipt:
+`docs/largefile-task-receipts/R04-development-capture-certs-2026-09-11.md`.
+
+R00 five-issue current-source verification (2026-09-11 UTC): the disposable
+current-source ARM64 production-linked cases passed required_unsupported 38/38,
+RAR 11/11, fuzzy-image/GIF 16/16, Rust OneNote 2/2, legacy OneNote 2/2, Rust
+map 2/2, parser regressions 4/4, descriptor map 2/2, CVD API 13/13 with the
+repository test CA, CVD info 1/1, and the daemon option-parser 31/31. The host
+tools suite passed 147 tests with 2 expected skips; the 597-row source guard,
+fresh snapshot, and diff checks passed. The release gate correctly remains
+blocked at 0 qualified, 440 pending, and 583 blockers. This is development
+evidence only; certified Linux x86-64, sanitizer, full-size, production-CVD/
+service, materialized-late-content, and final-canary evidence remain open.
+Receipt: `docs/largefile-task-receipts/R00-five-issue-verification-2026-09-11.md`.
+
+R00 five-issue hardening and verification (2026-09-11 UTC): the focused
+production-linked ARM64 checks passed PDF 24/24, ARJ map/status 8/8, EGG
+map/cleanup 12/12, callback/report API 4/4, and GIF/fuzzy-image 16/16. The
+fuzzy-image Rust FFI loader now uses fallible reservations for its hashmap and
+per-hash metadata vectors and returns allocation failure through `FFIError`
+instead of panicking across the extern boundary; a multiple-metadata-record
+regression and source guards pin the path. The generated inventory and
+snapshot were refreshed; the source guard, 147-tool-test suite with 2 expected
+skips, snapshot freshness, and diff checks passed. The exact linked binary
+predates the final Rust-only edit because the disposable CMake graph lacks
+`libcheck_pic.a` and related development artifacts, so the new allocation
+hardening is source-verified rather than claimed as linked evidence. The gate
+remains blocked at 0 qualified, 143 bounded, 440 pending, and 583 blockers;
+certified x86-64, sanitizer, full-size, production-CVD/service, materialized
+edge, and final-canary evidence remain open. Receipt:
+`docs/largefile-task-receipts/R00-five-issue-hardening-2026-09-11.md`.
+
+R06 object-space reference stream correction (2026-09-11 UTC): the embedded-
+ink and note-tag nested property helpers previously sliced the ordinary
+`object_ids` stream while resolving object-space references. Both now use the
+dedicated `object_space_ids` stream. A parsed-property regression with distinct
+compact IDs passed in the isolated current-source OneNote parser library
+profile, 61/61 tests; the full source guard passed all 597 capability bindings,
+the host tool suite passed 147 tests with 2 expected skips, and snapshot,
+inventory, and diff checks passed. The canonical package test remains blocked
+before compilation by the uncached `insta` dependency; no consumer, full-size,
+certified, or R04 qualification evidence was produced. Release readiness is
+unchanged and blocked. Receipt:
+`docs/largefile-task-receipts/R06-object-space-reference-stream-2026-09-11.md`.
+
+R06 modern-first OneNote fallback correction (2026-09-11 UTC): the scanner
+now gives the reader-backed modern parser first refusal before scanning for
+legacy attachment markers, because the legacy 16-byte magic is shared by
+newer section files. Legacy fallback is restricted to modern format/parse
+failures with the exact shared magic, and a no-attachment compatibility pass
+preserves the original modern error. The focused scanner fallback unit,
+147-host-test suite with 2 expected skips, 597-entry source guard, snapshot,
+and diff checks passed. The canonical Rust consumer check remains blocked
+before compilation by the uncached `insta` dependency; no consumer,
+materialized-edge, certified, or release qualification evidence was produced.
+Receipt: `docs/largefile-task-receipts/R06-modern-first-fallback-2026-09-11.md`.
+
+R09 TFLite vtable boundary hardening (2026-09-11 UTC): the recognized AI-model
+validator now rejects zero/negative-signed vtable distances and vtables that
+extend past their containing table. The host tools suite passed 147 tests with
+2 expected skips, the 597-entry source guard, fresh snapshot check, and diff
+check passed. The current-source ARM64 C/Rust build probes remain blocked before
+compilation by missing `zconf.h` and an incomplete offline dependency cache; no
+software was installed, no capability was promoted, and release readiness
+remains blocked.
+Receipt: `docs/largefile-task-receipts/R09-tflite-vtable-boundary-2026-09-11.md`.
+
+R01 task-receipt provenance exclusion (2026-09-11 UTC): task receipts are now
+excluded from the Git-mode source manifest as external run metadata, alongside
+the generated dashboard and coordinator ledger. The isolated Git regression
+passed 13/13 and proved receipt edits do not change the source identity while
+executable and untracked source edits still do. The complete source/evidence
+guard sweep passed, the post-change source-manifest SHA-256 was
+`c7c8baa7616f7e990ffc41763c92d6ebbd287ced505f8da1735a12a91f323e12`, and no
+capability was promoted. Release qualification remains blocked; certified
+runner/build and full-size evidence are still required.
+Receipt: `docs/largefile-task-receipts/R01-task-receipt-provenance-2026-09-11.md`.
+
+R02/R10 service resource-evidence hardening (2026-09-11 UTC): the service
+producer now retains RSS/temp sample counts and measured service, milter,
+parallel-client, and temporary-space peaks; the independent post-run checker
+requires those canonical fields, positive samples, the fixed 64-GiB temporary
+budget, and peak-versus-budget comparisons. It also rechecks retained
+parallel-client and milter elapsed times against the retained latency budget.
+Checksum-refreshed tamper regressions for RSS, temporary-space, and elapsed
+time pass. The focused service evidence suite passes, the full tools suite
+remains 147 passed with 2 expected Linux filesystem skips, the complete
+source/evidence guard is green, and the current source-manifest SHA-256 is
+`ae8307730da2dedcf28359186164eaedf199de9cc45853e9ec168548b40c90f3` across
+1,678 entries. No capability was promoted; certified x86-64, full-size,
+sanitizer, privileged, and R04 qualification evidence remain open.
+Receipt: `docs/largefile-task-receipts/R02-service-resource-evidence-2026-09-11.md`.
+
+R06 OneNote reader cleanup (2026-09-11 UTC): the bounded legacy
+reader-backed OneNote path now invokes sink abort cleanup when sink begin
+fails, and a regression covers that lifecycle contract. The disposable
+current-source parser profile passed check and 61/61 parser tests; the
+disposable current-source OneNote consumer profile passed 21/21 tests. The
+host tools suite passed 147 tests with 2 expected skips, the complete
+source/evidence guard passed all 597 capability bindings, and snapshot,
+inventory, and diff checks passed. The host Rust toolchain lacks rustfmt, so
+no installation was attempted. No capability was promoted; certified x86-64,
+full-size, sanitizer, privileged, production-service, and R04 qualification
+evidence remain open. Release readiness remains blocked. Receipt:
+`docs/largefile-task-receipts/R06-onenote-reader-cleanup-2026-09-11.md`.
+
+R10 structured-report version binding (2026-09-11 UTC): numeric verdicts in
+the shared structured clamd report consumer now require integer report
+`version: 1`; missing or unsupported numeric versions fail closed while the
+documented versionless string-valued incomplete compatibility path remains
+unchanged. The focused acceptance/status tests passed 25/25, the host tools
+suite passed 147 tests with 2 expected skips, the complete source/evidence
+guard passed all 597 capability bindings, and snapshot, inventory, and diff
+checks passed. The retained CMake binary predates this edit and the available
+container lacks JSON-C development headers, so no linked C runtime result was
+claimed. No capability was promoted; certified x86-64, full-size, sanitizer,
+privileged, production-service, and R04 qualification evidence remain open.
+Release readiness remains blocked. Receipt:
+`docs/largefile-task-receipts/R10-structured-report-version-2026-09-11.md`.
+
+R04 strict resource-phase grammar (2026-09-11 UTC): acceptance records now
+parse the complete semicolon-delimited resource-phase field and reject
+unknown, empty, or duplicate measured/development tokens instead of silently
+ignoring extra text. The focused acceptance/producer/development-service
+suite passed 26/26, the full source/evidence guard passed all 597 capability
+bindings, and snapshot, inventory, and diff checks passed. The C structured-
+report regression literals were also corrected to valid escaped C strings;
+the retained binary predates the source edits and JSON-C headers remain
+unavailable, so no linked C result is claimed. No capability was promoted;
+certified x86-64, full-size, sanitizer, privileged, production-service, and
+R04 acceptance evidence remain open. Receipt:
+`docs/largefile-task-receipts/R04-resource-phase-grammar-2026-09-11.md`.
+
+R09 TFLite vtable regression (2026-09-11 UTC): the TFLite vtable-distance
+hardening is now bound to the required AI-model C test group. The new public
+scan regressions cover zero and UINT32_MAX distances and require CL_EPARSE,
+cleared verdict/alert state, and non-cacheability. The host tools suite passed
+147 tests with 2 expected skips, the complete source/evidence guard passed all
+597 capability bindings, and snapshot, inventory, and diff checks passed. The
+new C test could not be linked because the retained binary predates the edit
+and the available Docker images lack JSON-C/Zlib test headers. No capability
+was promoted; certified x86-64, full-size, sanitizer, production-service,
+and R04 acceptance evidence remain open. Receipt:
+`docs/largefile-task-receipts/R09-tflite-vtable-test-2026-09-11.md`.
+
+R09 TFLite buffer-vector bounds (2026-09-11 UTC): the recognized TFLite
+Model `buffers` vector now validates each present `Buffer.data` scalar byte
+vector through the bounded FlatBuffer reader, rejecting out-of-range offsets
+as incomplete and non-cacheable instead of treating payload ranges as opaque.
+The required AI-model test group includes the public API regression for an
+out-of-range UINT32_MAX data offset. The host tools suite and complete
+source/evidence guard pass, with 597 capability bindings and fresh snapshot,
+inventory, and diff checks. The new C test is source-registered but not linked
+here because the retained binary predates the edit and the available Docker
+images lack JSON-C/Zlib development headers. No capability was promoted;
+certified Linux x86-64, full-size, sanitizer, production-service, R04
+acceptance, and full TFLite semantic evidence remain open. Receipt:
+`docs/largefile-task-receipts/R09-tflite-buffer-vector-2026-09-11.md`.
+
+R09 TFLite tensor/operator semantic bindings (2026-09-11 UTC): the bounded
+FlatBuffer walk now follows recognized `OperatorCode`, `SubGraph`, `Tensor`,
+and `Operator` tables, validates signed shape dimensions and rank, bounds
+TensorType values, binds tensor buffer indices to Model buffers, and binds
+operator opcode/input/output references to their declared vectors. The public
+AI-model tests include a valid one-tensor/one-operator control plus fail-
+visible invalid TensorType, tensor-buffer, opcode, input, and output
+references. The host
+tools suite passed 147 tests with 2 expected skips; the 597-row source guard,
+snapshot, inventory, and diff checks passed. A disposable C syntax probe
+remained blocked by the image's missing JSON-C development header, so no
+linked result or capability promotion is claimed; an isolated current-source
+C parser harness independently passed all 6 valid/malformed cases. Certified Linux x86-64,
+sanitizer, full-size, production-service, and complete TFLite semantic
+qualification remain open. Receipt:
+`docs/largefile-task-receipts/R09-tflite-tensor-operator-semantics-2026-09-11.md`.
+
+R09 TFLite signed OperatorCode version (2026-09-11 UTC): the bounded
+FlatBuffer semantic walk now rejects zero and out-of-range signed
+`OperatorCode.version` values, closing the negative-`int32` admission gap.
+The public API regression mutates the version field to `UINT32_MAX`; the
+isolated current-source parser harness passes 7/7, including this case. The
+host tools suite passed 147 tests with 2 expected skips; source guards passed
+with 597 capability bindings; snapshot, regenerated inventory, and diff
+checks passed. Current source-manifest SHA-256 is
+`42c96cebd6a3fa26eac45037b62bb1b65380c92dd9eccae6f15912ed691ce7e2`.
+The linked C build remains unavailable because the disposable image lacks
+JSON-C development headers, so no capability was promoted. Certified Linux
+x86-64, sanitizer, full-size, production-service, R04 acceptance, and
+complete TFLite semantic qualification remain open. Receipt:
+`docs/largefile-task-receipts/R09-tflite-operator-version-2026-09-11.md`.
+
+R09 Python marshal `TYPE_STRINGREF` support (2026-09-11 UTC): the bounded
+non-executing Python bytecode walker now consumes legal `R` string-reference
+objects and requires their indexes to be within the already-accounted marshal
+reference table. A registered legacy-layout regression covers a flagged
+string followed by `TYPE_STRINGREF`; the host tools suite passed 147 tests
+with 2 expected skips, source guards passed with 597 capability bindings, and
+snapshot, regenerated inventory, and diff checks passed. Current
+source-manifest SHA-256 is
+`d9d27ba8c7e7607471021007892f78a07914db276c80d6e586c4ea086361ee21`.
+The linked C test remains unavailable because the disposable image lacks
+JSON-C development headers, so no capability was promoted. Independent
+format-8, certified Linux x86-64, sanitizer, full-size, production-service,
+R04 acceptance, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R09-python-stringref-2026-09-11.md`.
+
+R10 milter framed-reply and indefinite-timeout semantics (2026-09-11 UTC):
+the structured milter consumer now rejects a second JSON report frame after
+the one authoritative report, and `ReadTimeout=0` now correctly blocks
+indefinitely instead of failing before the first `select()`. The host tools
+suite passed 147 tests with 2 expected skips; source guards passed with 597
+capability bindings; snapshot, regenerated inventory, manifest, and diff
+checks passed. Current source-manifest SHA-256 is
+`bff47fe203f641e0a094c4bbfb66ef835723d64d1904e3cc223b317c31da29f6`.
+The linked current-source C runtime remains unavailable because the retained
+build predates the edit and the available Docker images lack JSON-C and Check
+development headers. No capability was promoted; certified Linux x86-64,
+full-size, sanitizer, privileged, production-service, R04 acceptance, and
+final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R10-milter-framed-reply-timeout-2026-09-11.md`.
+
+R10 nonblocking milter descriptor send (2026-09-11 UTC): `nc_sendmsg()` now
+retries interrupted or temporarily unwritable nonblocking sends within the
+existing 30-second budget, rejects short successful sends, and fails closed
+on timeout or wait errors while passing `SCM_RIGHTS`. The host tools suite
+passed 147 tests with 2 expected skips; source guards passed with 597
+capability bindings; snapshot, regenerated inventory, manifest, and diff
+checks passed. Current source-manifest SHA-256 is
+`4ec4f450396d56a5ba56183daf0e2a4c666e9c0889c4ee08f753f4cf4d46837f`.
+The linked current-source C runtime remains unavailable because the retained
+build predates the edit and the available Docker images lack JSON-C and Check
+development headers. No capability was promoted; certified Linux x86-64,
+full-size, sanitizer, privileged, production-service, R04 acceptance, and
+final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R10-milter-fd-send-2026-09-11.md`.
+
+R09 AI-model backing-read status (2026-09-11 UTC): the bounded
+`CL_TYPE_AI_MODEL` reader now preserves an in-range fmap backing-read failure
+as `CL_EREAD` with sticky incomplete/non-cacheable state, while retaining
+`CL_EPARSE` for a short/truncated read. The injected-fmap regression is
+registered in the ordinary and required-unsupported cases; host tests passed
+147 tests with 2 expected skips, source guards passed with 597 capability
+bindings, and snapshot, regenerated inventory, manifest, and diff checks
+passed. Current source-manifest SHA-256 is
+`493b07b798b0ad97cc7425819fb6face2e2ceb46eba8833751fecdece1af13b2`.
+The linked current-source C runtime remains unavailable because the retained
+build predates the edit and the available Docker images lack JSON-C and Check
+development headers. No capability was promoted; full AI-model parser
+semantics, certified Linux x86-64, full-size, sanitizer, privileged,
+production-service, R04 acceptance, and final release qualification remain
+open. Receipt:
+`docs/largefile-task-receipts/R09-ai-model-read-status-2026-09-11.md`.
+
+R10 on-access descriptor reply timeout (2026-09-11 UTC): the descriptor-backed
+on-access reply reader now waits under the configured timeout before blocking
+`recv()`, preserves timeout versus receive-error status, and classifies signed
+`recv()` results before assigning the successful count to its unsigned buffer
+length. The existing Docker toolchain syntax check passed warning-free; host
+tests passed 147 tests with 2 expected skips; source guards passed with 597
+capability bindings; snapshot, regenerated inventory, manifest, and diff
+checks passed. Current source-manifest SHA-256 is
+`133ccef558ef5cb9df05ab884e4516c49a8f9867d25f260088230eba7a9ac3aa`.
+No current-source linked runtime or capability promotion was claimed because
+the available images lack JSON-C and Check development headers. Certified
+Linux x86-64, sanitizer, privileged on-access execution, full-size service
+parity, R04 acceptance, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R10-onaccess-fd-reply-timeout-2026-09-11.md`.
+
+R09 Python marshal backing-read status (2026-09-11 UTC): the bounded Python
+reader now preserves an in-range fmap backing-read failure as `CL_EREAD` with
+sticky incomplete/non-cacheable state, while short/truncated marshal input
+remains `CL_EPARSE`. The public regression is registered in both ordinary and
+required-unsupported groups; host tests passed 147 with 2 expected skips, the
+source guard passed with 597 capability bindings, and refreshed
+inventory/snapshot checks passed. Current source-manifest SHA-256 is
+`a7cf950670932058e077cf81706fe4fef93a16730d124312527f8650870f4b97`.
+No linked current-source C execution or capability promotion was claimed
+because the available images lack JSON-C and Check development headers.
+Certified Linux x86-64, sanitizer, production-CVD/service, full-size, R04
+acceptance, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R09-python-read-status-2026-09-11.md`.
+
+R10 on-access timeout normalization (2026-09-11 UTC): curl-backed on-access
+send and receive waits now normalize signed timeout values before the unsigned
+socket-wait helper, and curl-backed receive readiness failures preserve
+`CURLE_RECV_ERROR`. The descriptor-backed reader retains the same normalized
+timeout boundary. Host tests passed 147 with 2 expected skips; source guards
+passed with 597 capability bindings, refreshed inventory/snapshot and
+acceptance checks passed, and the current source-manifest SHA-256 is
+`5183c325e03e21e3fd09e6f01723d4a1bc100104484857198fd3971daccaed94`.
+Current-source linked execution, certified x86-64, full-size, sanitizer,
+privileged, production-service, R04 acceptance, and final release
+qualification remain open. Receipt:
+`docs/largefile-task-receipts/R10-onaccess-timeout-normalization-2026-09-11.md`.
+
+R10 shared command-send width hardening (2026-09-11 UTC): `sendln()` now
+stores the native `ssize_t` result from `send()` while draining its bounded
+unsigned wire-length input, preventing a large successful write from being
+misclassified through an `int` narrowing conversion. Source and host controls
+remain the verification basis; linked current-source runtime, certified
+x86-64, full-size service parity, and final release qualification remain open.
+
+R10 milter send deadline and spool-write retry (2026-09-11 UTC): `nc_send()`
+now establishes one deadline for a complete nonblocking payload instead of
+resetting the deadline after each partial write, and the local milter temp-file
+spool retries `EINTR` without abandoning the message. Source and host controls
+remain the verification basis; linked current-source milter execution,
+certified x86-64, full-size service parity, and final release qualification
+remain open. The stable current source-manifest SHA-256 is
+`2e00bba6b8dadca33d8d5e17eca3679018ca48c37215ab4ab8d5ac1dcc98429a`.
+Receipt:
+`docs/largefile-task-receipts/R10-milter-send-deadline-spool-write-2026-09-11.md`.
+
+R10 current-source ingress syntax verification (2026-09-11 UTC): ten changed
+shared/service/client translation units passed disposable Docker C syntax
+checks with warnings treated as errors, including milter netcode, clamd
+communication/session/scanner, clamdscan, on-access communication/protocol,
+common actions, and milter quota. JSON-C was represented only by a temporary
+type stub because the image lacks its development header; no linked-runtime
+or qualification claim follows. Receipt:
+`docs/largefile-task-receipts/R10-current-source-syntax-2026-09-11.md`.
+
+The corrected source-manifest SHA-256 is
+`cd5a9c391c706e45b9b7f9bc58d908b39a85e6e32c8bd403187bcb9349467eeb`;
+host tests, source guards, inventory freshness, snapshot validation, and
+syntax checking remain green.
+
+R06 modern-reader boundary verification (2026-09-11 UTC): a temporary
+out-of-tree manifest compiled the current vendored OneNote parser offline;
+61/61 library tests and 2/2 reader-boundary tests passed, including short
+reads and a logical `256 MiB + 1` input. The regular package test remains
+blocked by the uncached offline `insta` dev dependency. No capability was
+promoted. Receipt:
+`docs/largefile-task-receipts/R06-modern-onenote.md`.
+
+R10 milter compile correction (2026-09-11 UTC): restored the `nc_send()` local
+scratch buffer required by the shared `strerror_print` macro after the send
+deadline hardening exposed a compile defect. A disposable Docker toolchain
+passed warning-free syntax checking for `clamav-milter/netcode.c`, and a
+source guard binds the buffer to the error branch. No capability was promoted.
+Receipt:
+`docs/largefile-task-receipts/R10-milter-send-deadline-spool-write-2026-09-11.md`.
+
+R10 milter deadline enforcement (2026-09-11 UTC): `nc_send()` now enforces its
+single end-to-end deadline before every nonblocking `send()`, including the
+repeated-successful-partial-write path that never reaches `EAGAIN`. The ten
+changed ingress translation units pass disposable warning-as-error syntax
+checks; host tooling passes 147 tests with 2 expected skips; source guards,
+inventory freshness, snapshot validation, and `git diff --check` remain green.
+Refreshed source-manifest SHA-256:
+`7367697b6324da35cfa800e0f42c280b208f8ed9e6266e1b943411b907d935f7`.
+No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R10-milter-send-deadline-spool-write-2026-09-11.md`.
+
+R10 milter guard precision (2026-09-11 UTC): the deadline guards now require
+pre-send checks before the actual `send()` and `sendmsg()` calls, preventing
+the existing readiness-wait check from masking removal of the new enforcement.
+The guard sweep, host suite (147 passed, 2 expected skips), focused syntax
+check, inventory/snapshot validation, and `git diff --check` passed. Refreshed
+source-manifest SHA-256:
+`07b9f9b1f92a71c9b361f004de4b3c5e0de413821231a3d4c4bb2adada8ce4d8`.
+No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R10-milter-send-deadline-spool-write-2026-09-11.md`.
+
+R10 milter FD-passing deadline enforcement (2026-09-11 UTC): `nc_sendmsg()`
+now enforces its single end-to-end deadline before every `sendmsg()` retry,
+including repeated `EINTR` retries that bypass the readiness wait. The focused
+warning-as-error milter syntax check passed; host tooling passed 147 tests with
+2 expected skips; source guards, inventory freshness, snapshot validation, and
+`git diff --check` remain green. Refreshed source-manifest SHA-256:
+`77146a74752dec7e1bc49b30d32af4193ca46a86c92ff3a9df905690aab3981b`.
+No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R10-milter-send-deadline-spool-write-2026-09-11.md`.
+
+R10 on-access FD-pass timeout parity (2026-09-11 UTC): the local FILDES
+socket is nonblocking, in-progress connect is bounded by OnAccessCurlTimeout,
+and command plus SCM_RIGHTS sends preserve one deadline with distinct timeout
+and write statuses. Focused Docker syntax checks passed with warnings treated
+as errors; host tooling passed 147 tests with 2 expected skips; source guards,
+focused protocol/service controls, inventory, snapshots, acceptance map, and
+`git diff --check` passed. Two consecutive source-manifest generations matched
+at `1f16a6014a02be9857f41866926c15c39db282459d69baa9aaa3eb65923e4160`.
+No capability was promoted. Certified x86-64, full-size ingress/on-access
+service evidence, R03 runner qualification, R04 records, sanitizer, and final
+release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R10-onaccess-fdpass-timeout-2026-09-11.md`.
+
+R10 on-access FD-pass transport hardening (2026-09-11 UTC): connect and
+writable-send waits rebuild their select state and remaining deadline after
+`EINTR`, and raw FILDES command/SCM_RIGHTS sends suppress `SIGPIPE` with the
+platform-supported socket/send flags. Focused warning-as-error syntax, host
+tests (147 passed, 2 expected skips), source guards, inventory/snapshots, and
+`git diff --check` passed. Current source-manifest SHA-256:
+`3a29e00559104dd7328e4bd8e1bd264c38fc7f2e238cb3aafa2332433773a119`.
+No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R10-onaccess-fdpass-timeout-2026-09-11.md`.
+
+R10 on-access curl readiness EINTR deadline (2026-09-11 UTC):
+`onas_socket_wait()` now rebuilds its select state and remaining timeout from
+one absolute `OnAccessCurlTimeout` deadline after each interrupted wait. The
+affected C ingress units pass warning-as-error syntax checks; the host tools
+suite passes 147 tests with 2 expected skips; focused protocol/service tests,
+the complete source-guard sweep, refreshed inventory, and `git diff --check`
+pass. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R10-onaccess-curl-eintr-deadline-2026-09-11.md`.
+
+R09 TFLite TensorType boundary (2026-09-11 UTC): the bounded TFLite validator
+now rejects undefined `TensorType` values above the current schema maximum of
+22 instead of accepting values through 31. A registered required-unsupported
+regression mutates a valid tensor/operator model to value 23 and requires
+`CL_EPARSE`, no alert, and non-cacheability. The current-source scanner syntax
+check passed with warnings treated as errors; host tools passed 147 tests with
+2 expected skips; service workload checks passed 28 tests with 2 expected
+Linux-only skips; source guards, the 597-row map, refreshed inventory, stable
+manifest, and `git diff --check` passed. No capability was promoted. The
+current-source linked C test binary, certified x86-64, sanitizer, production
+service, full-size model corpus, R04 records, and final release qualification
+remain open. Receipt:
+`docs/largefile-task-receipts/R09-tflite-tensortype-boundary-2026-09-11.md`.
+
+R06 reference-stream short-input handling (2026-09-11 UTC): embedded-ink and
+note-tag adapters now reject declared object/object-space reference ranges
+that exceed their backing streams instead of silently truncating them with
+`saturating_sub().min()`. The current-source parser harness passed 62/62 and
+the consumer harness passed 21/21; host tooling passed 147 tests with 2
+expected skips, service workload checks passed 28 tests with 2 expected
+Linux-only skips, and inventory, snapshot, acceptance-map/schema, targeted
+source assertions, and `git diff --check` passed. No capability was promoted;
+certified, full-size, production-service, R04-record, and final release
+qualification remain open. Receipt:
+`docs/largefile-task-receipts/R06-reference-stream-short-input-2026-09-11.md`.

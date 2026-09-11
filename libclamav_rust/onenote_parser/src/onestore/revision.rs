@@ -6,8 +6,8 @@ use crate::fsshttpb::packaging::OneStorePackaging;
 use crate::onestore::object::Object;
 use crate::onestore::object_space::GroupData;
 use crate::onestore::revision_role::RevisionRole;
-use crate::reader::{reserve_collection, reserve_collection_map};
-use std::collections::HashMap;
+use crate::reader::{reserve_collection, reserve_collection_map, reserve_collection_set};
+use std::collections::{HashMap, HashSet};
 
 /// A OneNote file revision.
 ///
@@ -18,6 +18,38 @@ use std::collections::HashMap;
 pub(crate) struct Revision<'a> {
     objects: HashMap<ExGuid, Object<'a>>,
     roots: HashMap<RevisionRole, ExGuid>,
+}
+
+fn insert_root_if_absent(
+    roots: &mut HashMap<RevisionRole, ExGuid>,
+    role: RevisionRole,
+    object_id: ExGuid,
+) -> Result<bool> {
+    if roots.contains_key(&role) {
+        return Ok(false);
+    }
+
+    reserve_collection_map(roots, 1)?;
+    roots.insert(role, object_id);
+    Ok(true)
+}
+
+fn insert_declared_root(
+    declared_roles: &mut HashSet<RevisionRole>,
+    roots: &mut HashMap<RevisionRole, ExGuid>,
+    role: RevisionRole,
+    object_id: ExGuid,
+) -> Result<()> {
+    reserve_collection_set(declared_roles, 1)?;
+    if !declared_roles.insert(role) {
+        return Err(ErrorKind::MalformedOneStoreData(
+            "duplicate root role in revision manifest".into(),
+        )
+        .into());
+    }
+
+    insert_root_if_absent(roots, role, object_id)?;
+    Ok(())
 }
 
 impl<'a, 'b> Revision<'a> {
@@ -53,10 +85,7 @@ impl<'a, 'b> Revision<'a> {
 
         if let Some(rev) = revision_cache.get(&CellId(context_id, revision_manifest.rev_id)) {
             for (role, object_id) in rev.roots.iter() {
-                if !roots.contains_key(role) {
-                    reserve_collection_map(roots, 1)?;
-                }
-                roots.insert(*role, *object_id);
+                insert_root_if_absent(roots, *role, *object_id)?;
             }
             for (object_id, object) in rev.objects.iter() {
                 if objects.contains_key(object_id) {
@@ -69,12 +98,10 @@ impl<'a, 'b> Revision<'a> {
             return Ok(base_rev);
         }
 
+        let mut declared_roles = HashSet::new();
         for root in revision_manifest.root_declare.iter() {
             let role = RevisionRole::parse(root.root_id)?;
-            if !roots.contains_key(&role) {
-                reserve_collection_map(roots, 1)?;
-            }
-            roots.insert(role, root.object_id);
+            insert_declared_root(&mut declared_roles, roots, role, root.object_id)?;
         }
 
         for group_id in revision_manifest.group_references.iter() {
@@ -109,7 +136,15 @@ impl<'a, 'b> Revision<'a> {
         reserve_collection_map(&mut group_objects, group.declarations.len())?;
         for (decl, data) in group.declarations.iter().zip(group.objects.iter()) {
             object_ids.push(decl.object_id());
-            group_objects.insert((decl.object_id(), decl.partition_id()), data);
+            if group_objects
+                .insert((decl.object_id(), decl.partition_id()), data)
+                .is_some()
+            {
+                return Err(ErrorKind::MalformedOneStoreData(
+                    "duplicate object group declaration key".into(),
+                )
+                .into());
+            }
         }
 
         for object_id in object_ids {
@@ -130,5 +165,57 @@ impl<'a, 'b> Revision<'a> {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{insert_declared_root, insert_root_if_absent};
+    use crate::onestore::revision_role::RevisionRole;
+    use std::collections::{HashMap, HashSet};
+
+    #[test]
+    fn base_revision_root_cannot_replace_newer_root() {
+        let newer = exguid!({{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}, 1});
+        let older = exguid!({{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}, 2});
+        let mut roots = HashMap::new();
+
+        assert!(insert_root_if_absent(
+            &mut roots,
+            RevisionRole::DefaultContent,
+            newer,
+        )
+        .unwrap());
+        assert!(!insert_root_if_absent(
+            &mut roots,
+            RevisionRole::DefaultContent,
+            older,
+        )
+        .unwrap());
+        assert_eq!(roots.get(&RevisionRole::DefaultContent), Some(&newer));
+    }
+
+    #[test]
+    fn duplicate_root_role_in_one_revision_is_rejected() {
+        let first = exguid!({{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}, 1});
+        let second = exguid!({{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}, 2});
+        let mut declared_roles = HashSet::new();
+        let mut roots = HashMap::new();
+
+        insert_declared_root(
+            &mut declared_roles,
+            &mut roots,
+            RevisionRole::Metadata,
+            first,
+        )
+        .unwrap();
+        assert!(insert_declared_root(
+            &mut declared_roles,
+            &mut roots,
+            RevisionRole::Metadata,
+            second,
+        )
+        .is_err());
+        assert_eq!(roots.get(&RevisionRole::Metadata), Some(&first));
     }
 }

@@ -322,6 +322,15 @@ static cl_error_t onas_scan_thread_handle_dir(struct onas_scan_event *event_data
             continue;
         }
 
+        if (sb.st_size < 0) {
+            logg(LOGG_ERROR, "ClamWorker: invalid negative size for '%s' during directory traversal; treating the extra scan as incomplete\n",
+                 curr->fts_path);
+            if (CL_SUCCESS == ret) {
+                ret = CL_ESTAT;
+            }
+            continue;
+        }
+
         if (event_data->sizelimit && (uint64_t)sb.st_size > event_data->sizelimit) {
             /* Inotify extra scans have no permission response to deny.  Skip
              * only this object, keep scanning independent siblings, and
@@ -387,8 +396,14 @@ static cl_error_t onas_scan_thread_handle_file(struct onas_scan_event *event_dat
         event_data->bool_opts &= ((uint16_t)~ONAS_SCTH_B_SCAN);
         logg(LOGG_DEBUG, "ClamWorker: unable to stat '%s'; treating the permission event as incomplete\n", pathname);
     }
+    if (fres == 0 && sb.st_size < 0) {
+        err      = 1;
+        ret_code = CL_ESTAT;
+        event_data->bool_opts &= ((uint16_t)~ONAS_SCTH_B_SCAN);
+        logg(LOGG_DEBUG, "ClamWorker: invalid negative size for '%s'; treating the permission event as incomplete\n", pathname);
+    }
     if (event_data->sizelimit) {
-        if (fres != 0 || (uint64_t)sb.st_size > event_data->sizelimit) {
+        if (fres != 0 || (fres == 0 && sb.st_size >= 0 && (uint64_t)sb.st_size > event_data->sizelimit)) {
             /* don't skip so we avoid lockups, but don't scan either;
              * while it should be obvious, this will unconditionally set
              * the bit in the map to 0 regardless of original orientation */

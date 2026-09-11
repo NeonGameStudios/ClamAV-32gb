@@ -2,9 +2,10 @@ use crate::errors::{ErrorKind, Result};
 use crate::fsshttpb::data::exguid::ExGuid;
 use crate::one::property::layout_alignment::LayoutAlignment;
 use crate::one::property_set::{outline_element_node, outline_group, outline_node, PropertySetId};
-use crate::onenote::content::{parse_content, Content};
+use crate::onenote::content::{parse_content_at_depth, Content};
 use crate::onenote::list::{parse_list, List};
 use crate::onestore::object_space::ObjectSpace;
+use crate::reader::{collect_results, Reader};
 
 /// A content outline.
 ///
@@ -262,11 +263,11 @@ pub(crate) fn parse_outline(outline_id: ExGuid, space: &ObjectSpace) -> Result<O
         .ok_or_else(|| ErrorKind::MalformedOneNoteData("outline node is missing".into()))?;
     let data = outline_node::parse(outline_object)?;
 
-    let items = data
-        .children
-        .into_iter()
-        .map(|item_id| parse_outline_item(item_id, space))
-        .collect::<Result<_>>()?;
+    let items = collect_results(
+        data.children
+            .into_iter()
+            .map(|item_id| parse_outline_item(item_id, space, 0)),
+    )?;
 
     let outline = Outline {
         items,
@@ -287,7 +288,8 @@ pub(crate) fn parse_outline(outline_id: ExGuid, space: &ObjectSpace) -> Result<O
     Ok(outline)
 }
 
-fn parse_outline_item(item_id: ExGuid, space: &ObjectSpace) -> Result<OutlineItem> {
+fn parse_outline_item(item_id: ExGuid, space: &ObjectSpace, depth: usize) -> Result<OutlineItem> {
+    Reader::check_recursion_depth(depth)?;
     let content_type = space
         .get_object(item_id)
         .ok_or_else(|| ErrorKind::MalformedOneNoteData("outline item is missing".into()))?
@@ -299,9 +301,11 @@ fn parse_outline_item(item_id: ExGuid, space: &ObjectSpace) -> Result<OutlineIte
     })?;
 
     let item = match id {
-        PropertySetId::OutlineGroup => OutlineItem::Group(parse_outline_group(item_id, space)?),
+        PropertySetId::OutlineGroup => {
+            OutlineItem::Group(parse_outline_group(item_id, space, depth)?)
+        }
         PropertySetId::OutlineElementNode => {
-            OutlineItem::Element(parse_outline_element(item_id, space)?)
+            OutlineItem::Element(parse_outline_element_at_depth(item_id, space, depth)?)
         }
         _ => {
             return Err(ErrorKind::MalformedOneNoteData(
@@ -314,17 +318,22 @@ fn parse_outline_item(item_id: ExGuid, space: &ObjectSpace) -> Result<OutlineIte
     Ok(item)
 }
 
-fn parse_outline_group(group_id: ExGuid, space: &ObjectSpace) -> Result<OutlineGroup> {
+fn parse_outline_group(
+    group_id: ExGuid,
+    space: &ObjectSpace,
+    depth: usize,
+) -> Result<OutlineGroup> {
+    Reader::check_recursion_depth(depth)?;
     let group_object = space
         .get_object(group_id)
         .ok_or_else(|| ErrorKind::MalformedOneNoteData("outline group is missing".into()))?;
     let data = outline_group::parse(group_object)?;
 
-    let outlines = data
-        .children
-        .into_iter()
-        .map(|item_id| parse_outline_item(item_id, space))
-        .collect::<Result<_>>()?;
+    let outlines = collect_results(
+        data.children
+            .into_iter()
+            .map(|item_id| parse_outline_item(item_id, space, depth + 1)),
+    )?;
 
     let group = OutlineGroup {
         child_level: data.child_level,
@@ -334,32 +343,34 @@ fn parse_outline_group(group_id: ExGuid, space: &ObjectSpace) -> Result<OutlineG
     Ok(group)
 }
 
-pub(crate) fn parse_outline_element(
+pub(crate) fn parse_outline_element_at_depth(
     element_id: ExGuid,
     space: &ObjectSpace,
+    depth: usize,
 ) -> Result<OutlineElement> {
+    Reader::check_recursion_depth(depth)?;
     let element_object = space
         .get_object(element_id)
         .ok_or_else(|| ErrorKind::MalformedOneNoteData("outline element is missing".into()))?;
     let data = outline_element_node::parse(element_object)?;
 
-    let children = data
-        .children
-        .into_iter()
-        .map(|item_id| parse_outline_item(item_id, space))
-        .collect::<Result<_>>()?;
+    let children = collect_results(
+        data.children
+            .into_iter()
+            .map(|item_id| parse_outline_item(item_id, space, depth + 1)),
+    )?;
 
-    let contents = data
-        .contents
-        .into_iter()
-        .map(|content_id| parse_content(content_id, space))
-        .collect::<Result<_>>()?;
+    let contents = collect_results(
+        data.contents
+            .into_iter()
+            .map(|content_id| parse_content_at_depth(content_id, space, depth + 1)),
+    )?;
 
-    let list_contents = data
-        .list_contents
-        .into_iter()
-        .map(|list_id| parse_list(list_id, space))
-        .collect::<Result<_>>()?;
+    let list_contents = collect_results(
+        data.list_contents
+            .into_iter()
+            .map(|list_id| parse_list(list_id, space)),
+    )?;
 
     let element = OutlineElement {
         child_level: data.child_level,

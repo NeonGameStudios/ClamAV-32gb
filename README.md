@@ -1,111 +1,136 @@
-# ClamAV
+# ClamAV-32gb
 
-<p align="center">
-  <img width="250" height="250" src="https://raw.githubusercontent.com/Cisco-Talos/clamav/main/logo.png" alt='Maeve, the ClamAV mascot'>
-</p>
+This repository is a ClamAV fork focused on making scanning of inputs up to
+exactly 32 GiB (34,359,738,368 bytes) predictable and bounded. The work is
+being applied across `libclamav`, `clamscan`, `clamd`, `clamdscan`, the milter,
+and on-access scanning.
 
-<p align="center">
-  ClamAV® is an open source antivirus engine for detecting trojans, viruses,
-  malware & other malicious threats.
-</p>
+> **Status:** active development on `largefile-roadmap-qualification`. This is
+> not an official Cisco Talos release and it is not release-qualified yet.
+> The [current snapshot](32gb-current-snapshot.md) is the source of truth for
+> qualification status.
 
-<p align="center">
-  <a href="https://github.com/Cisco-Talos/clamav/actions"><img src="https://github.com/Cisco-Talos/clamav/workflows/CMake%20Build/badge.svg" height="18"></a>
-  <a href="https://discord.gg/6vNAqWnVgw"><img src="https://img.shields.io/discord/636023333074370595.svg?logo=discord" height="18"/></a>
-  <a href="https://twitter.com/clamav"><img src="https://abs.twimg.com/favicons/twitter.ico" width="18" height="18"></a>
-</p>
+## What this fork is building
 
-## Documentation & FAQ
+The current branch combines ClamAV 1.5.3 with an ongoing large-file safety and
+qualification effort. The implemented development slices include:
 
-ClamAV documentation is hosted at [docs.clamav.net](https://docs.clamav.net/).
-The source archive for each release also includes a copy of the documentation
-for [offline](docs/html/index.html) reading.
+- fail-closed input admission and shared accounting for logical content,
+  matcher work, temporary storage, memory, files, recursion, and time;
+- reader-backed and streaming paths for selected archive, OneNote, and other
+  large-format parsers, with bounded spooling and cleanup;
+- bounded structural validation for GGUF, ONNX, and TFLite model inputs, while
+  retaining raw matching;
+- a non-executing, bounded structural walker for Python bytecode;
+- deadline, partial-write, EINTR, report-framing, descriptor-passing, and
+  cleanup hardening across service and front-end paths; and
+- capability inventories, acceptance-map checks, workload checks, source
+  guards, and readiness reporting so incomplete coverage stays visible.
 
-You can contribute to the documentation by submitting improvements to
-[Cisco-Talos/clamav-documentation](https://github.com/Cisco-Talos/clamav-documentation)
+The goal is not simply to accept a 32 GiB file. A scan must account for every
+logical child and derived representation, preserve raw matching, and never
+report or cache `OK` when a required parser, matcher, decoder, or signature ABI
+was skipped. Unsupported or incomplete results must remain explicit.
 
-## ClamAV News
+## Current qualification status
 
-For information about the features in this and prior releases, read
-[the news](NEWS.md).
+The repository currently tracks 597 capability rows:
 
-Catch up on the latest about ClamAV by reading our
-[blog](http://blog.clamav.net) and follow us on Twitter `@clamav`.
+| Measure | Current value |
+| --- | ---: |
+| Qualified | 0 |
+| Bounded development slices | 143 |
+| Pending | 440 |
+| Explicitly unsupported | 14 |
+| Blocked by open evidence or qualification gates | 583 |
+| Parser rows still blocked | 80 / 80 |
+| Release readiness | **Blocked** |
 
-## ClamAV Signatures
+These numbers are intentionally conservative. Full parser coverage, complete
+materialized ingress testing, production-database runs, sanitizer evidence, a
+certified Linux x86-64 runner, and final release gates are still open.
 
-Anyone can learn to read and write ClamAV signatures. To get started, see our
-[signature writing manual](https://docs.clamav.net/manual/Signatures.html).
+## GitHub notes — since the previous push
 
-## Installation Instructions
+- Hardened the shared 32 GiB ingress/resource contract and fail-visible result
+  handling across daemon, client, milter, and on-access paths.
+- Extended bounded OneNote reader/parser coverage, including modern-first
+  fallback behavior, checked offsets, cleanup, and short-input rejection.
+- Strengthened bounded AI-model validation for GGUF, ONNX, and TFLite, plus
+  non-executing Python marshal/bytecode handling and fuzzy-image admission.
+- Added or refreshed R00–R10 evidence receipts, capability/inventory data,
+  service workload checks, source guards, and readiness snapshots.
+- Revalidated the local Python tooling and Rust parser suites; no capability was
+  promoted to release-qualified status.
 
-### Using Docker
+Release readiness remains **Blocked** pending full-size fixtures, complete
+parser and materialized-ingress coverage, sanitizer and production-service
+evidence, and a certified Linux x86-64 run.
 
-ClamAV can be run using Docker. For details, visit to the online manual under
-["Docker"](https://docs.clamav.net/manual/Installing/Docker.html) and check out
-our images on [Docker Hub](https://hub.docker.com/r/clamav/clamav).
+## Roadmap and evidence
 
-### Using a Package Manager
+- [PLAN.md](PLAN.md) — authoritative release contract and acceptance plan
+- [32gb-luna-execution-roadmap.md](docs/32gb-luna-execution-roadmap.md) —
+  step-by-step execution directive
+- [32gb-current-snapshot.md](32gb-current-snapshot.md) — current readiness
+  snapshot and remaining blockers
+- [largefile-capabilities.tsv](docs/largefile-capabilities.tsv) — capability
+  manifest covering ingress, parsers, matchers, and build features
+- [largefile-task-ledger.md](docs/largefile-task-ledger.md) — implementation
+  receipts and evidence ledger
+- [largefile-service-input-policy.md](docs/largefile-service-input-policy.md) —
+  service-input boundary and result policy
+- [largefile-qualification-followups.md](docs/largefile-qualification-followups.md) —
+  remaining qualification follow-ups
 
-For help installing from a package manager, refer to the online manual under
-["Packages"](https://docs.clamav.net/manual/Installing/Packages.html).
+## Development checks
 
-### Using an Installer
+From the repository root:
 
-The following install packages are available for download from
-[clamav.net/downloads](https://www.clamav.net/downloads):
+```sh
+python3 -B -m unittest discover -s tools -p '*_test.py'
+python3 -B tools/largefile_service_workload_check_test.py
+python3 -B tools/largefile_acceptance_cases.py --check-map
+python3 -B tools/largefile_acceptance_cases.py --check-records
+python3 -B tools/largefile_status_snapshot.py --check 32gb-current-snapshot.md
+sh tools/largefile_release_readiness.sh --status
+```
 
-- Linux - Debian and RPM packages for x86_64 and i686. *New in v0.104.*
-- macOS - PKG installer for x86_64 and arm64 (universal). *New in v0.104.*
-- Windows - MSI installers and portable ZIP packages for win32 and x64.
+The readiness command is expected to exit non-zero while the repository is
+still blocked. The commands above validate development tooling and evidence
+structure; they do not substitute for the outstanding full-size, sanitizer,
+service, and certified-runner qualification suites.
 
-To learn how to use these packages, refer to the online manual under
-["Installing"](https://docs.clamav.net/manual/Installing.html#installing-with-an-installer).
+## Building and using ClamAV
 
-### Build from Source
+This fork retains the standard ClamAV source-build flow. See
+[INSTALL.md](INSTALL.md) for build options and the
+[upstream installation documentation](https://docs.clamav.net/manual/Installing/Installing-from-source-Unix.html)
+for the platform-specific prerequisites. The roadmap documents the additional
+resource and qualification requirements for the 32 GiB target.
 
-For step-by-step instructions, refer to the online manual:
-- [Unix/Linux/Mac](https://docs.clamav.net/manual/Installing/Installing-from-source-Unix.html)
-- [Windows](https://docs.clamav.net/manual/Installing/Installing-from-source-Windows.html)
+For signature development, start with the
+[ClamAV signature-writing manual](https://docs.clamav.net/manual/Signatures.html).
+For upstream user documentation, see [docs.clamav.net](https://docs.clamav.net/).
 
-The source archive for each release includes a copy of the documentation for
-[offline](docs/html/UserManual.html) reading.
+## Contributing
 
-A reference with all of the available build options can be found in the
-[INSTALL.md](INSTALL.md) file.
+Please keep changes tied to a capability row, test case, or evidence receipt
+where possible. Do not turn a bounded development slice into a release claim
+without the required current-source, sanitizer, service, and certified-runner
+evidence. Issues and pull requests can be opened in this repository.
 
-You can find additional advice for developers in the online manual under
-["For Developers"](https://docs.clamav.net/manual/Development.html).
-
-### Upgrading from a previous version
-
-Visit [the FAQ](https://docs.clamav.net/faq/faq-upgrade.html) for tips on how
-to upgrade from a previous version.
-
-## Join the ClamAV Community
-
-The best way to get in touch with the ClamAV community is to join our
-[mailing lists](https://docs.clamav.net/faq/faq-ml.html).
-
-You can also join the community on our
-[ClamAV Discord chat server](https://discord.gg/6vNAqWnVgw).
-
-## Want to make a contribution?
-
-The ClamAV development team welcomes
-[code contributions](https://github.com/Cisco-Talos/clamav),
-improvements to
-[our documentation](https://github.com/Cisco-Talos/clamav-documentation),
-and also [bug reports](https://github.com/Cisco-Talos/clamav/issues).
-
-Thanks for joining us!
+This fork is based on [Cisco-Talos/clamav](https://github.com/Cisco-Talos/clamav)
+and retains its upstream attribution and licensing. Upstream bug reports and
+documentation improvements should continue to use the appropriate upstream
+projects.
 
 ## Licensing
 
 ClamAV is licensed for public/open source use under the GNU General Public
 License, Version 2 (GPLv2).
 
-See `COPYING.txt` for a copy of the license.
+See [COPYING.txt](COPYING.txt) for a copy of the license.
 
 ### 3rd Party Code
 
@@ -115,32 +140,32 @@ are licensed differently than ClamAV. These include:
 
 - Yara: Apache 2.0 license
   - Yara has since switched to the BSD 3-Clause License;
-    Our source is out-of-date and needs to be updated.
+    our source is out-of-date and needs to be updated.
 - 7z / lzma: public domain
 - libclamav's NSIS/NulSoft parser includes:
   - zlib: permissive free software license
   - bzip2 / libbzip2: BSD-like license
 - OpenBSD's libc/regex: BSD license
 - file: BSD license
-- str.c: Contains BSD licensed modified-implementations of strtol(), stroul()
-  functions, Copyright (c) 1990 The Regents of the University of California.
+- str.c: contains BSD-licensed modified implementations of `strtol()` and
+  `stroul()`, Copyright (c) 1990 The Regents of the University of California
 - pngcheck (png.c): MIT/X11-style license
 - getopt.c: MIT license
 - Curl: license inspired by MIT/X, but not identical
 - libmspack: LGPL license
 - UnRAR (libclamunrar): a non-free/restricted open source license
-  - Note: The UnRAR license is incompatible with GPLv2 because it contains a
-    clause that prohibits reverse engineering a RAR compression algorithm from
-    the UnRAR decompression code.
-    For this reason, libclamunrar/libclamunrar_iface is not linked at all with
-    libclamav. It is instead loaded at run-time. If it fails to load, ClamAV
-    will continue running without RAR support.
+  - The UnRAR license is incompatible with GPLv2 because it contains a clause
+    that prohibits reverse engineering a RAR compression algorithm from the
+    UnRAR decompression code.
+  - For this reason, libclamunrar/libclamunrar_iface is not linked with
+    libclamav. It is loaded at run time; if it fails to load, ClamAV continues
+    without RAR support.
 
-See the `COPYING` directory for a copy of the 3rd party project licenses.
+See the [COPYING directory](COPYING) for the third-party project licenses.
 
 ## Acknowledgements
 
-Credit for contributions to each release can be found in the [News](NEWS.md).
-
-ClamAV is brought to you by
-[the ClamAV Team](https://www.clamav.net/about.html#credits)
+This fork builds on the work of the
+[ClamAV Team](https://www.clamav.net/about.html#credits), Cisco Talos, and the
+many upstream contributors whose code and documentation remain part of the
+project.

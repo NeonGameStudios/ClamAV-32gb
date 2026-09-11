@@ -63,6 +63,24 @@ class DevelopmentAcceptanceCaptureTests(unittest.TestCase):
         )
         self.scanner.chmod(self.scanner.stat().st_mode | stat.S_IXUSR)
 
+    def test_cvd_certificate_directory_defaults_and_fails_early(self):
+        source_root = self.root / "source"
+        default_certs = source_root / "unit_tests/input/signing/verify"
+        default_certs.mkdir(parents=True)
+
+        self.assertEqual(
+            capture.resolve_cvd_certs_dir(source_root, None),
+            default_certs.resolve(),
+        )
+        explicit = self.root / "explicit-certs"
+        explicit.mkdir()
+        self.assertEqual(
+            capture.resolve_cvd_certs_dir(source_root, explicit),
+            explicit.resolve(),
+        )
+        with self.assertRaisesRegex(ValueError, "CVD certificate directory is missing"):
+            capture.resolve_cvd_certs_dir(source_root, self.root / "missing-certs")
+
     def test_capture_writes_real_bound_records_and_retained_artifacts(self):
         count = capture.capture(
             self.scanner,

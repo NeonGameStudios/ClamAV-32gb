@@ -25223,9 +25223,10 @@ START_TEST(test_sis9x_unexpected_nested_field_is_fail_visible)
 }
 END_TEST
 
-START_TEST(test_python_compiled_parser_is_explicitly_unsupported)
+static void assert_python_compiled_scan_result(const uint8_t *data,
+                                               size_t data_len,
+                                               cl_error_t expected)
 {
-    static const uint8_t data[] = {0x42, 0x0d, 0x0d, 0x0a, 0, 0, 0, 0};
     struct cl_scan_options options;
     fmap_t *map;
     struct cl_engine *scan_engine;
@@ -25235,11 +25236,12 @@ START_TEST(test_python_compiled_parser_is_explicitly_unsupported)
     cl_error_t ret;
 
     memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
     scan_engine = cl_engine_new();
     ck_assert_ptr_nonnull(scan_engine);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
-    map = cl_fmap_open_memory(data, sizeof(data));
+    map = cl_fmap_open_memory(data, data_len);
     ck_assert_ptr_nonnull(map);
     verdict    = CL_VERDICT_STRONG_INDICATOR;
     last_alert = "stale";
@@ -25248,19 +25250,232 @@ START_TEST(test_python_compiled_parser_is_explicitly_unsupported)
     ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
                         scan_engine, &options, NULL, NULL, NULL, NULL,
                         "CL_TYPE_PYTHON_COMPILED", NULL);
-    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(ret, expected);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
-    ck_assert(map->dont_cache_flag);
+    ck_assert(map->dont_cache_flag == (expected != CL_SUCCESS));
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+
+START_TEST(test_python_compiled_truncated_parser_is_fail_visible)
+{
+    static const uint8_t data[] = {0x42, 0x0d, 0x0d, 0x0a, 0, 0, 0, 0};
+    assert_python_compiled_scan_result(data, sizeof(data), CL_EPARSE);
+}
+END_TEST
+
+START_TEST(test_python_compiled_parser_accepts_legacy_code_object)
+{
+    static const uint8_t data[] = {
+        0x42, 0x0d, 0x0d, 0x0a, 0, 0, 0, 0,
+        'c',
+        0, 0, 0, 0, /* argcount */
+        0, 0, 0, 0, /* nlocals */
+        0, 0, 0, 0, /* stacksize */
+        0, 0, 0, 0, /* flags */
+        's', 0, 0, 0, 0, /* co_code */
+        ')', 1, /* co_consts */
+        'N', /* None constant */
+        ')', 0, /* co_names */
+        ')', 0, /* co_varnames */
+        ')', 0, /* co_freevars */
+        ')', 0, /* co_cellvars */
+        's', 0, 0, 0, 0, /* co_filename */
+        's', 0, 0, 0, 0, /* co_name */
+        0, 0, 0, 0, /* co_firstlineno */
+        's', 0, 0, 0, 0 /* co_lnotab */
+    };
+
+    assert_python_compiled_scan_result(data, sizeof(data), CL_SUCCESS);
+}
+END_TEST
+
+START_TEST(test_python_compiled_parser_rejects_out_of_range_marshal_reference)
+{
+    static const uint8_t data[] = {
+        0x42, 0x0d, 0x0d, 0x0a, 0, 0, 0, 0,
+        'c',
+        0, 0, 0, 0, /* argcount */
+        0, 0, 0, 0, /* nlocals */
+        0, 0, 0, 0, /* stacksize */
+        0, 0, 0, 0, /* flags */
+        's', 0, 0, 0, 0, /* co_code */
+        ')', 1, /* co_consts */
+        'r', 2, 0, 0, 0, /* forward reference: only root is in scope */
+        ')', 0, /* co_names */
+        ')', 0, /* co_varnames */
+        ')', 0, /* co_freevars */
+        ')', 0, /* co_cellvars */
+        's', 0, 0, 0, 0, /* co_filename */
+        's', 0, 0, 0, 0, /* co_name */
+        0, 0, 0, 0, /* co_firstlineno */
+        's', 0, 0, 0, 0 /* co_lnotab */
+    };
+
+    assert_python_compiled_scan_result(data, sizeof(data), CL_EPARSE);
+}
+END_TEST
+
+START_TEST(test_python_compiled_parser_rejects_flagged_marshal_reference)
+{
+    static const uint8_t data[] = {
+        0x42, 0x0d, 0x0d, 0x0a, 0, 0, 0, 0,
+        'c',
+        0, 0, 0, 0, /* argcount */
+        0, 0, 0, 0, /* nlocals */
+        0, 0, 0, 0, /* stacksize */
+        0, 0, 0, 0, /* flags */
+        's', 0, 0, 0, 0, /* co_code */
+        ')', 1, /* co_consts */
+        (uint8_t)('r' | 0x80), 0, 0, 0, 0, /* TYPE_REF cannot carry FLAG_REF */
+        ')', 0, /* co_names */
+        ')', 0, /* co_varnames */
+        ')', 0, /* co_freevars */
+        ')', 0, /* co_cellvars */
+        's', 0, 0, 0, 0, /* co_filename */
+        's', 0, 0, 0, 0, /* co_name */
+        0, 0, 0, 0, /* co_firstlineno */
+        's', 0, 0, 0, 0 /* co_lnotab */
+    };
+
+    assert_python_compiled_scan_result(data, sizeof(data), CL_EPARSE);
+}
+END_TEST
+
+START_TEST(test_python_compiled_parser_accepts_marshal_reference_from_dict_key)
+{
+    static const uint8_t data[] = {
+        0x42, 0x0d, 0x0d, 0x0a, 0, 0, 0, 0,
+        'c',
+        0, 0, 0, 0, /* argcount */
+        0, 0, 0, 0, /* nlocals */
+        0, 0, 0, 0, /* stacksize */
+        0, 0, 0, 0, /* flags */
+        's', 0, 0, 0, 0, /* co_code */
+        ')', 2, /* co_consts */
+        '{', /* dictionary */
+        (uint8_t)('s' | 0x80), 1, 0, 0, 0, 'x', /* referenced key */
+        'N', /* value */
+        0, /* dictionary terminator */
+        'r', 0, 0, 0, 0, /* reference to the dictionary key */
+        ')', 0, /* co_names */
+        ')', 0, /* co_varnames */
+        ')', 0, /* co_freevars */
+        ')', 0, /* co_cellvars */
+        's', 0, 0, 0, 0, /* co_filename */
+        's', 0, 0, 0, 0, /* co_name */
+        0, 0, 0, 0, /* co_firstlineno */
+        's', 0, 0, 0, 0 /* co_lnotab */
+    };
+
+    assert_python_compiled_scan_result(data, sizeof(data), CL_SUCCESS);
+}
+END_TEST
+
+START_TEST(test_python_compiled_parser_accepts_marshal_string_reference)
+{
+    static const uint8_t data[] = {
+        0x42, 0x0d, 0x0d, 0x0a, 0, 0, 0, 0,
+        'c',
+        0, 0, 0, 0, /* argcount */
+        0, 0, 0, 0, /* nlocals */
+        0, 0, 0, 0, /* stacksize */
+        0, 0, 0, 0, /* flags */
+        's', 0, 0, 0, 0, /* co_code */
+        ')', 2, /* co_consts */
+        (uint8_t)('s' | 0x80), 1, 0, 0, 0, 'x', /* referenced string */
+        'R', 0, 0, 0, 0, /* TYPE_STRINGREF */
+        ')', 0, /* co_names */
+        ')', 0, /* co_varnames */
+        ')', 0, /* co_freevars */
+        ')', 0, /* co_cellvars */
+        's', 0, 0, 0, 0, /* co_filename */
+        's', 0, 0, 0, 0, /* co_name */
+        0, 0, 0, 0, /* co_firstlineno */
+        's', 0, 0, 0, 0 /* co_lnotab */
+    };
+
+    assert_python_compiled_scan_result(data, sizeof(data), CL_SUCCESS);
+}
+END_TEST
+
+START_TEST(test_python_compiled_parser_accepts_modern_code_object)
+{
+    static const uint8_t data[] = {
+        0xcb, 0x0d, 0x0d, 0x0a,
+        0, 0, 0, 0, /* flags */
+        0, 0, 0, 0, 0, 0, 0, 0, /* hash */
+        'c',
+        0, 0, 0, 0, /* argcount */
+        0, 0, 0, 0, /* posonlyargcount */
+        0, 0, 0, 0, /* kwonlyargcount */
+        0, 0, 0, 0, /* stacksize */
+        0, 0, 0, 0, /* flags */
+        's', 0, 0, 0, 0, /* co_code */
+        ')', 0, /* co_consts */
+        ')', 0, /* co_names */
+        ')', 0, /* co_localsplusnames */
+        's', 0, 0, 0, 0, /* co_localspluskinds */
+        'z', 0, /* co_filename */
+        'z', 0, /* co_name */
+        'z', 0, /* co_qualname */
+        0, 0, 0, 0, /* co_firstlineno */
+        's', 0, 0, 0, 0, /* co_linetable */
+        's', 0, 0, 0, 0 /* co_exceptiontable */
+    };
+
+    assert_python_compiled_scan_result(data, sizeof(data), CL_SUCCESS);
+}
+END_TEST
+
+START_TEST(test_python_compiled_parser_still_runs_raw_matching)
+{
+    static const unsigned char data[] = {
+        0x42, 0x0d, 0x0d, 0x0a, 0, 0, 0, 0,
+        'P', 'Y', '-', 'R', 'A', 'W'
+    };
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    fmap_t *map;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    uint64_t scanned       = 0;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Python.Raw", "50592d524157", 0, 0, 0,
+                         "8", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_PYTHON_COMPILED", NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Python.Raw.UNOFFICIAL");
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
 }
 END_TEST
 
-START_TEST(test_ai_model_parser_is_explicitly_unsupported)
+START_TEST(test_ai_model_parser_rejects_incomplete_model)
 {
-    static const uint8_t data[] = {0x47, 0x47, 0x55, 0x46, 0x01, 0, 0, 0};
+    /* This is an incomplete ModelProto: it has an IR version and producer
+     * name, but no required graph or operator-set import. */
+    static const uint8_t data[] = {0x08, 0x01, 0x12, 0x04, 'o', 'n', 'n', 'x'};
     struct cl_scan_options options;
     fmap_t *map;
     struct cl_engine *scan_engine;
@@ -25270,6 +25485,7 @@ START_TEST(test_ai_model_parser_is_explicitly_unsupported)
     cl_error_t ret;
 
     memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
     scan_engine = cl_engine_new();
     ck_assert_ptr_nonnull(scan_engine);
@@ -25287,6 +25503,1481 @@ START_TEST(test_ai_model_parser_is_explicitly_unsupported)
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
     ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+static off_t ai_model_read_failure_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    (void)handle;
+    (void)buf;
+    (void)count;
+    (void)offset;
+    return -1;
+}
+
+START_TEST(test_ai_model_parser_preserves_fmap_read_failure)
+{
+    static const uint8_t data[] = {
+        'G', 'G', 'U', 'F', 3, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    };
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_handle(NULL, 0, sizeof(data), ai_model_read_failure_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_python_compiled_parser_preserves_fmap_read_failure)
+{
+    static const uint8_t data[] = {0x42, 0x0d, 0x0d, 0x0a, 0, 0, 0, 0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_handle(NULL, 0, sizeof(data), ai_model_read_failure_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_PYTHON_COMPILED", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+static void write_tflite_u16(uint8_t *data, uint16_t value)
+{
+    data[0] = (uint8_t)value;
+    data[1] = (uint8_t)(value >> 8);
+}
+
+static void build_minimal_tflite_model(uint8_t *data, size_t data_size)
+{
+    ck_assert_int_eq(data_size, 108);
+    memset(data, 0, data_size);
+    cli_writeint32(data, 64); /* root table */
+    memcpy(data + 4, "TFL3", 4);
+
+    /* Root Model vtable: ten fields, with subgraphs at field index two. */
+    write_tflite_u16(data + 32, 24);
+    write_tflite_u16(data + 34, 16);
+    write_tflite_u16(data + 40, 12);
+
+    /* Root Model table points back to the vtable and forward to one
+     * structurally valid, empty SubGraph table. */
+    cli_writeint32(data + 64, 32);
+    cli_writeint32(data + 76, 8);  /* vector at 84 */
+    cli_writeint32(data + 84, 1);  /* one subgraph */
+    cli_writeint32(data + 88, 16); /* table at 104 */
+
+    write_tflite_u16(data + 96, 4);
+    write_tflite_u16(data + 98, 4);
+    cli_writeint32(data + 104, 8); /* vtable at 96 */
+}
+
+static void build_tflite_model_with_metadata_buffer(uint8_t *data, size_t data_size)
+{
+    ck_assert_int_eq(data_size, 172);
+    memset(data, 0, data_size);
+    cli_writeint32(data, 64); /* root table */
+    memcpy(data + 4, "TFL3", 4);
+
+    /* Root Model vtable: field two is subgraphs, field four is buffers, and
+     * field five is metadata_buffer, a scalar-int vector. */
+    write_tflite_u16(data + 32, 24);
+    write_tflite_u16(data + 34, 28);
+    write_tflite_u16(data + 40, 12);
+    write_tflite_u16(data + 44, 20);
+    write_tflite_u16(data + 46, 24);
+
+    cli_writeint32(data + 64, 32); /* vtable at 32 */
+    cli_writeint32(data + 76, 40); /* subgraphs vector at 116 */
+    cli_writeint32(data + 84, 20); /* buffers vector at 104 */
+    cli_writeint32(data + 88, 8);  /* metadata_buffer vector at 96 */
+
+    cli_writeint32(data + 96, 1);  /* one metadata_buffer index */
+    cli_writeint32(data + 100, 1); /* index one, backed by the second buffer */
+
+    cli_writeint32(data + 104, 2);  /* two buffer tables */
+    cli_writeint32(data + 108, 44); /* buffer table at 152 */
+    cli_writeint32(data + 112, 40); /* shared buffer table at 152 */
+
+    cli_writeint32(data + 116, 1);  /* one subgraph */
+    cli_writeint32(data + 120, 48); /* subgraph table at 168 */
+
+    write_tflite_u16(data + 144, 4);
+    write_tflite_u16(data + 146, 4);
+    cli_writeint32(data + 152, 8); /* buffer vtable at 144 */
+
+    write_tflite_u16(data + 160, 4);
+    write_tflite_u16(data + 162, 4);
+    cli_writeint32(data + 168, 8); /* subgraph vtable at 160 */
+}
+
+static void build_tflite_model_with_invalid_buffer_data(uint8_t *data, size_t data_size)
+{
+    ck_assert_int_eq(data_size, 192);
+    memset(data, 0, data_size);
+    cli_writeint32(data, 64); /* root table */
+    memcpy(data + 4, "TFL3", 4);
+
+    /* Root Model vtable: field two is subgraphs and field four is buffers. */
+    write_tflite_u16(data + 32, 24);
+    write_tflite_u16(data + 34, 28);
+    write_tflite_u16(data + 40, 12);
+    write_tflite_u16(data + 44, 20);
+
+    cli_writeint32(data + 64, 32); /* vtable at 32 */
+    cli_writeint32(data + 76, 40); /* subgraphs vector at 116 */
+    cli_writeint32(data + 84, 20); /* buffers vector at 104 */
+
+    cli_writeint32(data + 104, 1); /* one buffer */
+    cli_writeint32(data + 108, 44); /* buffer table at 152 */
+
+    cli_writeint32(data + 116, 1); /* one subgraph */
+    cli_writeint32(data + 120, 48); /* subgraph table at 168 */
+
+    /* Buffer.data is field zero. Its uoffset deliberately exceeds the file. */
+    write_tflite_u16(data + 144, 6);
+    write_tflite_u16(data + 146, 8);
+    write_tflite_u16(data + 148, 4);
+    cli_writeint32(data + 152, 8); /* buffer vtable at 144 */
+    cli_writeint32(data + 156, UINT32_MAX);
+
+    write_tflite_u16(data + 160, 4);
+    write_tflite_u16(data + 162, 4);
+    cli_writeint32(data + 168, 8); /* subgraph vtable at 160 */
+}
+
+static void build_tflite_model_with_tensor_and_operator(uint8_t *data, size_t data_size)
+{
+    ck_assert_int_eq(data_size, 940);
+    memset(data, 0, data_size);
+    cli_writeint32(data, 64); /* root table */
+    memcpy(data + 4, "TFL3", 4);
+
+    /* Model: one OperatorCode, one SubGraph, and one Buffer. */
+    write_tflite_u16(data + 32, 24);
+    write_tflite_u16(data + 34, 24);
+    write_tflite_u16(data + 38, 8);  /* operator_codes at table + 8 */
+    write_tflite_u16(data + 40, 12); /* subgraphs at table + 12 */
+    write_tflite_u16(data + 44, 20); /* buffers at table + 20 */
+    cli_writeint32(data + 64, 32);   /* root vtable at 32 */
+    cli_writeint32(data + 72, 32);   /* operator-code vector at 104 */
+    cli_writeint32(data + 76, 40);   /* subgraph vector at 116 */
+    cli_writeint32(data + 84, 44);   /* buffer vector at 128 */
+
+    cli_writeint32(data + 104, 1);   /* one operator code */
+    cli_writeint32(data + 108, 292); /* operator-code table at 400 */
+    cli_writeint32(data + 116, 1);   /* one subgraph */
+    cli_writeint32(data + 120, 380); /* subgraph table at 500 */
+    cli_writeint32(data + 128, 1);   /* one buffer */
+    cli_writeint32(data + 132, 568); /* buffer table at 700 */
+
+    /* OperatorCode.builtin_code is field three and names opcode zero. */
+    write_tflite_u16(data + 360, 12);
+    write_tflite_u16(data + 362, 20);
+    write_tflite_u16(data + 370, 16);
+    cli_writeint32(data + 400, 40);  /* vtable at 360 */
+    cli_writeint32(data + 416, 0);   /* builtin operator code */
+
+    /* SubGraph.tensors is field zero and operators is field three. */
+    write_tflite_u16(data + 460, 24);
+    write_tflite_u16(data + 462, 24);
+    write_tflite_u16(data + 464, 4);
+    write_tflite_u16(data + 470, 16);
+    cli_writeint32(data + 500, 40);  /* vtable at 460 */
+    cli_writeint32(data + 504, 96);  /* tensor vector at 600 */
+    cli_writeint32(data + 516, 104); /* operator vector at 620 */
+
+    cli_writeint32(data + 600, 1);   /* one tensor */
+    cli_writeint32(data + 604, 196); /* tensor table at 800 */
+    cli_writeint32(data + 620, 1);   /* one operator */
+    cli_writeint32(data + 624, 276); /* operator table at 900 */
+
+    /* Buffer.data is an empty, in-range byte vector. */
+    write_tflite_u16(data + 660, 6);
+    write_tflite_u16(data + 662, 8);
+    write_tflite_u16(data + 664, 4);
+    cli_writeint32(data + 700, 40);  /* vtable at 660 */
+    cli_writeint32(data + 704, 46);  /* data vector at 750 */
+    cli_writeint32(data + 750, 0);   /* zero data bytes */
+
+    /* Tensor.shape is [1], type is FLOAT32, and buffer index is zero. */
+    write_tflite_u16(data + 760, 10);
+    write_tflite_u16(data + 762, 16);
+    write_tflite_u16(data + 764, 4);
+    write_tflite_u16(data + 766, 8);
+    write_tflite_u16(data + 768, 12);
+    cli_writeint32(data + 800, 40);  /* vtable at 760 */
+    cli_writeint32(data + 804, 46);  /* shape vector at 850 */
+    data[808] = 0;                   /* TensorType.FLOAT32 */
+    cli_writeint32(data + 812, 0);   /* buffer index */
+    cli_writeint32(data + 850, 1);   /* one shape dimension */
+    cli_writeint32(data + 854, 1);
+
+    /* Operator.opcode_index is zero; input and output vectors each reference
+     * the one tensor. */
+    write_tflite_u16(data + 860, 10);
+    write_tflite_u16(data + 862, 16);
+    write_tflite_u16(data + 864, 4);
+    write_tflite_u16(data + 866, 8);
+    write_tflite_u16(data + 868, 12);
+    cli_writeint32(data + 900, 40);  /* vtable at 860 */
+    cli_writeint32(data + 904, 0);   /* opcode index */
+    cli_writeint32(data + 908, 12);  /* inputs vector at 920 */
+    cli_writeint32(data + 912, 16);  /* outputs vector at 928 */
+    cli_writeint32(data + 920, 1);
+    cli_writeint32(data + 924, 0);
+    cli_writeint32(data + 928, 1);
+    cli_writeint32(data + 932, 0);
+}
+
+START_TEST(test_ai_model_tflite_root_is_structurally_supported)
+{
+    uint8_t data[108];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = NULL;
+    uint64_t scanned = 0;
+    cl_error_t ret;
+
+    build_minimal_tflite_model(data, sizeof(data));
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_tflite_metadata_buffer_is_structurally_supported)
+{
+    uint8_t data[172];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = NULL;
+    uint64_t scanned = 0;
+    cl_error_t ret;
+
+    /* Model.metadata_buffer is [int] and its entries are buffer indices. The
+     * old structural walk incorrectly interpreted index one as a FlatBuffer
+     * table offset and rejected this otherwise valid model. */
+    build_tflite_model_with_metadata_buffer(data, sizeof(data));
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_tflite_metadata_buffer_index_is_fail_visible)
+{
+    uint8_t data[172];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = "stale";
+    uint64_t scanned = UINT64_MAX;
+    cl_error_t ret;
+
+    build_tflite_model_with_metadata_buffer(data, sizeof(data));
+    cli_writeint32(data + 100, 2); /* buffers has entries 0 and 1 only */
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_tflite_metadata_buffer_negative_index_is_fail_visible)
+{
+    uint8_t data[172];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = "stale";
+    uint64_t scanned = UINT64_MAX;
+    cl_error_t ret;
+
+    build_tflite_model_with_metadata_buffer(data, sizeof(data));
+    cli_writeint32(data + 100, UINT32_MAX); /* metadata_buffer is [int32] */
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_tflite_root_offset_is_fail_visible)
+{
+    uint8_t data[108];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = "stale";
+    uint64_t scanned = UINT64_MAX;
+    cl_error_t ret;
+
+    build_minimal_tflite_model(data, sizeof(data));
+    cli_writeint32(data, 1000);
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_tflite_subgraph_vector_offset_is_fail_visible)
+{
+    uint8_t data[108];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = "stale";
+    uint64_t scanned = UINT64_MAX;
+    cl_error_t ret;
+
+    build_minimal_tflite_model(data, sizeof(data));
+    cli_writeint32(data + 76, 1000);
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_tflite_field_width_is_fail_visible)
+{
+    uint8_t data[108];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = "stale";
+    uint64_t scanned = UINT64_MAX;
+    cl_error_t ret;
+
+    build_minimal_tflite_model(data, sizeof(data));
+    /* The vtable still advertises a present Model.subgraphs field at byte
+     * four, but the table declares only one byte after its vtable offset.
+     * The old reader consumed the four-byte uoffset across that boundary. */
+    write_tflite_u16(data + 34, 5);
+    write_tflite_u16(data + 40, 4);
+    cli_writeint32(data + 68, 16);
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+static void build_minimal_onnx_model(uint8_t *data, size_t data_size)
+{
+    static const uint8_t model[] = {
+        0x08, 0x01,                         /* ir_version = 1 */
+        0x12, 0x04, 'o', 'n', 'n', 'x',     /* producer_name = "onnx" */
+        0x3a, 0x00,                         /* empty graph, field 7 */
+        0x42, 0x02, 0x10, 0x01              /* opset_import { version = 1 } */
+    };
+
+    ck_assert_int_eq(data_size, sizeof(model));
+    memcpy(data, model, sizeof(model));
+}
+
+START_TEST(test_ai_model_onnx_modelproto_is_structurally_supported)
+{
+    uint8_t data[14];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = NULL;
+    uint64_t scanned = 0;
+    cl_error_t ret;
+
+    build_minimal_onnx_model(data, sizeof(data));
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_onnx_accepts_node_metadata_properties)
+{
+    /* ModelProto -> GraphProto -> NodeProto -> metadata_props.  The two
+     * StringStringEntryProto fields are both length-delimited strings; they
+     * must not be interpreted as AttributeProto fields by the structural
+     * walker. */
+    static const uint8_t data[] = {
+        0x08, 0x01,                         /* ir_version = 1 */
+        0x3a, 0x0a,                         /* graph */
+        0x0a, 0x08,                         /* node */
+        0x4a, 0x06,                         /* metadata_props entry */
+        0x0a, 0x01, 'k',                    /* key = "k" */
+        0x12, 0x01, 'v',                    /* value = "v" */
+        0x42, 0x02, 0x10, 0x01              /* opset_import { version = 1 } */
+    };
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = NULL;
+    uint64_t scanned = 0;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_onnx_modelproto_missing_graph_is_fail_visible)
+{
+    static const uint8_t data[] = {
+        0x08, 0x01,                         /* ir_version = 1 */
+        0x42, 0x02, 0x10, 0x01              /* opset_import { version = 1 } */
+    };
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = "stale";
+    uint64_t scanned = UINT64_MAX;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_onnx_nested_message_truncation_is_fail_visible)
+{
+    static const uint8_t data[] = {
+        0x08, 0x01,             /* ir_version = 1 */
+        0x3a, 0x01, 0x12,      /* graph contains a truncated name field */
+        0x42, 0x02, 0x10, 0x01  /* opset_import { version = 1 } */
+    };
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = "stale";
+    uint64_t scanned = UINT64_MAX;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_onnx_opset_version_is_fail_visible)
+{
+    uint8_t data[14];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = "stale";
+    uint64_t scanned = UINT64_MAX;
+    cl_error_t ret;
+
+    build_minimal_onnx_model(data, sizeof(data));
+    data[11] = 0; /* the required OperatorSetIdProto version is absent */
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_header_is_structurally_supported)
+{
+    static const uint8_t data[] = {
+        'G', 'G', 'U', 'F',
+        0x01, 0x00, 0x00, 0x00, /* version */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* tensors */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* metadata */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  /* default alignment */
+    };
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = NULL;
+    uint64_t scanned       = 0;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_alignment_below_format_minimum_is_fail_visible)
+{
+    static const uint8_t data[] = {
+        'G', 'G', 'U', 'F',
+        0x01, 0x00, 0x00, 0x00, /* version */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* tensors */
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* metadata */
+        0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* key length */
+        'g', 'e', 'n', 'e', 'r', 'a', 'l', '.', 'a', 'l', 'i', 'g', 'n', 'm', 'e', 'n', 't',
+        0x04, 0x00, 0x00, 0x00, /* UINT32 */
+        0x04, 0x00, 0x00, 0x00  /* invalid: GGUF requires a multiple of 8 */
+    };
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_duplicate_alignment_is_fail_visible)
+{
+    static const uint8_t data[] = {
+        'G', 'G', 'U', 'F',
+        0x01, 0x00, 0x00, 0x00, /* version */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* tensors */
+        0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* metadata */
+        0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* key length */
+        'g', 'e', 'n', 'e', 'r', 'a', 'l', '.', 'a', 'l', 'i', 'g', 'n', 'm', 'e', 'n', 't',
+        0x04, 0x00, 0x00, 0x00, /* UINT32 */
+        0x20, 0x00, 0x00, 0x00, /* first alignment */
+        0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* duplicate key length */
+        'g', 'e', 'n', 'e', 'r', 'a', 'l', '.', 'a', 'l', 'i', 'g', 'n', 'm', 'e', 'n', 't',
+        0x04, 0x00, 0x00, 0x00, /* UINT32 */
+        0x40, 0x00, 0x00, 0x00  /* conflicting second alignment */
+    };
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_overlapping_tensor_offsets_are_fail_visible)
+{
+    static const uint8_t data[] = {
+        'G', 'G', 'U', 'F',
+        0x01, 0x00, 0x00, 0x00, /* version */
+        0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* tensors */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* metadata */
+        /* tensor 1: scalar F32 at relative offset 0 */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* name length */
+        0x01, 0x00, 0x00, 0x00, /* dimensions */
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* dimension */
+        0x00, 0x00, 0x00, 0x00, /* F32 */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* offset */
+        /* tensor 2: offset 0 overlaps tensor 1 (expected offset is 32) */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* name length */
+        0x01, 0x00, 0x00, 0x00, /* dimensions */
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* dimension */
+        0x00, 0x00, 0x00, 0x00, /* F32 */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* offset */
+        0x00, 0x00, 0x00, 0x00 /* one payload, enough for old max-end check */
+    };
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_tensor_rank_above_limit_is_fail_visible)
+{
+    static const uint8_t data[] = {
+        'G', 'G', 'U', 'F',
+        0x01, 0x00, 0x00, 0x00, /* version */
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* tensors */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* metadata */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* name length */
+        0x05, 0x00, 0x00, 0x00, /* dimensions: GGUF/ggml allows at most 4 */
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* five dimensions */
+        0x00, 0x00, 0x00, 0x00, /* F32 */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* offset */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* data alignment */
+        0x00, 0x00, 0x00, 0x00 /* payload */
+    };
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_empty_metadata_key_is_fail_visible)
+{
+    static const uint8_t data[] = {
+        'G', 'G', 'U', 'F',
+        0x01, 0x00, 0x00, 0x00, /* version */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* tensors */
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* metadata */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* empty key */
+        0x00, 0x00, 0x00, 0x00, /* UINT8 */
+        0x00 /* value */
+    };
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_tensor_name_limit_is_fail_visible)
+{
+    uint8_t data[132];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = "stale";
+    uint64_t scanned       = UINT64_MAX;
+    cl_error_t ret;
+
+    /* GGML rejects names whose byte length reaches GGML_MAX_NAME (64). Make
+     * the rest of the descriptor and its F32 payload valid so this regression
+     * specifically exercises the name boundary rather than a short read. */
+    memset(data, 0, sizeof(data));
+    memcpy(data, "GGUF", 4);
+    cli_writeint32(data + 4, 1);   /* version */
+    cli_writeint32(data + 8, 1);   /* tensor count */
+    cli_writeint32(data + 16, 0);  /* metadata count */
+    cli_writeint32(data + 24, 64); /* name length: GGML_MAX_NAME */
+    cli_writeint32(data + 96, 1);  /* rank */
+    cli_writeint32(data + 100, 1); /* one F32 element */
+    cli_writeint32(data + 108, 0); /* F32 */
+    cli_writeint32(data + 112, 0); /* relative tensor offset */
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_accepts_scalar_tensor)
+{
+    uint8_t data[68];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = NULL;
+    uint64_t scanned = 0;
+    cl_error_t ret;
+
+    /* GGML permits a scalar tensor with rank zero. The descriptor ends at
+     * byte 48, the tensor data starts at the default 32-byte-aligned offset
+     * 64, and one F32 payload occupies the final four bytes. */
+    memset(data, 0, sizeof(data));
+    memcpy(data, "GGUF", 4);
+    cli_writeint32(data + 4, 1);  /* version */
+    cli_writeint32(data + 8, 1);  /* tensor count */
+    cli_writeint32(data + 12, 0);
+    cli_writeint32(data + 16, 0); /* metadata count */
+    cli_writeint32(data + 20, 0);
+    cli_writeint32(data + 24, 0); /* tensor name length */
+    cli_writeint32(data + 28, 0);
+    cli_writeint32(data + 32, 0); /* rank: scalar */
+    cli_writeint32(data + 36, 0); /* F32 */
+    cli_writeint32(data + 40, 0); /* relative tensor offset */
+    cli_writeint32(data + 44, 0);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_accepts_zero_element_tensor)
+{
+    uint8_t data[64];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = NULL;
+    uint64_t scanned = 0;
+    cl_error_t ret;
+
+    /* GGML accepts non-negative shapes with zero total elements. The
+     * descriptor ends at byte 56 and the aligned, empty tensor-data section
+     * begins at byte 64. */
+    memset(data, 0, sizeof(data));
+    memcpy(data, "GGUF", 4);
+    cli_writeint32(data + 4, 1);  /* version */
+    cli_writeint32(data + 8, 1);  /* tensor count */
+    cli_writeint32(data + 16, 0); /* metadata count */
+    cli_writeint32(data + 24, 0); /* tensor name length */
+    cli_writeint32(data + 32, 1); /* rank */
+    cli_writeint32(data + 36, 0); /* zero elements */
+    cli_writeint32(data + 44, 0); /* F32 */
+    cli_writeint32(data + 48, 0); /* relative tensor offset */
+    cli_writeint32(data + 52, 0);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_dimension_exceeds_ggml_range_is_fail_visible)
+{
+    uint8_t data[64];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = "stale";
+    uint64_t scanned = UINT64_MAX;
+    cl_error_t ret;
+
+    memset(data, 0, sizeof(data));
+    memcpy(data, "GGUF", 4);
+    cli_writeint32(data + 4, 1);  /* version */
+    cli_writeint32(data + 8, 1);  /* tensor count */
+    cli_writeint32(data + 16, 0); /* metadata count */
+    cli_writeint32(data + 24, 0); /* tensor name length */
+    cli_writeint32(data + 32, 1); /* rank */
+    cli_writeint32(data + 36, 1); /* low dimension word */
+    cli_writeint32(data + 40, 0x80000000U); /* dimension > INT64_MAX */
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_q4_0_tensor_is_structurally_supported)
+{
+    static const uint8_t data[] = {
+        'G', 'G', 'U', 'F',
+        0x01, 0x00, 0x00, 0x00, /* version */
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* tensors */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* metadata */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* name length */
+        0x01, 0x00, 0x00, 0x00, /* dimensions */
+        0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 32 elements */
+        0x02, 0x00, 0x00, 0x00, /* Q4_0 */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* relative offset */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* header padding */
+        /* one Q4_0 block (18 bytes), followed by alignment padding */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = NULL;
+    uint64_t scanned       = 0;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_q4_0_shape_misalignment_is_fail_visible)
+{
+    static const uint8_t data[] = {
+        'G', 'G', 'U', 'F',
+        0x01, 0x00, 0x00, 0x00, /* version */
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* tensors */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* metadata */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* name length */
+        0x01, 0x00, 0x00, 0x00, /* dimensions */
+        0x1f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 31 elements */
+        0x02, 0x00, 0x00, 0x00, /* Q4_0 requires blocks of 32 */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* offset */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* header padding */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_quantized_row_shape_misalignment_is_fail_visible)
+{
+    uint8_t data[96];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = "stale";
+    uint64_t scanned       = UINT64_MAX;
+    cl_error_t ret;
+
+    /* The total shape has 32 elements, but Q4_0 requires every innermost
+     * row to contain a whole 32-element block. A 16x2 tensor must fail before
+     * its total-element product makes it look block-aligned. */
+    memset(data, 0, sizeof(data));
+    memcpy(data, "GGUF", 4);
+    cli_writeint32(data + 4, 1);   /* version */
+    cli_writeint32(data + 8, 1);   /* tensor count */
+    cli_writeint32(data + 16, 0);  /* metadata count */
+    cli_writeint32(data + 24, 0);  /* tensor name length */
+    cli_writeint32(data + 32, 2);  /* rank */
+    cli_writeint32(data + 36, 16); /* innermost row: not a Q4_0 block */
+    cli_writeint32(data + 44, 2);  /* second dimension */
+    cli_writeint32(data + 52, 2);  /* Q4_0 */
+    cli_writeint32(data + 56, 0);  /* relative tensor offset */
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_current_quantized_types_are_structurally_supported)
+{
+    static const struct {
+        uint32_t type;
+        uint32_t elements;
+        uint32_t block_bytes;
+    } cases[] = {
+        {34, 256, 54}, /* TQ1_0 */
+        {35, 256, 66}, /* TQ2_0 */
+        {39, 32, 17},  /* MXFP4 */
+        {40, 64, 36},  /* NVFP4 */
+        {41, 128, 18}, /* Q1_0 */
+        {42, 64, 18},  /* Q2_0 */
+    };
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    size_t i;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        uint8_t data[192];
+        uint32_t padded_bytes = (cases[i].block_bytes + 31U) & ~31U;
+        size_t data_size = 64U + padded_bytes;
+        fmap_t *map;
+        cl_verdict_t verdict;
+        const char *last_alert = NULL;
+        uint64_t scanned = 0;
+        cl_error_t ret;
+
+        memset(data, 0, sizeof(data));
+        memcpy(data, "GGUF", 4);
+        cli_writeint32(data + 4, 1);  /* version */
+        cli_writeint32(data + 8, 1);  /* tensor count */
+        cli_writeint32(data + 12, 0);
+        cli_writeint32(data + 16, 0); /* metadata count */
+        cli_writeint32(data + 20, 0);
+        cli_writeint32(data + 24, 0); /* tensor name length */
+        cli_writeint32(data + 28, 0);
+        cli_writeint32(data + 32, 1); /* rank */
+        cli_writeint32(data + 36, cases[i].elements);
+        cli_writeint32(data + 40, 0);
+        cli_writeint32(data + 44, cases[i].type);
+        cli_writeint32(data + 48, 0); /* relative tensor offset */
+        cli_writeint32(data + 52, 0);
+
+        map = cl_fmap_open_memory(data, data_size);
+        ck_assert_ptr_nonnull(map);
+        verdict = CL_VERDICT_STRONG_INDICATOR;
+        ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                            scan_engine, &options, NULL, NULL, NULL, NULL,
+                            "CL_TYPE_AI_MODEL", NULL);
+        ck_assert_int_eq(ret, CL_SUCCESS);
+        ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+        ck_assert(last_alert == NULL);
+        ck_assert(!map->dont_cache_flag);
+        cl_fmap_close(map);
+    }
+
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_still_runs_raw_matching)
+{
+    static const unsigned char data[] = {
+        'G', 'G', 'U', 'F',
+        0x01, 0x00, 0x00, 0x00, /* version */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* tensors */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* metadata */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* default alignment */
+        'A', 'I', '-', 'R', 'A', 'W', '-', 'M', 'A', 'R', 'K', 'E', 'R'
+    };
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    fmap_t *map;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    uint64_t scanned       = 0;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "AI.Raw", "41492d5241572d4d41524b4552", 0, 0, 0,
+                         "32", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "AI.Raw.UNOFFICIAL");
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
@@ -62740,7 +64431,7 @@ START_TEST(test_pe_import_hash_update_failure_is_fail_visible)
 END_TEST
 #endif
 
-static const TTest *test_image_fuzzy_hash_streams_encoded_source_under_contiguous_limit;
+static const TTest *test_image_fuzzy_hash_streams_encoded_source_under_contiguous_limit; static const TTest *test_ai_model_tflite_vtable_distance_is_fail_visible;
 
 static Suite *test_cl_suite(void)
 {
@@ -64312,8 +66003,18 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_sis_name_table_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_language_table_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_file_record_cursor_out_of_range_is_parse_error);
-    tcase_add_test(tc_cl, test_python_compiled_parser_is_explicitly_unsupported);
-    tcase_add_test(tc_cl, test_ai_model_parser_is_explicitly_unsupported);
+    tcase_add_test(tc_cl, test_python_compiled_truncated_parser_is_fail_visible);
+    tcase_add_test(tc_cl, test_python_compiled_parser_accepts_legacy_code_object);
+    tcase_add_test(tc_cl, test_python_compiled_parser_rejects_out_of_range_marshal_reference);
+    tcase_add_test(tc_cl, test_python_compiled_parser_rejects_flagged_marshal_reference);
+    tcase_add_test(tc_cl, test_python_compiled_parser_accepts_marshal_reference_from_dict_key);
+    tcase_add_test(tc_cl, test_python_compiled_parser_accepts_marshal_string_reference);
+    tcase_add_test(tc_cl, test_python_compiled_parser_accepts_modern_code_object);
+    tcase_add_test(tc_cl, test_python_compiled_parser_still_runs_raw_matching);
+    tcase_add_test(tc_cl, test_ai_model_parser_rejects_incomplete_model);
+    tcase_add_test(tc_cl, test_ai_model_parser_preserves_fmap_read_failure);
+    tcase_add_test(tc_cl, test_python_compiled_parser_preserves_fmap_read_failure);
+    tcase_add_test(tc_cl, test_ai_model_onnx_accepts_node_metadata_properties);
     tcase_add_test(tc_cl, test_sis_truncated_compressed_member_is_fail_visible);
     tcase_add_test(tc_cl, test_sis9x_cursor_out_of_range_is_parse_error);
     tcase_add_test(tc_cl, test_sis9x_short_nested_field_is_fail_visible);
@@ -64519,8 +66220,49 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_required_unsupported, test_rar_without_backend_is_explicitly_unsupported);
     tcase_add_test(tc_required_unsupported, test_ignored_file_type_is_fail_visible);
     tcase_add_test(tc_required_unsupported, test_ignored_file_type_still_runs_raw_matching);
-    tcase_add_test(tc_required_unsupported, test_python_compiled_parser_is_explicitly_unsupported);
-    tcase_add_test(tc_required_unsupported, test_ai_model_parser_is_explicitly_unsupported);
+    tcase_add_test(tc_required_unsupported, test_python_compiled_truncated_parser_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_python_compiled_parser_accepts_legacy_code_object);
+    tcase_add_test(tc_required_unsupported, test_python_compiled_parser_rejects_out_of_range_marshal_reference);
+    tcase_add_test(tc_required_unsupported, test_python_compiled_parser_rejects_flagged_marshal_reference);
+    tcase_add_test(tc_required_unsupported, test_python_compiled_parser_accepts_marshal_reference_from_dict_key);
+    tcase_add_test(tc_required_unsupported, test_python_compiled_parser_accepts_marshal_string_reference);
+    tcase_add_test(tc_required_unsupported, test_python_compiled_parser_accepts_modern_code_object);
+    tcase_add_test(tc_required_unsupported, test_python_compiled_parser_still_runs_raw_matching);
+    tcase_add_test(tc_required_unsupported, test_ai_model_parser_rejects_incomplete_model);
+    tcase_add_test(tc_required_unsupported, test_ai_model_parser_preserves_fmap_read_failure);
+    tcase_add_test(tc_required_unsupported, test_python_compiled_parser_preserves_fmap_read_failure);
+    tcase_add_test(tc_required_unsupported, test_ai_model_onnx_accepts_node_metadata_properties);
+    tcase_add_test(tc_required_unsupported, test_ai_model_tflite_root_is_structurally_supported);
+    tcase_add_test(tc_required_unsupported, test_ai_model_tflite_metadata_buffer_is_structurally_supported);
+    tcase_add_test(tc_required_unsupported, test_ai_model_tflite_metadata_buffer_index_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_tflite_metadata_buffer_negative_index_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_tflite_root_offset_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_tflite_subgraph_vector_offset_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_tflite_field_width_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_tflite_vtable_distance_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_tflite_buffer_data_range_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_tflite_tensor_and_operator_semantics_are_supported);
+    tcase_add_test(tc_required_unsupported, test_ai_model_tflite_tensor_type_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_tflite_tensor_and_operator_references_are_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_onnx_modelproto_is_structurally_supported);
+    tcase_add_test(tc_required_unsupported, test_ai_model_onnx_modelproto_missing_graph_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_onnx_nested_message_truncation_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_onnx_opset_version_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_header_is_structurally_supported);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_accepts_scalar_tensor);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_accepts_zero_element_tensor);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_dimension_exceeds_ggml_range_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_alignment_below_format_minimum_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_duplicate_alignment_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_overlapping_tensor_offsets_are_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_tensor_rank_above_limit_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_empty_metadata_key_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_tensor_name_limit_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_q4_0_tensor_is_structurally_supported);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_q4_0_shape_misalignment_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_quantized_row_shape_misalignment_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_current_quantized_types_are_structurally_supported);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_still_runs_raw_matching);
 
     tcase_add_test(tc_cl, test_rar_without_backend_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_rar_sfx_header_read_failure_is_fail_visible);
@@ -66256,5 +67998,202 @@ START_TEST(test_image_fuzzy_hash_streams_encoded_source_under_contiguous_limit)
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
     free(valid_image);
+}
+END_TEST
+
+START_TEST(test_ai_model_tflite_vtable_distance_is_fail_visible)
+{
+    static const uint32_t invalid_distances[] = {0, UINT32_MAX};
+    uint8_t data[108];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+    size_t i;
+
+    for (i = 0; i < sizeof(invalid_distances) / sizeof(invalid_distances[0]); i++) {
+        build_minimal_tflite_model(data, sizeof(data));
+        /* A FlatBuffer vtable distance is a positive backwards offset. Zero
+         * and UINT32_MAX must not become a valid forward/negative walk. */
+        cli_writeint32(data + 64, invalid_distances[i]);
+        memset(&options, 0, sizeof(options));
+        options.parse = ~0U;
+        ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+        scan_engine = cl_engine_new();
+        ck_assert_ptr_nonnull(scan_engine);
+        ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+        map = cl_fmap_open_memory(data, sizeof(data));
+        ck_assert_ptr_nonnull(map);
+        verdict = CL_VERDICT_STRONG_INDICATOR;
+        last_alert = "stale";
+        scanned = UINT64_MAX;
+
+        ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                            scan_engine, &options, NULL, NULL, NULL, NULL,
+                            "CL_TYPE_AI_MODEL", NULL);
+        ck_assert_int_eq(ret, CL_EPARSE);
+        ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+        ck_assert(last_alert == NULL);
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+        cl_engine_free(scan_engine);
+    }
+}
+END_TEST
+
+START_TEST(test_ai_model_tflite_buffer_data_range_is_fail_visible)
+{
+    uint8_t data[192];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = "stale";
+    uint64_t scanned = UINT64_MAX;
+    cl_error_t ret;
+
+    build_tflite_model_with_invalid_buffer_data(data, sizeof(data));
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_tflite_tensor_and_operator_semantics_are_supported)
+{
+    uint8_t data[940];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = NULL;
+    uint64_t scanned = 0;
+    cl_error_t ret;
+
+    build_tflite_model_with_tensor_and_operator(data, sizeof(data));
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_tflite_tensor_type_is_fail_visible)
+{
+    uint8_t data[940];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = "stale";
+    uint64_t scanned = UINT64_MAX;
+    cl_error_t ret;
+
+    build_tflite_model_with_tensor_and_operator(data, sizeof(data));
+    /* The current TFLite TensorType enum ends at FLOAT8_E5M2 = 22. */
+    data[808] = 23;
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_tflite_tensor_and_operator_references_are_fail_visible)
+{
+    static const size_t mutation_offsets[] = {808, 812, 904, 924, 932, 412};
+    static const uint32_t mutation_values[] = {UINT32_MAX, 1, 1, 1, 1, UINT32_MAX};
+    uint8_t data[940];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+    size_t i;
+
+    for (i = 0; i < sizeof(mutation_offsets) / sizeof(mutation_offsets[0]); i++) {
+        build_tflite_model_with_tensor_and_operator(data, sizeof(data));
+        if (mutation_offsets[i] == 808)
+            data[mutation_offsets[i]] = (uint8_t)mutation_values[i];
+        else
+            cli_writeint32(data + mutation_offsets[i], mutation_values[i]);
+        memset(&options, 0, sizeof(options));
+        options.parse = ~0U;
+        ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+        scan_engine = cl_engine_new();
+        ck_assert_ptr_nonnull(scan_engine);
+        ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+        map = cl_fmap_open_memory(data, sizeof(data));
+        ck_assert_ptr_nonnull(map);
+        verdict = CL_VERDICT_STRONG_INDICATOR;
+        last_alert = "stale";
+        scanned = UINT64_MAX;
+
+        ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                            scan_engine, &options, NULL, NULL, NULL, NULL,
+                            "CL_TYPE_AI_MODEL", NULL);
+        ck_assert_int_eq(ret, CL_EPARSE);
+        ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+        ck_assert_ptr_null(last_alert);
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+        cl_engine_free(scan_engine);
+    }
 }
 END_TEST

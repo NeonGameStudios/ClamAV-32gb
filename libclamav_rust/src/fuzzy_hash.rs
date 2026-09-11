@@ -79,6 +79,9 @@ pub enum Error {
     #[error("Image decoder exceeded the configured contiguous budget: {0}")]
     ContiguousBudget(sys::cl_error_t),
 
+    #[error("Failed to allocate image fuzzy hash signature metadata")]
+    Allocation,
+
     #[error("{0} hash must be {1} characters in length")]
     InvalidHashLength(&'static str, usize),
 }
@@ -300,18 +303,26 @@ fn fuzzy_hash_calculate_image_reader_inner(
     let decoder = reader.into_decoder().map_err(Error::ImageLoad)?;
 
     /*
-     * The fuzzy calculation converts the decoded image to RGB, grayscale,
-     * and a small working image. Reserve a bounded multiple of the decoder's
-     * declared output, with a floor so tiny images still exercise the shared
-     * contiguous admission boundary. This is deliberately independent of the
-     * encoded source length.
+     * The fuzzy calculation can retain the decoded image while it creates a
+     * temporary RGB image and a grayscale image.  A multiplier based only on
+     * `total_bytes()` under-reserves low-width formats such as L8: their
+     * decoded buffer is small, but the RGB conversion still needs three bytes
+     * per pixel.  Derive the conversion working set from the pixel count and
+     * keep a fixed allowance for the 32x32 resize/DCT buffers. This remains
+     * independent of the encoded source length.
      */
-    const MIN_WORKING_SET: u64 = 1024 * 1024;
+    const TRANSFORM_OVERHEAD: u64 = 1024 * 1024;
     let decoded_bytes: u64 = decoder.total_bytes();
+    let pixel_count = (decoder.dimensions().0 as u64)
+        .checked_mul(decoder.dimensions().1 as u64)
+        .ok_or(Error::ContiguousBudget(sys::cl_error_t_CL_ERESOURCE))?;
+    let conversion_bytes = pixel_count
+        .checked_mul(4)
+        .ok_or(Error::ContiguousBudget(sys::cl_error_t_CL_ERESOURCE))?;
     let working_set = decoded_bytes
-        .checked_mul(3)
-        .ok_or(Error::ContiguousBudget(sys::cl_error_t_CL_ERESOURCE))?
-        .max(MIN_WORKING_SET);
+        .checked_add(conversion_bytes)
+        .and_then(|bytes| bytes.checked_add(TRANSFORM_OVERHEAD))
+        .ok_or(Error::ContiguousBudget(sys::cl_error_t_CL_ERESOURCE))?;
 
     let status = unsafe { sys::cli_scan_reserve_contiguous(scan_ctx, working_set) };
     if status != sys::cl_error_t_CL_SUCCESS {
@@ -511,9 +522,22 @@ impl FuzzyHashMap {
                     hamming_distance: distance,
                 };
 
-                // If the hash key does not exist in the hashmap, insert an empty vec.
-                // Then add the current meta struct to the entry.
-                self.hashmap.entry(fuzzy_hash).or_default().push(meta);
+                /*
+                 * Signature loading happens across an FFI boundary.  A normal
+                 * HashMap::entry().or_default().push() may panic when either
+                 * container grows, which would abort the caller instead of
+                 * returning a database-load error.  Reserve both containers
+                 * before mutating them so allocation failure remains visible to
+                 * the C loader through the existing Result/FFIError path.
+                 */
+                self.hashmap
+                    .try_reserve(1)
+                    .map_err(|_| Error::Allocation)?;
+                let metadata = self.hashmap.entry(fuzzy_hash).or_default();
+                metadata
+                    .try_reserve(1)
+                    .map_err(|_| Error::Allocation)?;
+                metadata.push(meta);
 
                 Ok(())
             }
@@ -841,6 +865,25 @@ mod tests {
         assert_eq!(matches.len(), 1);
         assert_eq!(matches[0].lsigid, 17);
         assert_eq!(matches[0].subsigid, 23);
+    }
+
+    #[test]
+    fn fuzzy_hash_map_loads_multiple_metadata_records_for_one_hash() {
+        let mut hashmap = FuzzyHashMap::default();
+
+        hashmap
+            .load_subsignature("fuzzy_img#0000000000000000#0", 17, 23)
+            .expect("first valid image fuzzy signature");
+        hashmap
+            .load_subsignature("fuzzy_img#0000000000000000#1", 19, 29)
+            .expect("second valid image fuzzy signature");
+
+        let matches: Vec<_> = hashmap.check([0; 8]).collect();
+        assert_eq!(matches.len(), 2);
+        assert_eq!(matches[0].lsigid, 17);
+        assert_eq!(matches[0].subsigid, 23);
+        assert_eq!(matches[1].lsigid, 19);
+        assert_eq!(matches[1].subsigid, 29);
     }
 
     #[test]

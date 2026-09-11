@@ -312,6 +312,20 @@ loaded_dependencies_sha256=$(sha256sum "$loaded_dependencies" | awk '{ print $1 
 } > "$out/provenance/service-build-identity.txt"
 {
     printf 'service_resource_measurement_failed=0\n'
+    printf 'service_temp_budget=pass\n'
+    printf 'service_rss_peak_kb=1\n'
+    printf 'service_rss_samples=1\n'
+    printf 'service_temp_peak_bytes=1\n'
+    printf 'service_temp_samples=1\n'
+    printf 'service_temp_budget_bytes=68719476736\n'
+    printf 'milter_exact_edge_peak_rss_kb=1\n'
+    printf 'clamd_parallel_client_1_peak_rss_kb=1\n'
+    printf 'clamd_parallel_client_2_peak_rss_kb=1\n'
+    printf 'latency_budget_s=14400\n'
+    printf 'clamd_parallel_client_1_elapsed_s=1\n'
+    printf 'clamd_parallel_client_2_elapsed_s=1\n'
+    printf 'milter_exact_edge_elapsed_s=1\n'
+    printf 'latency=pass\n'
     printf 'rss_budget_kb=33554432\n'
     printf 'pcre_rss_budget_kb=41943040\n'
     printf 'post_pcre_rss_budget_kb=12582912\n'
@@ -348,8 +362,6 @@ workload_hash_manifest=$(sha256sum "$workload_results" | awk '{ print $1 }')
         done
 ) > "$out/SHA256SUMS"
 
-sh "$control_root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null
-
 write_checksum_manifest()
 {
     (
@@ -360,6 +372,39 @@ write_checksum_manifest()
             done
     ) > "$out/SHA256SUMS"
 }
+
+sh "$control_root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null
+
+cp "$out/service-summary.txt" "$tmp/service-summary.good"
+sed 's/^service_rss_peak_kb=1$/service_rss_peak_kb=33554433/' \
+    "$tmp/service-summary.good" > "$out/service-summary.txt"
+write_checksum_manifest
+if sh "$control_root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null 2>&1; then
+    echo 'service evidence verifier accepted an RSS peak above the overall budget' >&2
+    exit 1
+fi
+cp "$tmp/service-summary.good" "$out/service-summary.txt"
+write_checksum_manifest
+
+sed 's/^service_temp_peak_bytes=1$/service_temp_peak_bytes=68719476737/' \
+    "$tmp/service-summary.good" > "$out/service-summary.txt"
+write_checksum_manifest
+if sh "$control_root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null 2>&1; then
+    echo 'service evidence verifier accepted a temporary-space peak above the budget' >&2
+    exit 1
+fi
+cp "$tmp/service-summary.good" "$out/service-summary.txt"
+write_checksum_manifest
+
+sed 's/^clamd_parallel_client_1_elapsed_s=1$/clamd_parallel_client_1_elapsed_s=14401/' \
+    "$tmp/service-summary.good" > "$out/service-summary.txt"
+write_checksum_manifest
+if sh "$control_root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null 2>&1; then
+    echo 'service evidence verifier accepted elapsed time above the latency budget' >&2
+    exit 1
+fi
+cp "$tmp/service-summary.good" "$out/service-summary.txt"
+write_checksum_manifest
 
 cp "$lifecycle" "$tmp/service-lifecycle.good"
 sed 's/^1\tsocket_absent_after_stop\tyes$/1\tsocket_absent_after_stop\tno/' \

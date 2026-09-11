@@ -4,6 +4,7 @@ use crate::one::property::time::Time;
 use crate::one::property::{simple, PropertyType};
 use crate::one::property_set::PropertySetId;
 use crate::onestore::object::Object;
+use crate::reader::reserve_collection;
 use std::char::{decode_utf16, REPLACEMENT_CHARACTER};
 
 /// A number list definition.
@@ -41,6 +42,7 @@ pub(crate) fn parse(object: &Object) -> Result<Data> {
         simple::parse_u32(PropertyType::ListRestart, object)?.map(|value| value as i32);
     let list_format = simple::parse_vec_u16(PropertyType::NumberListFormat, object)?
         .map(parse_list_format)
+        .transpose()?
         .ok_or_else(|| {
             ErrorKind::MalformedOneNoteFileData("number list has no list format".into())
         })?;
@@ -67,8 +69,15 @@ pub(crate) fn parse(object: &Object) -> Result<Data> {
     Ok(data)
 }
 
-fn parse_list_format(data: Vec<u16>) -> Vec<char> {
-    decode_utf16(data[1..].iter().copied())
-        .map(|r| r.unwrap_or(REPLACEMENT_CHARACTER))
-        .collect()
+fn parse_list_format(data: Vec<u16>) -> Result<Vec<char>> {
+    let values = data.get(1..).ok_or_else(|| {
+        ErrorKind::MalformedOneNoteFileData("number list format is empty".into())
+    })?;
+    let mut output = Vec::new();
+    reserve_collection(&mut output, values.len())?;
+    for value in decode_utf16(values.iter().copied()) {
+        reserve_collection(&mut output, 1)?;
+        output.push(value.unwrap_or(REPLACEMENT_CHARACTER));
+    }
+    Ok(output)
 }

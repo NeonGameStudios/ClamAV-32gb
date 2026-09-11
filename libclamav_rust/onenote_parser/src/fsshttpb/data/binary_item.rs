@@ -12,7 +12,7 @@ pub(crate) struct BinaryItem(Vec<u8>);
 impl BinaryItem {
     pub(crate) fn parse(reader: Reader) -> Result<BinaryItem> {
         let size = CompactU64::parse(reader)?.value();
-        let data = reader.read_vec(size as usize)?;
+        let data = reader.read_vec_u64(size)?;
 
         Ok(BinaryItem(data))
     }

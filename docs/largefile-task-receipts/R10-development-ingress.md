@@ -541,3 +541,252 @@ Release-service lifecycle contract (2026-09-09 UTC):
   syntax/source guards passed.
 - No real release service run was claimed because the coherent current-source
   application build remains unavailable; no capability status changed.
+
+IDSESSION report-correlation hardening (2026-09-10 UTC):
+
+- `clamdscan` now obtains the response ID through the shared strict JSON
+  object parser, requiring a top-level unsigned integer. This replaces the
+  former substring search, which could bind a nested or quoted `"id"` value
+  instead of the daemon's request ID.
+- A focused `check_clamd` regression covers nested-only, quoted, negative,
+  out-of-range, wrong-type, and malformed IDs, and confirms rejected input does
+  not overwrite the caller's output. Source guards and `git diff --check` pass.
+No certified or full-size R10 evidence is claimed; no usage reset, commit,
+push, or workflow action was used.
+
+Legacy IDSESSION correlation hardening (2026-09-10 UTC):
+
+- The text-reply path now requires a positive decimal session ID followed by
+  the wire-format colon, rejects overflow and prefix garbage, and clears the
+  pending-entry lookup before parsing each reply. This prevents malformed
+  replies from being accepted by `atoi()` or accidentally reusing a previous
+  lookup pointer.
+- A focused `check_clamd` regression verifies valid parsing, malformed/zero/
+  signed/overflow inputs, and preservation of the caller's output on failure.
+  No certified or full-size R10 evidence is claimed.
+
+Regular-stream mutation hardening (2026-09-10 UTC):
+
+- `send_stream_fd_common()` now uses the admitted regular-file `fstat()` size
+  as its exact remaining budget, rejects early EOF and rejects an extra byte
+  before sending the zero-length terminator. Negative descriptor sizes are
+  also fail-visible.
+- This prevents a regular descriptor that changes during transmission from
+  being represented as a successful partial stream. No certified or full-size
+  R10 evidence is claimed.
+
+Milter structured-frame cardinality hardening (2026-09-10 UTC):
+
+- `nc_recv_scan_report()` now enforces the private structured-report wire
+  contract of one JSON report object followed by one zero-length terminator.
+  A second nonzero frame is rejected before parsing or merging it, so a
+  contradictory extra result cannot alter the milter's decision.
+- This is a source-level protocol correction only. No certified/full-size
+  milter or R04 acceptance record is claimed.
+
+Shared structured-client frame cardinality hardening (2026-09-10 UTC):
+
+- The common `dsreport()` path now rejects a second nonzero report frame
+  instead of merging it into the first result. Each report request therefore
+  consumes exactly one JSON report object and its zero-length terminator.
+- A focused `check_clamd` regression covers the multi-frame rejection. This is
+  development protocol evidence only; no certified/full-size R10 or R04
+  acceptance record is claimed.
+
+Structured-report duplicate-key hardening (2026-09-10 UTC):
+
+- The shared JSON report parser now scans the top-level object before invoking
+  JSON-C and rejects duplicate object names. Key decoding uses JSON-C for
+  escaped spellings, so `id` and `\u0069d` cannot select different values by
+  parser ordering. Report lengths above JSON-C's signed parser range are also
+  rejected before the narrowing cast.
+- Focused `check_clamd` regressions cover duplicate and escaped-duplicate
+  `id`, `verdict`, and `status` fields, while the source gate, inventory,
+  snapshot, and diff checks pass. Full C compilation remains unavailable on
+  this host because the required JSON-C/OpenSSL development headers are not
+  installed; no certified/full-size R10 or R04 acceptance record is claimed.
+
+On-access unknown-size stream ceiling hardening (2026-09-10 UTC):
+
+- `onas_send_stream()` now normalizes both zero and above-32-GiB direct-call
+  limits to `CLI_MAX_LARGE_FILESIZE` before reading a descriptor. This keeps
+  pipe/FIFO-style inputs fail-closed even when an on-access context is built
+  without the normal option parser; the regular-file preflight and FILDES
+  sender already apply the same ceiling.
+- The source gate and `git diff --check` are required follow-up checks. No
+  fresh on-access binary, privileged runner evidence, or R04/R10 acceptance
+  record is claimed; no software, remote execution, Docker, usage reset,
+  commit, push, or GitHub workflow action was used.
+
+On-access stat classification hardening (2026-09-10 UTC):
+
+- `onas_send_stream()` and `onas_fdpass()` now reject a negative `fstat()` size
+  with `CL_ESTAT` before converting it to `uint64_t` or comparing it with the
+  32-GiB ingress ceiling. Invalid metadata is therefore not misclassified as
+  an ordinary size-limit refusal.
+- The full source gate, snapshot check, inventory check, and `git diff --check`
+  are required follow-up checks. No fresh on-access binary, privileged runner
+  evidence, or R04/R10 acceptance record is claimed; no software, remote
+  execution, Docker, usage reset, commit, push, or GitHub workflow action was
+  used.
+
+On-access entry-point stat classification hardening (2026-09-10 UTC):
+
+- `onas_client_scan()` now rejects a caller-supplied negative `st_size` as
+  `CL_ESTAT` before converting it to `uint64_t` for the effective on-access
+  limit comparison. This keeps malformed metadata distinct from a genuine
+  `CL_EMAXSIZE` admission refusal even when the scan-thread preflight runs
+  before the protocol helper.
+- The source guard, inventory refresh, snapshot check, and full source gate are
+  required follow-up checks. No fresh on-access binary, privileged runner
+  evidence, or R04/R10 acceptance record is claimed; no software, remote
+  execution, Docker, usage reset, commit, push, or GitHub workflow action was
+  used.
+
+On-access worker stat classification hardening (2026-09-10 UTC):
+
+- Directory extra-scans and permission-event preflight now reject negative
+  `st_size` values as `CL_ESTAT` before comparing against
+  `OnAccessMaxFileSize`. Permission scans clear submission for malformed
+  metadata, so fanotify prevention mode can deny the event and monitoring-only
+  mode cannot report an uninspected object as clean.
+- The source guard, inventory refresh, snapshot check, and full source gate are
+  required follow-up checks. No fresh on-access binary, privileged runner
+  evidence, or R04/R10 acceptance record is claimed; no software, remote
+  execution, Docker, usage reset, commit, push, or GitHub workflow action was
+  used.
+
+Unknown-size on-access stream parity (2026-09-10 UTC):
+
+- Non-regular descriptors selected for on-access streaming no longer use
+  `fstat().st_size` as their complete length. They are consumed through EOF
+  under the bounded stream ceiling; an extra byte is classified as
+  `CL_EMAXSIZE` and the request is closed without a terminating frame, while a
+  source read failure remains `CL_EREAD`.
+- The source guard, inventory refresh, snapshot check, and full source gate are
+  required follow-up checks. No fresh on-access binary, privileged runner
+  evidence, or R04/R10 acceptance record is claimed; no software, remote
+  execution, Docker, usage reset, commit, push, or GitHub workflow action was
+  used.
+
+On-access report cardinality hardening (2026-09-10 UTC):
+
+- `onas_recv_scan_report()` now rejects a second nonzero structured report
+  frame instead of merging duplicate or conflicting daemon responses. A
+  single report followed by the zero terminator remains the only accepted
+  response shape.
+- The source guard, inventory refresh, snapshot check, and full source gate are
+  required follow-up checks. No fresh on-access binary, privileged runner
+  evidence, or R04/R10 acceptance record is claimed; no software, remote
+  execution, Docker, usage reset, commit, push, or GitHub workflow action was
+  used.
+On-access known-size early-EOF refinement (2026-09-10 UTC):
+
+- The on-access `INSTREAMREPORT` sender previously broke only on `read() == 0`
+  while still below the length admitted by `fstat()`. That made a shrinking
+  regular file enter the loop again with no progress, repeatedly sending a
+  zero-length chunk. The sender now reports `CL_EREAD`, sends no terminator,
+  and exits for this case. EOF remains normal for non-regular unknown-size
+  streams.
+- The source guard, inventory freshness, `git diff --check`, snapshot check,
+  and full source guard passed. No current-source build or certified
+  fanotify/on-access run was available, so this remains development evidence.
+
+No software, remote execution, Docker, usage reset, commit, push, or GitHub
+workflow action was used.
+
+On-access source-read interruption refinement (2026-09-10 UTC):
+
+- `onas_send_stream()` now retries `EINTR` for its main source read and its
+  regular-file growth and unknown-size overflow probes. A signal interruption
+  therefore cannot turn a resumable read into `CL_EREAD`, while genuine read
+  failures remain fail-closed and no terminator is sent on failure.
+- The source guard and `git diff --check` are required follow-up checks. No
+  fresh on-access binary, privileged runner evidence, or R04/R10 acceptance
+  record is claimed; no software, remote execution, Docker, usage reset,
+  commit, push, or GitHub workflow action was used.
+
+On-access version-frame validation refinement (2026-09-10 UTC):
+
+- `onas_get_clamd_version()` now requires one complete, NUL-terminated
+  `ClamAV ` version frame before printing or returning success. Empty,
+  malformed, or absent replies return failure so the caller's explicit local
+  version fallback remains available.
+- The source guard and `git diff --check` are required follow-up checks. No
+  fresh on-access binary, privileged runner evidence, or R04/R10 acceptance
+  record is claimed; no software, remote execution, Docker, usage reset,
+  commit, push, or GitHub workflow action was used.
+
+Legacy terminal-outcome validation refinement (2026-09-10 UTC):
+
+- The shared legacy reply parser now admits only the protocol's `OK`,
+  `FOUND`, and `ERROR` terminal suffixes. `dsresult()` and IDSESSION
+  `dspresult()` reject unknown or unterminated replies instead of removing
+  the request from correlation and allowing malformed text to look clean.
+- A focused `check_clamd` parser regression covers all three valid outcomes,
+  unknown/trailing text, and a missing NUL terminator. The source guard and
+  `git diff --check` are required follow-up checks; no fresh C binary,
+  certified/full-size R10 record, software installation, remote execution,
+  Docker, usage reset, commit, push, or GitHub workflow action was used.
+
+Legacy short-reply shape refinement (2026-09-10 UTC):
+
+- The shared legacy reply parser now also requires the colon-bearing reply
+  shape used by clamd. Bare short `OK`, `FOUND`, and `ERROR` suffixes can no
+  longer fall through the consumers' length guard and be treated as a clean
+  result.
+- Focused parser coverage covers those three short malformed forms. This is
+  development protocol evidence only; no certified/full-size R10 or R04
+  acceptance record is claimed.
+
+Clamdscan version-frame validation refinement (2026-09-10 UTC):
+
+- `clamdscan --version` now requires one nonempty, NUL-terminated `ClamAV `
+  version frame. Empty, malformed, repeated, or absent replies return the
+  existing fallback status instead of printing arbitrary text and reporting
+  success; the explicit `COMMAND UNAVAILABLE` fallback remains supported.
+- The source guard and `git diff --check` are required follow-up checks. No
+  fresh clamdscan binary, certified/full-size R10 record, or R04 acceptance
+  record is claimed.
+
+Reload-frame validation refinement (2026-09-10 UTC):
+
+- `clamdscan` now accepts a database reload only when the daemon returns the
+  exact NUL-terminated `RELOADING` frame. Prefixes with extra or missing bytes
+  remain fail-visible instead of being reported as a successful reload.
+- The source guard and `git diff --check` are required follow-up checks. No
+  fresh clamdscan binary, certified/full-size R10 record, or R04 acceptance
+  record is claimed.
+
+Clamdscan empty-walk failure return refinement (2026-09-10 UTC):
+
+- `serial_client_scan()` now returns failure when the file walker reports an
+  error before visiting any file. The existing “No files scanned” success path
+  is restricted to an error-free empty walk, so a pre-callback traversal
+  failure cannot be relabeled as clean.
+- The source guard and `git diff --check` are required follow-up checks. No
+  fresh clamdscan binary, certified/full-size R10 record, or R04 acceptance
+  record is claimed.
+
+Legacy path-command bounds refinement (2026-09-10 UTC):
+
+- Common `dsresult()` and `dsreport()` path requests now use one checked
+  command builder. It rejects `size_t` overflow, lengths that cannot be passed
+  through the `unsigned int` `sendln()` interface, allocation failure, and
+  formatting truncation before any command is sent; the old `sprintf` path is
+  removed.
+- A registered `check_clamd` regression verifies the exact normal `CONTSCAN`
+  wire command and successful clean reply. The current-source C binary,
+  certified ingress runner, and R04 acceptance evidence remain unavailable.
+
+Argument-separator parser hardening (2026-09-11 UTC):
+
+- Argument-taking clamd commands now require the protocol's literal space
+  separator before accepting a path. Previously `SCANfoo` was matched as
+  `SCAN` and the first path byte was silently discarded, allowing malformed
+  input to be dispatched as a different path.
+- Added `SCANfoo` to the existing daemon command compatibility matrix, which
+  exercises prefixed NUL/newline and legacy packet forms and requires
+  `UNKNOWN COMMAND`. Source/evidence controls remain green; a fresh
+  current-source daemon binary, certified/full-size ingress records, and R04
+  qualification remain open.

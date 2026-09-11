@@ -69,6 +69,8 @@ extern struct sockaddr_un nixsock;
 int sendln(int sockd, const char *line, unsigned int len);
 void recvlninit(struct RCVLN *s, int sockd);
 int recvln(struct RCVLN *s, char **rbol, char **reol);
+int parse_clamd_session_id(const char *line, unsigned int *id);
+cl_error_t parse_clamd_legacy_reply(const char *line, unsigned int length);
 
 int chkpath(const char *path, struct optstruct *clamdopts);
 #ifdef HAVE_FD_PASSING
@@ -102,6 +104,7 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
 int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator);
 int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete,
                             cl_error_t *status_out);
+int scan_report_json_id(const char *json, uint32_t json_length, unsigned int *id);
 int scan_report_json_alert(const char *json, uint32_t json_length, char **alert);
 int scan_report_json_metadata(const char *json, uint32_t json_length,
                               cl_scan_completion_t *completion_out,

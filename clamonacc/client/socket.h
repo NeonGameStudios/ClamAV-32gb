@@ -32,4 +32,4 @@ struct onas_sock_t {
 };
 
 cl_error_t onas_set_sock_only_once(struct onas_context *ctx, bool allow_fdpass);
-int onas_get_sockd(void);
+int onas_get_sockd(int64_t timeout_ms, cl_error_t *ret_code);

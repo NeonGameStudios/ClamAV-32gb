@@ -10,8 +10,10 @@ use crate::fsshttpb::data_element::object_group::ObjectGroup;
 use crate::fsshttpb::data_element::revision_manifest::RevisionManifest;
 use crate::fsshttpb::data_element::storage_index::StorageIndex;
 use crate::fsshttpb::data_element::storage_manifest::StorageManifest;
+use crate::reader::collect_results;
 use crate::Reader;
 use std::collections::HashMap;
+use std::hash::Hash;
 use std::fmt::Debug;
 
 pub(crate) mod cell_manifest;
@@ -36,6 +38,23 @@ pub(crate) struct DataElementPackage {
     pub(crate) object_groups: HashMap<ExGuid, ObjectGroup>,
     pub(crate) data_element_fragments: HashMap<ExGuid, DataElementFragment>,
     pub(crate) object_data_blobs: HashMap<ExGuid, ObjectDataBlob>,
+}
+
+fn insert_unique<K: Eq + Hash, V>(
+    values: &mut HashMap<K, V>,
+    key: K,
+    value: V,
+) -> Result<()> {
+    if values.contains_key(&key) {
+        return Err(ErrorKind::MalformedFssHttpBData(
+            "duplicate data element identifier".into(),
+        )
+        .into());
+    }
+
+    values.insert(key, value);
+
+    Ok(())
 }
 
 impl DataElementPackage {
@@ -89,15 +108,11 @@ impl DataElementPackage {
                 ErrorKind::MalformedFssHttpBData("revision manifest not found".into())
             })?;
 
-        revision_manifest
-            .group_references
-            .iter()
-            .map(|reference| {
-                self.find_object_group(*reference).ok_or_else(|| {
-                    ErrorKind::MalformedFssHttpBData("object group not found".into()).into()
-                })
+        collect_results(revision_manifest.group_references.iter().map(|reference| {
+            self.find_object_group(*reference).ok_or_else(|| {
+                ErrorKind::MalformedFssHttpBData("object group not found".into()).into()
             })
-            .collect::<Result<_>>()
+        }))
     }
 
     /// Look up a blob by its ID.
@@ -105,14 +120,31 @@ impl DataElementPackage {
         self.object_data_blobs.get(&id).map(|blob| blob.value())
     }
 
-    /// Find the first storage index.
-    pub(crate) fn find_storage_index(&self) -> Option<&StorageIndex> {
-        self.storage_indexes.values().next()
+    /// Look up the storage index referenced by the packaging header.
+    pub(crate) fn find_storage_index(&self, id: ExGuid) -> Option<&StorageIndex> {
+        self.storage_indexes.get(&id)
     }
 
-    /// Find the first storage manifest.
-    pub(crate) fn find_storage_manifest(&self) -> Option<&StorageManifest> {
-        self.storage_manifests.values().next()
+    /// Resolve the storage manifest through the storage-index mapping.
+    pub(crate) fn find_storage_manifest(
+        &self,
+        storage_index: &StorageIndex,
+    ) -> Result<Option<&StorageManifest>> {
+        match storage_index.manifest_mappings.as_slice() {
+            [] => match self.storage_manifests.len() {
+                0 => Ok(None),
+                1 => Ok(self.storage_manifests.values().next()),
+                _ => Err(ErrorKind::MalformedFssHttpBData(
+                    "storage manifest is ambiguous without a mapping".into(),
+                )
+                .into()),
+            },
+            [mapping] => Ok(self.storage_manifests.get(&mapping.mapping_id)),
+            _ => Err(ErrorKind::MalformedFssHttpBData(
+                "multiple storage manifest mappings are not supported".into(),
+            )
+            .into()),
+        }
     }
 
     /// Look up a cell revision ID by the cell's manifest ID.
@@ -150,45 +182,59 @@ impl DataElement {
         match element_type.value() {
             0x01 => {
                 reader.reserve_next_map(&mut package.storage_indexes)?;
-                package
-                    .storage_indexes
-                    .insert(id, Self::parse_storage_index(reader)?);
+                insert_unique(
+                    &mut package.storage_indexes,
+                    id,
+                    Self::parse_storage_index(reader)?,
+                )?;
             }
             0x02 => {
                 reader.reserve_next_map(&mut package.storage_manifests)?;
-                package
-                    .storage_manifests
-                    .insert(id, Self::parse_storage_manifest(reader)?);
+                insert_unique(
+                    &mut package.storage_manifests,
+                    id,
+                    Self::parse_storage_manifest(reader)?,
+                )?;
             }
             0x03 => {
                 reader.reserve_next_map(&mut package.cell_manifests)?;
-                package
-                    .cell_manifests
-                    .insert(id, Self::parse_cell_manifest(reader)?);
+                insert_unique(
+                    &mut package.cell_manifests,
+                    id,
+                    Self::parse_cell_manifest(reader)?,
+                )?;
             }
             0x04 => {
                 reader.reserve_next_map(&mut package.revision_manifests)?;
-                package
-                    .revision_manifests
-                    .insert(id, Self::parse_revision_manifest(reader)?);
+                insert_unique(
+                    &mut package.revision_manifests,
+                    id,
+                    Self::parse_revision_manifest(reader)?,
+                )?;
             }
             0x05 => {
                 reader.reserve_next_map(&mut package.object_groups)?;
-                package
-                    .object_groups
-                    .insert(id, Self::parse_object_group(reader)?);
+                insert_unique(
+                    &mut package.object_groups,
+                    id,
+                    Self::parse_object_group(reader)?,
+                )?;
             }
             0x06 => {
                 reader.reserve_next_map(&mut package.data_element_fragments)?;
-                package
-                    .data_element_fragments
-                    .insert(id, Self::parse_data_element_fragment(reader)?);
+                insert_unique(
+                    &mut package.data_element_fragments,
+                    id,
+                    Self::parse_data_element_fragment(reader)?,
+                )?;
             }
             0x0A => {
                 reader.reserve_next_map(&mut package.object_data_blobs)?;
-                package
-                    .object_data_blobs
-                    .insert(id, Self::parse_object_data_blob(reader)?);
+                insert_unique(
+                    &mut package.object_data_blobs,
+                    id,
+                    Self::parse_object_data_blob(reader)?,
+                )?;
             }
             x => {
                 return Err(ErrorKind::MalformedFssHttpBData(
@@ -199,5 +245,167 @@ impl DataElement {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{insert_unique, DataElementPackage};
+    use crate::fsshttpb::data::exguid::ExGuid;
+    use crate::fsshttpb::data_element::storage_index::{
+        StorageIndex, StorageIndexManifestMapping,
+    };
+    use crate::fsshttpb::data_element::storage_manifest::StorageManifest;
+    use crate::fsshttpb::data::serial_number::SerialNumber;
+    use crate::shared::guid::Guid;
+    use std::collections::HashMap;
+
+    #[test]
+    fn duplicate_data_element_identifier_is_rejected() {
+        let mut values = HashMap::new();
+        insert_unique(&mut values, 7u8, 1u8).unwrap();
+
+        assert!(insert_unique(&mut values, 7u8, 2u8).is_err());
+        assert_eq!(values.get(&7), Some(&1));
+    }
+
+    #[test]
+    fn storage_index_lookup_uses_the_packaging_reference() {
+        let first_id = ExGuid {
+            guid: Guid::nil(),
+            value: 1,
+        };
+        let selected_id = ExGuid {
+            guid: Guid::nil(),
+            value: 2,
+        };
+        let mut storage_indexes = HashMap::new();
+        storage_indexes.insert(
+            first_id,
+            StorageIndex {
+                manifest_mappings: Vec::new(),
+                cell_mappings: HashMap::new(),
+                revision_mappings: HashMap::new(),
+            },
+        );
+        storage_indexes.insert(
+            selected_id,
+            StorageIndex {
+                manifest_mappings: Vec::new(),
+                cell_mappings: HashMap::new(),
+                revision_mappings: HashMap::new(),
+            },
+        );
+
+        let package = DataElementPackage {
+            storage_indexes,
+            storage_manifests: HashMap::new(),
+            cell_manifests: HashMap::new(),
+            revision_manifests: HashMap::new(),
+            object_groups: HashMap::new(),
+            data_element_fragments: HashMap::new(),
+            object_data_blobs: HashMap::new(),
+        };
+
+        let selected = package
+            .find_storage_index(selected_id)
+            .expect("referenced storage index should be found");
+        assert!(std::ptr::eq(
+            selected,
+            package.storage_indexes.get(&selected_id).unwrap()
+        ));
+        assert!(!std::ptr::eq(
+            selected,
+            package.storage_indexes.get(&first_id).unwrap()
+        ));
+    }
+
+    #[test]
+    fn storage_manifest_lookup_uses_the_index_mapping() {
+        let mapped_id = ExGuid {
+            guid: Guid::nil(),
+            value: 2,
+        };
+        let other_id = ExGuid {
+            guid: Guid::nil(),
+            value: 3,
+        };
+        let index = StorageIndex {
+            manifest_mappings: vec![StorageIndexManifestMapping {
+                mapping_id: mapped_id,
+                serial: SerialNumber {
+                    guid: Guid::nil(),
+                    serial: 1,
+                },
+            }],
+            cell_mappings: HashMap::new(),
+            revision_mappings: HashMap::new(),
+        };
+        let mut manifests = HashMap::new();
+        manifests.insert(
+            mapped_id,
+            StorageManifest {
+                id: Guid::nil(),
+                roots: HashMap::new(),
+            },
+        );
+        manifests.insert(
+            other_id,
+            StorageManifest {
+                id: Guid::nil(),
+                roots: HashMap::new(),
+            },
+        );
+        let package = DataElementPackage {
+            storage_indexes: HashMap::new(),
+            storage_manifests: manifests,
+            cell_manifests: HashMap::new(),
+            revision_manifests: HashMap::new(),
+            object_groups: HashMap::new(),
+            data_element_fragments: HashMap::new(),
+            object_data_blobs: HashMap::new(),
+        };
+
+        let selected = package
+            .find_storage_manifest(&index)
+            .unwrap()
+            .expect("mapped storage manifest should be found");
+        assert!(std::ptr::eq(
+            selected,
+            package.storage_manifests.get(&mapped_id).unwrap()
+        ));
+    }
+
+    #[test]
+    fn storage_manifest_lookup_rejects_ambiguous_unmapped_manifests() {
+        let mut manifests = HashMap::new();
+        for value in [1, 2] {
+            manifests.insert(
+                ExGuid {
+                    guid: Guid::nil(),
+                    value,
+                },
+                StorageManifest {
+                    id: Guid::nil(),
+                    roots: HashMap::new(),
+                },
+            );
+        }
+        let package = DataElementPackage {
+            storage_indexes: HashMap::new(),
+            storage_manifests: manifests,
+            cell_manifests: HashMap::new(),
+            revision_manifests: HashMap::new(),
+            object_groups: HashMap::new(),
+            data_element_fragments: HashMap::new(),
+            object_data_blobs: HashMap::new(),
+        };
+        let index = StorageIndex {
+            manifest_mappings: Vec::new(),
+            cell_mappings: HashMap::new(),
+            revision_mappings: HashMap::new(),
+        };
+
+        assert!(package.find_storage_manifest(&index).is_err());
     }
 }

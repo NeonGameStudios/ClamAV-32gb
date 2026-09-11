@@ -7,6 +7,23 @@ use crate::fsshttpb::data_element::DataElement;
 use crate::shared::guid::Guid;
 use crate::Reader;
 use std::collections::HashMap;
+use std::hash::Hash;
+
+fn insert_unique<K: Eq + Hash, V>(
+    values: &mut HashMap<K, V>,
+    key: K,
+    value: V,
+) -> Result<()> {
+    if values.contains_key(&key) {
+        return Err(crate::errors::ErrorKind::MalformedFssHttpBData(
+            "duplicate storage manifest root".into(),
+        )
+        .into());
+    }
+
+    values.insert(key, value);
+    Ok(())
+}
 
 /// A storage manifest.
 ///
@@ -39,11 +56,26 @@ impl DataElement {
             let root_manifest = ExGuid::parse(reader)?;
             let cell = CellId::parse(reader)?;
 
-            roots.insert(root_manifest, cell);
+            insert_unique(&mut roots, root_manifest, cell)?;
         }
 
         ObjectHeader::try_parse_end_8(reader, ObjectType::DataElement)?;
 
         Ok(StorageManifest { id, roots })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::insert_unique;
+    use std::collections::HashMap;
+
+    #[test]
+    fn duplicate_storage_manifest_root_is_rejected() {
+        let mut values = HashMap::new();
+        insert_unique(&mut values, 7u8, 1u8).unwrap();
+
+        assert!(insert_unique(&mut values, 7u8, 2u8).is_err());
+        assert_eq!(values.get(&7), Some(&1));
     }
 }

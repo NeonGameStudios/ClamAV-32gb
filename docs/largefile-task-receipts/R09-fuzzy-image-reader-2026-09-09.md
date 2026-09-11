@@ -54,3 +54,30 @@ Boundaries:
 - No capability status was promoted. No commit, push, GitHub workflow action,
   usage reset, or banked reset was performed. Linux packages were installed
   only inside the disposable container; no host software was installed.
+
+Follow-up admission hardening (2026-09-10 UTC):
+
+- The working-set reservation now accounts for the decoder's pixel count as
+  well as its declared output bytes. This covers the simultaneously retained
+  decoded image, RGB conversion, grayscale conversion, and fixed 32x32/DCT
+  buffers; the prior three-times-output estimate could under-reserve L8 and
+  other low-byte-per-pixel inputs.
+- The reservation uses checked pixel multiplication and checked additions,
+  retains the fixed 1 MiB transform allowance, and remains independent of the
+  encoded source length. No required R09 row was promoted.
+- Source guards and diff checks are required follow-up validation. The offline
+  Cargo check remains blocked before compilation by the uncached `insta`
+  dependency; no consumer compile, certified runner, Docker, usage reset,
+  commit, or push is claimed.
+
+Current-source build correction (2026-09-11 UTC):
+
+- A disposable current-source CMake build reached `libclamav_rust` and exposed
+  a Rust compile error in the pixel-count reservation: `u64::from(...)` became
+  ambiguous because `num_traits::NumCast` is in scope. The dimensions are
+  `u32`, so the conversion now uses explicit widening casts before checked
+  multiplication. This changes no runtime policy; it restores compilation of
+  the reader-backed fuzzy-image path.
+- The final disposable ARM64 current-source build and linked test checkpoint
+  completed successfully. No capability promotion or certified/full-size claim
+  is made by this correction.

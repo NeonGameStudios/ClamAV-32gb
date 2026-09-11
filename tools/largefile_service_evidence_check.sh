@@ -141,6 +141,8 @@ then
 fi
 grep -Fx 'service_resource_measurement_failed=0' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no clean resource-measurement marker'
+grep -Fx 'service_temp_budget=pass' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence has no temporary-space budget pass marker'
 service_rss_budget_kb=$(awk -F= '$1 == "rss_budget_kb" { count++; value=$2 } END { if (count != 1) exit 1; print value }' "$summary") ||
     fail 'service evidence has no unique overall RSS budget'
 pcre_rss_budget_kb=$(awk -F= '$1 == "pcre_rss_budget_kb" { count++; value=$2 } END { if (count != 1) exit 1; print value }' "$summary") ||
@@ -155,6 +157,82 @@ esac
 [ "$service_rss_budget_kb" -le "$pcre_rss_budget_kb" ] || fail 'service overall RSS budget exceeds the PCRE-phase ceiling'
 grep -Fx 'rss_budget_contract=overall-stricter-than-pcre-phase' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence does not identify the stricter overall RSS subcase'
+
+summary_integer()
+{
+    summary_integer_key=$1
+    summary_integer_value=$(awk -F= -v expected_key="$summary_integer_key" '
+        $1 == expected_key { count++; value = $2 }
+        END { if (count != 1) exit 1; print value }
+    ' "$summary") || fail "service evidence has no unique $summary_integer_key"
+    case "$summary_integer_value" in
+        ''|*[!0-9]*) fail "service evidence $summary_integer_key is not a canonical integer" ;;
+    esac
+}
+
+summary_integer service_rss_samples
+service_rss_samples=$summary_integer_value
+[ "$service_rss_samples" -gt 0 ] || fail 'service evidence has no RSS samples'
+summary_integer service_temp_samples
+service_temp_samples=$summary_integer_value
+[ "$service_temp_samples" -gt 0 ] || fail 'service evidence has no temporary-space samples'
+summary_integer service_rss_peak_kb
+service_rss_peak_kb=$summary_integer_value
+if ! awk -v peak="$service_rss_peak_kb" -v budget="$service_rss_budget_kb" \
+    'BEGIN { exit !(peak <= budget) }'; then
+    fail 'service measured RSS peak exceeds the overall RSS budget'
+fi
+summary_integer milter_exact_edge_peak_rss_kb
+milter_exact_edge_peak_rss_kb=$summary_integer_value
+if ! awk -v peak="$milter_exact_edge_peak_rss_kb" -v budget="$service_rss_budget_kb" \
+    'BEGIN { exit !(peak <= budget) }'; then
+    fail 'milter measured RSS peak exceeds the overall RSS budget'
+fi
+for parallel_client in 1 2; do
+    summary_integer "clamd_parallel_client_${parallel_client}_peak_rss_kb"
+    parallel_client_peak=$summary_integer_value
+    if ! awk -v peak="$parallel_client_peak" -v budget="$service_rss_budget_kb" \
+        'BEGIN { exit !(peak <= budget) }'; then
+        fail "parallel client $parallel_client measured RSS peak exceeds the overall RSS budget"
+    fi
+done
+summary_integer service_temp_peak_bytes
+service_temp_peak_bytes=$summary_integer_value
+summary_integer service_temp_budget_bytes
+service_temp_budget_bytes=$summary_integer_value
+[ "$service_temp_budget_bytes" = 68719476736 ] ||
+    fail 'service temporary-space budget does not match the certified limit'
+if ! awk -v peak="$service_temp_peak_bytes" -v budget="$service_temp_budget_bytes" \
+    'BEGIN { exit !(peak <= budget) }'; then
+    fail 'service measured temporary-space peak exceeds its budget'
+fi
+grep -Fx 'latency=pass' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence has no latency pass marker'
+summary_integer latency_budget_s
+latency_budget_s=$summary_integer_value
+[ "$latency_budget_s" -gt 0 ] || fail 'service evidence has no positive latency budget'
+summary_decimal()
+{
+    summary_decimal_key=$1
+    summary_decimal_value=$(awk -F= -v expected_key="$summary_decimal_key" '
+        $1 == expected_key { count++; value = $2 }
+        END { if (count != 1) exit 1; print value }
+    ' "$summary") || fail "service evidence has no unique $summary_decimal_key"
+    case "$summary_decimal_value" in
+        ''|*[!0-9.]*|.*|*.) fail "service evidence $summary_decimal_key is not a decimal" ;;
+        *.*.*) fail "service evidence $summary_decimal_key is not a decimal" ;;
+    esac
+}
+for elapsed_key in \
+    clamd_parallel_client_1_elapsed_s \
+    clamd_parallel_client_2_elapsed_s \
+    milter_exact_edge_elapsed_s; do
+    summary_decimal "$elapsed_key"
+    if ! awk -v elapsed="$summary_decimal_value" -v budget="$latency_budget_s" \
+        'BEGIN { exit !(elapsed <= budget) }'; then
+        fail "service measured elapsed time exceeds the latency budget: $elapsed_key"
+    fi
+done
 grep -Fx 'service_runtime_dependencies_unchanged=pass' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no runtime-dependency immutability marker'
 grep -Fx 'service_runtime_loader_binding=pass' "$summary" >/dev/null 2>&1 ||

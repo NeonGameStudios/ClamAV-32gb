@@ -33,6 +33,11 @@
 #endif
 #include <fcntl.h>
 #include <errno.h>
+#include <stdint.h>
+#include <time.h>
+#ifndef _WIN32
+#include <sys/time.h>
+#endif
 
 #if !defined(_WIN32)
 #include <arpa/inet.h>
@@ -51,6 +56,33 @@
 #include "communication.h"
 
 static int onas_socket_wait(curl_socket_t sockfd, int32_t b_recv, uint64_t timeout_ms);
+
+static int onas_now_ms(uint64_t *now_ms)
+{
+#if defined(CLOCK_MONOTONIC)
+    struct timespec now;
+
+    if (now_ms == NULL || clock_gettime(CLOCK_MONOTONIC, &now) != 0 ||
+        now.tv_sec < 0 || now.tv_nsec < 0 || now.tv_nsec >= 1000000000L ||
+        (uint64_t)now.tv_sec > (UINT64_MAX - (uint64_t)now.tv_nsec) / 1000000000U)
+        return -1;
+
+    *now_ms = (uint64_t)now.tv_sec * 1000U + (uint64_t)now.tv_nsec / 1000000U;
+    return 0;
+#elif !defined(_WIN32)
+    struct timeval now;
+
+    if (now_ms == NULL || gettimeofday(&now, NULL) != 0 || now.tv_sec < 0 ||
+        now.tv_usec < 0 || now.tv_usec >= 1000000L)
+        return -1;
+
+    *now_ms = (uint64_t)now.tv_sec * 1000U + (uint64_t)now.tv_usec / 1000U;
+    return 0;
+#else
+    (void)now_ms;
+    return -1;
+#endif
+}
 
 static int onas_recv_bytes(struct onas_rcvln *rcv_data, void *buffer,
                            size_t length, int64_t timeout_ms)
@@ -130,28 +162,54 @@ static int onas_recv_bytes(struct onas_rcvln *rcv_data, void *buffer,
 static int onas_socket_wait(curl_socket_t sockfd, int32_t b_recv, uint64_t timeout_ms)
 {
     struct timeval tv;
-    fd_set infd, outfd, errfd;
-    int ret;
+    uint64_t now_ms;
+    uint64_t deadline_ms = 0;
 
-    tv.tv_sec  = timeout_ms / 1000;
-    tv.tv_usec = (timeout_ms % 1000) * 1000;
-
-    FD_ZERO(&infd);
-    FD_ZERO(&outfd);
-    FD_ZERO(&errfd);
-
-    FD_SET(sockfd, &errfd); /* always check for error */
-
-    if (b_recv) {
-        FD_SET(sockfd, &infd);
-    } else {
-        FD_SET(sockfd, &outfd);
+    if (timeout_ms > 0) {
+        if (onas_now_ms(&now_ms) != 0)
+            return -1;
+        deadline_ms = (timeout_ms > UINT64_MAX - now_ms) ? UINT64_MAX : now_ms + timeout_ms;
     }
 
-    /* select() returns the number of signalled sockets or -1 */
-    ret = select((int)sockfd + 1, &infd, &outfd, &errfd, &tv);
+    for (;;) {
+        fd_set infd;
+        fd_set outfd;
+        fd_set errfd;
+        int ret;
 
-    return ret;
+        /* select() mutates both the fd sets and timeout. Rebuild them after
+         * every EINTR and measure the remaining time from one absolute
+         * deadline so signal storms cannot extend OnAccessCurlTimeout. */
+        if (deadline_ms > 0) {
+            if (onas_now_ms(&now_ms) != 0)
+                return -1;
+            if (now_ms >= deadline_ms) {
+                errno = ETIMEDOUT;
+                return 0;
+            }
+            now_ms = deadline_ms - now_ms;
+            tv.tv_sec  = (long)(now_ms / 1000U);
+            tv.tv_usec = (long)((now_ms % 1000U) * 1000U);
+        } else {
+            tv.tv_sec  = 0;
+            tv.tv_usec = 0;
+        }
+
+        FD_ZERO(&infd);
+        FD_ZERO(&outfd);
+        FD_ZERO(&errfd);
+        FD_SET(sockfd, &errfd); /* always check for error */
+
+        if (b_recv)
+            FD_SET(sockfd, &infd);
+        else
+            FD_SET(sockfd, &outfd);
+
+        /* select() returns the number of signalled sockets or -1. */
+        ret = select((int)sockfd + 1, &infd, &outfd, &errfd, &tv);
+        if (ret >= 0 || errno != EINTR)
+            return ret;
+    }
 }
 
 /* Sends bytes over a socket
@@ -159,6 +217,7 @@ static int onas_socket_wait(curl_socket_t sockfd, int32_t b_recv, uint64_t timeo
 int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout, cl_error_t *ret_code)
 {
     size_t sent = 0;
+    uint64_t wait_timeout = timeout > 0 ? (uint64_t)timeout : 0;
     CURLcode curlcode;
     curl_socket_t sockfd;
 
@@ -185,7 +244,7 @@ int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout, cl_er
         do {
             curlcode = curl_easy_send(curl, line, len, &sent);
             if (CURLE_AGAIN == curlcode) {
-                int wait_result = onas_socket_wait(sockfd, 0, timeout);
+                int wait_result = onas_socket_wait(sockfd, 0, wait_timeout);
                 if (wait_result <= 0) {
                     if (wait_result == 0) {
                         logg(LOGG_ERROR, "ClamCom: TIMEOUT while waiting on socket (send)\n");
@@ -270,6 +329,13 @@ int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
             return received ? 0 : -1;
         if (length > CLAMD_SCAN_REPORT_MAX_FRAME)
             return -1;
+        if (received) {
+            /* Each on-access request has one authoritative structured report
+             * frame. Do not merge a second frame, since a duplicate or
+             * conflicting daemon response must remain fail-visible. */
+            logg(LOGG_ERROR, "Received multiple structured scan report frames from clamd.\n");
+            return -1;
+        }
 
         payload = (char *)malloc((size_t)length + 1U);
         if (!payload)
@@ -313,6 +379,7 @@ int onas_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int
 {
     char *eol;
     int ret = 0;
+    uint64_t wait_timeout = timeout > 0 ? (uint64_t)timeout : 0;
     curl_socket_t sockfd;
 
 #if ((LIBCURL_VERSION_MAJOR > 7) || (LIBCURL_VERSION_MAJOR == 7 && LIBCURL_VERSION_MINOR >= 45))
@@ -337,11 +404,13 @@ int onas_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int
                                                     sizeof(rcv_data->buf) - (rcv_data->curr - rcv_data->buf), &(rcv_data->retlen));
 
                 if (CURLE_AGAIN == rcv_data->curlcode) {
-                    int wait_result = onas_socket_wait(sockfd, 1, timeout);
+                    int wait_result = onas_socket_wait(sockfd, 1, wait_timeout);
                     if (wait_result <= 0) {
                         if (wait_result == 0) {
                             logg(LOGG_ERROR, "ClamCom: TIMEOUT while waiting on socket (recv)\n");
                             rcv_data->curlcode = CURLE_OPERATION_TIMEDOUT;
+                        } else {
+                            rcv_data->curlcode = CURLE_RECV_ERROR;
                         }
                         return -1;
                     }
@@ -421,18 +490,28 @@ int onas_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int
 int onas_fd_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout_ms)
 {
     char *eol;
-
-    UNUSEDPARAM(timeout_ms);
+    uint64_t wait_timeout = timeout_ms > 0 ? (uint64_t)timeout_ms : 0;
 
     while (1) {
         if (!rcv_data->retlen) {
-            rcv_data->retlen = recv(rcv_data->sockd, rcv_data->curr, sizeof(rcv_data->buf) - (rcv_data->curr - rcv_data->buf), 0);
-            if (rcv_data->retlen <= 0) {
-                if (rcv_data->retlen && errno == EINTR) {
-                    rcv_data->retlen = 0;
-                    continue;
+            int wait_result = onas_socket_wait(rcv_data->sockd, 1, wait_timeout);
+            ssize_t received;
+
+            if (wait_result <= 0) {
+                rcv_data->curlcode = (wait_result == 0) ? CURLE_OPERATION_TIMEDOUT : CURLE_RECV_ERROR;
+                return -1;
+            }
+
+            do {
+                received = recv(rcv_data->sockd, rcv_data->curr,
+                                sizeof(rcv_data->buf) - (rcv_data->curr - rcv_data->buf), 0);
+            } while (received < 0 && errno == EINTR);
+
+            if (received <= 0) {
+                if (received < 0) {
+                    rcv_data->curlcode = CURLE_RECV_ERROR;
                 }
-                if (rcv_data->retlen || rcv_data->curr != rcv_data->buf) {
+                if (received < 0 || rcv_data->curr != rcv_data->buf) {
                     *rcv_data->curr = '\0';
                     if (strcmp(rcv_data->buf, "UNKNOWN COMMAND\n"))
                         logg(LOGG_ERROR, "Communication error\n");
@@ -442,6 +521,7 @@ int onas_fd_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, 
                 }
                 return 0;
             }
+            rcv_data->retlen = (size_t)received;
         }
         if ((eol = memchr(rcv_data->curr, 0, rcv_data->retlen))) {
             int ret = 0;

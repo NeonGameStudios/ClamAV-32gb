@@ -5,8 +5,9 @@ use crate::one::property::layout_alignment::LayoutAlignment;
 use crate::one::property::outline_indent_distance::OutlineIndentDistance;
 use crate::one::property_set::{table_cell_node, table_node, table_row_node};
 use crate::onenote::note_tag::{parse_note_tags, NoteTag};
-use crate::onenote::outline::{parse_outline_element, OutlineElement};
+use crate::onenote::outline::{parse_outline_element_at_depth, OutlineElement};
 use crate::onestore::object_space::ObjectSpace;
+use crate::reader::{collect_results, Reader};
 
 /// A table.
 ///
@@ -164,17 +165,22 @@ impl TableCell {
     }
 }
 
-pub(crate) fn parse_table(table_id: ExGuid, space: &ObjectSpace) -> Result<Table> {
+pub(crate) fn parse_table_at_depth(
+    table_id: ExGuid,
+    space: &ObjectSpace,
+    depth: usize,
+) -> Result<Table> {
+    Reader::check_recursion_depth(depth)?;
     let table_object = space
         .get_object(table_id)
         .ok_or_else(|| ErrorKind::MalformedOneNoteData("table object is missing".into()))?;
     let data = table_node::parse(table_object)?;
 
-    let contents = data
-        .rows
-        .into_iter()
-        .map(|row_id| parse_row(row_id, space))
-        .collect::<Result<_>>()?;
+    let contents = collect_results(
+        data.rows
+            .into_iter()
+            .map(|row_id| parse_row_at_depth(row_id, space, depth + 1)),
+    )?;
 
     let table = Table {
         rows: data.row_count,
@@ -191,34 +197,36 @@ pub(crate) fn parse_table(table_id: ExGuid, space: &ObjectSpace) -> Result<Table
     Ok(table)
 }
 
-fn parse_row(row_id: ExGuid, space: &ObjectSpace) -> Result<TableRow> {
+fn parse_row_at_depth(row_id: ExGuid, space: &ObjectSpace, depth: usize) -> Result<TableRow> {
+    Reader::check_recursion_depth(depth)?;
     let row_object = space
         .get_object(row_id)
         .ok_or_else(|| ErrorKind::MalformedOneNoteData("row object is missing".into()))?;
     let data = table_row_node::parse(row_object)?;
 
-    let contents = data
-        .cells
-        .into_iter()
-        .map(|cell_id| parse_cell(cell_id, space))
-        .collect::<Result<_>>()?;
+    let contents = collect_results(
+        data.cells
+            .into_iter()
+            .map(|cell_id| parse_cell_at_depth(cell_id, space, depth + 1)),
+    )?;
 
     let row = TableRow { contents };
 
     Ok(row)
 }
 
-fn parse_cell(cell_id: ExGuid, space: &ObjectSpace) -> Result<TableCell> {
+fn parse_cell_at_depth(cell_id: ExGuid, space: &ObjectSpace, depth: usize) -> Result<TableCell> {
+    Reader::check_recursion_depth(depth)?;
     let cell_object = space
         .get_object(cell_id)
         .ok_or_else(|| ErrorKind::MalformedOneNoteData("cell object is missing".into()))?;
     let data = table_cell_node::parse(cell_object)?;
 
-    let contents = data
-        .contents
-        .into_iter()
-        .map(|element_id| parse_outline_element(element_id, space))
-        .collect::<Result<_>>()?;
+    let contents = collect_results(
+        data.contents
+            .into_iter()
+            .map(|element_id| parse_outline_element_at_depth(element_id, space, depth + 1)),
+    )?;
 
     let cell = TableCell {
         contents,

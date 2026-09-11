@@ -208,3 +208,222 @@ Follow-on current-source production CLI revalidation:
   Linux x86-64, sanitizer, full-size, and capability-bound evidence.
 
 State: `development-verified`; release readiness remains blocked.
+
+GGUF structural-admission refinement (2026-09-10 UTC):
+
+- The recognized GGUF AI-model path now has a bounded structural parser for
+  versions 1--3. It checks metadata scalar/array types, caps nested metadata
+  arrays by parser depth and remaining input, honors the optional
+  `general.alignment` value, validates tensor descriptor boundaries, and
+  checks aligned tensor-data offsets without copying model payloads.
+- The existing non-GGUF model case remains explicit unsupported, and a valid
+  minimal GGUF header is now covered by a required-unsupported development
+  group regression. Malformed/truncated GGUF remains incomplete and
+  non-cacheable; the mandatory outer raw matcher is unchanged.
+- This does not claim complete tensor shape/type validation, ONNX or
+  TensorFlow Lite parser coverage, full model corpus evidence, sanitizer or
+  certified x86-64 execution, or release qualification. No software, remote
+  execution, Docker, usage reset, commit, push, or GitHub workflow action was
+  used.
+
+GGUF alignment refinement (2026-09-10 UTC):
+
+- `general.alignment` now requires a power-of-two value at least 8 bytes and
+  no larger than the bounded parser ceiling; the required-group regression
+  rejects an otherwise well-formed metadata entry with alignment 4.
+- This follows the GGUF format requirement that tensor-data alignment be an
+  8-byte multiple and does not expand the release claim. Full tensor encoding
+  coverage and certified evidence remain open.
+
+The required group also covers a raw-detection control appended after a valid
+GGUF header. It confirms structural admission does not suppress the outer raw
+matcher or its exact alert result.
+
+GGUF duplicate-alignment refinement (2026-09-10 UTC):
+
+- The bounded GGUF path now rejects a repeated `general.alignment` metadata
+  key instead of allowing a later value to silently replace the earlier
+  alignment choice. This matches the upstream GGUF reader's duplicate-key
+  rejection behavior and keeps the special alignment field unambiguous.
+- The required-unsupported development group covers two conflicting valid
+  alignment entries and confirms the result is `CL_EPARSE`, non-cacheable, and
+  clean of a stale alert. Certified parser, full model corpus, sanitizer, and
+  x86-64 evidence remain unavailable. No software, remote execution, Docker,
+  usage reset, commit, push, or GitHub workflow action was used.
+
+GGUF tensor-layout refinement (2026-09-10 UTC):
+
+- GGUF tensor offsets are relative to the tensor-data blob. The bounded path
+  now requires each recognized tensor to start at the preceding tensor's
+  alignment-padded end, rejecting overlap and unexplained holes instead of
+  validating only the furthest end position.
+- A required-unsupported development regression with two F32 descriptors at
+  the same relative offset now returns `CL_EPARSE`, marks the input
+  non-cacheable, and clears stale alerts. This follows the reference GGUF
+  reader's contiguous-offset check; certified parser, full model corpus,
+  sanitizer, and x86-64 evidence remain unavailable.
+
+GGUF tensor-rank refinement (2026-09-10 UTC):
+
+- Tensor descriptors now reject rank values above the four-dimensional
+  `GGML_MAX_DIMS` boundary before reading the dimension vector. A complete
+  five-dimension F32 descriptor is covered by a required-unsupported
+  development regression and returns `CL_EPARSE` with non-cacheable state.
+- This follows the reference GGML tensor-rank check; tensor-type/corpus
+  coverage, certified parser, sanitizer, and x86-64 evidence remain open.
+
+GGUF metadata-key refinement (2026-09-10 UTC):
+
+- GGUF metadata entries now reject a zero-length key before consuming its
+  value. This matches the reference reader's empty-key boundary and prevents
+  an unnamed value from being admitted as structurally valid.
+- A required-unsupported development regression covers a complete empty-key
+  entry and returns `CL_EPARSE` with non-cacheable state. Tensor-type/corpus
+  coverage, certified parser, sanitizer, and x86-64 evidence remain open.
+
+GGUF quantized-tensor geometry refinement (2026-09-10 UTC):
+
+- The bounded parser now validates encoded block geometry for established
+  GGML tensor types, including Q4_0/Q4_1, Q5/Q8, K-quant, IQ, integer, and
+  BF16 types. Quantized element counts must be exact multiples of their
+  format block size, and byte-size multiplication remains checked before the
+  relative contiguous-layout validation.
+- A complete one-block Q4_0 descriptor is admitted without reading or copying
+  model payload semantics; a 31-element Q4_0 descriptor is fail-visible. This
+  is structural development evidence only; full corpus, decoder semantics,
+  sanitizer, certified parser, and x86-64 qualification remain open.
+
+GGUF current-quantized-type refinement (2026-09-10 UTC):
+
+- The same bounded geometry table now covers the current GGML tensor IDs
+  `TQ1_0`, `TQ2_0`, `MXFP4`, `NVFP4`, `Q1_0`, and `Q2_0`, using the
+  published block element and byte sizes. A table-driven required-group
+  regression admits one aligned block for each type and verifies clean,
+  cacheable structural completion.
+- This expands format admission only; model payload decoding, ONNX/TFLite
+  coverage, current-source linked execution, sanitizer, certified x86-64, and
+  release qualification remain open. No dependency was installed and no
+  remote, Docker, usage-reset, commit, push, or GitHub workflow action was
+  used.
+
+Bounded Python-bytecode parser refinement (2026-09-10 UTC):
+
+- Recognized Python compiled inputs now use a non-executing marshal structural
+  walker. It bounds recursion, object count, signed lengths, reference indices,
+  and every fmap offset, and accepts the legacy and modern code-object field
+  layouts without materializing marshal payloads.
+- The scan dispatcher merges the parser result with the existing raw matcher:
+  a valid bounded code object can complete cleanly, a raw malware match keeps
+  precedence, and truncated or unsupported marshal data returns `CL_EPARSE`
+  with a non-cacheable map.
+- Required-group regressions cover truncated input and minimal legacy and
+  modern code objects, plus raw-detection precedence through a malformed
+  recognized input. The local 145-test tools suite (2 expected skips),
+  snapshot check, `git diff --check`, and full source guards passed. This is
+  development-level structural evidence only; independent format-8 fixtures,
+  linked current-source execution, sanitizer, certified x86-64, full-size
+  materialization, and capability qualification remain open. No dependency,
+  remote execution, Docker, usage reset, commit, push, or GitHub workflow
+  action was used.
+
+GGUF quantized row-shape refinement (2026-09-11 UTC):
+
+- The bounded GGUF geometry checker now validates the innermost row dimension
+  against the quantization block size, not only the product of all tensor
+  dimensions. This rejects a shape such as `16x2` for Q4_0, whose total of 32
+  elements could otherwise pass while each row remains incomplete.
+- Added `test_ai_model_gguf_quantized_row_shape_misalignment_is_fail_visible`
+  to the required-unsupported development group. The source guard and
+  repository control sweep pass; a fresh linked C execution is not claimed
+  because the available ARM64 Docker image lacks the test/development
+  libraries and no package installation was authorized. Full tensor semantics,
+  sanitizer, certified x86-64, production-CVD/service, and release
+  qualification remain open.
+
+GGUF tensor-name boundary refinement (2026-09-11 UTC):
+
+- The bounded GGUF parser now rejects tensor names whose encoded byte length
+  reaches the reference `GGML_MAX_NAME` limit of 64, before skipping the name
+  payload. This prevents an oversized name from being admitted as part of an
+  otherwise valid descriptor.
+- Added `test_ai_model_gguf_tensor_name_limit_is_fail_visible` with a complete
+  descriptor and payload after the boundary. The source/control sweep passes;
+  linked C execution remains unclaimed because the available ARM64 Docker
+  image lacks the test/development libraries and no package installation was
+  authorized. Full model semantics, sanitizer, certified x86-64,
+  production-CVD/service, and release qualification remain open.
+
+TFLite metadata-buffer vector coverage hardening (2026-09-11 UTC):
+
+- The bounded FlatBuffer walk now explicitly documents and tests that
+  `Model.metadata_buffer` is its schema-defined vector of scalar `int32`
+  buffer indices. Those values are not FlatBuffer table offsets and remain out
+  of the table walker.
+- Added `test_ai_model_tflite_metadata_buffer_is_structurally_supported` with
+  two structurally valid buffer tables and a metadata-buffer index of one.
+  Source/evidence guards remain the available verification; linked C execution,
+  certified Linux x86-64, full-size evidence, and release qualification remain
+  open.
+
+TFLite metadata-buffer index-binding hardening (2026-09-11 UTC):
+
+- The bounded FlatBuffer walk now validates every signed `metadata_buffer`
+  entry against the declared `buffers` vector count. Negative values and
+  out-of-range indices are rejected as incomplete before they can be treated
+  as valid model metadata references.
+- Added `test_ai_model_tflite_metadata_buffer_index_is_fail_visible`, which
+  changes the valid fixture's index from one to two while its two buffer
+  tables remain present, requiring `CL_EPARSE`, a cleared verdict, and cache
+  taint. The source/control sweep remains green; linked current-source C
+  execution, certified Linux x86-64, full-size evidence, and release
+  qualification remain open.
+
+TFLite signed metadata-buffer index hardening (2026-09-11 UTC):
+
+- The bounded FlatBuffer walk now decodes `Model.metadata_buffer` entries as
+  schema-defined signed `int32` values before comparing them with the root
+  `buffers` count. Negative indices are rejected explicitly rather than
+  relying on an unsigned comparison to classify them as out of range.
+- Added `test_ai_model_tflite_metadata_buffer_negative_index_is_fail_visible`,
+  which uses an otherwise valid two-buffer model with an `int32` value of -1
+  and requires `CL_EPARSE`, a cleared verdict, and cache taint. Source/evidence
+  guards remain green, and the linked ARM64 current-source required-unsupported
+  group passed 38/38. Certified Linux x86-64, full-size evidence, and release
+  qualification remain open.
+
+Current-source C compile correction (2026-09-11 UTC):
+
+- The disposable current-source build found that the TFLite field helper's
+  local vtable offset reused the `field_offset` output-parameter name. The
+  local was renamed to `vtable_field_offset`; this is a compile-only naming
+  correction and does not change the validator's behavior or admission policy.
+- The ARM64 build completed incrementally from the persistent temporary build
+  directory, and the required-unsupported group passed 38/38. No certified or
+  full-size capability promotion is made without the required external
+  evidence.
+
+Current-source AI-model test corrections (2026-09-11 UTC):
+
+- AI-model unit fixtures now set `options.parse = ~0U`; without an explicit
+  parser option, the public scan path correctly performs raw-only matching and
+  cannot exercise parser admission assertions.
+- GGUF validation now requires the actual final tensor payload to fit in the
+  input while retaining alignment padding only between tensors. This accepts a
+  valid scalar tensor whose final four-byte payload ends at EOF.
+- Python and GGUF raw-matching fixtures now place their signature offsets at
+  the marker bytes (8 and 32 respectively). Their assertions use the public
+  `cl_scanmap_ex()` contract: parser status and `verdict_out` are checked
+  independently. The linked ARM64 required-unsupported group passed 38/38;
+certified x86-64, full-size evidence, and release qualification remain open.
+
+Python marshal backing-read status hardening (2026-09-11 UTC):
+
+- The bounded Python reader now distinguishes an in-range fmap backing-read
+  failure (`CL_EREAD`, sticky incomplete, non-cacheable) from a short or
+  malformed marshal range (`CL_EPARSE`).
+- Added and registered `test_python_compiled_parser_preserves_fmap_read_failure`
+  in the ordinary and required-unsupported groups. Host tooling and source
+  guards pass; no linked current-source C execution is claimed because the
+  available Docker images lack JSON-C and Check development headers. Full
+  Python semantics, certified x86-64, full-size, sanitizer, and release
+  qualification remain open.

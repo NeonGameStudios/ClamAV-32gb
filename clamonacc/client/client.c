@@ -565,14 +565,14 @@ int onas_get_clamd_version(struct onas_context **ctx)
         return 2;
     }
 
-    while ((len = onas_recvln(&rcv, &buff, NULL, timeout))) {
-        if (len == -1) {
-            logg(LOGG_DEBUG, "ClamClient: clamd did not respond with version information\n");
-            break;
-        }
-        printf("%s\n", buff);
+    len = onas_recvln(&rcv, &buff, NULL, timeout);
+    if (len <= 0 || buff == NULL || len <= (int)sizeof("ClamAV ") ||
+        strncmp(buff, "ClamAV ", sizeof("ClamAV ") - 1) != 0) {
+        logg(LOGG_DEBUG, "ClamClient: clamd did not respond with a valid version frame\n");
+        curl_easy_cleanup(curl);
+        return 2;
     }
-
+    printf("%s\n", buff);
     curl_easy_cleanup(curl);
     return 0;
 }
@@ -616,6 +616,18 @@ int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uin
     }
     if (ret_code) {
         *ret_code = CL_SUCCESS;
+    }
+
+    /* Reject malformed metadata before narrowing the signed stat size to an
+     * unsigned limit comparison.  The protocol helpers repeat this check at
+     * the wire boundary, but the scan-thread entry point must preserve the
+     * same CL_ESTAT classification when its caller supplied the stat result.
+     */
+    if (sb.st_size < 0) {
+        logg(LOGG_ERROR, "%s: On-access input has an invalid negative size. ERROR\n",
+             fname ? fname : "FD");
+        status = CL_ESTAT;
+        goto done;
     }
 
     if (!regular_file) {

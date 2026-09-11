@@ -7,7 +7,8 @@ use crate::fsshttpb::packaging::OneStorePackaging;
 use crate::onestore::object::Object;
 use crate::onestore::revision::Revision;
 use crate::onestore::revision_role::RevisionRole;
-use std::collections::HashMap;
+use crate::reader::{reserve_collection_set, Reader};
+use std::collections::{HashMap, HashSet};
 
 pub(crate) type GroupData<'a> = HashMap<(ExGuid, u64), &'a ObjectGroupData>;
 
@@ -62,8 +63,21 @@ impl<'a, 'b> ObjectSpace<'a> {
         let mut roots = HashMap::new();
 
         let mut rev_id = Some(revision_manifest_id);
+        let mut visited_revisions = HashSet::new();
+        let mut revision_depth = 0;
 
         while let Some(revision_manifest_id) = rev_id {
+            Reader::check_recursion_depth(revision_depth)?;
+            if visited_revisions.contains(&revision_manifest_id) {
+                return Err(ErrorKind::MalformedOneStoreData(
+                    "revision manifest chain contains a cycle".into(),
+                )
+                .into());
+            }
+            reserve_collection_set(&mut visited_revisions, 1)?;
+            visited_revisions.insert(revision_manifest_id);
+            revision_depth += 1;
+
             let base_rev_id = Revision::parse(
                 revision_manifest_id,
                 context_id,
