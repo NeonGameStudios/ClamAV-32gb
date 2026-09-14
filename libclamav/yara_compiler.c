@@ -642,118 +642,121 @@ char* yr_compiler_get_error_message(
     char* buffer,
     int buffer_size)
 {
+    size_t output_size;
+
+    output_size = (buffer_size > 0) ? (size_t)buffer_size : 0;
     switch (compiler->last_error) {
         case ERROR_INSUFICIENT_MEMORY:
-            snprintf(buffer, buffer_size, "not enough memory");
+            snprintf(buffer, output_size, "not enough memory");
             break;
         case ERROR_DUPLICATE_IDENTIFIER:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "duplicate identifier \"%s\"",
                 compiler->last_error_extra_info);
             break;
         case ERROR_DUPLICATE_STRING_IDENTIFIER:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "duplicate string identifier \"%s\"",
                 compiler->last_error_extra_info);
             break;
         case ERROR_DUPLICATE_TAG_IDENTIFIER:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "duplicate tag identifier \"%s\"",
                 compiler->last_error_extra_info);
             break;
         case ERROR_DUPLICATE_META_IDENTIFIER:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "duplicate metadata identifier \"%s\"",
                 compiler->last_error_extra_info);
             break;
         case ERROR_DUPLICATE_LOOP_IDENTIFIER:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "duplicate loop identifier \"%s\"",
                 compiler->last_error_extra_info);
             break;
         case ERROR_UNDEFINED_STRING:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "undefined string \"%s\"",
                 compiler->last_error_extra_info);
             break;
         case ERROR_UNDEFINED_IDENTIFIER:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "undefined identifier \"%s\"",
                 compiler->last_error_extra_info);
             break;
         case ERROR_UNREFERENCED_STRING:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "unreferenced string \"%s\"",
                 compiler->last_error_extra_info);
             break;
         case ERROR_NOT_A_STRUCTURE:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "\"%s\" is not a structure",
                 compiler->last_error_extra_info);
             break;
         case ERROR_NOT_AN_ARRAY:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "\"%s\" is not an array",
                 compiler->last_error_extra_info);
             break;
         case ERROR_INVALID_FIELD_NAME:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "invalid field name \"%s\"",
                 compiler->last_error_extra_info);
             break;
         case ERROR_MISPLACED_ANONYMOUS_STRING:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "wrong use of anonymous string");
             break;
         case ERROR_INCLUDES_CIRCULAR_REFERENCE:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "include circular reference");
             break;
         case ERROR_INCLUDE_DEPTH_EXCEEDED:
             snprintf(buffer,
-                     buffer_size,
+                     output_size,
                      "too many levels of included rules");
             break;
         case ERROR_LOOP_NESTING_LIMIT_EXCEEDED:
             snprintf(buffer,
-                     buffer_size,
+                     output_size,
                      "loop nesting limit exceeded");
             break;
         case ERROR_NESTED_FOR_OF_LOOP:
             snprintf(buffer,
-                     buffer_size,
+                     output_size,
                      "'for <quantifier> of <string set>' loops can't be nested");
             break;
         case ERROR_UNKNOWN_MODULE:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "unknown module \"%s\"",
                 compiler->last_error_extra_info);
             break;
@@ -764,14 +767,14 @@ char* yr_compiler_get_error_message(
         case ERROR_WRONG_NUMBER_OF_ARGUMENTS:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "%s",
                 compiler->last_error_extra_info);
             break;
         case ERROR_INTERNAL_FATAL_ERROR:
             snprintf(
                 buffer,
-                buffer_size,
+                output_size,
                 "internal fatal error");
             break;
     }

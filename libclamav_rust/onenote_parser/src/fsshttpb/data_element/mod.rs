@@ -116,8 +116,8 @@ impl DataElementPackage {
     }
 
     /// Look up a blob by its ID.
-    pub(crate) fn find_blob(&self, id: ExGuid) -> Option<&[u8]> {
-        self.object_data_blobs.get(&id).map(|blob| blob.value())
+    pub(crate) fn find_blob(&self, id: ExGuid) -> Option<&ObjectDataBlob> {
+        self.object_data_blobs.get(&id)
     }
 
     /// Look up the storage index referenced by the packaging header.

@@ -18,13 +18,14 @@
  *  MA 02110-1301, USA.
  */
 
-#if HAVE_CONF_H
+#if defined(HAVE_CONF_H) && HAVE_CONF_H
 #include "clamav-config.h"
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -118,6 +119,8 @@ void *cl_base64_decode(char *data, size_t len, void *obuf, size_t *olen, int one
 
     if (!olen || !base64_len(data, len, &decoded_len))
         return NULL;
+    if (len > (size_t)INT_MAX)
+        return NULL;
 
     buf = (obuf) ? obuf : cli_max_malloc(decoded_len + 1);
     if (!(buf))
@@ -131,7 +134,7 @@ void *cl_base64_decode(char *data, size_t len, void *obuf, size_t *olen, int one
         return NULL;
     }
 
-    bio = BIO_new_mem_buf(data, len);
+    bio = BIO_new_mem_buf(data, (int)len);
     if (!(bio)) {
         BIO_free(b64);
         if (!(obuf))

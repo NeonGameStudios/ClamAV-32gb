@@ -4,7 +4,7 @@ Task ID / parent milestone: `R09` / required AI-model parser slice
 
 Canonical checkout and branch:
 
-- `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- `<repository-root>`
 - `largefile-roadmap-qualification`
 - existing dirty worktree preserved; no reset, clean, commit, or push
 - current Git-mode source-manifest SHA-256:
@@ -50,7 +50,7 @@ A read-only current-source C syntax probe reached the disposable ARM64 image
 but stopped at its missing `json.h` development header. The image also lacks
 the coherent JSON-C/Zlib/check development set required for a linked rebuild;
 therefore no linked C result is claimed for this slice. No software was
-installed on the host or in a container, no remote/MCP-SSH execution was
+installed on the host or in a container, no remote/remote SSH execution was
 used, no usage reset or banked reset was used, and no GitHub workflow action
 was triggered.
 

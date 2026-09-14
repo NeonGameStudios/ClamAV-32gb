@@ -1,5 +1,25 @@
 # Wishlist
 
+## Consolidate the large-file branch into `main` and purge historical PII — deferred 2026-09-14
+
+- Status: deferred for later review; no branch, history, or remote-reference
+  changes are being made now. Reconfirmed deferred on 2026-09-14.
+- This is the deferred item from the branch/history-cleanup discussion (item
+  #2): decide whether the large-file branch should become `main` and whether
+  the other branches should then be retired.
+- Scope: evaluate making `largefile-roadmap-qualification` the repository's
+  `main`, then retiring the other branches only after checking open work, CI
+  settings, release/reference tags, and rollback options.
+- Important distinction: removing old Sonic1 or other personal identifying
+  information from past pushed commits requires a coordinated Git history
+  rewrite (all reachable refs), force-updating the remote, and follow-up
+  cleanup of GitHub caches, pull requests, forks, and existing clones. A
+  branch rename or deleting the other branch names alone would not remove that
+  history.
+- Before resuming: inventory sensitive paths and reachable refs, prepare a
+  reviewed rewrite map, document recovery refs, and obtain an explicit
+  maintenance window for the remote rewrite.
+
 ## ZIP/ZIP-SFX current-source focused audit — 2026-09-04
 
 - Retain current-source production-linked GCC evidence at `zip` 19/19,

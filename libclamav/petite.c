@@ -417,19 +417,24 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
             }
             bottom += 4;
 
-            if (size == 0 || (size_t)size > SIZE_MAX / 4U) {
-                if (usects)
-                    free(usects);
-                return 1;
-            }
             {
-                size_t copy_size = (size_t)size * 4U;
-                int64_t copy_adjustment = -(int64_t)(copy_size - 4U);
+                size_t copy_size = (size_t)size;
 
-                ssrc = petite_rva_window(buf, minrva, cli_readint32(packed + 4),
-                                          copy_adjustment, bufsz, copy_size);
-                ddst = petite_rva_window(buf, minrva, cli_readint32(packed + 8),
-                                          copy_adjustment, bufsz, copy_size);
+                if (size == 0 || copy_size > SIZE_MAX / 4U) {
+                    if (usects)
+                        free(usects);
+                    return 1;
+                }
+                copy_size *= 4U;
+
+                {
+                    int64_t copy_adjustment = -(int64_t)(copy_size - 4U);
+
+                    ssrc = petite_rva_window(buf, minrva, cli_readint32(packed + 4),
+                                              copy_adjustment, bufsz, copy_size);
+                    ddst = petite_rva_window(buf, minrva, cli_readint32(packed + 8),
+                                              copy_adjustment, bufsz, copy_size);
+                }
             }
 
             if (ssrc == NULL || ddst == NULL) {
@@ -688,7 +693,7 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
 
             if (j) {
                 int strippetite = 0;
-                uint32_t reloc;
+                uint32_t reloc = 0;
 
                 /* LONG MAGIC = 33C05E64 8B188B1B 8D63D65D */
                 char *petite_magic = petite_adjusted_buffer_window(

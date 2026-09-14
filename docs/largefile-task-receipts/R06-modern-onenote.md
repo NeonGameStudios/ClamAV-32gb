@@ -36,7 +36,7 @@ Observed blocker and expected behavior:
 Dependency ownership audit (2026-09-09 UTC):
 
 - The pinned checkout at
-  `/Users/claude/.cargo/git/checkouts/onenote.rs-83d1173891b1b328/29c0853`
+  `<local-user-home>/.cargo/git/checkouts/onenote.rs-83d1173891b1b328/29c0853`
   contains 10,071 lines across roughly 568 KiB of parser source. Its private
   reader wraps `&[u8]`, and the modern model owns extracted content in `Vec`
   fields, including embedded-file payloads. This confirms that a compliant

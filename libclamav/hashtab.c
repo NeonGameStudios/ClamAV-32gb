@@ -204,7 +204,6 @@ static inline void PROFILE_REPORT(const struct cli_hashtable *s)
 #define PROFILE_DELETED_REUSE(s, tries)
 #define PROFILE_INSERT(s, tries)
 #define PROFILE_DATA_UPDATE(s, tries)
-#define PROFILE_HASH_DELETE(s)
 #define PROFILE_HASH_CLEAR(s)
 #define PROFILE_REPORT(s)
 #endif
@@ -272,7 +271,7 @@ static inline uint32_t hash32shift(uint32_t key)
 
 static inline size_t hash(const unsigned char *k, const size_t len, const size_t SIZE)
 {
-    size_t Hash = 1;
+    uint32_t Hash = 1;
     size_t i;
     for (i = 0; i < len; i++) {
         /* a simple add is good, because we use the mixing function below */
@@ -358,7 +357,7 @@ const struct cli_htu32_element *cli_htu32_next(const struct cli_htu32 *s, const 
     if (!current)
         ncur = 0;
     else {
-        ncur = current - s->htable;
+        ncur = (size_t)(current - s->htable);
         if (ncur >= s->capacity)
             return NULL;
 
@@ -871,9 +870,9 @@ void cli_hashset_destroy(struct cli_hashset *hs)
     hs->capacity          = 0;
 }
 
-#define BITMAP_CONTAINS(bmap, val) ((bmap)[(val) >> 5] & ((uint64_t)1 << ((val)&0x1f)))
-#define BITMAP_INSERT(bmap, val) ((bmap)[(val) >> 5] |= ((uint64_t)1 << ((val)&0x1f)))
-#define BITMAP_REMOVE(bmap, val) ((bmap)[(val) >> 5] &= ~((uint64_t)1 << ((val)&0x1f)))
+#define BITMAP_CONTAINS(bmap, val) ((bmap)[(val) >> 5] & ((uint32_t)1U << ((val)&0x1f)))
+#define BITMAP_INSERT(bmap, val) ((bmap)[(val) >> 5] |= ((uint32_t)1U << ((val)&0x1f)))
+#define BITMAP_REMOVE(bmap, val) ((bmap)[(val) >> 5] &= ~((uint32_t)1U << ((val)&0x1f)))
 
 /*
  * searches the hashset for the @key.
@@ -924,9 +923,12 @@ static cl_error_t cli_hashset_grow(struct cli_hashset *hs)
         return CL_ERESOURCE;
 
     if (hs->mempool) {
-        rc = cli_hashset_init_pool(&new_hs, (size_t)hs->capacity * 2, hs->limit * 100 / hs->capacity, hs->mempool);
+        rc = cli_hashset_init_pool(&new_hs, (size_t)hs->capacity * 2,
+                                   (uint8_t)(hs->limit * 100 / hs->capacity),
+                                   hs->mempool);
     } else {
-        rc = cli_hashset_init(&new_hs, (size_t)hs->capacity * 2, hs->limit * 100 / hs->capacity);
+        rc = cli_hashset_init(&new_hs, (size_t)hs->capacity * 2,
+                              (uint8_t)(hs->limit * 100 / hs->capacity));
     }
     if (rc != CL_SUCCESS) {
         return rc;
@@ -934,7 +936,7 @@ static cl_error_t cli_hashset_grow(struct cli_hashset *hs)
     /* and copy keys */
     for (i = 0; i < hs->capacity; i++) {
         if (BITMAP_CONTAINS(hs->bitmap, i)) {
-            const size_t key = hs->keys[i];
+            const uint32_t key = hs->keys[i];
             cli_hashset_addkey_internal(&new_hs, key);
         }
     }
@@ -1005,7 +1007,7 @@ ssize_t cli_hashset_toarray(const struct cli_hashset *hs, uint32_t **array)
             arr[j++] = hs->keys[i];
         }
     }
-    return j;
+    return (ssize_t)j;
 }
 
 void cli_hashset_init_noalloc(struct cli_hashset *hs)
@@ -1061,14 +1063,14 @@ cl_error_t cli_map_addkey(struct cli_map *m, const void *key, int32_t keysize)
         return CL_EARG;
     }
 
-    el = cli_hashtab_find(&m->htab, key, keysize);
+    el = cli_hashtab_find(&m->htab, key, (size_t)keysize);
     if (el) {
         // already exists
         m->last_insert = (int32_t)el->data;
         return CL_ECREAT;
     }
 
-    if (m->nvalues == UINT32_MAX) {
+    if (m->nvalues == UINT32_MAX || m->nvalues > (uint32_t)INT32_MAX) {
         return CL_EMEM;
     }
     n = m->nvalues + 1;
@@ -1104,11 +1106,12 @@ cl_error_t cli_map_addkey(struct cli_map *m, const void *key, int32_t keysize)
         memset(&m->u.unsized_values[n - 1], 0, sizeof(*m->u.unsized_values));
     }
     m->nvalues = n;
-    if (!cli_hashtab_insert(&m->htab, key, keysize, (const cli_element_data)(n - 1))) {
+    if (!cli_hashtab_insert(&m->htab, key, (size_t)keysize,
+                            (const cli_element_data)(n - 1))) {
         return CL_EMEM;
     }
 
-    m->last_insert = n - 1;
+    m->last_insert = (int32_t)(n - 1);
     return CL_SUCCESS;
 }
 
@@ -1120,7 +1123,7 @@ cl_error_t cli_map_removekey(struct cli_map *m, const void *key, int32_t keysize
         return CL_EARG;
     }
 
-    el = cli_hashtab_find(&m->htab, key, keysize);
+    el = cli_hashtab_find(&m->htab, key, (size_t)keysize);
     if (!el) {
         // not found, can't remove
         return CL_EUNLINK;
@@ -1137,10 +1140,10 @@ cl_error_t cli_map_removekey(struct cli_map *m, const void *key, int32_t keysize
         v->valuesize = 0;
     } else {
         char *v = (char *)m->u.sized_values + (int32_t)el->data * m->valuesize;
-        memset(v, 0, m->valuesize);
+        memset(v, 0, (size_t)m->valuesize);
     }
 
-    cli_hashtab_delete(&m->htab, key, keysize);
+    cli_hashtab_delete(&m->htab, key, (size_t)keysize);
 
     return CL_SUCCESS;
 }
@@ -1154,8 +1157,9 @@ cl_error_t cli_map_setvalue(struct cli_map *m, const void *value, int32_t values
     }
 
     if (m->valuesize) {
-        memcpy((char *)m->u.sized_values + m->last_insert * m->valuesize,
-               value, valuesize);
+        memcpy((char *)m->u.sized_values +
+                   (size_t)m->last_insert * (size_t)m->valuesize,
+               value, (size_t)valuesize);
     } else {
         struct cli_map_value *v = &m->u.unsized_values[m->last_insert];
 
@@ -1163,13 +1167,13 @@ cl_error_t cli_map_setvalue(struct cli_map *m, const void *value, int32_t values
             free(v->value);
         }
 
-        v->value = cli_max_malloc(valuesize);
+        v->value = cli_max_malloc((size_t)valuesize);
         if (!v->value) {
             cli_errmsg("hashtab.c: Unable to allocate  memory for v->value\n");
             return CL_EMEM;
         }
 
-        memcpy(v->value, value, valuesize);
+        memcpy(v->value, value, (size_t)valuesize);
         v->valuesize = valuesize;
     }
     return CL_SUCCESS;
@@ -1182,7 +1186,7 @@ cl_error_t cli_map_find(struct cli_map *m, const void *key, int32_t keysize)
         return CL_EARG;
     }
 
-    el = cli_hashtab_find(&m->htab, key, keysize);
+    el = cli_hashtab_find(&m->htab, key, (size_t)keysize);
     if (!el) {
         // not found
         return CL_EACCES;

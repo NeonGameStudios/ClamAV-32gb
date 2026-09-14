@@ -83,8 +83,9 @@ pub struct CVD {
 
 impl CVD {
     pub fn from_file(file_path: &Path) -> Result<Self, Error> {
-        let file = File::open(file_path)
-            .map_err(|_| Error::Parse(format!("Failed to open file: {:?}", file_path)))?;
+        let file = File::open(file_path).map_err(|e| {
+            Error::Parse(format!("Failed to open file {:?}: {}", file_path, e))
+        })?;
         let mut reader = BufReader::new(&file);
 
         // We need to extract the name from the filename.

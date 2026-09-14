@@ -79,7 +79,7 @@ SizeT PPC_Convert(Byte *data, SizeT size, UInt32 ip, int encoding)
       UInt32 src = ((UInt32)(data[i + 0] & 3) << 24) |
         ((UInt32)data[i + 1] << 16) |
         ((UInt32)data[i + 2] << 8) |
-        ((UInt32)data[i + 3] & (~3));
+        ((UInt32)data[i + 3] & ~(UInt32)3);
       
       UInt32 dest;
       if (encoding)
@@ -90,7 +90,7 @@ SizeT PPC_Convert(Byte *data, SizeT size, UInt32 ip, int encoding)
       data[i + 1] = (Byte)(dest >> 16);
       data[i + 2] = (Byte)(dest >> 8);
       data[i + 3] &= 0x3;
-      data[i + 3] |= dest;
+      data[i + 3] |= (Byte)dest;
     }
   }
   return i;

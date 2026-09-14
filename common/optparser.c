@@ -96,6 +96,23 @@ static bool parse_max_scantime(const char *arg, long long *value)
     return true;
 }
 
+static bool parse_number(const char *arg, long long *value)
+{
+    char *end;
+    long long parsed;
+
+    if (!arg || !value || !*arg)
+        return false;
+
+    errno = 0;
+    parsed = strtoll(arg, &end, 10);
+    if (errno == ERANGE || end == arg || *end != '\0')
+        return false;
+
+    *value = parsed;
+    return true;
+}
+
 #define FLAG_MULTIPLE 1 /* option can be used multiple times */
 #define FLAG_REQUIRED 2 /* arg is required, even if there's a default value */
 #define FLAG_HIDDEN   4 /* don't print in clamconf --generate-config */
@@ -1326,8 +1343,15 @@ struct optstruct *optparse(const char *cfgfile, int argc, char **argv, int verbo
                             err = 1;
                             break;
                         }
-                    } else {
-                        numarg = atoi(arg);
+                    } else if (!parse_number(arg, &numarg)) {
+                        if (cfgfile)
+                            fprintf(stderr, "ERROR: Can't parse numerical argument for option %s\n", name);
+                        else if (optentry->shortopt)
+                            fprintf(stderr, "ERROR: Can't parse numerical argument for option --%s (-%c)\n", optentry->longopt, optentry->shortopt);
+                        else
+                            fprintf(stderr, "ERROR: Can't parse numerical argument for option --%s\n", optentry->longopt);
+                        err = 1;
+                        break;
                     }
                 } else {
                     numarg = 0;
@@ -1582,8 +1606,10 @@ struct optstruct *optadditem(const char *name, const char *arg, int verbose, int
                             err = 1;
                             break;
                         }
-                    } else {
-                        numarg = atoi(arg);
+                    } else if (!parse_number(arg, &numarg)) {
+                        fprintf(stderr, "ERROR: Can't parse numerical argument for option %s\n", name);
+                        err = 1;
+                        break;
                     }
                 } else {
                     numarg = 0;

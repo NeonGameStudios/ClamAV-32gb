@@ -84,7 +84,6 @@ int SzPpmdInputAccountingAllowed(UInt64 processed, size_t buffered, UInt64 limit
 int SzPpmdInputWindowSize(const Byte *begin, const Byte *cur, const Byte *end,
     size_t *buffered);
 int SzDecoderInputProgressAllowed(UInt64 remaining, size_t available, size_t consumed);
-UInt64 SzFolder_GetUnpackSize(CSzFolder *p);
 
 SRes SzFolder_Decode(const CSzFolder *folder, const UInt64 *packSizes,
     ILookInStream *stream, UInt64 startPos,

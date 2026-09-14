@@ -118,3 +118,45 @@ pub(crate) fn parse_embedded_file(file_id: ExGuid, space: &ObjectSpace) -> Resul
 
     Ok(file)
 }
+
+pub(crate) fn scan_embedded_file<F>(
+    file_id: ExGuid,
+    space: &ObjectSpace,
+    callback: &mut F,
+) -> Result<bool>
+where
+    F: FnMut(Option<&str>, &mut dyn std::io::Read) -> bool,
+{
+    let node_object = space
+        .get_object(file_id)
+        .ok_or_else(|| ErrorKind::MalformedOneNoteData("embedded file is missing".into()))?;
+    let node = embedded_file_node::parse(node_object)?;
+
+    let container_object = space
+        .get_object(node.embedded_file_container)
+        .ok_or_else(|| {
+            ErrorKind::MalformedOneNoteData("embedded file container is missing".into())
+        })?;
+    if container_object.id() != crate::one::property_set::PropertySetId::EmbeddedFileContainer.as_jcid() {
+        return Err(ErrorKind::MalformedOneNoteFileData(
+            format!(
+                "unexpected object type: 0x{:X}",
+                container_object.id().0
+            )
+            .into(),
+        )
+        .into());
+    }
+
+    let blob = container_object.file_data().ok_or_else(|| {
+        ErrorKind::MalformedOneNoteFileData("embedded file container has no data".into())
+    })?;
+    let mut reader = blob.open_reader()?;
+    let name = if node.embedded_file_name.is_empty() {
+        None
+    } else {
+        Some(node.embedded_file_name.as_str())
+    };
+
+    Ok(callback(name, &mut *reader))
+}

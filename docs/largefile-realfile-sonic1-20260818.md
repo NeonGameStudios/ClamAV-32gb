@@ -15,7 +15,7 @@ The five large files were scanned with the current Release build,
 `ClamAV 1.5.3-largefile-devel`, using Sonic1's existing production CVD mirror:
 
 ```text
-/home/camera/clamav-32gb-work-f08c7b0/evidence/production-cvd-mirror-20260816/db
+<remote-user-home>/clamav-32gb-work-f08c7b0/evidence/production-cvd-mirror-20260816/db
 ```
 
 That mirror contained `main.cvd`, `daily.cvd`, and `bytecode.cvd` (about
@@ -40,7 +40,7 @@ The USB files were then scanned serially with the official `main.cvd`,
 memory and 58 GiB available before the run. The evidence is preserved at:
 
 ```text
-/home/camera/clamav-32gb-work/usb-scan-20260818-current/
+<remote-user-home>/clamav-32gb-work/usb-scan-20260818-current/
 ```
 
 With top-level limits of 32 GiB but the normal `PCREMaxFileSize` default

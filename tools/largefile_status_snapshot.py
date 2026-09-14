@@ -115,7 +115,7 @@ def render_snapshot(counts: dict, hashes: dict[str, str]) -> str:
         "Required unsupported rows remain blockers. Only allowlisted `kind=unsupported` rows are exclusions.", "",
         "## Roadmap reminders — maintained text, not generated findings", "",
         "These reminders require human review as implementation and evidence change:", "",
-        "- Implementation: finish remaining modern OneNote/contiguous parser paths and independent format-8 bytecode fixtures.",
+        "- Implementation: the bounded modern OneNote reader path is implemented; finish any remaining parser-family gaps and independent format-8 bytecode fixtures.",
         "- Evidence: qualify current-source Linux x86-64 Release and ASan/UBSan builds with production databases.",
         "- Acceptance: run the oversized descriptor probe on the certified runner; complete materialized edges, ingress/on-access parity, and resource measurements.",
         "- Release: obtain revision-bound evidence for each required capability and run the full release gate.", "",

@@ -1,6 +1,6 @@
 # 32 GiB roadmap progress review — 2026-09-04
 
-Reviewed repository: `/Volumes/512gbNVME/github-external/ClamAV-32gb`  
+Reviewed repository: `<repository-root>`
 Branch: `largefile-roadmap-qualification`  
 Reviewed HEAD: `ff8905891b2b58a66c71859ab2c807cc4dee2dec`  
 Comparison baseline: `5aee0970e23c6032997023b76ceb3be4d9277fb4` (August 24 end of day).

@@ -244,7 +244,7 @@ cl_error_t cli_bm_initoff(const struct cli_matcher *root, struct cli_bm_off *dat
                    cli_bm_add_u64(data->offset[patt->offset_min], patt->prefix_length, &match_offset)) {
             if (!data->cnt || (match_offset != data->offtab[data->cnt - 1])) {
                 data->offtab[data->cnt] = match_offset;
-                if (data->offtab[data->cnt] >= info->fsize)
+                if (data->offtab[data->cnt] >= (uint64_t)info->fsize)
                     continue;
                 data->cnt++;
             }

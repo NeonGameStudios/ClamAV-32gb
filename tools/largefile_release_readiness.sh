@@ -300,6 +300,13 @@ verify_qualified_evidence()
                 echo "qualified release evidence lacks required cases for ${capability_kind}:${capability_id}" >&2
                 return 1
             }
+            python3 -B "$root/tools/largefile_acceptance_resources.py" \
+                "$evidence_directory" \
+                --records "$acceptance_records" \
+                --require-capability "$capability_kind" "$capability_id" >/dev/null || {
+                echo "qualified release evidence lacks per-case resource measurements for ${capability_kind}:${capability_id}" >&2
+                return 1
+            }
         fi
 
         case "$evidence_type" in

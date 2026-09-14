@@ -53,6 +53,18 @@ int clamd_largefile_worker_count_check(
     char *reason,
     size_t reason_size);
 
+/* Calculate the safe daemon queue ceiling from the open-file limit and the
+ * configured recursion/worker values. The result is kept representable by
+ * the legacy int thread-pool fields; a failed return means the arithmetic or
+ * one of those fields cannot be represented safely. */
+int clamd_queue_limit_calculate(
+    uint64_t nofile_limit,
+    uint64_t max_recursion,
+    uint64_t max_threads,
+    uint64_t configured_queue,
+    uint64_t *max_queue_limit,
+    uint64_t *effective_queue);
+
 /* Resolve the process cgroup and its mounted hierarchy, then return the
  * smallest finite memory headroom across the current cgroup and visible
  * ancestors. Explicit proc paths support deterministic hierarchy fixtures. */

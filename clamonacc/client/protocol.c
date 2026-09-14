@@ -652,6 +652,10 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
                 goto done;
             }
             free(bol);
+            /* Path-based commands have been sent successfully.  Keep the
+             * common transport guard from treating the zero-byte command
+             * setup as an unsent scan request. */
+            len = 1;
             break;
 
         case STREAM:

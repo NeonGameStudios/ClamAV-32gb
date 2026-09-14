@@ -6,7 +6,7 @@ Exact capability kind:id list: library:ole2-sticky-completion; parser:CL_TYPE_MS
 
 Starting commit and working-tree/source manifest identity: `ff8905891b2b58a66c71859ab2c807cc4dee2dec`; working tree intentionally dirty with the roadmap candidate changes. The current-source inventory and source guards were regenerated and passed after this slice.
 
-Prerequisites verified: canonical checkout `/Volumes/512gbNVME/github-external/ClamAV-32gb`, branch `largefile-roadmap-qualification`, ARM64 current-source build container, and existing roadmap acceptance/source gates.
+Prerequisites verified: canonical checkout `<repository-root>`, branch `largefile-roadmap-qualification`, ARM64 current-source build container, and existing roadmap acceptance/source gates.
 
 Owned files and excluded shared files: `libclamav/ole2_extract.c`, `unit_tests/check_clamav.c`, and `unit_tests/input/other_sigs/Clamav-Unit-Test-Signature.ndb`. Shared manifests, readiness state, and qualification records were not promoted.
 

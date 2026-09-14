@@ -64,6 +64,7 @@ runtime_component_hashes_after=$out/provenance/service-runtime-component-hashes-
 loaded_dependencies=$out/provenance/service-loaded-dependencies.txt
 parallel_profile=$out/provenance/parallel-client-clamd.conf
 lifecycle=$out/provenance/service-lifecycle.tsv
+resource_samples=$out/provenance/service-resource-samples.tsv
 checksum_manifest=$out/SHA256SUMS
 
 for required in "$summary" "$oracle_binding" "$qualification_oracle" "$workload_results" "$acceptance_records" \
@@ -73,11 +74,12 @@ for required in "$summary" "$oracle_binding" "$qualification_oracle" "$workload_
     "$dependency_hashes" "$dependency_hashes_after" \
     "$runtime_component_artifacts" "$runtime_component_hashes" \
     "$runtime_component_hashes_after" "$loaded_dependencies" "$parallel_profile" \
-    "$lifecycle" \
+    "$lifecycle" "$resource_samples" \
     "$checksum_manifest"; do
     [ -s "$required" ] || fail "missing service evidence: $required"
 done
 [ -d "$runtime_component_dir" ] || fail 'service runtime component directory is missing'
+[ ! -L "$resource_samples" ] || fail 'service resource samples are symlinked'
 
 (
     cd "$out"
@@ -141,6 +143,24 @@ then
 fi
 grep -Fx 'service_resource_measurement_failed=0' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no clean resource-measurement marker'
+grep -Fx 'service_rss_measurement=procfs-process-tree-vmrss' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence is not bound to process-tree RSS measurement'
+grep -Fx 'service_rss_process_tree=pass' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence has no process-tree RSS pass marker'
+grep -Fx 'service_rss_sampler=tools/largefile_procfs_tree_rss.sh' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence has no approved procfs RSS sampler identity'
+grep -Fx 'service_memory_metrics=procfs-process-tree-status-smaps-rollup-stat-io' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence has no complete procfs memory/counter metric identity'
+grep -Fx 'service_oom_measurement=procfs-cgroup-v2-memory-events' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence has no cgroup-v2 OOM-counter identity'
+grep -Fx 'service_oom_events=pass' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence has no OOM-event pass marker'
+grep -Fx 'service_oom_kills=pass' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence has no OOM-kill pass marker'
+grep -Fx 'service_swap=pass' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence does not prove that the selected process tree stayed out of swap'
+grep -Fx 'service_resource_samples=provenance/service-resource-samples.tsv' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence has no retained resource-sample reference'
 grep -Fx 'service_temp_budget=pass' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no temporary-space budget pass marker'
 service_rss_budget_kb=$(awk -F= '$1 == "rss_budget_kb" { count++; value=$2 } END { if (count != 1) exit 1; print value }' "$summary") ||
@@ -178,6 +198,49 @@ service_temp_samples=$summary_integer_value
 [ "$service_temp_samples" -gt 0 ] || fail 'service evidence has no temporary-space samples'
 summary_integer service_rss_peak_kb
 service_rss_peak_kb=$summary_integer_value
+summary_integer service_rss_peak_process_count
+service_rss_peak_process_count=$summary_integer_value
+[ "$service_rss_peak_process_count" -gt 0 ] ||
+    fail 'service evidence has no process count at the measured RSS peak'
+summary_integer service_pss_peak_kb
+service_pss_peak_kb=$summary_integer_value
+summary_integer service_vas_peak_kb
+service_vas_peak_kb=$summary_integer_value
+summary_integer service_swap_peak_kb
+service_swap_peak_kb=$summary_integer_value
+summary_integer service_minor_faults_peak
+service_minor_faults_peak=$summary_integer_value
+summary_integer service_major_faults_peak
+service_major_faults_peak=$summary_integer_value
+summary_integer service_read_bytes_peak
+service_read_bytes_peak=$summary_integer_value
+summary_integer service_write_bytes_peak
+service_write_bytes_peak=$summary_integer_value
+summary_integer service_cancelled_write_bytes_peak
+service_cancelled_write_bytes_peak=$summary_integer_value
+[ "$service_swap_peak_kb" = 0 ] || fail 'service evidence reports non-zero process-tree swap usage'
+summary_integer service_oom_baseline
+service_oom_baseline=$summary_integer_value
+summary_integer service_oom_kill_baseline
+service_oom_kill_baseline=$summary_integer_value
+summary_integer service_oom_peak
+service_oom_peak=$summary_integer_value
+summary_integer service_oom_kill_peak
+service_oom_kill_peak=$summary_integer_value
+summary_integer service_oom_samples
+service_oom_samples=$summary_integer_value
+[ "$service_oom_samples" -gt 0 ] || fail 'service evidence has no OOM-counter samples'
+summary_integer service_oom_cgroup_count
+service_oom_cgroup_count=$summary_integer_value
+[ "$service_oom_cgroup_count" -gt 0 ] || fail 'service evidence has no OOM cgroup identity'
+service_oom_cgroup_digest=$(awk -F= '$1 == "service_oom_cgroup_digest" { count++; value=$2 } END { if (count != 1) exit 1; print value }' "$summary") ||
+    fail 'service evidence has no unique OOM cgroup identity digest'
+case "$service_oom_cgroup_digest" in
+    ''|*[!0-9a-fA-F]*) fail 'service OOM cgroup identity digest is not hexadecimal' ;;
+esac
+[ "${#service_oom_cgroup_digest}" -eq 64 ] || fail 'service OOM cgroup identity digest is not SHA-256'
+[ "$service_oom_peak" = "$service_oom_baseline" ] || fail 'service OOM counter increased during qualification'
+[ "$service_oom_kill_peak" = "$service_oom_kill_baseline" ] || fail 'service OOM-kill counter increased during qualification'
 if ! awk -v peak="$service_rss_peak_kb" -v budget="$service_rss_budget_kb" \
     'BEGIN { exit !(peak <= budget) }'; then
     fail 'service measured RSS peak exceeds the overall RSS budget'
@@ -205,6 +268,148 @@ service_temp_budget_bytes=$summary_integer_value
 if ! awk -v peak="$service_temp_peak_bytes" -v budget="$service_temp_budget_bytes" \
     'BEGIN { exit !(peak <= budget) }'; then
     fail 'service measured temporary-space peak exceeds its budget'
+fi
+if ! python3 - "$resource_samples" "$service_rss_samples" \
+    "$service_rss_peak_kb" "$service_rss_peak_process_count" \
+    "$service_pss_peak_kb" "$service_vas_peak_kb" "$service_swap_peak_kb" \
+    "$service_minor_faults_peak" "$service_major_faults_peak" \
+    "$service_read_bytes_peak" "$service_write_bytes_peak" \
+    "$service_cancelled_write_bytes_peak" "$service_rss_budget_kb" \
+    "$service_temp_budget_bytes" "$service_oom_baseline" \
+    "$service_oom_kill_baseline" "$service_oom_peak" \
+    "$service_oom_kill_peak" "$service_oom_samples" \
+    "$service_oom_cgroup_count" "$service_oom_cgroup_digest" <<'PY'
+import csv
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+(
+    expected_samples,
+    expected_rss_peak,
+    expected_rss_peak_count,
+    expected_pss_peak,
+    expected_vas_peak,
+    expected_swap_peak,
+    expected_minor_peak,
+    expected_major_peak,
+    expected_read_peak,
+    expected_write_peak,
+    expected_cancelled_peak,
+    rss_budget,
+    temporary_budget,
+    expected_oom_baseline,
+    expected_oom_kill_baseline,
+    expected_oom_peak,
+    expected_oom_kill_peak,
+    expected_oom_samples,
+    expected_oom_cgroup_count,
+    expected_oom_cgroup_digest,
+) = sys.argv[2:]
+integer_values = [
+    expected_samples, expected_rss_peak, expected_rss_peak_count,
+    expected_pss_peak, expected_vas_peak, expected_swap_peak,
+    expected_minor_peak, expected_major_peak, expected_read_peak,
+    expected_write_peak, expected_cancelled_peak, rss_budget,
+    temporary_budget, expected_oom_baseline, expected_oom_kill_baseline,
+    expected_oom_peak, expected_oom_kill_peak, expected_oom_samples,
+    expected_oom_cgroup_count,
+]
+if any(not value.isdigit() for value in integer_values):
+    raise SystemExit("resource-sample summary integer is malformed")
+(
+    expected_samples, expected_rss_peak, expected_rss_peak_count,
+    expected_pss_peak, expected_vas_peak, expected_swap_peak,
+    expected_minor_peak, expected_major_peak, expected_read_peak,
+    expected_write_peak, expected_cancelled_peak, rss_budget,
+    temporary_budget, expected_oom_baseline, expected_oom_kill_baseline,
+    expected_oom_peak, expected_oom_kill_peak, expected_oom_samples,
+    expected_oom_cgroup_count,
+) = map(int, integer_values)
+if len(expected_oom_cgroup_digest) != 64 or any(
+    character not in "0123456789abcdefABCDEF" for character in expected_oom_cgroup_digest
+):
+    raise SystemExit("resource-sample OOM cgroup digest is malformed")
+records = []
+try:
+    with path.open(newline="", encoding="utf-8") as stream:
+        reader = csv.reader(stream, delimiter="\t", strict=True)
+        if next(reader, None) != [
+            "sequence", "rss_kb", "pss_kb", "vas_kb", "swap_kb",
+            "minor_faults", "major_faults", "read_bytes", "write_bytes",
+            "cancelled_write_bytes", "process_count", "temporary_bytes",
+            "oom_events", "oom_kill_events", "oom_cgroup_digest", "sampled_pids",
+        ]:
+            raise ValueError("invalid resource-sample header")
+        for line_number, row in enumerate(reader, start=2):
+            if len(row) != 16 or any(value == "" for value in row):
+                raise ValueError(f"malformed resource-sample row at line {line_number}")
+            (
+                sequence, rss, pss, vas, swap, minor, major, read_bytes,
+                write_bytes, cancelled, process_count, temporary_bytes,
+                oom_events, oom_kill_events, oom_cgroup_digest, sampled_pids,
+            ) = row
+            if not sequence.isdigit() or int(sequence) != len(records) + 1:
+                raise ValueError(f"resource-sample sequence is not contiguous at line {line_number}")
+            numeric_fields = (rss, pss, vas, swap, minor, major, read_bytes,
+                              write_bytes, cancelled, process_count, temporary_bytes,
+                              oom_events, oom_kill_events)
+            if any(not value.isdigit() for value in numeric_fields):
+                raise ValueError(f"resource-sample numeric field is invalid at line {line_number}")
+            values = list(map(int, numeric_fields))
+            (rss_value, pss_value, vas_value, swap_value, minor_value,
+             major_value, read_value, write_value, cancelled_value,
+             process_count_value, temporary_value, oom_value, oom_kill_value) = values
+            pids = sampled_pids.split(",")
+            if process_count_value < 1 or len(pids) != process_count_value or len(set(pids)) != len(pids):
+                raise ValueError(f"resource-sample PID set is invalid at line {line_number}")
+            if any(not pid.isdigit() or int(pid) < 1 for pid in pids):
+                raise ValueError(f"resource-sample PID is invalid at line {line_number}")
+            if len(oom_cgroup_digest) != 64 or any(
+                character not in "0123456789abcdefABCDEF" for character in oom_cgroup_digest
+            ):
+                raise ValueError(f"resource-sample OOM cgroup digest is invalid at line {line_number}")
+            if oom_cgroup_digest != expected_oom_cgroup_digest:
+                raise ValueError(f"resource-sample OOM cgroup identity changed at line {line_number}")
+            if oom_value != expected_oom_baseline or oom_kill_value != expected_oom_kill_baseline:
+                raise ValueError(f"resource-sample OOM counters changed at line {line_number}")
+            if pss_value > rss_value or vas_value < rss_value:
+                raise ValueError(f"resource-sample PSS/VAS relationship is invalid at line {line_number}")
+            if swap_value != 0:
+                raise ValueError(f"resource-sample reports swap usage at line {line_number}")
+            if rss_value > rss_budget:
+                raise ValueError(f"resource-sample RSS exceeds budget at line {line_number}")
+            if temporary_value > temporary_budget:
+                raise ValueError(f"resource-sample temporary usage exceeds budget at line {line_number}")
+            records.append((
+                rss_value, pss_value, vas_value, swap_value, minor_value,
+                major_value, read_value, write_value, cancelled_value,
+                process_count_value, temporary_value, oom_value, oom_kill_value,
+            ))
+except (OSError, csv.Error, ValueError) as error:
+    raise SystemExit(str(error))
+if len(records) != expected_samples or not records:
+    raise SystemExit("resource-sample count does not match the service summary")
+peaks = [max(record[index] for record in records) for index in range(9)]
+if peaks != [
+    expected_rss_peak, expected_pss_peak, expected_vas_peak, expected_swap_peak,
+    expected_minor_peak, expected_major_peak, expected_read_peak,
+    expected_write_peak, expected_cancelled_peak,
+]:
+    raise SystemExit("resource-sample counter peak does not match the service summary")
+peak = peaks[0]
+if peak != expected_rss_peak:
+    raise SystemExit("resource-sample RSS peak does not match the service summary")
+peak_count = max(record[9] for record in records if record[0] == peak)
+if peak_count != expected_rss_peak_count:
+    raise SystemExit("resource-sample peak process count does not match the service summary")
+if len(records) != expected_oom_samples:
+    raise SystemExit("resource-sample OOM-counter count does not match the service summary")
+if expected_oom_peak != expected_oom_baseline or expected_oom_kill_peak != expected_oom_kill_baseline:
+    raise SystemExit("service summary reports an OOM counter increase")
+PY
+then
+    fail 'service resource-sample evidence is malformed or inconsistent'
 fi
 grep -Fx 'latency=pass' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no latency pass marker'
@@ -341,8 +546,35 @@ max_scan_time_ms=$(identity_field max_scan_time_ms)
 service_timeout_s=$(identity_field service_timeout_s)
 lifecycle_reference=$(identity_field service_lifecycle)
 lifecycle_hash=$(identity_field service_lifecycle_sha256)
+resource_samples_reference=$(identity_field service_resource_samples)
+resource_samples_hash=$(identity_field service_resource_samples_sha256)
+memory_metrics_identity=$(identity_field service_memory_metrics)
+oom_metrics_identity=$(identity_field service_oom_measurement)
+oom_cgroup_identity=$(identity_field service_oom_cgroup_digest)
+oom_baseline_identity=$(identity_field service_oom_baseline)
+oom_kill_baseline_identity=$(identity_field service_oom_kill_baseline)
+oom_cgroup_count_identity=$(identity_field service_oom_cgroup_count)
 
 [ "$loader_injection" = disabled ] || fail 'service evidence does not prove inherited loader injection was disabled'
+[ "$memory_metrics_identity" = procfs-process-tree-status-smaps-rollup-stat-io ] ||
+    fail 'service build identity does not bind complete procfs memory/counter metrics'
+[ "$oom_metrics_identity" = procfs-cgroup-v2-memory-events ] ||
+    fail 'service build identity does not bind cgroup-v2 OOM metrics'
+case "$oom_cgroup_identity" in
+    ''|*[!0-9a-fA-F]*) fail 'service build identity OOM cgroup digest is not hexadecimal' ;;
+esac
+[ "${#oom_cgroup_identity}" -eq 64 ] || fail 'service build identity OOM cgroup digest is not SHA-256'
+case "$oom_baseline_identity:$oom_kill_baseline_identity:$oom_cgroup_count_identity" in
+    ''|*[!0-9:]*) fail 'service build identity OOM counters are not canonical integers' ;;
+esac
+[ "$oom_cgroup_identity" = "$service_oom_cgroup_digest" ] ||
+    fail 'service OOM cgroup identity differs between summary and build identity'
+[ "$oom_baseline_identity" = "$service_oom_baseline" ] ||
+    fail 'service OOM baseline differs between summary and build identity'
+[ "$oom_kill_baseline_identity" = "$service_oom_kill_baseline" ] ||
+    fail 'service OOM-kill baseline differs between summary and build identity'
+[ "$oom_cgroup_count_identity" = "$service_oom_cgroup_count" ] ||
+    fail 'service OOM cgroup count differs between summary and build identity'
 
 case "$max_scan_time_ms" in
     ''|*[!0-9]*|0*) fail 'service MaxScanTime identity is not a positive integer' ;;
@@ -404,6 +636,7 @@ is_hash "$runtime_component_hashes_sha256" || fail 'service runtime-component ha
 is_hash "$runtime_component_hashes_after_sha256" || fail 'service after runtime-component hash-list hash is invalid'
 is_hash "$loaded_dependencies_sha256" || fail 'service loaded-dependency evidence hash is invalid'
 is_hash "$lifecycle_hash" || fail 'service lifecycle evidence hash is invalid'
+is_hash "$resource_samples_hash" || fail 'service resource-sample evidence hash is invalid'
 [ "$binary_reference" = provenance/service-binary-hashes-before.txt ] ||
     fail 'service build identity references the wrong binary hash list'
 [ "$dependency_reference" = provenance/service-runtime-dependency-hashes.txt ] ||
@@ -428,6 +661,8 @@ is_hash "$lifecycle_hash" || fail 'service lifecycle evidence hash is invalid'
     fail 'service build identity references the wrong after interpreter record list'
 [ "$lifecycle_reference" = provenance/service-lifecycle.tsv ] ||
     fail 'service build identity references the wrong lifecycle evidence'
+[ "$resource_samples_reference" = provenance/service-resource-samples.tsv ] ||
+    fail 'service build identity references the wrong resource samples'
 
 cache_source=$(sed -n 's#^CMAKE_HOME_DIRECTORY:INTERNAL=##p' "$cmake_cache")
 [ "$cache_source" = "$root" ] || fail 'service CMake cache is bound to a different source root'
@@ -456,6 +691,7 @@ actual_runtime_component_hashes_sha256=$(sha256sum "$runtime_component_hashes" |
 actual_runtime_component_hashes_after_sha256=$(sha256sum "$runtime_component_hashes_after" | awk '{ print $1 }')
 actual_loaded_dependencies_sha256=$(sha256sum "$loaded_dependencies" | awk '{ print $1 }')
 actual_lifecycle_hash=$(sha256sum "$lifecycle" | awk '{ print $1 }')
+actual_resource_samples_hash=$(sha256sum "$resource_samples" | awk '{ print $1 }')
 [ "$actual_binary_hashes_sha256" = "$binary_hashes_sha256" ] ||
     fail 'service binary-list hash does not verify'
 [ "$actual_interpreter_hashes_sha256" = "$interpreter_hashes_sha256" ] ||
@@ -476,6 +712,8 @@ actual_lifecycle_hash=$(sha256sum "$lifecycle" | awk '{ print $1 }')
     fail 'service loaded-dependency evidence hash does not verify'
 [ "$actual_lifecycle_hash" = "$lifecycle_hash" ] ||
     fail 'service lifecycle evidence hash does not verify'
+[ "$actual_resource_samples_hash" = "$resource_samples_hash" ] ||
+    fail 'service resource samples hash does not verify'
 
 cmp -s "$binary_before" "$binary_after" ||
     fail 'service executable hashes changed during qualification'

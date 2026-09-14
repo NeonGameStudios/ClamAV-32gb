@@ -26,10 +26,7 @@
 #define k_LZMA2 0x21
 #define k_LZMA  0x30101
 #define k_BCJ   0x03030103
-#define k_PPC   0x03030205
 #define k_ARM   0x03030501
-#define k_ARMT  0x03030701
-#define k_SPARC 0x03030805
 #define k_BCJ2  0x0303011B
 
 #ifdef _7ZIP_PPMD_SUPPPORT

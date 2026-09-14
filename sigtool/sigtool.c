@@ -3938,7 +3938,10 @@ static int makediff(const struct optstruct *opts)
         return -1;
     }
 
-    snprintf(name, sizeof(name), "%s-%u.script", getdbname(opts->filename[0], dbname, sizeof(dbname)), newver);
+    /* Leave room for the hyphen, the maximum unsigned-int spelling and the
+     * .script suffix so the generated name is never silently truncated. */
+    snprintf(name, sizeof(name), "%.*s-%u.script", (int)(sizeof(name) - 19),
+             getdbname(opts->filename[0], dbname, sizeof(dbname)), newver);
     ret = diffdirs(odir, ndir, name);
 
     removeTempDir(opts, odir);

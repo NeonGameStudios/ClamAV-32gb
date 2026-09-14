@@ -323,10 +323,10 @@ char *cli_ole2_get_property_name2(const char *name, int size)
             newname[j++] = tolower(name[i]);
         } else {
             // Non-printable. Expand to something unique and printable.
-            if (name[i] < 10 && name[i] >= 0 && name[i + 1] == 0) {
+            if ((unsigned char)name[i] < 10 && name[i + 1] == 0) {
                 // Single digit (next byte is NULL)
                 newname[j++] = '_';
-                newname[j++] = name[i] + '0';
+                newname[j++] = (unsigned char)name[i] + '0';
             } else {
                 // Two digits (next byte is not NULL)
                 const uint16_t x = (((uint16_t)name[i]) << 8) | name[i + 1];

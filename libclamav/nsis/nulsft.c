@@ -100,6 +100,16 @@ static cl_error_t nsis_reconcile_status(cli_ctx *ctx, cl_error_t status)
     return status;
 }
 
+static cl_error_t nsis_admit_empty_member(cli_ctx *ctx)
+{
+    cl_error_t status = cli_updatelimits(ctx, 0);
+
+    if (status != CL_SUCCESS && status != CL_ETIMEOUT && status != CL_BREAK)
+        cli_mark_scan_incomplete(ctx, "NSIS empty member exceeds configured scan limits");
+
+    return status;
+}
+
 #define LINESTR(x) #x
 #define LINESTR2(x) LINESTR(x)
 #define __AT__ " at "__FILE__ \
@@ -340,9 +350,6 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
         return CL_BREAK;
     }
 
-    if ((ret = cli_checklimits("NSIS", ctx, 0, 0, 0)) != CL_CLEAN)
-        return ret;
-
     if (n->fno)
         snprintf(n->ofn, 1023, "%s" PATHSEP "content.%.3u", n->dir, n->fno);
     else
@@ -367,6 +374,10 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
         n->curpos += 4;
         loops = EC32(size);
         if (!(size = (loops & ~0x80000000))) {
+            n->asz -= 4;
+            ret = nsis_admit_empty_member(ctx);
+            if (ret != CL_SUCCESS)
+                return ret;
             cli_dbgmsg("NSIS: empty file found\n");
             return CL_SUCCESS;
         }
@@ -561,14 +572,17 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
         }
 
         size = cli_readint32(obuf);
+        if (size == 0) {
+            ret = nsis_admit_empty_member(ctx);
+            if (ret != CL_SUCCESS)
+                return ret;
+            cli_dbgmsg("NSIS: Empty file found.\n");
+            return CL_SUCCESS;
+        }
+
         if ((ret = cli_checklimits("NSIS", ctx, size, 0, 0)) != CL_CLEAN) {
             cli_mark_scan_incomplete(ctx, "NSIS solid member exceeds configured scan limits");
             return ret;
-        }
-
-        if (size == 0) {
-            cli_dbgmsg("NSIS: Empty file found.\n");
-            return CL_SUCCESS;
         }
 
         n->nsis.next_out  = obuf;

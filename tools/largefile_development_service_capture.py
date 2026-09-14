@@ -2,11 +2,11 @@
 """Capture current-source clamd and clamdscan records on a small fixture.
 
 This is development evidence only.  It exercises the six direct structured
-report commands and, when supplied, clamdscan's fdpass and stream ingress
-modes with clean, detection, and size-limit inputs under the ARM64 legacy
-envelope.  The output is deliberately shaped like R04 evidence so the generic
-acceptance-record verifier sees the same embedded scan outcomes as a certified
-service run.
+report commands and, when supplied, clamdscan's default, fdpass, stream,
+multiscan, stream-multiscan, and fdpass-multiscan ingress modes with clean,
+detection, and size-limit inputs under the ARM64 legacy envelope.  The output
+is deliberately shaped like R04 evidence so the generic acceptance-record
+verifier sees the same embedded scan outcomes as a certified service run.
 """
 
 from __future__ import annotations
@@ -38,8 +38,12 @@ MODES = {
     "instream": "INSTREAMREPORT",
 }
 CLIENT_MODES = {
-    "fdpass": "fdpass",
-    "stream": "stream",
+    "default": (),
+    "fdpass": ("fdpass",),
+    "stream": ("stream",),
+    "multiscan": ("multiscan",),
+    "stream-multiscan": ("stream", "multiscan"),
+    "fdpass-multiscan": ("fdpass", "multiscan"),
 }
 ORACLE_HEADER = [
     "role", "expected_size", "expected_sha256", "expected_exit",
@@ -63,6 +67,17 @@ REPORT_NUMERIC_FIELDS = (
 
 def fail(message: str) -> None:
     raise ValueError(message)
+
+
+def resolve_cvd_certs_dir(source_root: Path, supplied: Path | None) -> Path:
+    """Use the repository test CA by default and reject an unusable trust root."""
+    certs = supplied if supplied is not None else source_root / "unit_tests/input/signing/verify"
+    if not certs.is_dir() or certs.is_symlink():
+        fail(
+            "CVD certificate directory is missing or symlinked: "
+            f"{certs}; pass --cvd-certs-dir with a valid directory"
+        )
+    return certs.resolve()
 
 
 def sha256(path: Path) -> str:
@@ -340,7 +355,7 @@ def load_report(path: Path, label: str) -> dict:
     if not path.is_file() or path.stat().st_size == 0:
         fail(f"{label} did not write a structured report")
     rows = [
-        json.loads(line)
+        acceptance_cases.load_json_object(line, label)
         for line in path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
@@ -360,6 +375,9 @@ def run_client(
     log_path: Path,
 ) -> dict:
     label = f"clamdscan/{mode}/{outcome}"
+    options = CLIENT_MODES.get(mode)
+    if options is None:
+        fail(f"unsupported clamdscan mode: {mode}")
     oracle = protocol.load_oracle(oracle_path, "production")
     protocol.validate_input(str(fixture), oracle)
     command = [
@@ -367,7 +385,7 @@ def run_client(
         f"--config-file={config}",
         f"--report-json={report_path}",
         "--no-summary",
-        f"--{mode}",
+        *[f"--{option}" for option in options],
         str(fixture),
     ]
     report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -517,6 +535,8 @@ def capture(
     else:
         fail("development service evidence output must be outside the source tree")
     require_file(build_dir / "CMakeCache.txt", "build CMakeCache.txt")
+    source_root = source_root.resolve()
+    certs = resolve_cvd_certs_dir(source_root, certs)
     output.mkdir(parents=True, exist_ok=True)
     for directory in ("corpus", "db", "logs", "reports", "provenance"):
         (output / directory).mkdir(parents=True, exist_ok=True)
@@ -612,7 +632,7 @@ def capture(
                     records.append(record)
                     outcome_records.append(record)
                 if clamdscan is not None:
-                    for mode, capability in CLIENT_MODES.items():
+                    for mode in CLIENT_MODES:
                         report_path = output / f"reports/client-{mode}-{outcome}.jsonl"
                         log_path = output / f"logs/client-{mode}-{outcome}.log"
                         report = run_client(
@@ -623,7 +643,7 @@ def capture(
                             output, capability, mode, outcome, fixture, database,
                             oracle_path, config, report, source_manifest,
                             build_identity, daemon_log, record_kind="clamdscan",
-                            record_id=capability, artifact_prefix="client-",
+                            record_id=mode, artifact_prefix="client-",
                             service_input_artifacts=(service_inputs_before, service_inputs_after),
                         )
                         records.append(record)
@@ -691,12 +711,16 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("clamd", type=Path)
     parser.add_argument("output", type=Path)
-    parser.add_argument("--clamdscan", type=Path,
-                        help="also capture clamdscan --fdpass and --stream records")
+    parser.add_argument(
+        "--clamdscan", type=Path,
+        help=("also capture clamdscan default, fdpass, stream, multiscan, "
+              "stream-multiscan, and fdpass-multiscan records"),
+    )
     parser.add_argument("--source-root", type=Path,
                         default=Path(__file__).resolve().parents[1])
     parser.add_argument("--build-dir", type=Path, required=True)
-    parser.add_argument("--cvd-certs-dir", type=Path)
+    parser.add_argument("--cvd-certs-dir", type=Path,
+                        help="CVD root-CA directory; defaults to the repository test CA")
     args = parser.parse_args(argv)
     try:
         count = capture(

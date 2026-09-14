@@ -4,10 +4,11 @@
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 import subprocess
 import tempfile
+
+import largefile_acceptance_cases as acceptance_cases
 
 
 MAX_SCAN_SIZE = 32 * 1024 * 1024 * 1024
@@ -36,6 +37,11 @@ def run_case(
         "--max-temporary-size=64G",
         "--max-contiguous-size=32G",
         "--pcre-max-filesize=32G",
+        # Exercise the operational limit result, not the optional heuristic
+        # alert. AlertExceedsMax intentionally maps the same limit to a
+        # detection-style CLI result (1) rather than the fail-closed limit
+        # result (2) asserted by this admission contract.
+        "--alert-exceeds-max=no",
         "--debug",
         "--no-summary",
         f"--report-json={report}",
@@ -54,8 +60,9 @@ def run_case(
 
 def validate(report: Path, expected_root_size: int, expected_temporary: int) -> None:
     try:
-        rows = [json.loads(line) for line in report.read_text(encoding="utf-8").splitlines() if line]
-    except (OSError, json.JSONDecodeError) as error:
+        rows = [acceptance_cases.load_json_object(line, "clamscan admission report")
+                for line in report.read_text(encoding="utf-8").splitlines() if line]
+    except (OSError, ValueError) as error:
         fail(f"cannot read structured report {report}: {error}")
     if len(rows) != 1 or not isinstance(rows[0], dict):
         fail(f"structured report is not exactly one object: {report}")

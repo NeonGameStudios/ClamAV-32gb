@@ -2,6 +2,7 @@
 2010-10-29 : Igor Pavlov : Public domain */
 
 #include <string.h>
+#include <limits.h>
 
 #if defined(_WIN32)
 #include <WinSock2.h>
@@ -90,7 +91,7 @@ int SzFolder_FindBindPairForInStream(CSzFolder *p, UInt32 inStreamIndex)
   UInt32 i;
   for (i = 0; i < p->NumBindPairs; i++)
     if (p->BindPairs[i].InIndex == inStreamIndex)
-      return i;
+      return (i <= (UInt32)INT_MAX) ? (int)i : -1;
   return -1;
 }
 
@@ -100,18 +101,20 @@ int SzFolder_FindBindPairForOutStream(CSzFolder *p, UInt32 outStreamIndex)
   UInt32 i;
   for (i = 0; i < p->NumBindPairs; i++)
     if (p->BindPairs[i].OutIndex == outStreamIndex)
-      return i;
+      return (i <= (UInt32)INT_MAX) ? (int)i : -1;
   return -1;
 }
 
 UInt64 SzFolder_GetUnpackSize(CSzFolder *p)
 {
-  int i = (int)SzFolder_GetNumOutStreams(p);
+  UInt32 i = SzFolder_GetNumOutStreams(p);
   if (i == 0)
     return 0;
-  for (i--; i >= 0; i--)
+  while (i > 0) {
+    i--;
     if (SzFolder_FindBindPairForOutStream(p, i) < 0)
       return p->UnpackSizes[i];
+  }
   /* throw 1; */
   return 0;
 }
@@ -443,9 +446,9 @@ static SRes SzReadArchiveProperties(CSzData *sd)
 {
   for (;;)
   {
-    UInt64 type;
-    RINOK(SzReadID(sd, &type));
-    if (type == k7zIdEnd)
+    UInt64 propertyType;
+    RINOK(SzReadID(sd, &propertyType));
+    if (propertyType == k7zIdEnd)
       break;
     RINOK(SzSkeepData(sd));
   }
@@ -906,7 +909,7 @@ static SRes SzReadSubStreamsInfo(
           if (numSubstreams == 1 && folder->UnpackCRCDefined)
           {
             if (si >= *numUnpackStreams) {
-              cli_dbgmsg("SzReadSubStreamsInfo: more streams exist than specified, ignoring.\n");
+              cli_dbgmsg_no_inline("SzReadSubStreamsInfo: more streams exist than specified, ignoring.\n");
               continue;
             }
             (*digestsDefined)[si] = 1;
@@ -919,7 +922,7 @@ static SRes SzReadSubStreamsInfo(
             for (j = 0; j < numSubstreams; j++, digestIndex++)
             {
               if (si >= *numUnpackStreams) {
-                cli_dbgmsg("SzReadSubStreamsInfo: more streams exist than specified, ignoring(2).\n");
+                cli_dbgmsg_no_inline("SzReadSubStreamsInfo: more streams exist than specified, ignoring(2).\n");
                 continue;
               }
               (*digestsDefined)[si] = digestsDefined2[digestIndex];
@@ -1081,24 +1084,24 @@ static SRes SzReadHeader2(
 
   for (;;)
   {
-    UInt64 type;
+    UInt64 propertyType;
     UInt64 size;
     size_t propertySize;
     size_t propertyRemaining;
-    RINOK(SzReadID(sd, &type));
-    if (type == k7zIdEnd)
+    RINOK(SzReadID(sd, &propertyType));
+    if (propertyType == k7zIdEnd)
       break;
     RINOK(SzReadNumber(sd, &size));
     if (size > sd->Size)
       return SZ_ERROR_ARCHIVE;
     propertySize      = (size_t)size;
     propertyRemaining = sd->Size;
-    if ((UInt64)(int)type != type)
+    if ((UInt64)(int)propertyType != propertyType)
     {
       RINOK(SzSkeepDataSize(sd, size));
     }
     else
-    switch((int)type)
+    switch((int)propertyType)
     {
       case k7zIdName:
       {
@@ -1364,14 +1367,16 @@ static SRes SzArEx_Open2(
     if(endpos-curpos < 500) checkSize = (int)(endpos-curpos);
     readpos = endpos - checkSize;
     RINOK(inStream->Seek(inStream, &readpos, SZ_SEEK_SET));
-    RINOK(LookInStream_Read2(inStream, buf, checkSize, SZ_ERROR_ARCHIVE));
+    RINOK(LookInStream_Read2(inStream, buf, (size_t)checkSize, SZ_ERROR_ARCHIVE));
     for (i = (int)checkSize - 2; i >= 0; i--)
       if((buf[i] == 0x17 && buf[i + 1] == 0x6) || (buf[i] == 0x01 && buf[i + 1] == 0x04))
 	break;
     if (i < 0)
       return SZ_ERROR_ARCHIVE;
-    nextHeaderSize = checkSize - i;
-    nextHeaderOffset = readpos + i;
+    if (readpos < 0)
+      return SZ_ERROR_ARCHIVE;
+    nextHeaderSize = (UInt64)checkSize - (UInt64)i;
+    nextHeaderOffset = (UInt64)readpos + (UInt64)i;
     if(nextHeaderOffset < k7zStartHeaderSize)
       return SZ_ERROR_INPUT_EOF;
     nextHeaderOffset -= k7zStartHeaderSize;
@@ -1401,7 +1406,8 @@ static SRes SzArEx_Open2(
       return SZ_ERROR_INPUT_EOF;
   }
 
-  RINOK(LookInStream_SeekTo(inStream, startArcPos + k7zStartHeaderSize + nextHeaderOffset));
+  RINOK(LookInStream_SeekTo(inStream,
+      (UInt64)startArcPos + (UInt64)k7zStartHeaderSize + nextHeaderOffset));
 
   if (!Buf_Create(&buffer, nextHeaderSizeT, allocTemp))
     return SZ_ERROR_MEM;

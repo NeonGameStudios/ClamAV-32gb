@@ -8,7 +8,7 @@ authoritative release contract; the execution guide does not certify completion.
 
 The fork is ClamAV 1.5.3 with a mostly C scanning engine in `libclamav`, several Rust parsers, and thin front ends for `clamscan`, `clamd`, `clamdscan`, milter, and on-access scanning. Those front ends largely converge on the same descriptor/fmap pipeline, so the existing 64-bit raw-scanning foundation is strong; the unfinished work is cumulative accounting, resource admission, complete parser coverage, and reliable proof of completeness.
 
-Use [ClamAV-32gb](/Volumes/512gbNVME/github-external/ClamAV-32gb) as the canonical Git repository. The release contract is:
+Use [ClamAV-32gb](<repository-root>) as the canonical Git repository. The release contract is:
 
 - Accept every input from zero through exactly 32 GiB across modern library APIs, CLI/stdin, clamd path/FILDES/INSTREAM command families, clamdscan modes, milter, and on-access scanning.
 - Fully inspect every structurally confirmed layer handled by an enabled parser, subject to the shared 64 GiB logical, file-count, recursion, temporary-space, and four-hour limits.

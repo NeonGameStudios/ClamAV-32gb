@@ -86,7 +86,7 @@ int cli_realhex2ui(const char *hex, uint16_t *ptr, unsigned int len)
 
         } else if (hex[i + 1] == '?') {
             if ((c = cli_hex2int(hex[i])) >= 0) {
-                val = c << 4;
+                val = (uint16_t)(c << 4);
             } else {
                 return 0;
             }
@@ -94,7 +94,7 @@ int cli_realhex2ui(const char *hex, uint16_t *ptr, unsigned int len)
 
         } else if (hex[i] == '?') {
             if ((c = cli_hex2int(hex[i + 1])) >= 0) {
-                val = c;
+                val = (uint16_t)c;
             } else {
                 return 0;
             }
@@ -105,9 +105,9 @@ int cli_realhex2ui(const char *hex, uint16_t *ptr, unsigned int len)
 
         } else {
             if ((c = cli_hex2int(hex[i])) >= 0) {
-                val = c;
+                val = (uint16_t)c;
                 if ((c = cli_hex2int(hex[i + 1])) >= 0) {
-                    val = (val << 4) + c;
+                    val = (uint16_t)((val << 4) + c);
                 } else {
                     return 0;
                 }
@@ -124,12 +124,17 @@ int cli_realhex2ui(const char *hex, uint16_t *ptr, unsigned int len)
 uint16_t *cli_hex2ui(const char *hex)
 {
     uint16_t *str;
-    unsigned int len;
+    size_t len;
 
     len = strlen(hex);
 
+    if (len > UINT_MAX) {
+        cli_errmsg("cli_hex2ui(): Hexstring is too long.\n");
+        return NULL;
+    }
+
     if (len % 2 != 0) {
-        cli_errmsg("cli_hex2ui(): Malformed hexstring: %s (length: %u)\n", hex,
+        cli_errmsg("cli_hex2ui(): Malformed hexstring: %s (length: %zu)\n", hex,
                    len);
         return NULL;
     }
@@ -138,7 +143,7 @@ uint16_t *cli_hex2ui(const char *hex)
     if (!str)
         return NULL;
 
-    if (cli_realhex2ui(hex, str, len))
+    if (cli_realhex2ui(hex, str, (unsigned int)len))
         return str;
 
     free(str);
@@ -173,13 +178,13 @@ int cli_hex2str_to(const char *hex, char *ptr, size_t len)
 {
     size_t i;
     int c;
-    char val;
+    unsigned char val;
 
     for (i = 0; i < len; i += 2) {
         if ((c = cli_hex2int(hex[i])) >= 0) {
-            val = c;
+            val = (unsigned char)c;
             if ((c = cli_hex2int(hex[i + 1])) >= 0) {
-                val = (val << 4) + c;
+                val = (unsigned char)((val << 4) + c);
             } else {
                 return -1;
             }
@@ -187,7 +192,7 @@ int cli_hex2str_to(const char *hex, char *ptr, size_t len)
             return -1;
         }
 
-        *ptr++ = val;
+        *ptr++ = (char)val;
     }
 
     return 0;
@@ -195,12 +200,13 @@ int cli_hex2str_to(const char *hex, char *ptr, size_t len)
 
 int cli_hex2num(const char *hex)
 {
-    int hexval, ret = 0, len, i;
+    int hexval, ret = 0;
+    size_t len, i;
 
     len = strlen(hex);
 
     if (len % 2 != 0) {
-        cli_errmsg("cli_hex2num(): Malformed hexstring: %s (length: %d)\n", hex,
+        cli_errmsg("cli_hex2num(): Malformed hexstring: %s (length: %zu)\n", hex,
                    len);
         return -1;
     }
@@ -216,7 +222,8 @@ int cli_hex2num(const char *hex)
 
 int cli_xtoi(const char *hex)
 {
-    int len, val, i;
+    int val;
+    size_t len, i;
     char *hexbuf;
 
     len = strlen(hex);
@@ -264,7 +271,7 @@ char *cli_str2hex(const char *string, unsigned int len)
 int cli_strbcasestr(const char *haystack, const char *needle)
 {
     const char *pt = haystack;
-    int i, j;
+    size_t i, j;
 
     i = strlen(haystack);
     j = strlen(needle);
@@ -286,22 +293,26 @@ int cli_strbcasestr(const char *haystack, const char *needle)
  */
 int cli_chomp(char *string)
 {
-    int l;
+    size_t l;
 
     if (string == NULL)
         return -1;
 
     l = strlen(string);
 
+    if (l > (size_t)INT_MAX)
+        return -1;
+
     if (l == 0)
         return 0;
 
-    --l;
+    while (l > 0) {
+        if ((string[l - 1] != '\n') && (string[l - 1] != '\r'))
+            break;
+        string[--l] = '\0';
+    }
 
-    while ((l >= 0) && ((string[l] == '\n') || (string[l] == '\r')))
-        string[l--] = '\0';
-
-    return l + 1;
+    return (int)l;
 }
 
 /*
@@ -313,7 +324,8 @@ int cli_chomp(char *string)
  */
 char *cli_strtok(const char *line, int fieldno, const char *delim)
 {
-    int counter  = 0, i, j;
+    int counter = 0;
+    size_t i, j;
     char *buffer = NULL;
 
     /* step to arg # <fieldno> */
@@ -358,7 +370,8 @@ char *cli_strtok(const char *line, int fieldno, const char *delim)
 char *cli_strtokbuf(const char *input, int fieldno, const char *delim,
                     char *output)
 {
-    int counter = 0, i, j;
+    int counter = 0;
+    size_t i, j;
 
     /* step to arg # <fieldno> */
     for (i = 0; input[i] && counter != fieldno; i++) {
@@ -443,8 +456,8 @@ const char *__cli_strcasestr(const char *haystack, const char *needle)
     const size_t strlen_a = strlen(haystack);
     const size_t strlen_b = strlen(needle);
 
-    f[0] = tolower(*needle);
-    f[1] = toupper(*needle);
+    f[0] = (char)tolower((unsigned char)*needle);
+    f[1] = (char)toupper((unsigned char)*needle);
     f[2] = '\0';
     for (l = strcspn(haystack, f); l != strlen_a; l += strcspn(haystack + l + 1, f) + 1)
         if (strncasecmp(haystack + l, needle, strlen_b) == 0)
@@ -569,7 +582,9 @@ long cli_strntol(const char *nptr, size_t n, char **endptr, register int base)
     register unsigned long acc = 0;
     register int c;
     register unsigned long cutoff;
-    register int neg = 0, any = 0, cutlim;
+    register int neg = 0, any = 0;
+    register unsigned long cutlim;
+    long result = 0;
 
     if (0 == n) {
         goto done;
@@ -632,7 +647,7 @@ long cli_strntol(const char *nptr, size_t n, char **endptr, register int base)
      * Set any if any `digits' consumed; make it negative to indicate
      * overflow.
      */
-    cutoff = neg ? -(unsigned long)LONG_MIN : LONG_MAX;
+    cutoff = neg ? (unsigned long)LONG_MAX + 1UL : (unsigned long)LONG_MAX;
     cutlim = cutoff % (unsigned long)base;
     cutoff /= (unsigned long)base;
     for (acc = 0, any = 0; s < nptr + n; s++) {
@@ -644,26 +659,32 @@ long cli_strntol(const char *nptr, size_t n, char **endptr, register int base)
             c -= isupper(c) ? 'A' - 10 : 'a' - 10;
         else
             break;
-        if (c >= base)
+        if ((unsigned long)c >= (unsigned long)base)
             break;
-        if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim))
+        if (any < 0 || acc > cutoff || (acc == cutoff && (unsigned long)c > cutlim))
             any = -1;
         else {
             any = 1;
-            acc *= base;
-            acc += c;
+            acc *= (unsigned long)base;
+            acc += (unsigned long)c;
         }
     }
     if (any < 0) {
-        acc   = neg ? LONG_MIN : LONG_MAX;
+        result = neg ? LONG_MIN : LONG_MAX;
         errno = ERANGE;
-    } else if (neg)
-        acc = -acc;
+    } else if (neg) {
+        if (acc == (unsigned long)LONG_MAX + 1UL)
+            result = LONG_MIN;
+        else
+            result = (long)-(long)acc;
+    } else {
+        result = (long)acc;
+    }
 
 done:
     if (endptr != 0)
         *endptr = (char *)(any ? s : nptr);
-    return (acc);
+    return result;
 }
 
 /**
@@ -694,7 +715,8 @@ unsigned long cli_strntoul(const char *nptr, size_t n, char **endptr,
     register unsigned long acc = 0;
     register int c;
     register unsigned long cutoff;
-    register int neg = 0, any = 0, cutlim;
+    register int neg = 0, any = 0;
+    register unsigned long cutlim;
 
     /*
      * See cli_strntol for comments as to the logic used.
@@ -745,14 +767,14 @@ unsigned long cli_strntoul(const char *nptr, size_t n, char **endptr,
             c -= isupper(c) ? 'A' - 10 : 'a' - 10;
         else
             break;
-        if (c >= base)
+        if ((unsigned long)c >= (unsigned long)base)
             break;
-        if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim))
+        if (any < 0 || acc > cutoff || (acc == cutoff && (unsigned long)c > cutlim))
             any = -1;
         else {
             any = 1;
-            acc *= base;
-            acc += c;
+            acc *= (unsigned long)base;
+            acc += (unsigned long)c;
         }
     }
     if (any < 0) {
@@ -921,20 +943,20 @@ static inline size_t output_utf8(uint16_t u, unsigned char *dst)
         return 1;
     }
     if (u < 0x80) {
-        *dst = u & 0xff;
+        *dst = (unsigned char)(u & 0xff);
         return 1;
     }
     if (u < 0x800) {
-        *dst++ = 0xc0 | (u >> 6);   /* 110yyyyy */
-        *dst   = 0x80 | (u & 0x3f); /* 10zzzzzz */
+        *dst++ = (unsigned char)(0xc0 | (u >> 6));   /* 110yyyyy */
+        *dst   = (unsigned char)(0x80 | (u & 0x3f)); /* 10zzzzzz */
         return 2;
     }
     /* u < 0x10000 because we only handle utf-16,
      * values in range 0xd800 - 0xdfff aren't valid, but we don't check for
      * that*/
-    *dst++ = 0xe0 | (u >> 12);         /* 1110xxxx */
-    *dst++ = 0x80 | ((u >> 6) & 0x3f); /* 10yyyyyy */
-    *dst   = 0x80 | (u & 0x3f);        /* 10zzzzzz */
+    *dst++ = (unsigned char)(0xe0 | (u >> 12));         /* 1110xxxx */
+    *dst++ = (unsigned char)(0x80 | ((u >> 6) & 0x3f)); /* 10yyyyyy */
+    *dst   = (unsigned char)(0x80 | (u & 0x3f));        /* 10zzzzzz */
     return 3;
 }
 
@@ -958,18 +980,17 @@ char *cli_unescape(const char *str)
                 !isxdigit(str[k + 3]) || !isxdigit(str[k + 4]) ||
                 !isxdigit(str[k + 5])) {
                 if (k + 2 < len && isxdigit(str[k + 1]) && isxdigit(str[k + 2])) {
-                    c = ((cli_hex2int(str[k + 1]) < 0 ? 0 : cli_hex2int(str[k + 1]))
-                         << 4) |
-                        cli_hex2int(str[k + 2]);
+                    c = (unsigned char)((((cli_hex2int(str[k + 1]) < 0) ? 0 : cli_hex2int(str[k + 1]))
+                                          << 4) |
+                                         cli_hex2int(str[k + 2]));
                     k += 2;
                 }
             } else {
-                uint16_t u =
-                    ((cli_hex2int(str[k + 2]) < 0 ? 0 : cli_hex2int(str[k + 2]))
-                     << 12) |
-                    ((cli_hex2int(str[k + 3]) < 0 ? 0 : cli_hex2int(str[k + 3])) << 8) |
-                    ((cli_hex2int(str[k + 4]) < 0 ? 0 : cli_hex2int(str[k + 4])) << 4) |
-                    cli_hex2int(str[k + 5]);
+                uint16_t u = (uint16_t)((((cli_hex2int(str[k + 2]) < 0) ? 0 : cli_hex2int(str[k + 2]))
+                                         << 12) |
+                                        (((cli_hex2int(str[k + 3]) < 0) ? 0 : cli_hex2int(str[k + 3])) << 8) |
+                                        (((cli_hex2int(str[k + 4]) < 0) ? 0 : cli_hex2int(str[k + 4])) << 4) |
+                                        cli_hex2int(str[k + 5]));
                 i += output_utf8(u, (unsigned char *)&R[i]);
                 k += 5;
                 continue;
@@ -1017,21 +1038,20 @@ int cli_textbuffer_append_normalize(struct text_buffer *buf, const char *str,
                     break;
                 case 'x':
                     if (i + 2 < len)
-                        c = ((cli_hex2int(str[i + 1]) < 0 ? 0 : cli_hex2int(str[i + 1]))
-                             << 4) |
-                            cli_hex2int(str[i + 2]);
+                        c = (char)((((cli_hex2int(str[i + 1]) < 0) ? 0 : cli_hex2int(str[i + 1]))
+                                     << 4) |
+                                    cli_hex2int(str[i + 2]));
                     i += 2;
                     break;
                 case 'u':
                     if (i + 4 < len) {
-                        uint16_t u =
-                            ((cli_hex2int(str[i + 1]) < 0 ? 0 : cli_hex2int(str[i + 1]))
-                             << 12) |
-                            ((cli_hex2int(str[i + 2]) < 0 ? 0 : cli_hex2int(str[i + 2]))
-                             << 8) |
-                            ((cli_hex2int(str[i + 3]) < 0 ? 0 : cli_hex2int(str[i + 3]))
-                             << 4) |
-                            cli_hex2int(str[i + 4]);
+                        uint16_t u = (uint16_t)((((cli_hex2int(str[i + 1]) < 0) ? 0 : cli_hex2int(str[i + 1]))
+                                                 << 12) |
+                                                (((cli_hex2int(str[i + 2]) < 0) ? 0 : cli_hex2int(str[i + 2]))
+                                                 << 8) |
+                                                (((cli_hex2int(str[i + 3]) < 0) ? 0 : cli_hex2int(str[i + 3]))
+                                                 << 4) |
+                                                cli_hex2int(str[i + 4]));
                         if (textbuffer_ensure_capacity(buf, 4) == -1)
                             return -1;
                         buf->pos += output_utf8(u, (unsigned char *)&buf->data[buf->pos]);
@@ -1059,7 +1079,7 @@ int cli_hexnibbles(char *str, int len)
         int c = cli_hex2int(str[i]);
         if (c < 0)
             return 1;
-        str[i] = c;
+        str[i] = (char)c;
     }
     return 0;
 }
@@ -1072,6 +1092,7 @@ cl_error_t cli_basename(
 {
     cl_error_t status = CL_EARG;
     const char *index = NULL;
+    size_t basename_len;
 
     if (NULL == filepath || NULL == filebase || filepath_len == 0) {
         cli_dbgmsg("cli_basename: Invalid arguments.\n");
@@ -1100,13 +1121,15 @@ cl_error_t cli_basename(
     }
 #endif
 
-    if (0 == CLI_STRNLEN(index, filepath_len - (index - filepath))) {
+    basename_len = filepath_len - (size_t)(index - filepath);
+
+    if (0 == CLI_STRNLEN(index, basename_len)) {
         cli_dbgmsg("cli_basename: Provided path does not include a file name.\n");
         status = CL_EFORMAT;
         goto done;
     }
 
-    *filebase = CLI_STRNDUP(index, filepath_len - (index - filepath));
+    *filebase = CLI_STRNDUP(index, basename_len);
     if (NULL == *filebase) {
         cli_errmsg("cli_basename: Failed to allocate memory for file basename.\n");
         status = CL_EMEM;

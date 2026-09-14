@@ -7,13 +7,13 @@ Date: 2026-09-09
 
 Canonical source and branch:
 
-- `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- `<repository-root>`
 - `largefile-roadmap-qualification`
 - intentionally dirty working tree preserved
 
 ## Remote qualification retry
 
-MCP-SSH host discovery returned the exact host IDs `sonic3` and `sonic1`.
+remote SSH host discovery returned the exact host IDs `sonic3` and `sonic1`.
 The supplied `sonic3-sudo` profile was described successfully for `sonic3`.
 Three side-effect-free commands (`pwd`, `ls -la`, and `docker ps -a`) then
 timed out during SSH connect after 20 seconds each; no remote command started.

@@ -1,7 +1,7 @@
 use crate::errors::{ErrorKind, Result};
 use crate::fsshttpb::data::exguid::ExGuid;
 use crate::one::property::layout_alignment::LayoutAlignment;
-use crate::one::property_set::{page_manifest_node, page_metadata, page_node, title_node};
+use crate::one::property_set::{page_manifest_node, page_metadata, page_node, title_node, PropertySetId};
 use crate::onenote::outline::{parse_outline, Outline};
 use crate::onenote::page_content::{parse_page_content, PageContent};
 use crate::onestore::object_space::ObjectSpace;
@@ -171,6 +171,61 @@ pub(crate) fn parse_page(page_space: &ObjectSpace) -> Result<Page> {
         height: data.page_height,
         contents,
     })
+}
+
+pub(crate) fn scan_page<F>(page_space: &ObjectSpace, callback: &mut F) -> Result<bool>
+where
+    F: FnMut(Option<&str>, &mut dyn std::io::Read) -> bool,
+{
+    let _metadata = parse_metadata(page_space)?;
+    let manifest = parse_manifest(page_space)?;
+    let data = parse_data(manifest, page_space)?;
+
+    if let Some(title_id) = data.title {
+        let title_object = page_space
+            .get_object(title_id)
+            .ok_or_else(|| ErrorKind::MalformedOneNoteData("title object is missing".into()))?;
+        let title = title_node::parse(title_object)?;
+        for outline_id in title.children {
+            if !super::outline::scan_outline(outline_id, page_space, callback)? {
+                return Ok(false);
+            }
+        }
+    }
+
+    for content_id in data.content {
+        if !scan_page_content(content_id, page_space, callback)? {
+            return Ok(false);
+        }
+    }
+
+    Ok(true)
+}
+
+fn scan_page_content<F>(
+    content_id: ExGuid,
+    space: &ObjectSpace,
+    callback: &mut F,
+) -> Result<bool>
+where
+    F: FnMut(Option<&str>, &mut dyn std::io::Read) -> bool,
+{
+    let object = space
+        .get_object(content_id)
+        .ok_or_else(|| ErrorKind::MalformedOneNoteData("page content is missing".into()))?;
+    let id = PropertySetId::from_jcid(object.id()).ok_or_else(|| {
+        ErrorKind::MalformedOneNoteData(
+            format!("invalid property set id: 0x{:X}", object.id().0).into(),
+        )
+    })?;
+
+    match id {
+        PropertySetId::EmbeddedFileNode => {
+            super::embedded_file::scan_embedded_file(content_id, space, callback)
+        }
+        PropertySetId::OutlineNode => super::outline::scan_outline(content_id, space, callback),
+        _ => Ok(true),
+    }
 }
 
 fn parse_title(title_id: ExGuid, space: &ObjectSpace) -> Result<Title> {

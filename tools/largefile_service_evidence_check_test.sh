@@ -65,6 +65,9 @@ for lifecycle_event in \
     'pidfile_absent_after_stop	yes'; do
     printf '1\t%s\n' "$lifecycle_event" >> "$lifecycle"
 done
+resource_samples=$out/provenance/service-resource-samples.tsv
+printf 'sequence\trss_kb\tpss_kb\tvas_kb\tswap_kb\tminor_faults\tmajor_faults\tread_bytes\twrite_bytes\tcancelled_write_bytes\tprocess_count\ttemporary_bytes\toom_events\toom_kill_events\toom_cgroup_digest\tsampled_pids\n' > "$resource_samples"
+printf '1\t1\t1\t2\t0\t1\t0\t2\t3\t0\t1\t1\t0\t0\t0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\t101\n' >> "$resource_samples"
 source_manifest_sha256=$(sha256sum "$out/provenance/source-manifest.txt" | awk '{ print $1 }')
 source_commit=$source_manifest_sha256
 source_tree=$source_manifest_sha256
@@ -306,14 +309,47 @@ loaded_dependencies_sha256=$(sha256sum "$loaded_dependencies" | awk '{ print $1 
     printf 'service_interpreter_records_after_sha256=%s\n' "$(sha256sum "$interpreter_records_after" | awk '{ print $1 }')"
     printf 'service_lifecycle=provenance/service-lifecycle.tsv\n'
     printf 'service_lifecycle_sha256=%s\n' "$(sha256sum "$lifecycle" | awk '{ print $1 }')"
+    printf 'service_resource_samples=provenance/service-resource-samples.tsv\n'
+    printf 'service_resource_samples_sha256=%s\n' "$(sha256sum "$resource_samples" | awk '{ print $1 }')"
+    printf 'service_memory_metrics=procfs-process-tree-status-smaps-rollup-stat-io\n'
+    printf 'service_oom_measurement=procfs-cgroup-v2-memory-events\n'
+    printf 'service_oom_baseline=0\n'
+    printf 'service_oom_kill_baseline=0\n'
+    printf 'service_oom_cgroup_count=1\n'
+    printf 'service_oom_cgroup_digest=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n'
     printf 'loader_injection=disabled\n'
     printf 'max_scan_time_ms=14400000\n'
     printf 'service_timeout_s=14400\n'
 } > "$out/provenance/service-build-identity.txt"
 {
     printf 'service_resource_measurement_failed=0\n'
+    printf 'service_rss_measurement=procfs-process-tree-vmrss\n'
+    printf 'service_rss_process_tree=pass\n'
+    printf 'service_rss_sampler=tools/largefile_procfs_tree_rss.sh\n'
+    printf 'service_memory_metrics=procfs-process-tree-status-smaps-rollup-stat-io\n'
+    printf 'service_pss_peak_kb=1\n'
+    printf 'service_vas_peak_kb=2\n'
+    printf 'service_swap_peak_kb=0\n'
+    printf 'service_swap=pass\n'
+    printf 'service_minor_faults_peak=1\n'
+    printf 'service_major_faults_peak=0\n'
+    printf 'service_read_bytes_peak=2\n'
+    printf 'service_write_bytes_peak=3\n'
+    printf 'service_cancelled_write_bytes_peak=0\n'
+    printf 'service_oom_measurement=procfs-cgroup-v2-memory-events\n'
+    printf 'service_oom_baseline=0\n'
+    printf 'service_oom_kill_baseline=0\n'
+    printf 'service_oom_peak=0\n'
+    printf 'service_oom_kill_peak=0\n'
+    printf 'service_oom_samples=1\n'
+    printf 'service_oom_cgroup_count=1\n'
+    printf 'service_oom_cgroup_digest=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n'
+    printf 'service_oom_events=pass\n'
+    printf 'service_oom_kills=pass\n'
+    printf 'service_resource_samples=provenance/service-resource-samples.tsv\n'
     printf 'service_temp_budget=pass\n'
     printf 'service_rss_peak_kb=1\n'
+    printf 'service_rss_peak_process_count=1\n'
     printf 'service_rss_samples=1\n'
     printf 'service_temp_peak_bytes=1\n'
     printf 'service_temp_samples=1\n'
@@ -381,6 +417,16 @@ sed 's/^service_rss_peak_kb=1$/service_rss_peak_kb=33554433/' \
 write_checksum_manifest
 if sh "$control_root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null 2>&1; then
     echo 'service evidence verifier accepted an RSS peak above the overall budget' >&2
+    exit 1
+fi
+cp "$tmp/service-summary.good" "$out/service-summary.txt"
+write_checksum_manifest
+
+sed 's/^service_swap_peak_kb=0$/service_swap_peak_kb=1/' \
+    "$tmp/service-summary.good" > "$out/service-summary.txt"
+write_checksum_manifest
+if sh "$control_root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null 2>&1; then
+    echo 'service evidence verifier accepted non-zero swap usage' >&2
     exit 1
 fi
 cp "$tmp/service-summary.good" "$out/service-summary.txt"

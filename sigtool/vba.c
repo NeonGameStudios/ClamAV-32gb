@@ -72,12 +72,14 @@ static char *get_unicode_name(char *name, int size)
     }
     j = 0;
     for (i = 0; i < size; i = i + 2) {
-        if (isprint(name[i])) {
-            newname[j++] = name[i];
+        const unsigned char byte = (unsigned char)name[i];
+
+        if (isprint(byte)) {
+            newname[j++] = (char)byte;
         } else {
-            if (name[i] < 10 && name[i] >= 0) {
+            if (byte < 10) {
                 newname[j++] = '_';
-                newname[j++] = name[i] + '0';
+                newname[j++] = (char)(byte + '0');
             }
             newname[j++] = '_';
         }

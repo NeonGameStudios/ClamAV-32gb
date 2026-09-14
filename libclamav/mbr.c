@@ -124,6 +124,15 @@ static bool mbr_partition_extent_is_valid(const struct mbr_partition_entry *entr
     return entry != NULL && (entry->type == MBR_EMPTY || entry->numLBA != 0);
 }
 
+static bool mbr_partition_start_is_valid(const struct mbr_partition_entry *entry)
+{
+    /* LBA zero contains the boot record. A typed entry beginning there would
+     * overlap the record that established the partition table and must not be
+     * handed to nested scanning. Empty entries may retain compatibility
+     * coordinates because they are never dispatched. */
+    return entry != NULL && (entry->type == MBR_EMPTY || entry->firstLBA != 0);
+}
+
 static cl_error_t mbr_read(cli_ctx *ctx, void *dst, size_t at, size_t len, const char *reason)
 {
     size_t got;
@@ -160,7 +169,7 @@ cl_error_t cli_mbr_check(const unsigned char *buff, size_t len, size_t maplen)
     mbr_convert_to_host(&mbr);
 
     if ((mbr.entries[0].type == MBR_PROTECTIVE) || (mbr.entries[0].type == MBR_HYBRID))
-        return CL_TYPE_GPT;
+        return (cl_error_t)CL_TYPE_GPT;
 
     return mbr_check_mbr(&mbr, maplen, sectorsize);
 }
@@ -214,7 +223,7 @@ cl_error_t cli_mbr_check2(cli_ctx *ctx, size_t sectorsize)
     mbr_convert_to_host(&mbr);
 
     if ((mbr.entries[0].type == MBR_PROTECTIVE) || (mbr.entries[0].type == MBR_HYBRID))
-        return CL_TYPE_GPT;
+        return (cl_error_t)CL_TYPE_GPT;
 
     cl_error_t status = mbr_check_mbr(&mbr, maplen, sectorsize);
     if ((status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
@@ -612,6 +621,12 @@ static cl_error_t mbr_check_mbr(struct mbr_boot_record *record, size_t maplen, s
             goto done;
         }
 
+        if (!mbr_partition_start_is_valid(&record->entries[i])) {
+            cli_dbgmsg("cli_scanmbr: Non-empty partition starts at LBA zero\n");
+            status = CL_EFORMAT;
+            goto done;
+        }
+
         if (!mbr_partition_range(record->entries[i].firstLBA, record->entries[i].numLBA,
                                  sectorsize, &partoff, &partsize) ||
             partoff > maplen || partsize > maplen - partoff) {
@@ -658,6 +673,12 @@ static cl_error_t mbr_check_ebr(struct mbr_boot_record *record)
     for (i = 0; i < MBR_MAX_PARTITION_ENTRIES; ++i) {
         if (!mbr_partition_extent_is_valid(&record->entries[i])) {
             cli_dbgmsg("cli_scanmbr: Non-empty logical partition has zero length\n");
+            status = CL_EFORMAT;
+            goto done;
+        }
+
+        if (!mbr_partition_start_is_valid(&record->entries[i])) {
+            cli_dbgmsg("cli_scanmbr: Non-empty logical partition starts at LBA zero\n");
             status = CL_EFORMAT;
             goto done;
         }

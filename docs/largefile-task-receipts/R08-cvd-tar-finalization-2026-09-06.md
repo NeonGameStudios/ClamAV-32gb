@@ -4,7 +4,7 @@ Task ID / parent milestone: R08 / CVD archive production and sigtool behavior
 
 Exact capability kind:id list: library:production-cvd-ingress; library:production-cvd-api-boundary
 
-Starting commit and working-tree/source manifest identity: `ff8905891b2b58a66c71859ab2c807cc4dee2dec`; working tree intentionally dirty with the roadmap candidate changes. The active checkout is `/Volumes/512gbNVME/github-external/ClamAV-32gb` on `largefile-roadmap-qualification`.
+Starting commit and working-tree/source manifest identity: `ff8905891b2b58a66c71859ab2c807cc4dee2dec`; working tree intentionally dirty with the roadmap candidate changes. The active checkout is `<repository-root>` on `largefile-roadmap-qualification`.
 
 Observed failing case and expected behavior: strict CVD loading correctly rejected archives without the two TAR end blocks, but sigtool and freshclam archive writers did not emit those blocks. Sigtool's unsigned CVD fixtures also needed to retain historical `DSIG:` text for cdiff matching while unsigned loading ignored that metadata. The expected behavior is marker-complete generated archives, strict signed verification unchanged, and explicit unsigned metadata handling.
 

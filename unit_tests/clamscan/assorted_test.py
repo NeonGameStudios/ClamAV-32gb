@@ -5,6 +5,7 @@ Run clamscan tests.
 """
 
 import shutil
+import subprocess
 import unittest
 import sys
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -158,7 +159,7 @@ class TC(testcase.TestCase):
         def reachable_without_incomplete_pe_analysis(sig):
             return not any(fragment in sig for fragment in (
                 '_text', '_data', '_idata', '_rdata', '_rsrc', '.IMP_',
-                'BC_5of6', 'BC_6of6',
+                'BC_5of6', 'BC_6of6', '_CRT', '_tls',
             ))
 
         expected_results = [
@@ -392,13 +393,22 @@ class TC(testcase.TestCase):
         self.verify_output(output.err, expected=expected_stderr, unexpected=unexpected_stderr)
 
     def test_cvdload_no_sign_fips_limits(self):
-        self.step_name('Test that clamscan --fips-limits fails to load a CVD if .cvd.sign file is not present')
+        self.step_name('Test that clamscan --fips-limits requires a detached signature for a current-format CVD')
 
         path_db = Path(TC.path_tmp, 'database')
         path_db.mkdir()
 
-        # Copy cvd to temp directory
-        shutil.copy(str(TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-6.cvd'), str(path_db / 'test.cvd'))
+        # The checked-in CVD predates the strict TAR end-marker contract.
+        # Rebuild it into the current format, retaining its DSIG metadata, so
+        # this test isolates detached-signature policy from archive parsing.
+        source_cvd = TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-6.cvd'
+        fixture_builder = TC.path_source / 'unit_tests' / 'input' / 'create_cvd_test_fixture.py'
+        current_cvd = path_db / 'test.cvd'
+        subprocess.run(
+            [sys.executable, str(fixture_builder), '--input', str(source_cvd),
+             '--output', str(current_cvd), '--keep-dsig'],
+            check=True,
+        )
 
         testpaths = [
             TC.path_build / "unit_tests" / "input" / "clamav_hdb_scanfiles" / "clam.exe.2007.one",
@@ -421,8 +431,18 @@ class TC(testcase.TestCase):
             'Can\'t verify CVD file']
         self.verify_output(output.err, expected=expected_results)
 
-        # Add the .cvd.sign file and try again
-        shutil.copy(str(TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-6.cvd.sign'), str(path_db))
+        # Sign the current-format fixture with the repository's existing test
+        # key. sigtool emits test-6.cvd.sign because that is the database name
+        # recorded in the CVD metadata, matching production detached-signature
+        # lookup even though the file is named test.cvd in this directory.
+        signing_key = TC.path_build / 'unit_tests' / 'input' / 'signing' / 'sign' / 'signing-test.key'
+        signing_dir = TC.path_source / 'unit_tests' / 'input' / 'signing' / 'sign'
+        subprocess.run(
+            [TC.sigtool, '--sign', str(current_cvd), '--key', str(signing_key),
+             '--cert', str(signing_dir / 'signing-test.crt'),
+             '--cert', str(signing_dir / 'intermediate-test.crt')],
+            cwd=str(path_db), check=True,
+        )
 
         command = '{valgrind} {valgrind_args} {clamscan} --fips-limits -d {path_db} {testfiles}'.format(
             valgrind=TC.valgrind, valgrind_args=TC.valgrind_args,

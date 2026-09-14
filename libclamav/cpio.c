@@ -156,6 +156,16 @@ static cl_error_t cpio_checktimelimit(cli_ctx *ctx)
     return status;
 }
 
+static cl_error_t cpio_admit_empty_member(cli_ctx *ctx)
+{
+    cl_error_t status = cli_updatelimits(ctx, 0);
+
+    if (status != CL_SUCCESS && status != CL_ETIMEOUT && status != CL_BREAK)
+        cli_mark_scan_incomplete(ctx, "CPIO empty member exceeds configured scan limits");
+
+    return status;
+}
+
 static cl_error_t cpio_validate_context(cli_ctx *ctx)
 {
     if (ctx == NULL)
@@ -395,6 +405,11 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
         if (!filesize) {
             if (trailer)
                 complete = 1;
+            else {
+                status = cpio_admit_empty_member(ctx);
+                if (status != CL_SUCCESS)
+                    goto done;
+            }
             continue;
         }
 
@@ -539,6 +554,11 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
         if (!filesize) {
             if (trailer)
                 complete = 1;
+            else {
+                status = cpio_admit_empty_member(ctx);
+                if (status != CL_SUCCESS)
+                    goto done;
+            }
             continue;
         }
 
@@ -702,6 +722,11 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
             }
             if (trailer)
                 complete = 1;
+            else {
+                status = cpio_admit_empty_member(ctx);
+                if (status != CL_SUCCESS)
+                    goto done;
+            }
             continue;
         }
 

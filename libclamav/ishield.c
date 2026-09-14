@@ -294,7 +294,7 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
             return CL_EMAXFILES;
         }
 
-        if (off > map->len || sizeof(fb) > map->len - (size_t)off) {
+        if ((uint64_t)off > map->len || sizeof(fb) > map->len - (size_t)off) {
             cli_dbgmsg("ishield-msi: file record is outside the input map\n");
             cli_mark_scan_incomplete(ctx, "InstallShield MSI file record is truncated");
             return CL_EPARSE;
@@ -739,6 +739,14 @@ static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize)
     fmap_t *map = ctx->fmap;
 
     if (!fsize) {
+        /* An empty embedded file has no payload to materialize, but remains
+         * a logical child and must consume one MaxFiles slot. */
+        ret = cli_updatelimits(ctx, 0);
+        if (ret != CL_SUCCESS) {
+            if (ret != CL_ETIMEOUT && ret != CL_BREAK)
+                cli_mark_scan_incomplete(ctx, "InstallShield empty member exceeds configured scan limits");
+            return ret;
+        }
         cli_dbgmsg("ishield: skipping empty file\n");
         return CL_SUCCESS;
     }
@@ -1061,6 +1069,14 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
                                 return cabret;
                             }
                         } else {
+                            cl_error_t empty_status = cli_updatelimits(ctx, 0);
+
+                            if (empty_status != CL_SUCCESS) {
+                                if (empty_status != CL_ETIMEOUT && empty_status != CL_BREAK)
+                                    cli_mark_scan_incomplete(ctx, "InstallShield empty CAB member exceeds configured scan limits");
+                                return empty_status;
+                            }
+                            scanned++;
                             cli_dbgmsg("is_parse_hdr: skipped empty file\n");
                         }
                     }

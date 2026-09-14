@@ -62,6 +62,21 @@
 #include "yara_exec.h"
 #endif
 
+/* Emit qualification-only boundaries for the exceptional full-subject PCRE
+ * path. These are debug events rather than accounting shortcuts: the
+ * external qualification runner samples the process tree independently at
+ * these boundaries and retains the actual log. */
+static void largefile_pcre_phase_dbg(const cli_ctx *ctx, const char *phase, size_t subject_bytes, bool subject_released)
+{
+    if (!ctx || !phase || !ctx->recursion_stack || ctx->recursion_stack_size == 0 ||
+        ctx->recursion_level >= ctx->recursion_stack_size) {
+        return;
+    }
+
+    cli_dbgmsg("largefile_pcre_phase: phase=%s recursion_level=%u subject_bytes=%zu subject_released=%u\n",
+               phase, ctx->recursion_level, subject_bytes, subject_released ? 1U : 0U);
+}
+
 #ifdef CLI_PERF_LOGGING
 
 static inline void perf_log_filter(int32_t pos, int32_t length, int8_t trie)
@@ -283,10 +298,15 @@ static inline cl_error_t matcher_run(const struct cli_matcher *root,
                     return CL_EREAD;
                 }
 
+                largefile_pcre_phase_dbg(ctx, "before-pcre", map->len, false);
+
                 /* scan the full buffer */
+                largefile_pcre_phase_dbg(ctx, "pcre", map->len, false);
                 ret = cli_pcre_scanbuf(buffer, map->len, virname, acres, root, mdata, poffdata, ctx);
                 cli_scan_release_contiguous(ctx, map->len);
                 fmap_release_unlocked(map);
+                ctx->largefile_pcre_subject_released = true;
+                largefile_pcre_phase_dbg(ctx, "post-pcre-before-deep-parse", map->len, true);
             }
         } else if (pcremode == PCRE_SCAN_BUFF) {
             /* check that scanned buffer does not exceed pcre maxfilesize limit */

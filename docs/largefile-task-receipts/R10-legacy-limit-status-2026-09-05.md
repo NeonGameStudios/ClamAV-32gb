@@ -7,7 +7,7 @@ wrappers without relabelling them as malware or clean success.
 
 Prerequisites verified:
 
-- Canonical source: `/Volumes/512gbNVME/github-external/ClamAV-32gb`.
+- Canonical source: `<repository-root>`.
 - Branch: `largefile-roadmap-qualification`.
 - Current-source ARM64 static test binary rebuilt in the disposable
   `clamav-largefile-local-toolchain2:latest` container.

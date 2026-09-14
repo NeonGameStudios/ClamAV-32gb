@@ -61,7 +61,7 @@ unsigned Xz_ReadVarInt(const Byte *p, size_t maxSize, UInt64 *value)
     Byte b = p[i];
     *value |= (UInt64)(b & 0x7F) << (7 * i++);
     if ((b & 0x80) == 0)
-      return (b == 0 && i != 1) ? 0 : i;
+      return (b == 0 && i != 1) ? 0u : (unsigned)i;
   }
   return 0;
 }
@@ -317,8 +317,8 @@ static SRes Lzma2State_Code(void *pp, Byte *dest, SizeT *destLen, const Byte *sr
     int srcWasFinished, ECoderFinishMode finishMode, int *wasFinished)
 {
   ELzmaStatus status;
-  /* ELzmaFinishMode fm = (finishMode == LZMA_FINISH_ANY) ? LZMA_FINISH_ANY : LZMA_FINISH_END; */
-  SRes res = Lzma2Dec_DecodeToBuf((CLzma2Dec *)pp, dest, destLen, src, srcLen, finishMode, &status);
+  ELzmaFinishMode fm = (finishMode == CODER_FINISH_ANY) ? LZMA_FINISH_ANY : LZMA_FINISH_END;
+  SRes res = Lzma2Dec_DecodeToBuf((CLzma2Dec *)pp, dest, destLen, src, srcLen, fm, &status);
   UNUSEDPARAM(srcWasFinished);
   *wasFinished = (status == LZMA_STATUS_FINISHED_WITH_MARK);
   return res;
@@ -511,7 +511,7 @@ SRes Xz_ParseHeader(CXzStreamFlags *p, const Byte *buf)
 {
   *p = (CXzStreamFlags)GetBe16(buf + XZ_SIG_SIZE);
   if (CrcCalc(buf + XZ_SIG_SIZE, XZ_STREAM_FLAGS_SIZE) !=
-      GetUi32(buf + XZ_SIG_SIZE + XZ_STREAM_FLAGS_SIZE))
+      (UInt32)GetUi32(buf + XZ_SIG_SIZE + XZ_STREAM_FLAGS_SIZE))
     return SZ_ERROR_NO_ARCHIVE;
   return XzFlags_IsSupported(*p) ? SZ_OK : SZ_ERROR_UNSUPPORTED;
 }
@@ -520,14 +520,15 @@ static Bool Xz_CheckFooter(CXzStreamFlags flags, UInt64 indexSize, const Byte *b
 {
   return
       indexSize == (((UInt64)GetUi32(buf + 4) + 1) << 2) &&
-      (GetUi32(buf) == CrcCalc(buf + 4, 6) &&
+      ((UInt32)GetUi32(buf) == CrcCalc(buf + 4, 6) &&
       flags == GetBe16(buf + 8) &&
       memcmp(buf + 10, XZ_FOOTER_SIG, XZ_FOOTER_SIG_SIZE) == 0);
 }
 
 #define READ_VARINT_AND_CHECK(buf, pos, size, res) \
-  { unsigned s = Xz_ReadVarInt(buf + pos, size - pos, res); \
-  if (s == 0) return SZ_ERROR_ARCHIVE; pos += s; }
+  do { unsigned s = Xz_ReadVarInt(buf + pos, size - pos, res); \
+  if (s == 0) return SZ_ERROR_ARCHIVE; \
+  pos += s; } while (0)
 
 
 SRes XzBlock_Parse(CXzBlock *p, const Byte *header)
@@ -536,7 +537,7 @@ SRes XzBlock_Parse(CXzBlock *p, const Byte *header)
   int numFilters, i;
   UInt32 headerSize = (UInt32)header[0] << 2;
 
-  if (CrcCalc(header, headerSize) != GetUi32(header + headerSize))
+  if (CrcCalc(header, headerSize) != (UInt32)GetUi32(header + headerSize))
     return SZ_ERROR_ARCHIVE;
 
   pos = 1;
@@ -583,7 +584,7 @@ SRes XzBlock_Parse(CXzBlock *p, const Byte *header)
   return SZ_OK;
 }
 
-SRes XzDec_Init(CMixCoder *p, const CXzBlock *block)
+static SRes XzDec_Init(CMixCoder *p, const CXzBlock *block)
 {
   int i;
   Bool needReInit = True;
@@ -877,7 +878,7 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
         {
           p->state = XZ_STATE_STREAM_FOOTER;
           p->pos = 0;
-          if (CRC_GET_DIGEST(p->crc) != GetUi32(p->buf))
+          if (CRC_GET_DIGEST(p->crc) != (UInt32)GetUi32(p->buf))
             return SZ_ERROR_CRC;
         }
         break;

@@ -6,6 +6,7 @@ use crate::fsshttpb::data::exguid::ExGuid;
 use crate::fsshttpb::data::object_types::ObjectType;
 use crate::fsshttpb::data::stream_object::ObjectHeader;
 use crate::fsshttpb::data_element::DataElement;
+use crate::reader::ReaderBlob;
 use crate::Reader;
 use std::convert::TryFrom;
 use std::fmt;
@@ -66,20 +67,40 @@ impl ObjectGroupDeclaration {
             declared_cell_count,
             object_count,
             cell_count,
+            declared_data_size,
+            actual_data_size,
         ) = match (self, data) {
             (
                 ObjectGroupDeclaration::Object {
                     object_reference_count,
                     cell_reference_count,
+                    data_size,
                     ..
                 },
-                ObjectGroupData::Object { group, cells, .. }
-                | ObjectGroupData::ObjectExcluded { group, cells, .. },
+                ObjectGroupData::Object { group, cells, data },
             ) => (
                 *object_reference_count,
                 *cell_reference_count,
                 group.len(),
                 cells.len(),
+                *data_size,
+                data.len(),
+            ),
+            (
+                ObjectGroupDeclaration::Object {
+                    object_reference_count,
+                    cell_reference_count,
+                    data_size,
+                    ..
+                },
+                ObjectGroupData::ObjectExcluded { group, cells, size },
+            ) => (
+                *object_reference_count,
+                *cell_reference_count,
+                group.len(),
+                cells.len(),
+                *data_size,
+                *size,
             ),
             (
                 ObjectGroupDeclaration::Blob {
@@ -97,6 +118,8 @@ impl ObjectGroupDeclaration {
                 *cell_reference_count,
                 objects.len(),
                 cells.len(),
+                0,
+                0,
             ),
             (ObjectGroupDeclaration::Object { .. }, ObjectGroupData::BlobReference { .. })
             | (ObjectGroupDeclaration::Blob { .. }, ObjectGroupData::Object { .. })
@@ -118,6 +141,13 @@ impl ObjectGroupDeclaration {
         if object_count != declared_object_count || cell_count != declared_cell_count {
             return Err(ErrorKind::MalformedFssHttpBData(
                 "object group reference counts do not match declaration".into(),
+            )
+            .into());
+        }
+
+        if declared_data_size != actual_data_size {
+            return Err(ErrorKind::MalformedFssHttpBData(
+                "object group data size does not match declaration".into(),
             )
             .into());
         }
@@ -178,7 +208,7 @@ pub(crate) enum ObjectGroupData {
     Object {
         group: Vec<ExGuid>,
         cells: Vec<CellId>,
-        data: Vec<u8>,
+        data: ReaderBlob,
     },
     /// An excluded object.
     ///
@@ -202,7 +232,7 @@ pub(crate) enum ObjectGroupData {
     },
 }
 
-struct DebugSize(usize);
+struct DebugSize(u64);
 
 impl fmt::Debug for ObjectGroupData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -426,6 +456,7 @@ mod tests {
     use super::{ObjectChangeFrequency, ObjectGroupData, ObjectGroupDeclaration};
     use crate::fsshttpb::data::cell_id::CellId;
     use crate::fsshttpb::data::exguid::ExGuid;
+    use crate::reader::ReaderBlob;
     use crate::shared::guid::Guid;
 
     fn test_id() -> ExGuid {
@@ -453,7 +484,7 @@ mod tests {
         let data = ObjectGroupData::Object {
             group: vec![id],
             cells: vec![CellId(id, id)],
-            data: Vec::new(),
+            data: ReaderBlob::Memory(Vec::new()),
         };
 
         assert!(declaration.validate_data(&data).is_ok());
@@ -472,10 +503,48 @@ mod tests {
         let data = ObjectGroupData::Object {
             group: vec![id],
             cells: vec![CellId(id, id)],
-            data: Vec::new(),
+            data: ReaderBlob::Memory(Vec::new()),
         };
 
         assert!(declaration.validate_data(&data).is_err());
+    }
+
+    #[test]
+    fn declaration_rejects_mismatched_object_data_size() {
+        let id = test_id();
+        let declaration = ObjectGroupDeclaration::Object {
+            object_id: id,
+            partition_id: 1,
+            data_size: 1,
+            object_reference_count: 1,
+            cell_reference_count: 1,
+        };
+        let data = ObjectGroupData::Object {
+            group: vec![id],
+            cells: vec![CellId(id, id)],
+            data: ReaderBlob::Memory(Vec::new()),
+        };
+
+        assert!(declaration.validate_data(&data).is_err());
+    }
+
+    #[test]
+    fn excluded_object_uses_its_declared_data_size() {
+        let id = test_id();
+        let declaration = ObjectGroupDeclaration::Object {
+            object_id: id,
+            partition_id: 1,
+            data_size: 7,
+            object_reference_count: 0,
+            cell_reference_count: 0,
+        };
+        let data = ObjectGroupData::ObjectExcluded {
+            group: Vec::new(),
+            cells: Vec::new(),
+            size: 7,
+        };
+
+        assert!(declaration.validate_data(&data).is_ok());
     }
 
     #[test]

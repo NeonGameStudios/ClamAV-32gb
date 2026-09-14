@@ -51,7 +51,7 @@ struct CPOOL {
     struct CP_ENTRY *pool;
 };
 
-void cpool_init(struct optstruct *copt);
+int cpool_init(struct optstruct *copt);
 void cpool_free(void);
 struct CP_ENTRY *cpool_get_rand(int *s);
 

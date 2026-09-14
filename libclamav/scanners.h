@@ -264,7 +264,10 @@ void emax_reached(cli_ctx *ctx);
  * @param ctx    Scan context.
  * @param reason Static or otherwise context-lifetime-safe reason string.
  */
+#ifndef CLI_MARK_SCAN_INCOMPLETE_DECLARED
+#define CLI_MARK_SCAN_INCOMPLETE_DECLARED
 void cli_mark_scan_incomplete(cli_ctx *ctx, const char *reason);
+#endif
 
 /**
  * @brief Record the common VBA metadata fields for an OLE2 layer.

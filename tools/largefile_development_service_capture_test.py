@@ -10,6 +10,28 @@ import largefile_development_service_capture as capture
 
 
 class DevelopmentServiceCaptureTests(unittest.TestCase):
+    def test_cvd_cert_directory_defaults_to_repository_test_ca(self):
+        with tempfile.TemporaryDirectory(prefix="largefile-service-certs-") as temp:
+            source_root = Path(temp)
+            certs = source_root / "unit_tests/input/signing/verify"
+            certs.mkdir(parents=True)
+            self.assertEqual(
+                capture.resolve_cvd_certs_dir(source_root, None), certs.resolve()
+            )
+
+    def test_cvd_cert_directory_rejects_missing_or_symlinked_path(self):
+        with tempfile.TemporaryDirectory(prefix="largefile-service-certs-") as temp:
+            source_root = Path(temp)
+            with self.assertRaisesRegex(ValueError, "CVD certificate directory"):
+                capture.resolve_cvd_certs_dir(source_root, None)
+
+            certs = source_root / "certs"
+            certs.mkdir()
+            link = source_root / "link"
+            link.symlink_to(certs, target_is_directory=True)
+            with self.assertRaisesRegex(ValueError, "CVD certificate directory"):
+                capture.resolve_cvd_certs_dir(source_root, link)
+
     def test_service_input_identity_is_versioned_and_hash_bound(self):
         with tempfile.TemporaryDirectory(prefix="largefile-service-inputs-") as temp:
             root = Path(temp)
@@ -109,7 +131,14 @@ class DevelopmentServiceCaptureTests(unittest.TestCase):
         )
         self.assertEqual(
             capture.CLIENT_MODES,
-            {"fdpass": "fdpass", "stream": "stream"},
+            {
+                "default": (),
+                "fdpass": ("fdpass",),
+                "stream": ("stream",),
+                "multiscan": ("multiscan",),
+                "stream-multiscan": ("stream", "multiscan"),
+                "fdpass-multiscan": ("fdpass", "multiscan"),
+            },
         )
 
     def test_service_lifecycle_artifact_binds_health_and_cleanup(self):

@@ -3,11 +3,12 @@ use crate::fsshttpb::packaging::OneStorePackaging;
 use crate::onenote::notebook::Notebook;
 use crate::onenote::section::{Section, SectionEntry, SectionGroup};
 use crate::onestore::parse_store;
-use crate::reader::{reserve_collection, Reader};
+use crate::reader::{reserve_collection, BlobSpoolBudget, Reader};
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{self, Read};
 use std::path::{Component, Path, PathBuf};
+use std::rc::Rc;
 
 pub(crate) mod content;
 pub(crate) mod embedded_file;
@@ -182,6 +183,65 @@ impl Parser {
             store,
             file_name.to_string_lossy().into_owned(),
         )
+    }
+
+    /// Scan a section from a bounded sequential reader and stream each
+    /// embedded file to the callback. The callback owns the attachment
+    /// consumption window: returning `false` stops traversal after the
+    /// current attachment without treating that as a parser error.
+    pub fn scan_section_reader<R, F>(
+        &mut self,
+        reader: R,
+        file_name: &Path,
+        callback: F,
+    ) -> Result<()>
+    where
+        R: Read,
+        F: FnMut(Option<&str>, &mut dyn Read) -> bool,
+    {
+        self.scan_section_reader_with_budget(reader, file_name, None, None, callback)
+    }
+
+    /// Scan a section from a bounded sequential reader while accounting
+    /// parser-owned object-data spools against a caller-provided temporary
+    /// budget. Spools are created below `spool_directory` when supplied.
+    pub fn scan_section_reader_with_budget<R, F>(
+        &mut self,
+        reader: R,
+        file_name: &Path,
+        spool_directory: Option<&Path>,
+        budget: Option<Box<dyn BlobSpoolBudget>>,
+        mut callback: F,
+    ) -> Result<()>
+    where
+        R: Read,
+        F: FnMut(Option<&str>, &mut dyn Read) -> bool,
+    {
+        let budget = budget.map(Rc::from);
+        let mut reader = Reader::from_reader_with_options(
+            reader,
+            Reader::MAX_MATERIALIZED_BYTES,
+            spool_directory.map(Path::to_path_buf),
+            budget,
+        );
+        let packaging = OneStorePackaging::parse(&mut reader)?;
+        if packaging.cell_schema != guid!({1F937CB4-B26F-445F-B9F8-17E20160E461}) {
+            return Err(ErrorKind::NotASectionFile {
+                file: file_name.to_string_lossy().into_owned(),
+            }
+            .into());
+        }
+        let store = parse_store(&packaging)?;
+
+        if store.schema_guid() != guid!({1F937CB4-B26F-445F-B9F8-17E20160E461}) {
+            return Err(ErrorKind::NotASectionFile {
+                file: file_name.to_string_lossy().into_owned(),
+            }
+            .into());
+        }
+
+        section::scan_attachments(&store, &mut callback)?;
+        Ok(())
     }
 
     /// Parse a OneNote section file.

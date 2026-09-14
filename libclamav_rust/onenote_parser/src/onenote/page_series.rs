@@ -45,3 +45,29 @@ pub(crate) fn parse_page_series(id: ExGuid, store: &OneStore) -> Result<PageSeri
 
     Ok(PageSeries { pages })
 }
+
+pub(crate) fn scan_page_series<F>(
+    id: ExGuid,
+    store: &OneStore,
+    callback: &mut F,
+) -> Result<bool>
+where
+    F: FnMut(Option<&str>, &mut dyn std::io::Read) -> bool,
+{
+    let object = store
+        .data_root()
+        .get_object(id)
+        .ok_or_else(|| ErrorKind::MalformedOneNoteData("page series object is missing".into()))?;
+    let data = page_series_node::parse(object)?;
+
+    for page_space_id in data.page_spaces {
+        let page_space = store
+            .object_space(page_space_id)
+            .ok_or_else(|| ErrorKind::MalformedOneNoteData("page space is missing".into()))?;
+        if !super::page::scan_page(page_space, callback)? {
+            return Ok(false);
+        }
+    }
+
+    Ok(true)
+}

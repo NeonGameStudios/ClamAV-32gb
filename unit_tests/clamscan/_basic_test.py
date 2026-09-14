@@ -23,6 +23,9 @@ class TC(testcase.TestCase):
         'clam-upack.exe',
         'clam.chm',
         'clam.ppt',
+        'clam-mew.exe',
+        'clam-yc.exe',
+        'clam_cache_emax.tgz',
     }
 
     @classmethod
@@ -118,15 +121,13 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        # clam_cache_emax.tgz deliberately reaches MaxRecursion before a
-        # shallower sibling supplies the ignored test detection. Once that
-        # detection is filtered, the skipped deep branch must remain an error
-        # instead of being reported clean.
+        # Once the raw test signature is filtered, every recognized malformed
+        # fixture must remain an error instead of being reported clean.
         assert output.ec == 2
 
         expected_results = ['Scanned files: 0']
         expected_results.append('Infected files: 0')
-        expected_results.append('clam_cache_emax.tgz: Exceeded max recursion depth ERROR')
+        expected_results.append("clam_cache_emax.tgz: Can't parse data ERROR")
         expected_results.append("Can't parse data ERROR")
         expected_results.append('Total errors: {}'.format(len(TC.testpaths)))
         unexpected_results = ['{}: ClamAV-Test-File.UNOFFICIAL FOUND'.format(testpath.name) for testpath in TC.testpaths]

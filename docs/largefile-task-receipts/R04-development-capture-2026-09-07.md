@@ -9,7 +9,7 @@ platform cases.
 
 Prerequisites verified:
 
-- Canonical source: `/Volumes/512gbNVME/github-external/ClamAV-32gb`.
+- Canonical source: `<repository-root>`.
 - Branch: `largefile-roadmap-qualification`.
 - Rebuilt scanner: `/private/tmp/clamav-largefile-static-build/clamscan/clamscan`.
 - The repository test CVD certificate directory was supplied explicitly;

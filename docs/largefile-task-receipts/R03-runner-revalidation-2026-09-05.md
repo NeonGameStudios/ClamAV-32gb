@@ -7,39 +7,39 @@ Exact prerequisite: an authorized Linux x86-64 runner for the current
 
 Starting identity:
 
-- Canonical local source: `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- Canonical local source: `<repository-root>`
 - Branch: `largefile-roadmap-qualification`
 - Local worktree remains dirty; no remote source mutation was attempted.
 - Host/profile selected from the existing operator record: `sonic1` /
-  `sonic1-camera-key`.
+  `<redacted-login-profile>`.
 
 Prerequisites verified:
 
-- MCP-SSH host discovery returned `sonic1` as a POSIX host with the recorded
+- remote SSH host discovery returned `sonic1` as a POSIX host with the recorded
   full-access-sudo label.
-- `ssh.connection.describe` succeeded for `sonic1-camera-key`; it reported
-  host `192.168.1.216:4456`, login identity `camera`, pinned profile
+- `ssh.connection.describe` succeeded for `<redacted-login-profile>`; it reported
+  host `<redacted-private-address>:4456`, login identity <redacted>, pinned profile
   authorization, and sudo capability.
 
 Observed failing prerequisite:
 
-- `ssh.connection_check(host=sonic1, login_profile=sonic1-camera-key,
+- `ssh.connection_check(host=sonic1, login_profile=<redacted-login-profile>,
   timeout_mode=use_effective_limit, timeout_seconds=30)` returned request
-  `req_7b8410c44ee5457788b686254bf9ee66`.
+  `<redacted-request-id>`.
 - Policy and address resolution passed, but TCP connect timed out after the
   effective 20-second limit. SSH authentication, SFTP and sudo were not
   reached; the check reported `remote_started=false` and
   `remote_may_still_be_running=false`.
 - A bounded retry after the local OLE2 slice used the same authorized
   host/profile with `timeout_seconds=20` and returned request
-  `req_9aba26427f6e4fa9900e873c93b6d27a`. Policy and address resolution again
+  `<redacted-request-id>`. Policy and address resolution again
   passed, while TCP connect timed out at 20 seconds; the remote was not
   started and no SSH/authentication/SFTP phase was reached. A malformed
   diagnostic request using the unsupported `timeout_mode=default` was not
   treated as evidence.
 - A current-state retry using the same host/profile and
   `timeout_mode=use_effective_limit timeout_seconds=30` returned request
-  `req_94fe440904dd40698e9efbdb1cfef9f6`. Policy and address resolution
+  `<redacted-request-id>`. Policy and address resolution
   passed, while the effective 20-second TCP connect again timed out;
   `remote_started=false` and `remote_may_still_be_running=false`.
 

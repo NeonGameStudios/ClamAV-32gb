@@ -7,7 +7,7 @@ development slices; certified release remains blocked.
 
 ## Starting identity
 
-- Canonical source: `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- Canonical source: `<repository-root>`
 - Branch: `largefile-roadmap-qualification`
 - Starting commit: `ff8905891b2b58a66c71859ab2c807cc4dee2dec`
 - Starting worktree: dirty. Before this task, 10 tracked files were modified and 14
@@ -29,14 +29,17 @@ must be triaged as `R00-TRIAGE` before implementation proceeds.
 | 17 `matcher:*` | `R08-MATCHER` / `R09-REQUIRED-UNSUPPORTED` slice | Native matchers, bytecode, YARA, PCRE, fuzzy-image |
 | 41 `feature:*` | `R08-FEATURE` | Build switches, optional feature behavior, and capability output |
 | 80 `parser:*` | `R08-PARSER` / `R09-REQUIRED-UNSUPPORTED` slice | Every scanner dispatch branch and parser-specific cases |
-| 19 ingress rows (`clamd`, `clamdscan`, `clamscan`, `milter`, `on-access`) | `R10-INGRESS` | Front-end parity, reports, queueing, cleanup, and on-access semantics |
+| 23 ingress rows (`clamd`, `clamdscan`, `clamscan`, `milter`, `on-access`) | `R10-INGRESS` | Front-end parity, reports, queueing, cleanup, and on-access semantics |
 | 3 `library:*` ingress rows (`path`, `fd`, `fmap`) | `R10-INGRESS` | Modern library ingress parity |
 | 14 `unsupported:*` | `R09-ALLOWLIST-AUDIT` | Verify deliberate first-release exclusions remain precise |
 
-The counts above cover all 597 manifest rows. The recorded pre-R09 status was 0
-qualified, 143 bounded, 433 pending, and 21 unsupported. The current manifest
-keeps all seven required rows in scope as pending: 0 qualified, 143 bounded,
-440 pending, and 14 allowlisted unsupported. Status labels do not qualify any
+The routing table covers the current 601 manifest rows: 426 `library`, 17
+`matcher`, 41 `feature`, 80 `parser`, 23 ingress, and 14 deliberate
+`unsupported` rows (with the three library ingress rows counted in both their
+ownership and ingress routing). The recorded pre-R09 status was 0 qualified,
+143 bounded, 433 pending, and 21 unsupported. The current manifest keeps all
+seven required rows in scope as pending: 0 qualified, 147 bounded, 440
+pending, and 14 allowlisted unsupported. Status labels do not qualify any
 row.
 
 ## Former required-unsupported escalation (`R09-REQUIRED-UNSUPPORTED`)
@@ -72,7 +75,7 @@ R02 now records the PLAN.md PCRE-phase (40 GiB) and post-PCRE (12 GiB) RSS
 budgets in both runtime and service evidence while preserving the stricter
 32 GiB overall workload bound. R13 real phase sampling remains required.
 
-R04 now maps all 597 capabilities to named required cases and validates the
+R04 now maps all 601 capabilities to named required cases and validates the
 case-record schema. The service qualification path has an explicit,
 fail-closed producer for directly mapped clamscan/clamd/clamdscan workloads,
 and the runtime boundary path binds clamscan file/stdin detection reports to
@@ -115,6 +118,27 @@ metadata narrowing. The call-path analysis is retained in
 `docs/largefile-task-receipts/R08-archive-rust-audit.md`; runtime and
 materialized-edge qualification remain open.
 
+The follow-on R08 contiguous-read source audit found the roadmap-approved
+whole-map PCRE read and two legacy PE unpacker reads for `PESpin` and `yC`.
+The PCRE path is guarded by the effective PCRE limit, contiguous reservation,
+deadline check, and post-match fmap release. The PE reads are preceded by the
+shared `cli_pe_unpack_size_check`, which rejects buffers above the 1-GiB
+individual-allocation ceiling and marks the recognized unpacker incomplete;
+they cannot become unbounded 32-GiB parser allocations. The inspected parser,
+decoder, hash, MIME, script, PDF, XAR, ZIP, and 7-Zip paths otherwise remain
+windowed or spool-backed. Source guards passed for all 601 manifest entries,
+so no parser source change was justified by this audit. Receipt:
+`docs/largefile-task-receipts/R08-contiguous-source-audit-2026-09-13.md`.
+
+After the retained Release tree disappeared, a fresh current-source ARM64
+Release tree was configured with the application targets, built successfully,
+and smoke-tested. The clean fixture returned `OK`/exit 0, the deterministic
+HDB-backed ZIP returned `ClamAV-Test-File.UNOFFICIAL FOUND`/exit 1, and the
+complete configured CTest suite passed 28/28 in 223.36 seconds. Receipt:
+`docs/largefile-task-receipts/R03-current-source-release-smoke-2026-09-13.md`.
+This remains development ARM64 evidence and does not change the certified
+release boundary.
+
 R09 formerly required-unsupported behavior is now development-verified.
 Ignored-type classification no longer suppresses the generic raw matcher,
 RAR/RARSFX backend failures remain explicit parse/incomplete results, the
@@ -139,6 +163,48 @@ scanner.
 R04 now exposes a single `--require-r09` binding gate for both reviewed case
 rows across all seven R09 capabilities; the authoritative repository record
 file remains empty until retained current-source records are produced.
+
+R09 real UnRAR backend probe (2026-09-12 UTC): the current-source ARM64
+Release `clamscan` loaded the build-tree `libclamunrar_iface` module and
+successfully extracted and scanned a valid stored RAR4 member and the same
+member behind a neutral-prefix RAR-SFX wrapper. Both disposable SHA-256 HDB
+scans returned `RarChild.UNOFFICIAL FOUND` with scanner exit 1; the RARSFX
+trace classified `CL_TYPE_RARSFX` at offset 23 before nested extraction. The
+source manifest is
+`638480cc7d781d77029c9022aecd882c62b7cfd5d9737eb43c3d37dacaf7b0db`, the
+scanner hash is
+`b085b063e507da218d1ea5ed3436a91a7572bcf11462c4ec9ff3daa17eaa99c6`, and
+the CMake cache hash is
+`cf3622e210201cf7f5ce1ca92167de34585eb58353441f03d4ecbcf50cb5b3b7`.
+This closes the optional-backend development probe but does not promote the
+two parser rows: complete corpus, full-size, sanitizer, certified x86-64,
+production-CVD/service, Sonic1, and final release evidence remain required.
+Receipt: `docs/largefile-task-receipts/R09-real-unrar-backend-2026-09-12.md`.
+
+The CMake unittest fallback was also made non-vacuous: explicit unittest
+discovery now runs the `unit_tests/clamscan` directory when pytest is absent,
+with a source guard pinning that command. The current-source ARM64 Release
+aggregate exercised 127 clamscan cases and passed with one skip; the broader
+14-test CTest subset and dedicated clamd suite also passed. Stale expectations
+were reconciled with the roadmap's fail-visible ZIP/PE/CVD/PDF contracts, and
+the CVD FIPS test now converts and signs the historical fixture through the
+repository's existing test tooling. Exact evidence is in
+`docs/largefile-task-receipts/R03-clamscan-aggregate-2026-09-12.md`.
+
+The required `parser:CL_TYPE_IGNORED` path now has a production-linked CLI
+regression as well as its direct-library cases. A minimal ID3/MP3 input is
+recognized as ignored: without a matching raw signature it returns explicit
+`Can't parse data`/exit 2, while the same recognized shape with an outer raw
+signature returns `Ignored.Raw.UNOFFICIAL FOUND`/exit 1 and retains the
+incomplete warning. Receipt:
+`docs/largefile-task-receipts/R09-ignored-type-cli-2026-09-12.md`.
+
+The same real-CLI contract is now covered for the recognized Python-compiled
+and AI-model paths: malformed Python and ONNX inputs return parser-specific
+incomplete results with exit 2, while exact outer raw markers return exit 1
+detections. This keeps parser failure visible without allowing recognized
+content to suppress malware matching. Receipt:
+`docs/largefile-task-receipts/R09-parser-policy-cli-2026-09-12.md`.
 
 The capability-record checker now binds each reviewed case suffix to an
 allowed completion contract: clean and valid-complete cases must be complete,
@@ -790,7 +856,7 @@ exact environment are recorded in
 This remains ARM64 development evidence; certified x86-64 Release/sanitizer,
 full-size, fanotify, and production-canary evidence remain open.
 
-The requested MCP-SSH Sonic3 runner was rechecked with the supplied
+The requested remote SSH Sonic3 runner was rechecked with the supplied
 `sonic3-sudo` profile. Profile/capability description succeeded, but the live
 connection diagnostic was denied by `no_matching_allow_rule`; the normal
 read-only `uname -a` command matched the configured full-access rule and then
@@ -1035,7 +1101,7 @@ allowance for `largefile_development_acceptance_capture` was aligned with the
 existing 300-second source/runtime control allowance after the standalone
 capture passed near its former 60-second limit. The source/evidence guard
 sweep passed across all 597 capabilities; no status changed. Receipt:
-`docs/largefile-task-receipts/R03-r10-mcp-ssh-and-ctest-2026-09-09.md`.
+`docs/largefile-task-receipts/R03-r10-remote SSH-and-ctest-2026-09-09.md`.
 
 R06 bounded stream-window refinement (2026-09-09): the vendored OneNote
 reader now rejects oversized stream `read`/`peek` requests before internal
@@ -1843,13 +1909,23 @@ still blocked by the uncached `insta` dependency, while streaming embedded-file
 extraction, certified builds, and full-size R06 qualification remain open.
 
 R09 Python modern marshal-layout correction (2026-09-10): the bounded Python
-compiled-bytecode walker now models Python 3.11+ code objects with five leading
+compiled-bytecode walker now models Python 3.11+ code objects with six leading
 integers and eight object fields, followed by the first-line, line-table, and
-exception-table objects. This corrects the earlier six-leading/nine-object
-interpretation and keeps the modern fixture aligned with CPython's removal of
-`co_nlocals` from the marshalled sequence. Source/evidence controls passed;
+exception-table objects. This corrects the earlier five-leading interpretation
+and keeps the modern fixture aligned with the locally generated CPython 3.11
+marshal sequence, including `co_nlocals`. Source/evidence controls passed;
 direct C execution, independent format-8 evidence, certified builds, and
 production qualification remain open. Receipt:
+`docs/largefile-task-receipts/R09-python-modern-layout-2026-09-10.md`.
+
+R09 Python 3.11 marshal revalidation (2026-09-11): a locally generated CPython
+3.11 marshal stream was inspected and confirmed to contain six leading
+uint32 fields, including `co_nlocals`; the current scanner layout and modern
+regression fixture now use that shape. Host tooling passed 147 tests with 2
+expected skips, the 597-row acceptance map and 14-record schema passed,
+snapshot/shell/diff controls passed, and no linked C execution was claimed
+because the host lacks the required OpenSSL development headers. The Python
+parser remains pending for certified/full-size qualification. Receipt:
 `docs/largefile-task-receipts/R09-python-modern-layout-2026-09-10.md`.
 
 R09 ONNX nested-message kind correction (2026-09-10): the bounded ONNX
@@ -2234,6 +2310,30 @@ format-8, certified Linux x86-64, sanitizer, full-size, production-service,
 R04 acceptance, and final release qualification remain open. Receipt:
 `docs/largefile-task-receipts/R09-python-stringref-2026-09-11.md`.
 
+R09 Python marshal string-reference table correction (2026-09-11 UTC): the
+bounded Python walker now models legacy Python 2 `TYPE_STRINGREF` as an index
+into the separate `TYPE_INTERNED` string table, rather than the Python 3
+`FLAG_REF` object table. The valid regression now uses a legal `t`/`R` pair and
+an additional malformed regression rejects `R 0` without an interned entry.
+The parser also rejects `R|FLAG_REF`, which cannot be both a lookup and a new
+reference-table entry. The host tools suite passed 147 tests with 2 expected skips; source guards,
+snapshot freshness, shell syntax, and diff checks passed. Linked current-source
+C execution, certified Release/sanitizer, independent format-8, full-size,
+production-service, R04 acceptance, and final release qualification remain
+open. Receipt:
+`docs/largefile-task-receipts/R09-python-stringref-table-2026-09-11.md`.
+
+R09 Python marshal reference-registration semantics (2026-09-11 UTC): the
+bounded Python walker now counts `FLAG_REF` only for marshal types that CPython
+actually registers, so flagged singleton values cannot manufacture a later
+valid `TYPE_REF` target. A malformed regression covers `FLAG_REF` on `None`;
+the host tools suite passed 147 tests with 2 expected skips, and source guards,
+snapshot freshness, shell syntax, inventory, and diff checks passed. Linked C,
+certified Release/sanitizer, independent format-8, full-size,
+production-service, R04 acceptance, and final release qualification remain
+open. Receipt:
+`docs/largefile-task-receipts/R09-python-marshal-reference-semantics-2026-09-11.md`.
+
 R10 milter framed-reply and indefinite-timeout semantics (2026-09-11 UTC):
 the structured milter consumer now rejects a second JSON report frame after
 the one authoritative report, and `ReadTimeout=0` now correctly blocks
@@ -2459,3 +2559,2291 @@ source assertions, and `git diff --check` passed. No capability was promoted;
 certified, full-size, production-service, R04-record, and final release
 qualification remain open. Receipt:
 `docs/largefile-task-receipts/R06-reference-stream-short-input-2026-09-11.md`.
+
+R06 OneStore/reference-pairing validation (2026-09-11 UTC): object mapping now
+validates context and object-space reference stream lengths independently and
+requires exact object-reference count parity, rejecting swapped counts and
+surplus object IDs that the prior zip-based mapping could silently accept or
+discard. Rich-text parsing also rejects embedded text-run data without a
+corresponding style entry while preserving valid text-only runs. The
+current-source parser harness passed 69/69, and the bundled valid section
+sample parsed successfully through the production parser source. Host tooling
+passed 147 tests with 2 expected skips; service workload checks passed 28 tests
+with 2 expected Linux-only skips; acceptance map/schema, release-readiness
+policy tests, inventory freshness, targeted source assertions, and
+`git diff --check` passed.
+The monolithic source-guard wrapper was stopped after it exceeded the bounded
+local run without output and is not claimed as passed. No capability was
+promoted; certified, sanitizer, full-size, production-service, R03-runner,
+R04-record, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R06-reference-stream-kind-2026-09-11.md`.
+
+R06 OneNote page-content extraction walker (2026-09-11 UTC): the shared
+OneNote extraction walker now visits embedded files represented directly as
+page contents, and the compatibility iterator reuses that walker instead of
+maintaining an outline-only duplicate. The current-source OneNote host
+harness passed 21/21; the bundled sample parsed successfully but contains no
+embedded-file fixture. Host tooling passed 147 tests with 2 expected skips;
+service workload checks passed 28 tests with 2 expected Linux-only skips; the
+597-row acceptance map/schema, snapshot, inventory, targeted guards, and
+`git diff --check` passed. Full consumer checking remains blocked before
+compilation by the offline `clam-sigutil` tag reference. No capability was
+promoted; certified, sanitizer, full-size, production-service, R03-runner,
+R04-record, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R06-page-content-walker-2026-09-11.md`.
+
+R06 OneNote recursive outline walker (2026-09-11 UTC): extraction now follows
+the complete parsed outline tree, including `OutlineItem::Group` and nested
+`OutlineElement::children()`, so embedded files below groups or child
+elements reach both scanner and compatibility APIs. The current-source
+OneNote host harness passed 21/21; host tooling and service workload evidence
+from the preceding walker slice remained green at 147/2 expected skips and
+28/2 expected Linux-only skips. Acceptance map/schema, snapshot, inventory,
+targeted guards, and `git diff --check` passed. No capability was promoted;
+certified, sanitizer, full-size, production-service, R03-runner, R04-record,
+and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R06-outline-walker-2026-09-11.md`.
+
+R06 OneNote complete content walker (2026-09-11 UTC): the shared extraction
+walker now also visits page-title outlines and table rows/cells, in addition
+to page-level files, outline groups, and child elements. This closes concrete
+parsed-content omissions without changing the scanner/compatibility callback
+contract. The current-source OneNote harness passed 21/21; host tooling passed
+147 tests with 2 expected skips; service workload checks passed 28 tests with
+2 expected Linux-only skips; acceptance map/schema, snapshot, refreshed
+inventory, targeted guards, shell syntax, and `git diff --check` passed. No
+capability was promoted; certified, sanitizer, full-size, production-service,
+R03-runner, R04-record, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R06-complete-content-walker-2026-09-11.md`.
+
+R09 GGUF empty metadata-array element type (2026-09-11 UTC): the GGUF
+structural walker now validates an array's declared element type before
+iterating its elements, so an undefined type in a zero-count array cannot
+become a clean result. The required-unsupported regression
+`test_ai_model_gguf_empty_metadata_array_type_is_fail_visible` requires
+`CL_EPARSE`, no alert, and non-cacheability. Current-source linked C execution
+is not available in this environment; no capability was promoted and
+certified, sanitizer, full-size, production-service, R04-record, and final
+release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R09-gguf-empty-array-type-2026-09-11.md`.
+
+R06 reader-backed OneNote blob streaming (2026-09-11 UTC): stream-backed
+FSSHTTPB `ObjectDataBlob` values now use private temporary-file storage in
+bounded 64 KiB reader windows and expose a reader to the scanner-facing
+attachment walker, avoiding a second whole-payload `Vec<u8>` before ClamAV
+temporary-spool scanning. The parser's current-source unit profile passed
+70/70, the current-source consumer harness passed 21/21, host tooling passed
+147 tests with 2 expected skips, service workload checks passed 28 tests with 2
+expected Linux-only skips, and acceptance/schema, shell-syntax, and diff
+checks passed. The regular package check remains blocked before compilation by
+the uncached offline `insta` dev dependency; full current C/Rust consumer
+compilation remains blocked by the missing `openssl/ssl.h` header. No
+capability was promoted; certified, sanitizer, full-size, production-service,
+Sonic1, R04-record, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R06-reader-backed-blob-stream-2026-09-11.md`.
+
+R06 OneStore object-group data-size validation (2026-09-11 UTC): the modern
+OneNote parser now requires each inline or excluded object group's data size to
+match its declaration, preventing malformed object metadata from being
+accepted with a mismatched payload. The current-source parser unit profile
+passed 72/72, including focused mismatch and excluded-object coverage;
+targeted source guards and shell syntax checks passed. No capability was
+promoted; certified, sanitizer, full-size, production-service, Sonic1,
+R04-record, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R06-object-group-size-validation-2026-09-11.md`.
+
+R03 Sonic1 current-source build (2026-09-11 UTC): the checksum-verified
+current checkout configured and built successfully on the available Linux
+x86-64 Docker environment with workflow-equivalent static and roadmap test
+flags enabled. The resulting `clamscan` reported
+`ClamAV 1.5.3-largefile-devel`; a repository-HDB clean scan returned `OK`,
+and a temporary NDB signature produced the expected detection exit 1. The
+static-linked `check_clamav` target then passed focused `required_unsupported`
+(47), OneNote (2 + 2 Rust consumer), CryptFF (3), and GIF/fuzzy-image (16)
+cases. The image initially lacked the locked `clam-sigutil` Git source, so
+the dependency set was fetched into a persistent remote cache; the build then
+completed offline. This is development evidence only: no certified runner,
+sanitizer, full-size 32-GiB, production-CVD, daemon/service, or final-canary
+evidence was established. No capability was promoted and release readiness
+remains blocked. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-build-2026-09-11.md`.
+
+R06 OneNote parser offline verification (2026-09-11 UTC): the current
+checksum-verified Sonic1 source was tested in a named x86-64 Docker container
+with the retained offline Cargo cache. `cargo test --offline --all-targets`
+exited 0 with 72 unit tests and 5 integration tests, including the reader
+path's logical-input-above-former-cap and short-read parity cases. The Docker
+image used stable Rust 1.97.1; no Rust address instrumentation, certified
+runner, materialized-large-file, production-CVD/service, R04-record, or final
+release evidence was claimed. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R06-onenote-parser-offline-2026-09-11.md`.
+
+R03 Sonic1 CTest control revalidation (2026-09-11 UTC): repaired three
+control-contract issues found by the first targeted CTest run. The runtime
+evidence verifier now has a bounded Python ELF header fallback for minimal
+containers without `file`; the clamscan admission fixture explicitly disables
+AlertExceedsMax to assert the operational exit-2 limit result; and the exact
+32-GiB Check case now binds the repository's established `*_ex2` strong
+indicator/report status and has a 900-second default for its three sparse
+passes. The two quick controls passed 2/2, and the configured exact CTest
+control passed 1/1 in 346.02 seconds. Final static Check binary:
+`fc7fd546c89c55a4ced07e061eaa645e999adeb5009fafa2e9cfa91bce419f69`. No
+capability was promoted; certified-runner, sanitizer, production-service,
+R04-record, and final-canary evidence remain open. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-build-2026-09-11.md`.
+
+R05 Sonic1 current-source oversize FILDESREPORT revalidation (2026-09-11
+UTC): current-source `clamd` and `clamscan` targets built successfully and the
+exact sparse 32-GiB+1 descriptor was exercised through `FILDESREPORT` with
+`MaxFileSize=32G` and `MaxScanSize=64G`. Both alerts-off and alerts-on runs
+passed the exact pre/post PONG and cleanup controls with zero allocated,
+parser, matcher, logical, and temporary work. Alerts off returned
+`LIMIT_INCOMPLETE`/`CL_EMAXSIZE`; alerts on returned
+`DETECTION_TERMINATED` with the exact `Heuristics.Limits.Exceeded.MaxFileSize`
+alert. Bundle SHA-256:
+`c86af2c4164d46219c52ad426b4c52ad0700dc9a0c70c66b619907b92cbc516a`.
+Development evidence only; certified-runner reproduction, full materialized
+release fixtures, R04 records, and final qualification remain open. No
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R05-fixture-oracle.md`.
+
+R03 Sonic1 static test-link and scan-API revalidation (2026-09-11 UTC): the
+complete encrypted-fixture aggregate was materialized (53 expected inputs),
+then the current Check target was corrected to avoid the shared `libclamav`
+path and to bind the static UnRAR implementation. The large scan-API group
+also received a truthful 60-second default timeout while preserving its `T`
+override. The final static binary passed `cl_scan_api` 836/836 with zero
+failures/errors, including encrypted RAR and MHTML streaming coverage;
+`required_unsupported` passed 47/47; OneNote passed 2/2 plus Rust consumer
+2/2; CryptFF passed 3/3; and GIF passed 16/16. No capability was promoted;
+certified, sanitizer, full-size, production-service, R04-record, and final
+release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-build-2026-09-11.md`.
+
+R03 Sonic1 full current-source Check-suite revalidation (2026-09-11 UTC): the
+AutoIt fixtures were materialized and the rebuilt static `check_clamav` suite
+was run with the CMake test trust store at
+`/candidate/unit_tests/input/signing/verify`. The corrected run completed
+`cl_suite` with 2,889 checks, 0 failures, and 0 errors, including the strict
+malformed-CVD archive case and the previously slow PDF/API cases. An earlier
+one-failure result used `/candidate/certs`, which is not the unit-test signing
+store; it was discarded as harness setup evidence. No capability was
+promoted; certified, sanitizer, full-size, production-service, R04-record, and
+final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-build-2026-09-11.md`.
+
+Repository consistency revalidation (2026-09-11 UTC): aligned two stale
+OneNote source-guard tokens with the current reader-backed implementation,
+refreshed the generated large-file inventory, and passed the full
+`tools/largefile_source_guards.sh` sweep. The sweep covered all 597 capability
+entries plus release-readiness, acceptance-record, snapshot/PDF evidence, and
+schema checks. The snapshot freshness check, 13 snapshot unit tests, shell
+syntax checks, and `git diff --check` also passed. No capability was promoted;
+release readiness remains blocked pending certified, full-size,
+production-service, and final-canary evidence. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-build-2026-09-11.md`.
+
+R03 Sonic1 fresh C ASan/UBSan revalidation (2026-09-11 UTC): the isolated
+`RelWithDebInfo` sanitizer build completed with exit 0 and produced scanner,
+daemon, client, and native test artifacts with both sanitizer runtimes linked.
+ASan found an uninitialized `tc_largefile` test-harness pointer during the
+first run; initializing it to `NULL` fixed the pre-test crash. The runner then
+restored the exact tracked HDB fixture at the CMake-embedded `/src` path and
+materialized the three AutoIt fixtures. Focused controls passed `cl_api` 518/518,
+`autoit_map` 9/9, and `autoit_corpus` 1/1. The configured sanitizer CTest
+entry passed 1/1 in 132.17 seconds with no ASan/UBSan diagnostic. Remote tested
+source hash was `4a81f43c0caf099034398171ec731e969801c4a69e387820dcdc1a48f855fb36`;
+current local working-tree test-source hash was
+`307b81d2e00225ef60bceb4041dfa4536598136974ec8561f3aa90cf8294ea6b`, so this
+remains disposable development evidence rather than revision-bound final
+qualification. Rust address instrumentation, certified/full-size/production
+evidence, R04 records, and final canary remain open. No capability was
+promoted. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-build-2026-09-11.md`.
+
+R06 private OneNote reader-spool hardening (2026-09-11 UTC): stream-backed
+object-data spools now request owner-only `0600` permissions on Unix, and the
+reader unit profile adds partial-spool cleanup and permission regressions.
+`git diff --check` and the source-guard syntax check passed. Local offline
+Cargo execution remains blocked by the uncached `insta` dev dependency; the
+updated private source was not exported to Sonic1 after MCP-SSH rejected that
+destination as unauthorized. No capability was promoted; linked runtime,
+certified, full-size, production-service, R04-record, and final release
+qualification remain open. Receipt:
+`docs/largefile-task-receipts/R06-reader-spool-private-2026-09-11.md`.
+
+R06 zero-length OneNote reader-blob admission (2026-09-11 UTC): a declared
+zero-byte stream-backed object now stays in memory as an empty value instead
+of creating and immediately deleting a disk spool. The reader regression
+asserts the no-spool representation under the existing serialized temp-file
+profile, and the source guard pins the branch. No capability was promoted;
+full crate, linked runtime, sanitizer, certified, full-size, production-
+service, R04-record, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R06-reader-zero-blob-2026-09-11.md`.
+
+R09 fuzzy-image null-context status admission (2026-09-11 UTC): the
+reader-backed image fuzzy-hash FFI now maps its explicit null scan-context
+error to `CL_ENULLARG` instead of the generic parse status. A focused Rust
+regression pins the mapping, preserving the distinction between invalid API
+arguments and malformed image input. No capability was promoted; full crate,
+linked current-source execution, sanitizer, certified, full-size,
+production-service, R04-record, and final release qualification remain open.
+Receipt:
+`docs/largefile-task-receipts/R09-fuzzy-image-null-context-2026-09-11.md`.
+
+R09 ONNX TensorProto enum boundaries (2026-09-11 UTC): the structural ONNX
+walker now rejects out-of-range `data_type` and `data_location` enum values
+instead of treating valid protobuf varints as a complete recognized model. A
+valid current upper-bound case and two fail-visible invalid-enum cases are
+registered in both ordinary and required-unsupported development groups.
+Source guards and snapshot/inventory consistency checks passed; linked C
+execution remains pending because this host lacks Docker access and the
+OpenSSL development header. No capability was promoted; certified, sanitizer,
+full-size, production-service, R04-record, and final release qualification
+remain open. Receipt:
+`docs/largefile-task-receipts/R09-onnx-enum-boundaries-2026-09-11.md`.
+
+R09 ONNX AttributeProto boundaries (2026-09-11 UTC): the structural ONNX
+walker now requires an attribute name and rejects an out-of-range
+`AttributeProto.type` discriminator instead of treating valid protobuf wire
+types as a complete nested attribute. A valid named/typed case and two
+fail-visible semantic-boundary cases are registered in both ordinary and
+required-unsupported development groups. The host suite passed 147 tests with
+2 expected skips; the full source-guard, snapshot, inventory, shell-syntax,
+and diff checks passed. A current-source ARM64 Docker build then linked the
+test and application binaries; `cl_suite/required_unsupported` passed 56/56,
+`cl_suite/cl_api` passed 519/519, and CTest passed `libclamav`, `clamscan`,
+and `sigtool` 3/3. The configured large-file CTest controls also passed 8/8.
+This is development evidence only: the container is not the certified Linux
+x86-64 profile and large-file defaults were disabled. No capability was
+promoted; certified, sanitizer, full-size, production-service, R04-record,
+and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R09-onnx-attribute-boundaries-2026-09-11.md`.
+
+R09 ONNX TensorProto required data type (2026-09-11 UTC): the structural
+ONNX walker now rejects a TensorProto that omits its required `data_type`
+field, and a fail-visible empty-tensor fixture is registered in both ordinary
+and required-unsupported development groups. The current-source ARM64 Docker
+build completed at 100%; linked `cl_suite/required_unsupported` passed 57/57,
+`cl_suite/cl_api` passed 520/520, and the updated CTest integration/control
+selection passed 11/11. Source guards, regenerated inventory, snapshot,
+syntax, and diff checks passed. This remains development evidence only, with
+large-file defaults disabled on a non-certified architecture; no capability
+was promoted and certified, full-size, production-service, R04-record, and
+final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R09-onnx-tensor-required-field-2026-09-11.md`.
+
+R06 modern OneNote reader-over-cap admission (2026-09-11 UTC): the current
+production `scan_onenote()` path was exercised against the valid modern
+`New Section 1.one` sample through a bounded fmap callback with a logical
+length of 256 MiB plus one byte. The linked ARM64 Docker `rust_onenote` suite
+passed 3/3, including this reader-over-former-cap case, and the updated CTest
+integration/control selection passed 11/11 after inventory regeneration. The
+test does not allocate or read the zero-filled tail and asserts clean,
+cacheable completion. The complete current CTest matrix subsequently passed
+15/15, including the Rust package, `clamd`, and `freshclam` targets. This is
+development evidence only: materialized
+late-child/offset evidence, certified Linux x86-64, sanitizer, full-size,
+production-service, Sonic1, and final release qualification remain open; no
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R06-modern-onenote-reader-over-cap-2026-09-11.md`.
+
+R03 Rust sanitizer CTest runner (2026-09-12 UTC): the current-source ARM64
+sanitizer build exposed that Cargo's Rust test executable needs the
+compiler-selected ASan/UBSan runtimes preloaded, while Cargo and rustc must
+not inherit that preload. `cmake/FindRust.cmake` now derives the actual target
+name and runtime paths and supplies a target-specific Cargo runner. The direct
+sanitized Rust unit-test binary passed 159/159, the reader-backed OneNote
+sanitizer case passed 3/3, and the corrected `libclamav_rust` CTest target
+passed 1/1. A direct run of the complete `cl_suite/cl_api` group then passed
+520/520 in 10 minutes 23 seconds; all three action-source tests passed under
+sanitizers, and the `traverse_to: Failed open payload` text was the expected
+replaced-symlink diagnostic. The broader selected sanitizer CTest timeout is
+therefore not an action-test failure. The Python test executor now forwards
+keyword arguments correctly, and a restricted `libclamav` CTest invocation
+with `CK_RUN_CASE=cl_api` passed 1/1 in 606.66 seconds, completing all 520
+checks under the sanitizer-specific 1200-second allowance. The unfiltered
+`cl_suite` remains open for a certified runner; this ARM64 development
+evidence does not satisfy the nightly Rust, certified x86-64, full-size,
+production-service, R04-record, fanotify, or final release gates. Receipt:
+`docs/largefile-task-receipts/R03-rust-sanitizer-runner-2026-09-12.md`.
+
+R06 OneNote corpus attachment over-cap reader (2026-09-12 UTC): the linked
+current-source ARM64 build now exercises the real attachment-bearing
+`clam.exe.2010.one` corpus through a bounded fmap callback with a logical
+length of 256 MiB plus one byte. The new production `scan_onenote()` test
+uses a two-layer child scan and a private `OneNote.Reader.MZ` signature, so
+its 4/4 `rust_onenote` result demonstrates reader-backed extraction and
+nested child detection rather than raw container matching. The core normal
+application matrix passed 5/5. An unfiltered normal `libclamav` attempt was
+blocked by the disposable Docker filesystem during its unrelated large
+temporary-fixture writes; the focused OneNote case passed after redirecting
+disposable temp output to host-backed storage. Source manifest and diff
+checks passed. No capability was promoted; certified x86-64, sanitizer
+coverage for this new case, full-size, production-service, R04-record, and
+final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R06-reader-corpus-attachment-over-cap-2026-09-12.md`.
+
+R06/R00 normal-suite storage and path portability follow-up (2026-09-12
+UTC): the correctly configured current-source ARM64 `libclamav` CTest target
+passed 2865 checks with 0 failures and 0 errors using host-backed temporary
+storage. The run exposed and fixed a real partial-message spool defect: its
+private directory now has owner execute permission. The long-path CVD test
+now preserves its >1023-character logical path through a short physical
+symlink chain, avoiding the Docker Desktop bind-mount `ENAMETOOLONG` limit
+while retaining the path-construction coverage. The current source manifest
+is `8c6ad5642f35ea7d8812d4011636fe90db589b9522eb45d74d346bd1f7d70c89`.
+No capability was promoted; certified x86-64, sanitizer, full-size,
+production-service, R04-record, and final release qualification remain open.
+Receipt:
+`docs/largefile-task-receipts/R06-reader-corpus-attachment-over-cap-2026-09-12.md`.
+
+R07 independent bytecode format-8 prerequisite audit (2026-09-12 UTC): the
+active disposable ARM64 container has GCC but no `clang`, `llvm-as`, or `llc`,
+and the repository has no independent format-8 compiler output or `.bc`/`.ll`
+fixture. The existing generated `bytecode.cud` is a legacy ClamAV database,
+not the required independent format-8 artifact. Per the roadmap, this slice
+is explicitly blocked on an authorized compatible compiler or independently
+compiled artifact plus source identity/hash; nothing was installed,
+downloaded, or externally contacted. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R07-format8-artifact-prerequisite-2026-09-12.md`.
+
+R03 current-host qualification preflight (2026-09-14 UTC): the roadmap
+host preflight exited 1 with `host preflight requires Linux x86-64 (found
+Darwin/arm64)`. The ARM64 Docker environment remains development-only;
+the exact 32-GiB qualification TCase cannot be enabled or claimed here.
+R07 also still lacks an independently compiled CBC format-8 artifact or
+compatible compiler. No gate was bypassed and no capability was promoted.
+Receipt:
+`docs/largefile-task-receipts/R03-current-host-preflight-2026-09-14.md`.
+
+R06 OneNote parser temporary-budget integration (2026-09-12 UTC):
+stream-backed `ObjectDataBlob` extents now reserve each written 64-KiB reader
+window through the shared scan temporary-byte budget and release the exact
+reservation when the parser-owned spool drops. The production scanner passes
+the current layer's temporary directory into the parser, keeping parser
+scratch files under the scan-owned location. The isolated current-source
+OneNote parser suite passed 77/77, the linked `rust_onenote` group passed 4/4,
+and the full correctly configured normal `libclamav` CTest target passed
+2865 checks with 0 failures and 0 errors. Current source manifest:
+`9d682db828b0ba68d7ab8a92956e9b11c44dfe2c9879c6b2af9f4399e27af644`.
+This remains ARM64 development evidence; no capability was promoted and
+certified, sanitizer, full-size late-child, production-service, Sonic1, and
+final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R06-reader-corpus-attachment-over-cap-2026-09-12.md`.
+
+R08 7-Zip linked revalidation (2026-09-12 UTC): the current source configured
+and linked the production static `check_clamav` target in the existing AArch64
+Linux Docker toolchain. Focused current-source execution passed `7z` 28/28,
+`7z_map` 4/4, `7z_cleanup` 1/1, `7z_sfx` 3/3, and `7z_sfx_corpus` 1/1, all with
+zero failures and errors. This includes the sticky-completion regression and
+the materialized embedded-child corpus path. Source manifest:
+`0efece36509e28c0d0268e553acd3b48d8a37035a5896edc14c32e41433901e6`.
+This remains development evidence only; certified x86-64, sanitizer,
+production-CVD/service, resource, full-size, Sonic1, and final release
+qualification remain open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R08-7z-linked-revalidation-2026-09-12.md`.
+
+R08 archive-family linked sweep (2026-09-12 UTC): current-source focused
+execution passed ARJ (`arj_map` 8/8, `arj_compressed` 2/2, `arj` 14/14,
+`arjsfx` 5/5), EGG (`egg_metadata` 1/1, `egg_map` 12/12, `egg_sfx` 3/3),
+MSPack/CAB (`mspack_map` 8/8, `mspack` 8/8, `cabsfx` 3/3), AutoIt
+(`autoit_map` 9/9, `autoit_corpus` 1/1, `autoit_sfx` 1/1), and NSIS
+(`nulsft_map` 2/2, `nulsft` 8/8, `nulsft_corpus` 1/1), all with zero failures
+and errors. This strengthens AArch64 development evidence for parser
+admission, extraction, cleanup, status, and nested-child paths; no capability
+was promoted. Certified x86-64, sanitizer, production-CVD/service, resource,
+full-size, Sonic1, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R08-archive-family-linked-sweep-2026-09-12.md`.
+
+R08 ZIP linked sweep (2026-09-12 UTC): current-source focused execution
+passed `zip_map` 3/3, `zip_sfx` 5/5, and `zip` 19/19, all with zero failures
+and errors. The groups cover central-directory and callback status, weak and
+confirmed SFX admission, ZIP64 malformed input, sticky completion, decoder
+finalization, and exact nested-child corpus matching. This remains AArch64
+development evidence; certified x86-64, sanitizer, production-CVD/service,
+resource, full-size, Sonic1, and final release qualification remain open. No
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R08-zip-linked-sweep-2026-09-12.md`.
+
+R08 bounded solid EGG stream extraction (2026-09-12 UTC): the production
+streaming EGG path now replays a solid archive's shared stream and forwards
+only the requested member range for STORE and independently framed BZIP2
+blocks, while preserving per-block size and CRC validation. Solid DEFLATE and
+LZMA now keep one decoder across block boundaries and are covered by two-block
+late-member regressions; solid AZO remains an explicit fail-visible path.
+Current-source AArch64 execution passed `egg_map` 16/16, including stored,
+BZIP2, persistent-DEFLATE, and persistent-LZMA late-member extraction;
+source guards, the regenerated inventory, capability manifest, release
+readiness, acceptance map, diff check, and snapshot check passed. Source
+manifest: `8f8cb5a60596514421f3724007d0f756fd1c5dddca024328ed015ae858e5db34`.
+This remains development evidence only; certified x86-64, sanitizer,
+production-CVD/service, resource, full-size, Sonic1, and final release
+qualification remain open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R08-egg-solid-stream-2026-09-12.md`.
+
+R08 targeted-test fixture dependency (2026-09-12 UTC): `check_clamav` now
+depends on the complete decrypted fixture aggregate already used by the
+service test. Removing the two generated RAR outputs and rebuilding only the
+target regenerated both files and restored the expected 53/53 fixture count.
+The complete current-source ARM64 CTest matrix then passed 15/15 in 156.15
+seconds, including all 2,915 `libclamav` checks. Source guards, snapshot
+freshness, and diff checks passed; no capability was promoted. This remains
+development evidence only, with certified x86-64, sanitizer, full-size,
+production-CVD/service, Sonic1, and final release gates open. Receipt:
+`docs/largefile-task-receipts/R08-egg-solid-stream-2026-09-12.md`.
+
+R03 current-source Release matrix (2026-09-12 UTC): the current source built
+successfully in Release mode with shared and static libraries, application,
+UnRAR, milter, on-access, and tests enabled. The private-entry-point harness
+used the static library while application binaries used the shared build. The
+source manifest is `257282d76e128071449421a7eab0fdfe1ea2901e8b4f7c3da2e9e2483b96ae43`
+and the Release CMake cache is
+`ccb75198e830592855c11379070858f637ec45bdbcb97d923c4ca4ce9cf80ab3`. The
+identity-bound CTest matrix passed 16/16 in 156.91 seconds, including
+libclamav, Rust, clamscan, clamd, freshclam, sigtool, milter, ingress, and all
+large-file control/evidence tests. This is AArch64 Docker development evidence
+only; no capability was promoted and certified x86-64, sanitizer, full-size,
+production-CVD/service, Sonic1, and final release gates remain open. Receipt:
+`docs/largefile-task-receipts/R03-current-source-release-2026-09-12.md`.
+
+R08 MBR zero-start partition admission (2026-09-12 UTC): MBR and EBR now
+reject typed partition entries beginning at LBA zero before nested dispatch;
+the direct regression is fail-visible through `CL_EFORMAT`, incomplete-scan,
+and non-cacheable context state. Current-source ARM64 Release execution
+passed `mbr` 12/12, `mbr_corpus` 1/1, and `partition_map` 5/5. Source guards,
+inventory, snapshot, and diff checks passed after refresh. Source manifest:
+`26b5c4569dc7ae5cf6f3465f93bfd42e0a2a3e074898cd94ebb408550669bfee`. The
+complete current-source ARM64 Release CTest matrix then passed 16/16 in
+122.00 seconds after rebuilding all affected targets. This remains
+development evidence only; no capability was promoted and certified
+x86-64, sanitizer, full-size, production-CVD/service, Sonic1, resource, and
+final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R08-mbr-zero-start-admission-2026-09-12.md`.
+
+R10 clamd `ReadTimeout=0` stream semantics (2026-09-12 UTC): the daemon now
+preserves the zero timeout sentinel through `INSTREAM` parsing and handling,
+so a client may pause after a partial chunk and still complete a valid stream.
+The focused current-source ARM64 Release clamd test passed 1/1 in 32.50
+seconds, including 17 Python cases covering both legacy and structured
+zero-timeout pause/resume paths. Host-side source guards, snapshot freshness,
+and diff checks passed. The remaining current-source ARM64 Release CTest
+targets, excluding the separately run `clamd` and source-guard tests, then
+passed 14/14 in 130.10 seconds; together these targeted runs cover all 16
+registered CTest targets without claiming one combined resource-limited
+invocation. A later full ARM64 CTest attempt passed `libclamav` and
+`largefile_poc_fail_closed` but was resource-killed with exit 137 while
+starting `largefile_source_guards`; it is not counted as a complete matrix
+pass. Source manifest:
+`064540666ce4a83742c68e5e0aedcf5f1673e41b6019f305841de64470ebf499`. This
+remains development evidence only; no capability was promoted and certified
+x86-64, sanitizer, full-size, production-CVD/service, Sonic1, resource, and
+final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R10-clamd-read-timeout-zero-2026-09-12.md`.
+
+R10 daemon receive deadline edge (2026-09-12 UTC): the per-descriptor receive
+loop now expires a positive `ReadTimeout` at `now >= timeout_at` instead of
+granting an extra polling interval at the exact deadline, while preserving the
+zero sentinel for indefinite reads. Current-source ARM64 Release `clamd` and
+`clamdscan` rebuilt successfully, and the registered `clamd` target passed
+1/1 in 32.91 seconds with the 17-case stream-timeout suite. The source guard,
+snapshot, and diff checks passed. The positive-deadline regression is included
+in the 18-case daemon suite. The resulting source manifest is
+`04aa4a408357b560a7a6d139cc5ba382bfa1a8d74a3c19ff12005b9a4381c730`; no
+capability was promoted. Certified x86-64, sanitizer, full-
+size, service, resource, Sonic1, R04, and final release qualification remain
+open. Receipt: `docs/largefile-task-receipts/R10-read-deadline-edge-2026-09-12.md`.
+
+R10 structured service capture (2026-09-12 UTC): the current-source ARM64
+Release binaries completed 24 R04-shaped service records: six direct clamd
+structured report modes and clamdscan `fdpass`/`stream`, each with clean,
+detection, and limit outcomes. The result distribution was eight
+`COMPLETE`, eight `DETECTION_TERMINATED`, and eight `LIMIT_INCOMPLETE`; all
+three daemon lifecycle records proved PING health before and after cases and
+clean socket/PID-file removal. The independent acceptance-record verifier
+passed all 24 records. The first attempt failed closed because the test CA
+directory was not supplied; rerunning with the repository's `/src/certs`
+directory resolved that configuration prerequisite. This is development-only
+ARM64 evidence and does not promote capabilities; certified x86-64, sanitizer,
+full-size, production-CVD, resource, Sonic1, and final release qualification
+remain open. Receipt:
+`docs/largefile-task-receipts/R10-structured-service-capture-2026-09-12.md`.
+
+R04/R10 development service capture certificate default (2026-09-12 UTC):
+`tools/largefile_development_service_capture.py` now defaults to the
+repository test CA and rejects missing or symlinked certificate directories,
+matching the existing clamscan development capture. Its focused test passed
+8/8. After rebuilding current-source ARM64 Release `clamd` and `clamdscan`, a
+fresh capture without an explicit certificate argument wrote 24 R04 records;
+the independent verifier passed all 24. This is development-only evidence and
+does not promote capabilities; certified x86-64, sanitizer, full-size,
+production-CVD, resource, Sonic1, and final release qualification remain open.
+Receipt: `docs/largefile-task-receipts/R04-development-service-certs-default-2026-09-12.md`.
+
+R04 clamscan development acceptance capture (2026-09-12 UTC): the current-
+source ARM64 Release `clamscan` produced six fresh R04 records for file and
+stdin clean, detection, and max-file-size limit edges. The repository CA was
+resolved by default, exact detection offset `25` and the exact
+`Heuristics.Limits.Exceeded.MaxFileSize` reason were bound into the records,
+and the independent acceptance verifier passed all 6. Retained evidence is
+`/tmp/clamav-dev-acceptance-20260912f`; this is development-only evidence and
+does not promote capabilities or satisfy certified, full-size, production-CVD,
+resource, Sonic1, or final release qualification. Receipt:
+`docs/largefile-task-receipts/R04-development-acceptance-capture-2026-09-12.md`.
+
+R10 development clamdscan client-mode matrix (2026-09-12 UTC): the capability
+manifest and case map now explicitly represent default, fdpass, stream,
+multiscan, stream-multiscan, and fdpass-multiscan client ingress. The corrected
+development capture bound the option tuples to their string capability IDs and
+produced 36 fresh R04 records: six direct structured clamd modes and six
+clamdscan modes, each with clean, exact detection, and MaxFileSize-limit
+outcomes. The independent verifier passed all 36; focused mode tests passed
+8/8 and the case map now covers 601 capabilities. Retained evidence is
+`/tmp/clamav-dev-service-20260912i`. This remains ARM64 development evidence;
+certified x86-64, full-size, production-CVD, sanitizer, resource, fanotify,
+Sonic1, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R10-development-client-mode-matrix-2026-09-12.md`.
+
+R13 on-access fanotify development run (2026-09-12 UTC): `clamonacc` now uses
+`AT_FDCWD` for fanotify pathname marking, path-based continuous/multiscan
+commands now enter the structured response path instead of being rejected as
+zero-length submissions, and on-access logs distinguish malware detections
+from incomplete/error outcomes. The existing ARM64 Release development
+container rebuilt `clamonacc`; a privileged disposable run observed real
+`FAN_OPEN` events in both default continuous and fd-passing modes, with clamd
+returning the exact detection, and exercised the on-access size boundary. The
+same event path also reached `INSTREAMREPORT`, `MULTISCANREPORT`, and
+`ALLMATCHSCANREPORT` for `--stream`, `--multiscan`, and `--allmatch`; each
+returned the exact detection. The source guard protects all three fixes. The
+same kernel rejected `FAN_OPEN_PERM` marking with `EINVAL`, so no
+prevention/permission evidence was claimed or promoted. Certified x86-64,
+full-size, production-CVD, sanitizer, resource, Sonic1, and final release
+qualification remain open. Receipt:
+`docs/largefile-task-receipts/R13-onaccess-fanotify-development-2026-09-12.md`.
+
+R13 malformed-event follow-up (2026-09-12 UTC): the on-access worker now
+handles a queued fanotify event with its fanotify bit set but no copied
+metadata object without dereferencing NULL after the scan helper rejects the
+context. The current-source ARM64 `clamonacc` target rebuilt successfully;
+binary hash is
+`39a36a8c582fee4e54c563ca09f08bd7493e7e06459283cfe37a80796d2d12de` and the
+source-manifest hash is
+`5519e24e83b0ac9354f5d0d7814545cd3bb63d18cd325a2c9173ebd2dba7129c`.
+Prior valid-event traces are kept bound to their pre-follow-up binary; no
+permission capability was promoted. Source guards and the ARM64 compile are
+the current verification, while certified x86-64, full-size, production-CVD,
+sanitizer, resource, Sonic1, and real permission-event qualification remain
+open. Receipt:
+`docs/largefile-task-receipts/R13-onaccess-fanotify-development-2026-09-12.md`.
+
+R13 pathname-boundary follow-up (2026-09-12 UTC): the fanotify event loop now
+uses the complete pathname buffer for `/proc/self/fd` resolution and rejects
+an actually truncated result before scanning or submitting a path to clamd.
+A real privileged ARM64 monitoring run over a 1,238-byte nested pathname
+logged the refusal, produced no report for the truncated path, and shut down
+the on-access queue cleanly. The rebuilt `clamonacc` hash is
+`6478856599524219535c8dfcc3bc464ffcbf8e1746e1d7fd42bc200ed3bb2bd7`, with
+source manifest
+`66c49bc37c2cd23b1b85ca646cae1d71025ee76e9dc62562a52a5becd3a9fe36`.
+Source guards and the target build passed; prior valid-event traces remain
+bound to their earlier binary. No permission capability was promoted.
+Certified x86-64, full-size, production-CVD, sanitizer, resource, Sonic1,
+and real permission-event qualification remain open. Receipt:
+`docs/largefile-task-receipts/R13-onaccess-fanotify-development-2026-09-12.md`.
+
+R13 pathname-event recovery follow-up (2026-09-12 UTC): an oversized
+resolved fanotify pathname is now rejected as one event and the loop continues
+after successful close/deny recovery; only a failed recovery response remains
+fatal. The current-source ARM64 monitoring run refused the 1,238-byte fixture,
+kept clamonacc live, and then scanned a later unprivileged normal event through
+`CONTSCANREPORT`, detecting the exact test signature. Final `clamonacc` hash:
+`f724742900bd5cef8103e5f17d65f647c61373e129028c9178cc9597df9bfb21`;
+source manifest:
+`8d19f02597a5541ce99002b8be7da2a0e60ea97f71fb3d2b8382eba5900cccd4`.
+Source guards and the existing current-source build passed; no permission
+capability was promoted. Certified x86-64, full-size, production-CVD,
+sanitizer, resource, Sonic1, and real permission-event qualification remain
+open. Receipt:
+`docs/largefile-task-receipts/R13-onaccess-fanotify-development-2026-09-12.md`.
+
+R13 final-source pathname recovery revalidation (2026-09-12 UTC): the
+current-source `clamonacc` target was rebuilt and rerun after the source and
+inventory refresh. The 1,238-byte fixture was refused, the monitor remained
+live, and a later unprivileged normal event reached `CONTSCANREPORT` and
+returned the exact test detection. The staged binary hash remained
+`f724742900bd5cef8103e5f17d65f647c61373e129028c9178cc9597df9bfb21`; the
+current-tree source manifest hash, regenerated after the inventory and
+tracked evidence refresh, is
+`6831c6997594987bc608aff005204832ff4399f48d79b8ad6dd665a7dcbac7d8`.
+The final clamonacc and clamd log hashes are
+`8ca59c77d04e4736d6e4fd8e446244dd5c5a3b959136dabe633b3efb8967a160` and
+`33adfbfdf0ca38724366d6dbd6c0d070550387d30f96d0cb54c87f60d684fd39`.
+Source guards and snapshot freshness checks passed. This remains ARM64
+development monitoring evidence; no permission capability was promoted and
+certified x86-64, full-size, production-CVD, sanitizer, resource, Sonic1,
+and real permission-event qualification remain open. Receipt:
+`docs/largefile-task-receipts/R13-onaccess-fanotify-development-2026-09-12.md`.
+
+R13 queue-teardown ownership audit (2026-09-12 UTC): queued on-access events
+now retain explicit ownership until dispatch, and queue-owned events remaining
+at shutdown release their path/metadata and close or deny any retained
+fanotify descriptor through the shared fail-closed helper. Dispatched events
+are detached before worker-pool submission so queue teardown cannot free them
+while a worker is using them. The current-source ARM64 `clamonacc` target
+rebuilt successfully; the current-tree source-manifest hash is
+`439eef3f46a381e4dbe6b185d3d7336b5b3cdda867ee5d8d734870e4e98811d9`.
+The full source guards and refreshed snapshot passed. This remains an
+implementation/cleanup audit without real permission-event evidence; no
+capability was promoted. Certified x86-64, full-size, production-CVD,
+sanitizer, resource, Sonic1, and final permission qualification remain open.
+Receipt:
+`docs/largefile-task-receipts/R13-onaccess-fanotify-development-2026-09-12.md`.
+
+R03 current-source CTest matrix (2026-09-12 UTC): the existing ARM64
+Release build was checked in three bounded invocations covering all 16
+registered CTest targets. `libclamav`, `libclamav_rust`, `clamd`, clamscan,
+freshclam, sigtool, milter, and all large-file release-control tests passed;
+each invocation exited 0. The build identity was bound to current-tree source
+manifest `439eef3f46a381e4dbe6b185d3d7336b5b3cdda867ee5d8d734870e4e98811d9`.
+This is current-source ARM64 development verification only: no capability was
+promoted, and certified x86-64, sanitizer parity, full-size materialized
+workloads, production databases, resource/fanotify qualification, and final
+release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R03-current-source-ctest-2026-09-12.md`.
+
+R13 inotify record-boundary and local-help audit (2026-09-12 UTC): the
+dynamic-directory event loop now bounds every inotify header/name length to
+the current read and requires an in-record NUL before any path string use;
+validated records always advance, including unknown watch descriptors and
+nameless events. A malformed tail is discarded visibly without unchecked
+pointer advancement. `clamonacc --help` now exits 0 with usage output before
+daemon configuration parsing or privileged fanotify startup. The current
+source rebuilt `clamonacc` warning-clean, source guards passed, and the
+focused large-file CTest control slice passed 3/3. Source manifest:
+`7f6c7387913854f6527445a602e10521f46c36d2e594a592921e2156fd054ac4`;
+`clamonacc` hash:
+`0d24a6ed8b91796d7cc504c1844f06763c5e55d82da4f8ce06e66ff597e32a6e`.
+This remains ARM64 development evidence without kernel-injected malformed
+inotify or real fanotify permission-event qualification. Receipt:
+`docs/largefile-task-receipts/R13-onaccess-fanotify-development-2026-09-12.md`.
+
+R13 inotify hierarchy-state audit (2026-09-12 UTC): the recursive watch
+bookkeeping now rejects zero/oversized watch limits before doubled allocation,
+empty hierarchy paths before final-byte indexing, and stale watch descriptors
+before lookup-table clearing. The current-source ARM64 `clamonacc` target
+rebuilt warning-clean; source guards and the focused large-file CTest slice
+passed (`3/3`). Inventory: 44,670 lines, SHA-256
+`6b965f6fd0c565940b580a44f7d5564b8bbe3a3e4de17b2a4b629ad9a68e0813`.
+Source manifest:
+`825ae463132f8c095a87fd77702e09f4f6b3a815e1b04dc308da033a8b194f1b`;
+`clamonacc` hash:
+`b2d0ef4ba1725d5dcdc21dbd772b32b13d201f475ffea2b6be98726eb29393bd`.
+This remains ARM64 development evidence without real fanotify permission
+qualification; no capability was promoted. Receipt:
+`docs/largefile-task-receipts/R13-onaccess-fanotify-development-2026-09-12.md`.
+
+R03 current-source CTest revalidation (2026-09-12 UTC): after the R13
+inotify hierarchy-state changes, all 16 registered current-source ARM64
+Release CTest targets were rerun in three bounded serial invocations and
+passed: `3/3` (`libclamav`, `libclamav_rust`, `clamd`), `10/10` release-control
+and milter targets, and `3/3` (`clamscan`, `freshclam`, `sigtool`). The source
+manifest is
+`825ae463132f8c095a87fd77702e09f4f6b3a815e1b04dc308da033a8b194f1b`; current
+`clamonacc` is
+`b2d0ef4ba1725d5dcdc21dbd772b32b13d201f475ffea2b6be98726eb29393bd`.
+This is development verification only; certified x86-64, sanitizer, full-size
+materialized, production-CVD, resource, and real fanotify permission evidence
+remain open. Receipt:
+`docs/largefile-task-receipts/R03-current-source-ctest-2026-09-12.md`.
+
+R13 process-tree service resource measurement (2026-09-12 UTC): service
+qualification now follows every active clamd, clamdscan, queue-client, and
+milter root through Linux procfs `PPid` records and sums each descendant's
+`VmRSS` once. The service evidence verifier requires the explicit
+`procfs-process-tree-vmrss` marker, sampler identity, and a nonzero process
+count at the measured peak; daemon-only evidence is rejected. A real
+parent/child sampler regression, the service-evidence verifier, source guards,
+runtime-evidence controls, and acceptance schema all passed in the current
+ARM64 container (focused CTest `5/5`, exit 0). The complete 18-test current
+source CTest set then passed in bounded slices (`3/3`, `12/12`, and `3/3`),
+each with exit 0. Current source-manifest SHA-256 is
+`7ed2dc136662b3a8b86ed0727f720d007dfd47cef6862fe4109b078c941594c9`.
+This remains instrumentation/verifier development evidence: no full-size
+service run or certified x86-64 resource qualification was claimed, and PCRE
+phase, PSS/swap, production-CVD, Sonic1, fanotify permission, sanitizer-parity,
+and release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R13-process-tree-resource-sampler-2026-09-12.md`.
+
+R13 PCRE runtime phase markers (2026-09-12 UTC): the full-map matcher now
+emits debug-only `before-pcre`, `pcre`, and
+`post-pcre-before-deep-parse` events after the subject is mapped and released;
+the parser dispatch boundary emits `deep-parse`. The independent PCRE proof
+verifier now reads the retained process log and rejects missing, out-of-order,
+or release-unbound markers. The existing Linux ARM64 Release build rebuilt
+`clamscan`, the PCRE evidence regression passed 10/10, and the focused current
+source CTest slice passed 5/5. Source manifest:
+`ae5a9f964fcc2ec91e3f613ca63030e0aeb3d0d3c43cd3bd8dfb64fa7b4a32f1`;
+tracked inventory: 44,674 lines, SHA-256
+`c38bf34d1f45d55640bed835724b322e162c914d745160f9e3d0833f3dc3aab4`.
+A disposable PCRE scan emitted the matcher markers and exact custom alert,
+but its test-CVD parser ordering was intentionally not accepted as a
+qualification sequence. This remains instrumentation/verifier development
+evidence; full-size PCRE, certified x86-64, RSS/PSS/swap, production-CVD,
+sanitizer, Sonic1, fanotify permission, and release qualification remain
+open. Receipt:
+`docs/largefile-task-receipts/R13-pcre-runtime-markers-2026-09-12.md`.
+
+R13 process-tree memory and I/O metrics (2026-09-12 UTC): the service
+qualification runner now retains aggregate Linux procfs samples for VmRSS,
+PSS (`smaps_rollup`), VAS, VmSwap, minor/major faults, and read/write I/O for
+all active service roots and descendants. The producer and independent
+verifier require the exact expanded schema, reject missing selected-process
+metrics, enforce PSS/VAS relationships and zero observed swap, and compare all
+counter peaks with the summary. The real Linux sampler regression, service
+evidence regression, source guards, and focused CTest passed; focused CTest
+was `3/3` in the existing ARM64 development container. Retained log:
+`/private/tmp/clamav-r13-metrics-focused-20260912.log`, SHA-256
+`f73414d70e3c04da6d3561416c8cfb7810147b076d1743e45346aadf9f4f36a4`.
+Current source manifest SHA-256:
+`f8130229ca77715c899163e61172416aaec77ad1b0f90c32347d0e5047cffa8a`;
+tracked inventory remains 44,674 lines, SHA-256
+`c38bf34d1f45d55640bed835724b322e162c914d745160f9e3d0833f3dc3aab4`.
+This is development instrumentation evidence only: it does not establish
+historical OOM-event proof, per-parser R14 canary records, PCRE phase
+qualification, full-size production-CVD service behavior, sanitizer parity,
+real fanotify permission responses, or release readiness. Receipt:
+`docs/largefile-task-receipts/R13-process-tree-metrics-2026-09-12.md`.
+
+R13 cgroup-v2 OOM observability (2026-09-12 UTC): service qualification now
+captures a pre-run cgroup identity and `memory.events` baseline, retains
+`oom`/`oom_kill` counters with each process-tree resource sample, rejects
+cgroup identity changes or counter increases, and checks the final counters
+after service cleanup. The real Linux cgroup-v2 sampler regression, service
+evidence regression, source guards, process-tree metrics regression, and
+focused CTest passed (`4/4`) in the existing ARM64 development container.
+Retained log: `/private/tmp/clamav-r13-oom-focused-20260912.log`, SHA-256
+`0834965d39db0774f5c1893272b4fd83c4b0b14ee4e5d10745b3863c37a1b4ba`; the
+final post-identity-binding focused log is
+`/private/tmp/clamav-r13-final-focused-20260912.log`, SHA-256
+`f75cf7b5d94ad45158adc7a88949db2d0a1319146b408d6b72dffa20538e39f1`.
+Current source-manifest SHA-256:
+`e10f52fa7a6fa26bf32f4a1fb61061a0c0173027b78e4200d5e61679d5bf3eb3`;
+tracked inventory remains 44,674 lines, SHA-256
+`c38bf34d1f45d55640bed835724b322e162c914d745160f9e3d0833f3dc3aab4`.
+This remains development evidence only; full-size certified x86-64,
+per-parser canary, PCRE phase, sanitizer-parity, production-CVD, Sonic1,
+fanotify permission, and release-readiness requirements remain open. Receipt:
+`docs/largefile-task-receipts/R13-cgroup-oom-observability-2026-09-12.md`.
+
+R14 per-case resource contract (2026-09-12 UTC): acceptance records now have
+an independent `provenance/acceptance-case-resources.tsv` sidecar contract for
+per-case process-tree RSS/PSS/VAS, swap, page faults, I/O, temporary peaks,
+OOM counters/cgroup identity, and PCRE phase peaks. The sidecar binds
+source/build/config/platform identities, requires certified Linux x86-64
+procfs sampling, rejects nonzero swap and invalid memory relationships, and
+requires every requested capability case. `--bind` adds the sidecar hash and
+retained artifact path to every case record; authoritative release readiness
+now requires this binding, while development captures remain allowed to omit
+it. The new producer samples a live command tree through the existing procfs
+and cgroup-v2 samplers, tracks recursive temporary usage, supports ordered PCRE
+phase markers, validates before writing, and preserves command exit results.
+The full host tool suite passed 156 tests with 2 expected Linux-only skips.
+Reused current-source ARM64 CTest passed `4/4`: source guards, acceptance
+schema, resource schema, and resource-capture producer. A real ARM64 Linux
+capture sampled a live process but correctly failed the certified x86-64 gate;
+a fresh retry confirmed no invalid sidecar row was emitted. Current source
+manifest: 1,693 lines, SHA-256
+`a1fd05c7b23dfe0b12e2ca8278dcc759508a4a9d27a0791e1cdb2ad9769ba946`.
+Certified x86-64, full-size, production-CVD, sanitizer, Sonic1, fanotify
+permission, and final release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R14-per-case-resource-contract-2026-09-12.md`.
+
+R04 acceptance resource producer binding (2026-09-12 UTC): the service
+acceptance producer now accepts an independently captured resource sidecar and
+binds it through the strict R14 verifier when requested. `--require-resource-
+sidecar` requires the default sidecar, while existing development captures
+remain unchanged without the option. The producer integration regression
+passes 9/9, including exact sidecar hash/path binding; the reconfigured
+current-source focused CTest passed 6/6, including both direct producer
+targets. The service qualification runner now captures separate live
+daemon-plus-client process-tree peaks for each mapped workload, finalizes the
+sidecar after the complete build identity is written, and requires that
+sidecar during authoritative record production. The full source-guard sweep
+passed after this integration. Current source manifest: 1,693 lines, SHA-256
+`f2db32e87842c846da4d8064bc546930f7d7d9787a2ec676db12e07b6e9d0faf`. No
+capability was promoted; certified x86-64, format-8 compiler/artifact, full-size,
+production-CVD, sanitizer, Sonic1, fanotify permission, and final release
+evidence remain open. Receipt:
+`docs/largefile-task-receipts/R04-acceptance-resource-producer-binding-2026-09-12.md`.
+
+R03 current-source rebuild and full CTest revalidation (2026-09-12 UTC): after
+the service per-case resource integration, the current mounted source was
+reconfigured and rebuilt successfully in the existing ARM64
+`rust:1.97-bookworm` container. The complete configured CTest invocation passed
+`24/24` in `203.56` seconds, covering the library, Rust, CLI, daemon,
+freshclam, sigtool, milter, acceptance/evidence, procfs, OOM, and service
+evidence suites. The container was stopped after verification. Current source
+manifest SHA-256:
+`f2db32e87842c846da4d8064bc546930f7d7d9787a2ec676db12e07b6e9d0faf`. This is
+development verification only; certified x86-64, full-size, sanitizer,
+production-CVD, Sonic1, PCRE/queue, fanotify permission, and final release
+evidence remain open. Receipt:
+`docs/largefile-task-receipts/R03-current-source-ctest-2026-09-12.md`.
+
+R11 development service vertical slice (2026-09-12 UTC): the current-source
+Release `clamd` and `clamdscan` binaries exercised all six structured clamd
+report commands and six client modes over clean, detection, and small-limit
+fixtures. The live run produced 36 bound R04 records: 12 `COMPLETE`, 12
+`DETECTION_TERMINATED`, and 12 `LIMIT_INCOMPLETE`; the independent case-map
+validator accepted all 36, and each outcome group proved daemon health and
+cleanup. This remains Linux-aarch64 development evidence only; certified
+x86-64, exact 32-GiB, resource-sidecar, production-CVD/Sonic1, sanitizer,
+fanotify permission, and final release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R11-development-service-vertical-slice-2026-09-12.md`.
+
+R13 on-access thread-pool admission (2026-09-12 UTC): `clamonacc` now rejects
+zero, negative, and out-of-range `OnAccessMaxThreads` values before startup,
+and the bundled thread-pool constructor refuses zero-worker pools and native
+allocation-size overflow. This prevents an accepted fanotify event from
+entering a queue with no worker able to deliver its response. A direct
+one-worker execution regression and an application-level invalid-config test
+passed; the reconfigured current-source ARM64 Release CTest matrix passed
+`26/26`, and the final source guards, snapshot freshness check, and diff check
+passed. This is development verification only; certified x86-64, exact
+32-GiB, sanitizer, resource-sidecar, production-CVD/Sonic1, and real fanotify
+permission evidence remain open. Receipt:
+`docs/largefile-task-receipts/R13-onaccess-threadpool-admission-2026-09-12.md`.
+
+R13 on-access thread-pool lifecycle (2026-09-12 UTC): the bundled pool now
+fails visibly when `pthread_create()` rejects a worker, waits on a condition
+variable rather than spinning forever for startup, and joins every created
+worker before releasing queue or pool memory. A Linux linker-wrapped `EAGAIN`
+regression proved failed startup returns promptly; the normal one-worker
+execution and invalid `OnAccessMaxThreads` admission cases remained green.
+The current-source ARM64 Release build was reconfigured and the full CTest
+matrix passed `26/26` in `168.09` seconds; source guards, snapshot freshness,
+and diff checks also passed. Current source-manifest SHA-256:
+`38e4a79612532a9360240686f59ba86c3d2ada046a82db8843bca6ec5bc57a77`.
+This remains development verification only; certified x86-64, exact 32-GiB,
+sanitizer, resource-sidecar, production-CVD/Sonic1, and privileged fanotify
+permission evidence remain open. Receipt:
+`docs/largefile-task-receipts/R13-onaccess-threadpool-lifecycle-2026-09-12.md`.
+
+R10 clamd thread-pool admission (2026-09-12 UTC): clamd now starts a needed
+worker before publishing a dispatch item, rejects `pthread_create()` failure,
+and restores consumed capacity when reserved admission cannot be completed.
+This closes the prior path where a successful dispatch could leave a request
+permanently queued with no worker. The Linux linker-wrapped `EAGAIN`
+regression covered ordinary dispatch failure, reserved-dispatch retry after
+reservation restoration, and normal callback execution. The regenerated
+current-source ARM64 Release build passed the complete CTest matrix `27/27` in
+`175.01` seconds; source guards, snapshot freshness, and diff checks also
+passed. Current source-manifest SHA-256:
+`9d9c01e047b48b64d127ea9eea68feb96d769a70da1783998bb07494eada79dc`.
+This remains development verification only; certified x86-64, exact 32-GiB,
+sanitizer, resource-sidecar, production-CVD/Sonic1, and privileged fanotify
+permission evidence remain open. Receipt:
+`docs/largefile-task-receipts/R10-clamd-threadpool-admission-2026-09-12.md`.
+
+R10 milter connection-pool startup (2026-09-12 UTC): `cpool_init()` now
+returns an explicit status, rejects monitor-thread creation failure, cleans up
+the partial socket pool, and prevents `clamav-milter` from continuing with an
+unusable non-null pool. A Linux linker-wrapped `EAGAIN` regression covered
+failed startup, successful monitor startup, and cleanup; the existing milter
+quota and protocol tests remained green. The regenerated current-source ARM64
+Release build passed the complete CTest matrix `28/28` in `272.76` seconds;
+source guards, snapshot freshness, and diff checks also passed. Current source
+manifest SHA-256:
+`38c4763f8df4a5ba68f9523cfa5ddd72cf3933c42dc6ac47da61a0be7654765c`.
+This remains development verification only; certified x86-64, exact 32-GiB,
+sanitizer, resource-sidecar, production-CVD/Sonic1, and privileged fanotify
+permission evidence remain open. Receipt:
+`docs/largefile-task-receipts/R10-milter-connpool-startup-2026-09-12.md`.
+
+R10 clamd numeric limits and queue arithmetic (2026-09-12 UTC): generic
+numeric configuration options now use checked `strtoll()` conversion, and
+clamd validates `MaxThreads` and `MaxQueue` before narrowing them to thread-pool
+types. Queue-limit derivation now detects recursion/thread multiplication and
+descriptor-budget overflow, avoids low-limit unsigned underflow, and caps the
+effective queue at `INT_MAX`. Parser and arithmetic edge-case unit tests were
+added. The regenerated current-source ARM64 Release build passed the complete
+CTest matrix `28/28` in `215.36` seconds; source guards, snapshot freshness,
+and diff checks also passed. Current source-manifest SHA-256:
+`4a5c5e7544f752830511a833b4467106708e2b7c848b4862c4c18e6695107546`.
+This remains development verification only; certified x86-64, exact 32-GiB,
+sanitizer, resource-sidecar, production-CVD/Sonic1, and privileged fanotify
+permission evidence remain open. Receipt:
+`docs/largefile-task-receipts/R10-clamd-limit-arithmetic-2026-09-12.md`.
+
+R08 HFS+ ExtentOverflow resolution (2026-09-12 UTC): HFS+ fork extraction now
+resolves checked ExtentOverflow B-tree records after the eight inline extent
+descriptors are exhausted. Records are bound to fork type, catalog file ID,
+and logical starting block; node offsets, key/descriptor geometry, volume
+coordinates, leaf-chain termination/counts, cycles, missing records, recursive
+ExtentOverflow overflow, and scan deadlines remain fail-visible and
+non-cacheable. A production-linked synthetic regression follows both a
+catalog leaf chain and a nine-block data fork through overflow-only blocks and
+reaches the exact child signature. Focused `hfs_fork` passes `2/2`, and the
+current-source ARM64 Release CTest matrix passes `28/28` in `165.40` seconds;
+source guards, inventory freshness, status snapshot freshness, and
+`git diff --check` also pass. Current source-manifest SHA-256 is recorded in
+the receipt as
+`436caac47eb38f1de6470bba94e1ca61ba30b80cf3f7cf018eb897caf46300ce`. This remains development
+verification only; complete HFS+ corpus, sanitizer/leak, certified Linux
+x86-64, production-CVD/service, materialized-large-file/resource, Sonic1,
+and final parser/release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R08-hfsplus-extent-overflow-2026-09-12.md`.
+
+R08 HFS+ ExtentOverflow chain-tail hardening (2026-09-12 UTC): a matching
+overflow record is now retained while the complete declared leaf chain is
+validated, so a self-linked or otherwise malformed tail cannot be bypassed.
+The production-linked `hfs_fork` case remains `2/2`, and the linked `libclamav`
+CTest target reports `2,918` checks with zero failures and errors. Source
+guards, snapshot freshness, and `git diff --check` pass. The current source
+manifest is 1,697 entries with SHA-256
+`52802577d6c2fe851d98801dc257a6c11f85ea70f961b35c6d1844fb3486878c`. This is
+development verification only; complete HFS+ corpus, sanitizer/leak, certified
+Linux x86-64, production-CVD/service, materialized-large-file/resource,
+Sonic1, and final parser/release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R08-hfsplus-extent-chain-tail-2026-09-12.md`.
+
+R08 HFS+ resource-fork ExtentOverflow coverage (2026-09-12 UTC): the
+production-shaped HFS+ fixture now resolves separate data- and resource-fork
+records after their eight inline extents, while retaining the self-linked-tail
+fail-closed regression. Focused `hfs_fork` passes `2/2`, and the linked
+`libclamav` CTest target reports `2,918` checks with zero failures and errors.
+The current 1,697-entry source manifest is
+`e22940b895d3f25943495ce72737e9a41a592891e28861861918ead460d32b0`. This is
+development verification only; complete HFS+ corpus, sanitizer/leak,
+certified Linux x86-64, production-CVD/service, materialized-large-file/
+resource, Sonic1, and final parser/release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R08-hfsplus-resource-fork-overflow-2026-09-12.md`.
+
+R08 HFS+ derived-inventory reconciliation (2026-09-12 UTC): the first
+post-resource-fork full CTest run passed 27/28 targets; the only failure was
+the source guard rejecting the stale tracked inventory. The generated
+`docs/largefile-inventory.tsv` was refreshed to 44,877 lines and matched a
+second independent generator run byte-for-byte. The repaired source guard
+passed as CTest `1/1`, and a complete rerun then passed `28/28` configured
+CTest targets in `332.49` seconds. The 601-entry capability validator,
+snapshot freshness, and `git diff --check` also passed. The current
+1,697-entry source manifest is
+`6fb259e48bb36879ff8464826a0922779259bceaa98fd4787af9974b19af3b6b`; the
+inventory SHA-256 is
+`4f6c40a1ce3148c023d7968e0170c20c91d6c082bde661a358c227476537f22`. This is
+development bookkeeping evidence only and does not promote HFS+ or change the
+release boundary. Receipt:
+`docs/largefile-task-receipts/R08-hfsplus-inventory-refresh-2026-09-12.md`.
+
+R08 no-mempool bytecode allocation ownership (2026-09-12 UTC): the
+`DISABLE_MPOOL` bytecode API now applies bounded zero-size and
+`CLI_MAX_ALLOCATION` admission, tracks successful `cli_max_malloc()` buffers
+in the context, and frees them during context reset; a focused regression
+covers rejected sizes and ownership. The ARM64 Release static variant built
+all applications and test targets, passed the focused bytecode suite `25/25`,
+and passed the complete configured CTest matrix `28/28` in `229.29` seconds,
+including the full `libclamav` suite at `2,919` checks. The refreshed 44,885-line
+inventory and source guards passed. The post-change 1,697-entry source
+manifest SHA-256 is
+`3d146e1b5ab18ac7e158cac6e96b88c39952a1eca8ff4ceb1d4e0bd405a7b13e`. This
+remains development verification only; certified Linux x86-64, exact 32-GiB,
+sanitizer, production-CVD/service, Sonic1, and final allocator-variant
+qualification remain open. Receipt:
+`docs/largefile-task-receipts/R08-bytecode-no-mpool-2026-09-12.md`.
+
+R06 modern OneNote CTest timeout correction (2026-09-12 UTC): the current
+Release-linked `rust_onenote` suite passed `4/4`, including the logical
+256 MiB-plus-one corpus attachment streaming case. A fresh full CTest run
+identified that the deterministic service-evidence verifier exceeded the
+generic 60-second CTest allowance without an internal failure; its allowance
+was raised to the documented 300 seconds. The focused verifier then passed
+`1/1` in 219.53 seconds, and the complete Release matrix passed `28/28` in
+282.83 seconds. Current source-manifest SHA-256 is
+`0eb96c128b88b2f3bfa379dbdacbac84923e9dde49d6acd8912f8bc0af4bc721` across
+1,697 entries. This remains development verification only; certified Linux
+x86-64, exact 32-GiB, sanitizer, production-CVD/service, Sonic1, privileged
+fanotify, materialized-edge, and final release qualification remain open.
+Receipt: `docs/largefile-task-receipts/R06-modern-onenote-citest-timeout-2026-09-12.md`.
+
+R03/R08 focused sanitizer follow-up (2026-09-12 UTC): the disposable ARM64
+`rust:1.97-bookworm` container built the current source with C ASan/UBSan.
+With the repository's existing CVD test certificates supplied, the
+production-linked `rust_onenote` suite passed `4/4`, HFS+ `hfs_fork`
+passed `2/2`, and the full bytecode suite passed `88/88`, all with leak
+detection enabled and no sanitizer diagnostics. The HFS+ fixture's first
+mapped scan is now closed before replacement, removing the reported 312-byte
+fixture leak. The source guards, 601-entry capability manifest, snapshot and
+acceptance validators, and `git diff --check` passed after derived-inventory
+regeneration. Current source-manifest SHA-256:
+`206d81a16538b85a5fe0fc9ac5c622b4163eb185e942b87854fda5fc3a98ca89`
+(1,697 entries). This remains focused ARM64 development evidence; certified
+Linux x86-64, nightly Rust sanitizer, exact 32-GiB/materialized resource,
+production-CVD/service, Sonic1, privileged fanotify, and final release
+qualification remain open. Receipt:
+`docs/largefile-task-receipts/R08-hfsplus-extent-overflow-2026-09-12.md`.
+
+R03 Rust sanitizer runner target selection (2026-09-13 UTC): removed the
+duplicate x86-64-only Cargo runner environment from `unit_tests/CMakeLists.txt`
+so `cmake/FindRust.cmake` is the single target-aware implementation. Also
+gated the `largefile_clamscan_admission` CTest registration on `ENABLE_APP`,
+allowing library-only test configurations to generate without a missing
+`clamscan` target. The full application ARM64 CMake configure completed with
+static tests and C ASan/UBSan flags. Generated CTest evidence uses
+`CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUNNER` and Cargo target
+`aarch64-unknown-linux-gnu`; the focused `libclamav_rust` CTest passed `1/1`
+in `59.74` seconds. Source guards and `git diff --check` passed. An alternate
+toolchain image lacked an OpenSSL development header, but the preserved full
+sanitizer container supplied the existing headers and completed the test; no
+package installation occurred. Current 1,697-entry source manifest SHA-256 is
+`83c55df9a3eb4ca55ac7b6fa0f24f24d6aa88adc50320c69fd60a2c187c7746d`. This is
+ARM64 development/configuration evidence only; certified x86-64, exact
+32-GiB/materialized resources, production service/CVD, privileged fanotify,
+Sonic1, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R03-rust-sanitizer-runner-2026-09-12.md`.
+
+R13 on-access configuration cleanup (2026-09-13 UTC): the rebuilt ARM64
+sanitizer test caught a 91-byte `onas_init_context` leak when invalid
+`OnAccessMaxThreads` configuration returned before the normal cleanup label.
+`clamonacc` now routes option parsing, logger, daemon-config, worker-count,
+and daemonize failures through its existing context cleanup, preserving the
+fail-closed exit codes. The rebuilt focused admission test passed `1/1` with
+LeakSanitizer, and the four on-access/clamd/milter pool tests passed `4/4` in
+`5.15` seconds. The surrounding application/release-control subset was
+`26/27` before the fix, with the leak as its only failure. Current 1,697-entry
+source manifest SHA-256:
+`5a2baef1ece4b0d64579fb8380b03f62b751e79dd584342c318c9fcd9aeec593`. This is
+ARM64 development sanitizer evidence only; certified x86-64, exact
+32-GiB/materialized resources, privileged fanotify, production service/CVD,
+Sonic1, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R13-onaccess-config-cleanup-2026-09-13.md`.
+
+R03 current application sanitizer revalidation (2026-09-13 UTC): rebuilt the
+full current-source application and test tree at single-job concurrency to
+100%, including `clamscan`, `clamd`, `clamonacc`, `clamav-milter`, `sigtool`,
+and the added pool binaries. The four pool/configuration tests pass `4/4`
+under C ASan/UBSan with LeakSanitizer; the rebuilt application, milter,
+release-control, and previously failing on-access configuration evidence
+combine to cover the non-aggregate 27-test subset `27/27`. The bounded
+`CK_RUN_SUITE=cl_suite CK_RUN_CASE=cl_api` CTest invocation passes all `520`
+checks in `610.67` seconds without sanitizer diagnostics. The unfiltered
+`libclamav` wrapper remains an honest `1,200`-second timeout on this ARM64
+development host, so remaining Check TCase groups must stay bounded rather
+than being relabeled as a pass. Current 1,697-entry source manifest SHA-256:
+`5a2baef1ece4b0d64579fb8380b03f62b751e79dd584342c318c9fcd9aeec593`. This is
+development evidence only; certified x86-64, exact 32-GiB/materialized
+resources, production service/CVD, privileged fanotify, Sonic1, and final
+release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R03-rust-sanitizer-runner-2026-09-12.md`.
+
+R03 bounded parser-family sanitizer follow-up (2026-09-13 UTC): current-source
+ARM64 sanitizer CTest TCase invocations passed `1/1` for `rust_onenote`,
+`hfs_fork`, `rust_alz`, `rust_lha`, `7z`, `zip`, `pdf`, `required_unsupported`,
+`parser_regressions`, `rust_map`, `7z_sfx`, `hfs_map`, and `mspack`, with no
+ASan/UBSan diagnostics. The complete `cl_api` TCase passed all `520` checks in
+`610.67` seconds. A one-hour container lifetime expired between two runs; the
+same preserved container was restarted and the remaining cases then passed.
+This retains bounded current-source development evidence without treating the
+unfiltered suite timeout as a pass. Certified x86-64, exact
+32-GiB/materialized resources, production service/CVD, privileged fanotify,
+Sonic1, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R03-rust-sanitizer-runner-2026-09-12.md`.
+
+R03 bounded sanitizer corpus follow-up (2026-09-13 UTC): 25 additional
+current-source ARM64 C ASan/UBSan CTest invocations passed `1/1`, covering
+PDF, XAR, PE, GIF, Rust LHA, HWP3/HWP OLE2, AutoIt, 7-Zip SFX, TIFF, PNG,
+JPEG, CVD, crypt, ELF, TNEF, graphics, callback, hash, and map paths. No
+sanitizer diagnostics were emitted. The source-manifest helper was rerun at
+1,697 entries with SHA-256
+`5a2baef1ece4b0d64579fb8380b03f62b751e79dd584342c318c9fcd9aeec593`.
+This is development evidence only and does not replace the unfiltered Check
+suite, certified x86-64, exact 32-GiB/materialized, production service/CVD,
+privileged fanotify, Sonic1, independent format-8, or final release gates.
+Receipt: `docs/largefile-task-receipts/R03-bounded-sanitizer-corpus-followup-2026-09-13.md`.
+
+R03 public scan-API sanitizer follow-up (2026-09-13 UTC): the current-source
+ARM64 C ASan/UBSan `cl_scan_api` TCase completed all `836` Check assertions
+with zero failures and zero errors. CTest passed `1/1` in `1,039.67` seconds
+under the configured timeout, with no sanitizer diagnostics. This remains
+development evidence and does not replace certified x86-64, exact
+32-GiB/materialized, production service/CVD, privileged fanotify, Sonic1,
+independent format-8, or final release qualification. Receipt:
+`docs/largefile-task-receipts/R03-bounded-sanitizer-corpus-followup-2026-09-13.md`.
+
+R03 bytecode runtime sanitizer follow-up (2026-09-13 UTC): the correctly
+selected `bytecode/arithmetic` TCase completed `52` checks with zero failures
+and zero errors, passing `1/1` in `68.74` seconds without ASan/UBSan
+diagnostics. A prior `cl_suite/arithmetic` selector produced zero checks and
+was discarded. This is development runtime evidence only and does not replace
+the independent format-8 artifact required by R07 or any certified/final
+qualification gate. Receipt:
+`docs/largefile-task-receipts/R03-bounded-sanitizer-corpus-followup-2026-09-13.md`.
+
+R03 additional parser-family sanitizer follow-up (2026-09-13 UTC): ten more
+current-source ARM64 C ASan/UBSan CTest invocations passed `1/1` for `mail`,
+`mail_partial`, `mhtml`, `tar`, `tar_member`, `iso`, `udf_corpus`,
+`apm_corpus`, `gpt_corpus`, and `zip_sfx`; no sanitizer diagnostics were
+emitted. This adds MIME, archive, filesystem, partition, and SFX development
+coverage only; certified x86-64, exact 32-GiB/materialized, production
+service/CVD, privileged fanotify, Sonic1, independent format-8, and final
+release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R03-bounded-sanitizer-corpus-followup-2026-09-13.md`.
+
+R03 current application smoke (2026-09-13 UTC): the preserved current-source
+ASan/UBSan Docker build rebuilt the application and registered test targets to
+100% with exit 0, including `clamscan`, `clamd`, `clamdscan`, `clamonacc`,
+`clamav-milter`, `sigtool`, and `clambc`. `clamscan` returned `OK` for a clean
+fixture and exit 1 with the expected `ClamAV-Test-File.UNOFFICIAL FOUND`
+detection for the generated `clam.zip` fixture. This is local ARM64
+development smoke evidence only; certified x86-64, exact
+32-GiB/materialized, production CVD/service, privileged fanotify, Sonic1,
+independent format-8, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R03-application-smoke-2026-09-13.md`.
+
+R10 development service revalidation (2026-09-13 UTC): the current-source
+ASan/UBSan build completed the development service capture with exit 0 and 36
+validated records: six structured `clamd` commands and six `clamdscan` modes,
+each over clean, detection, and limit fixtures. Outcomes were 12
+`COMPLETE`, 12 `DETECTION_TERMINATED`, and 12 `LIMIT_INCOMPLETE`; all daemon
+instances remained PING-healthy and removed their sockets and PID files during
+cleanup. This is ARM64 small-fixture development evidence only; exact
+32-GiB/materialized service, production CVD, certified x86-64, milter,
+fanotify, Sonic1, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R10-development-service-revalidation-2026-09-13.md`.
+
+R06 focused OneNote reader sanitizer follow-up (2026-09-13 UTC): the existing
+ARM64 `RelWithDebInfo` ASan/UBSan tree was reconfigured against the current
+source manifest and rebuilt at 100% with exit 0. The focused linked
+`cl_suite/rust_onenote` case passed all 4 checks, including the corpus-backed
+attachment detection above the former 256 MiB whole-input boundary, with no
+ASan/UBSan diagnostics in the captured stderr. The source identity is coherent
+at 1,697 manifest entries with SHA-256
+`5a2baef1ece4b0d64579fb8380b03f62b751e79dd584342c318c9fcd9aeec593`.
+This is ARM64 development evidence only; certified x86-64, exact
+32-GiB/materialized resources, production CVD/service, Sonic1, and final
+release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R06-reader-corpus-attachment-sanitizer-2026-09-13.md`.
+
+R09 fuzzy-image Release integration (2026-09-13 UTC): the fresh
+current-source ARM64 Release `clamscan` integration harness passed all 4
+`fuzzy_img_hash_test` tests. It exercised exact and distance-bounded
+scanner-facing matches, malformed-signature rejection, and both image-scan
+disable controls. This is application-level development evidence only;
+certified x86-64, production CVD/service, materialized-large-file,
+sanitizer/resource, Sonic1, and final release qualification remain open.
+Receipt: `docs/largefile-task-receipts/R09-fuzzy-image-release-integration-2026-09-13.md`.
+
+R09 real UnRAR Release integration (2026-09-13 UTC): after correcting the
+test fixture's RAR4 header CRC convention, the fresh current-source ARM64
+Release `clamscan` test passed 1/1 with the enabled production UnRAR backend.
+Both a valid RAR4 archive and a neutral-prefix RAR-SFX produced the expected
+nested `RarChild.UNOFFICIAL FOUND` detection without an archive-incomplete
+diagnostic. This is development evidence only; complete corpus, sanitizer,
+certified x86-64, production CVD/service, materialized-large-file, Sonic1,
+resource, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R09-real-unrar-backend-release-2026-09-13.md`.
+
+R10 milter protocol Release integration (2026-09-13 UTC): the registered
+current-source ARM64 Release `clamav_milter_protocol` CTest passed 1/1 in
+5.38 seconds. Its verbose harness reported clean accept (`a`), malware reject
+(`r`), exact configured-limit accept (`a`), and limit-plus-one fail-visible
+(`t`) outcomes. The repository CTest profile intentionally uses its 100 MiB
+development limit, so literal 32-GiB/certified milter qualification remains
+open. Receipt:
+`docs/largefile-task-receipts/R10-milter-protocol-release-2026-09-13.md`.
+
+R09 ignored-type Release integration (2026-09-13 UTC): the current-source
+ARM64 Release `clamscan` test passed 1/1. A recognized ignored-type input with
+the exact raw marker produced `Ignored.Raw.UNOFFICIAL FOUND` while retaining
+the unsupported-parser warning; the same-shape nonmatching input returned
+exit 2 with `Can't parse data ERROR` and the same explicit warning. This is
+development evidence only; sanitizer, certified x86-64, production
+CVD/service, materialized-large-file, Sonic1, resource, and final release
+qualification remain open. Receipt:
+`docs/largefile-task-receipts/R09-ignored-type-release-2026-09-13.md`.
+
+R03 full `clamscan` Release integration (2026-09-13 UTC): the complete
+current-source ARM64 Release `clamscan` CTest target passed 1/1 in 16.07
+seconds; its underlying integration suite ran 127 tests with zero failures and
+zero errors and one expected platform skip. This includes the current parser
+corpus, R09 parser-policy and ignored-type cases, fuzzy-image integration, and
+the corrected RAR/RAR-SFX backend case. This is development evidence only;
+certified x86-64, exact 32-GiB/materialized resources, production CVD/service,
+sanitizer/resource, Sonic1, and final release qualification remain open.
+Receipt: `docs/largefile-task-receipts/R03-clamscan-full-release-2026-09-13.md`.
+
+R09 required application-row sanitizer follow-up (2026-09-13 UTC): the
+current-source ARM64 `RelWithDebInfo` ASan/UBSan `clamscan` passed all 7 tests
+in the focused fuzzy-image, Python/ONNX parser-policy, ignored-type, and
+production UnRAR/RAR-SFX suites. The run used the current 1,697-entry source
+manifest (`ff52df247a98e17e6b4aafcd02601f84fb00d00adcee0793f19216c54aea1a15`)
+and emitted no ASan, UBSan, LeakSanitizer, or runtime-error diagnostics. This
+is ARM64 development evidence only; certified x86-64, exact
+32-GiB/materialized resources, production CVD/service, privileged fanotify,
+Sonic1, independent format-8, resource, and final release qualification
+remain open. Receipt:
+`docs/largefile-task-receipts/R09-required-rows-asan-2026-09-13.md`.
+
+R03 full `clamscan` sanitizer integration (2026-09-13 UTC): the complete
+current-source ARM64 `RelWithDebInfo` ASan/UBSan `clamscan` CTest target
+passed 1/1 in 183.77 seconds. Its integration harness ran 127 tests with
+zero failures and zero errors and one expected platform skip; no ASan, UBSan,
+LeakSanitizer, or runtime-error diagnostics were emitted. This broadens
+application-facing sanitizer coverage but remains development evidence only;
+certified x86-64, exact 32-GiB/materialized resources, production
+CVD/service, privileged fanotify, Sonic1, independent format-8, resource,
+and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R03-clamscan-full-asan-2026-09-13.md`.
+
+R10 full `clamd` sanitizer integration (2026-09-13 UTC): the complete
+current-source ARM64 `RelWithDebInfo` ASan/UBSan `clamd` CTest target passed
+1/1 in 233.35 seconds. Its integration harness ran 18 tests with zero
+failures and zero errors, covering daemon lifecycle, scan/reload, report and
+stream paths, limit outcomes, clamdscan modes, and the `ReadTimeout=0`
+structured-stream case. No ASan, UBSan, LeakSanitizer, or runtime-error
+diagnostics were emitted. This remains development evidence only; certified
+x86-64, exact 32-GiB/materialized resources, production CVD/service,
+privileged fanotify, Sonic1, independent format-8, resource, and final
+release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R10-clamd-full-asan-2026-09-13.md`.
+
+R10 milter application sanitizer integration (2026-09-13 UTC): the current
+source ARM64 `RelWithDebInfo` ASan/UBSan quota and protocol targets passed
+2/2 in 8.46 seconds. The protocol harness verified clean accept, infected
+reject, exact-limit accept, and limit-plus-one fail-visible outcomes, with no
+ASan, UBSan, LeakSanitizer, or runtime-error diagnostics. Its 100 MiB
+development limit profile is not literal 32-GiB/certified evidence. Receipt:
+`docs/largefile-task-receipts/R10-milter-full-asan-2026-09-13.md`.
+
+R03 remaining application executables sanitizer integration (2026-09-13 UTC):
+the current-source ARM64 `RelWithDebInfo` ASan/UBSan `freshclam` and `sigtool`
+targets passed 2/2 in 41.11 seconds. The `sigtool` harness ran 6 tests with
+zero failures and zero errors, and the combined output contained no ASan,
+UBSan, LeakSanitizer, or runtime-error diagnostics. This is development
+evidence only; certified x86-64, exact 32-GiB/materialized resources,
+production CVD/service, privileged fanotify, Sonic1, independent format-8,
+resource, and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R03-freshclam-sigtool-asan-2026-09-13.md`.
+
+R03/R10/R13 large-file control and Rust sanitizer integration (2026-09-13
+UTC): the current-source ARM64 `RelWithDebInfo` ASan/UBSan batch passed 9/9
+targets in 11.36 seconds, covering on-access and daemon/milter thread-pool
+controls, fail-closed admission, clamscan admission, clamd report protocol,
+late ZIP-member detection, and the complete `libclamav_rust` target. Rust ran
+159 tests with zero failures; no ASan, UBSan, LeakSanitizer, or runtime-error
+diagnostics were emitted. This remains development evidence only; certified
+x86-64, exact 32-GiB/materialized resources, production CVD/service,
+privileged fanotify, Sonic1, independent format-8, resource, and final
+release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R03-R10-R13-controls-rust-asan-2026-09-13.md`.
+
+R03 full `libclamav` sanitizer diagnostic (2026-09-13 UTC): the authoritative
+current-source ARM64 ASan/UBSan CTest target failed closed at its configured
+1,200-second aggregate timeout with exit 111 from `check_clamav`; no
+assertion or sanitizer diagnostic was emitted. A follow-up direct
+`cl_suite` run with per-case `T=1800` was stopped after approximately 30
+minutes at a concrete diagnostic boundary, after 1,328 retained passed cases
+and zero failed/error cases. This is not a full-suite pass; the complete core
+sanitizer result remains a certified-runner/time-profile task. Receipt:
+`docs/largefile-task-receipts/R03-libclamav-full-asan-timeout-2026-09-13.md`.
+
+R03 full `libclamav` Release integration (2026-09-13 UTC): the existing ARM64
+Release tree was reconfigured and rebuilt against the current 1,697-entry
+source manifest (`ff52df247a98e17e6b4aafcd02601f84fb00d00adcee0793f19216c54aea1a15`),
+then its complete `libclamav` CTest target passed 1/1 in 89.73 seconds. The
+underlying suite completed all 2,919 checks with zero failures and zero errors.
+This is current-source development evidence only; the sanitizer aggregate
+timeout, certified x86-64, exact 32-GiB/materialized resources, production
+CVD/service, privileged fanotify, Sonic1, independent format-8, resource,
+and final release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R03-libclamav-full-release-2026-09-13.md`.
+
+R03 complete current-source Release CTest matrix (2026-09-13 UTC): after the
+Release tree was reconfigured and rebuilt against the current manifest, all
+28 registered targets passed in 182.03 seconds. This includes the complete
+2,919-check `libclamav` suite, all large-file admission/protocol/resource
+controls, Rust integration, `clamscan`, `clamd`, both milter targets,
+`freshclam`, and `sigtool`. This is ARM64 development evidence only;
+certified x86-64, exact 32-GiB/materialized resources, production CVD/service,
+privileged fanotify, Sonic1, independent format-8, resource, and final
+release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R03-current-source-release-ctest-2026-09-13.md`.
+
+R06 OneNote spool-release assertion (2026-09-13 UTC): the current-source
+production-linked `rust_onenote` over-cap corpus case now asserts that the
+shared temporary ledger is zero after successful nested detection while a
+nonzero temporary peak proves the parser and attachment spools were actually
+used. The rebuilt ARM64 Release `check_clamav` binary passed the focused
+`rust_onenote` TCase 4/4 with zero failures and errors. This is development
+evidence only; certified x86-64, materialized full-size edges, sanitizer
+coverage for this tightened case, production CVD/service, resource/fanotify,
+Sonic1, and final release qualification remain open. No capability was
+promoted. Receipt:
+`docs/largefile-task-receipts/R06-onenote-spool-release-2026-09-13.md`.
+
+R06 OneNote spool-release sanitizer revalidation (2026-09-13 UTC): after
+reconfiguring the existing ARM64 `RelWithDebInfo` ASan/UBSan tree against the
+current 1,697-entry source manifest, the production-linked `rust_onenote`
+over-cap corpus case passed 4/4 with zero failures and errors. The focused
+binary and CMake cache were source-bound to manifest
+`c75877cc35ffc2d86a4a7c086cc2a51a80e026ec96a5e047ec223e98942246d9`, and no
+sanitizer diagnostics were emitted. This remains development evidence only;
+certified x86-64, exact 32-GiB/materialized resources, production CVD/service,
+resource/fanotify, Sonic1, and final release qualification remain open. No
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R06-onenote-spool-release-asan-2026-09-13.md`.
+
+R03 current-source Release matrix revalidation after R06 (2026-09-13 UTC):
+the existing ARM64 Release tree was reconfigured and rebuilt against the
+current 1,697-entry source manifest after the OneNote spool-release assertion
+was added. The complete CTest matrix passed 28/28 in 187.23 seconds,
+including the 2,919-check `libclamav` suite, all large-file controls and
+verifiers, Rust, `clamscan`, `clamd`, `clamdscan`, both milter targets,
+`freshclam`, and `sigtool`. This remains ARM64 development evidence only;
+certified x86-64, exact 32-GiB/materialized resources, production CVD/service,
+privileged fanotify, Sonic1, independent format-8, resource, and final
+release qualification remain open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R03-current-source-release-ctest-r06-2026-09-13.md`.
+
+R11 current-source Release service vertical slice (2026-09-13 UTC): the
+freshly reconfigured ARM64 Release `clamd`/`clamdscan` build produced 36 live
+R04 records across six structured report commands and six client modes, with
+12 `COMPLETE`, 12 `DETECTION_TERMINATED`, and 12 `LIMIT_INCOMPLETE` outcomes.
+Independent acceptance-record validation passed, and all clean/detection/
+limit daemon lifecycles proved pre/post health, normal exit, and socket/PID
+cleanup. This is small-fixture ARM64 development evidence only; exact
+32-GiB/materialized service behavior, certified x86-64, production CVD,
+privileged fanotify, milter, Sonic1, resource sidecars, and final release
+qualification remain open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R11-development-service-vertical-slice-release-2026-09-13.md`.
+
+R04 current-source Release `clamscan` vertical slice (2026-09-13 UTC): the
+fresh Release scanner produced six live file/stdin records covering two
+`COMPLETE`, two `DETECTION_TERMINATED`, and two `LIMIT_INCOMPLETE` outcomes.
+Independent validation against the current case map and retained artifacts
+passed. This is small-fixture ARM64 development evidence only; exact
+32-GiB/materialized ingress, certified x86-64, production CVD, resource,
+fanotify, Sonic1, and final release qualification remain open. No capability
+was promoted. Receipt:
+`docs/largefile-task-receipts/R04-development-clamscan-vertical-slice-release-2026-09-13.md`.
+
+R03 source-bound revalidation after status snapshot correction (2026-09-13
+UTC): correcting the maintained OneNote status wording changed the source
+manifest, so the existing ARM64 Release and ASan/UBSan trees were both
+reconfigured and rebuilt against the new 1,697-entry manifest
+`1664c22ff783fd269c2c0e12e21ba81e05ce6c603fff66fe8a0530d68b87093d`. The
+focused OneNote sanitizer test passed 4/4, and the complete current-source
+Release matrix passed 28/28 in 174.02 seconds. Snapshot freshness and tracked
+snapshot equality also passed. This remains development evidence only; the
+certified x86-64, exact 32-GiB/materialized, production-CVD/service,
+resource/fanotify, Sonic1, independent format-8, and final release gates
+remain open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R03-source-rebound-status-snapshot-2026-09-13.md`.
+
+R04/R11 current-source Release acceptance refresh (2026-09-13 UTC): after
+rebinding the Release build to the current 1,697-entry source manifest, fresh
+captures produced 36 service records (12 each `COMPLETE`,
+`DETECTION_TERMINATED`, and `LIMIT_INCOMPLETE`) and six direct `clamscan`
+records (two of each outcome). Both bundles independently passed the strict
+acceptance-record verifier, and service lifecycle health/cleanup artifacts
+were retained. This remains ARM64 small-fixture development evidence only;
+exact 32-GiB/materialized, certified x86-64, production CVD, resource,
+fanotify, Sonic1, and final release qualification remain open. No capability
+was promoted. Receipt:
+`docs/largefile-task-receipts/R04-R11-current-source-release-acceptance-refresh-2026-09-13.md`.
+
+R03 Sonic3 MCP-SSH connectivity check (2026-09-13 UTC): host discovery and
+the supplied `sonic3-sudo` profile description succeeded, and the exact
+read-only `docker ps -a` command was policy-allowed by preview. Three live
+attempts then timed out during SSH connect at 20, 30, and 30 seconds,
+respectively, all with `remote_started=false`. No remote command, source transfer, or
+filesystem mutation occurred. Sonic3 qualification is therefore blocked by
+connectivity from the current MCP-SSH deployment, independently of the local
+ARM64/capacity blocker. Receipt:
+`docs/largefile-task-receipts/R03-sonic3-mcp-ssh-connectivity-2026-09-13.md`.
+
+R03/R11 materialized-edge capacity check (2026-09-13 UTC): the current host
+has 35 GiB free on the worktree volume, the container mount has 13 GiB free,
+the container overlay is full, available container memory is 1.8 GiB with
+swap already in use, and the only Docker context is ARM64 `desktop-linux`.
+The roadmap's certified runner contract requires Linux x86-64, at least 48 GiB
+effective memory, and 68 GiB free disk-backed temporary space. No materialized
+32-GiB fixture was created. This is a concrete blocker for full-size,
+materialized, resource, fanotify, and final qualification evidence; it does
+not invalidate the ARM64 development build. Receipt:
+`docs/largefile-task-receipts/R03-materialized-edge-capacity-check-2026-09-13.md`.
+
+R13 resource-capture fail-closed correction and revalidation (2026-09-13
+UTC): `largefile_acceptance_resource_capture.py` now terminates and rejects a
+capture when a required sampler fails while the wrapped command remains alive,
+and phase-protocol reads reject symlink replacement. Five focused host
+regressions passed. Both current ARM64 build trees were reconfigured and
+rebuilt against source manifest
+`0cd222db4377ba8d53519d743cf75f2b5f0cdcf504f0223d7551de5ab9213439`; the full
+Release CTest matrix passed 28/28 in 180.64 seconds, and the focused
+ASan/UBSan resource-capture target passed 1/1 with no sanitizer diagnostics.
+This strengthens evidence integrity but does not qualify any capability.
+Receipt:
+`docs/largefile-task-receipts/R13-resource-capture-fail-closed-2026-09-13.md`.
+
+R03 current-source Rust integration ASan/UBSan revalidation (2026-09-13
+UTC): the standalone `libclamav_rust` CTest target passed 159 Rust tests in
+2.44 seconds against the current 1,697-entry source manifest, with no ASan,
+UBSan, LeakSanitizer, or runtime-error diagnostics in retained logs. This is
+ARM64 development evidence only; certified x86-64, full-size/materialized,
+production CVD/service, resource/fanotify, Sonic1, independent format-8, and
+final release evidence remain open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R03-rust-integration-asan-current-2026-09-13.md`.
+
+R03 current-source application-facing ASan/UBSan CTest revalidation
+(2026-09-13 UTC): the current ARM64 sanitizer build passed all 26 selected
+application-facing targets in 515.72 seconds, including 21 large-file and
+release-control targets, both milter targets, `clamscan`, `clamd`,
+`freshclam`, and `sigtool`. Retained logs contained no ASan, UBSan,
+LeakSanitizer, or runtime-error diagnostics. This is development evidence
+only; certified x86-64, full-size/materialized, production CVD/service,
+resource/fanotify, Sonic1, independent format-8, and final release evidence
+remain open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R03-application-facing-asan-ctest-current-2026-09-13.md`.
+
+R09 current-source sanitizer required-unsupported suite (2026-09-13 UTC):
+the reconfigured ARM64 ASan/UBSan `check_clamav` binary, bound to source
+manifest `1664c22ff783fd269c2c0e12e21ba81e05ce6c603fff66fe8a0530d68b87093d`,
+passed all 57 cases in the `required_unsupported` group with zero failures or
+errors. Retained sanitizer stderr contained no ASan, UBSan, LeakSanitizer, or
+runtime-error diagnostics. This strengthens development coverage for the
+seven R09 rows but does not qualify them: certified x86-64, full-size and
+materialized edges, production CVD/service, resource/fanotify, Sonic1,
+independent format-8 bytecode, and final release evidence remain required.
+No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R09-required-unsupported-check-suite-asan-current-2026-09-13.md`.
+
+R03/R10/R13 current-source build revalidation after structured-report test
+correction (2026-09-13 UTC): the child fixture now ignores the expected
+peer-close `SIGPIPE`, and the derived large-file inventory was regenerated
+from the repository inventory script. The current 1,697-entry source manifest
+(`8bc6ca7cb824cfd13e3e6980a79d053503d9df9a475e6d90f23c0392f82aeb34`) passed
+the source guards. The ARM64 Release matrix passed 28/28 in 193.94 seconds;
+the current-source ARM64 ASan/UBSan application/control subset passed 27/27
+in 500.58 seconds. The only excluded sanitizer target was the known full
+`libclamav` timeout at 1,200.98 seconds, with no sanitizer diagnostics. This
+is development verification only: no capability was promoted, and certified
+x86-64, exact 32-GiB materialized edges, production CVD/service, privileged
+fanotify, independent format-8/JIT, and final readiness remain open. Receipt:
+`docs/largefile-task-receipts/R03-current-source-build-revalidation-2026-09-13.md`.
+
+R01 provenance revalidation (2026-09-13 UTC): the snapshot regression suite
+passed 13/13, tracked snapshot freshness passed, and the current Git-mode
+source manifest remained 1,697 files with SHA-256
+`8bc6ca7cb824cfd13e3e6980a79d053503d9df9a475e6d90f23c0392f82aeb34`, matching
+the current Release and ASan/UBSan build identities. This confirms the
+dashboard/source-manifest provenance contract after the latest worktree
+changes; no capability status or release-readiness result changed. Receipt:
+`docs/largefile-task-receipts/R01-provenance-revalidation-2026-09-13.md`.
+
+R05 streaming ZIP late-member fixture (2026-09-13 UTC): the deterministic
+ZIP generator now writes payloads in bounded 1-MiB chunks, accepts explicit
+large-run sizes, and emits ZIP64 when required. Its independent oracle now
+uses bounded random-access metadata reads and streams the target member for
+CRC and marker validation. The focused regression passed 6/6, including a
+parameterized 2-MiB prefix / 1-MiB target-prefix round trip and a synthetic
+ZIP64 directory round trip; the full source-guard sweep passed. This is
+fixture-preparation evidence only: no
+roadmap-scale materialized ZIP was created locally, no capability was
+promoted, and certified runner/full-family evidence remains open. Receipt:
+`docs/largefile-task-receipts/R05-streaming-zip-fixture-2026-09-13.md`.
+
+R03 current-source Release application smoke (2026-09-13 UTC): the existing
+ARM64 Release tree was reconfigured and rebuilt against the current 1,697-entry
+source manifest (`7c9e98e508dea7060cf515f952d734b311bd5be2bfeb3816b1cbcfb7a0eebf00`).
+The Release `clamscan` returned `OK` for a clean repository file and the exact
+`ClamAV-Test-File.UNOFFICIAL FOUND` result for the checked-in known-test-file
+fixture. This is local development smoke evidence only; no capability was
+promoted and full-size/certified/release evidence remains open. Receipt:
+`docs/largefile-task-receipts/R03-current-source-release-smoke-2026-09-13.md`.
+
+R03 current-source Release CTest after R05 (2026-09-13 UTC): the
+source-rebound ARM64 Release matrix passed 28/28 targets in 189.04 seconds,
+including `libclamav`, all large-file controls, the registered ZIP late-member
+test, Rust, `clamscan`, `clamd`, `freshclam`, `sigtool`, clamdscan controls,
+and both milter targets. This is development verification only; exact
+32-GiB/materialized, certified x86-64, production-CVD/service,
+privileged-fanotify, independent-format-8, and final release evidence remain
+open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R03-current-source-release-ctest-r05-2026-09-13.md`.
+
+R03 current-source ASan/UBSan CTest after R05 (2026-09-13 UTC): the
+source-rebound ARM64 sanitizer matrix passed 27/27 runnable targets in 500.89
+seconds with no ASan, UBSan, LeakSanitizer, or runtime-error diagnostics,
+including the ZIP64 regression and application/control targets. The complete
+`libclamav` sanitizer target remains explicitly excluded after its known
+1,200-second timeout and is not represented as a pass. Certified x86-64,
+exact 32-GiB/materialized, production-CVD/service, fanotify, Sonic1,
+independent-format-8, and final release evidence remain open. No capability
+was promoted. Receipt:
+`docs/largefile-task-receipts/R03-current-source-asan-ctest-r05-2026-09-13.md`.
+
+R03 ASan/UBSan suite-slice diagnostics (2026-09-13 UTC): current-source
+focused Check groups passed `egg_map` 16/16, `7z` 28/28, `rust_onenote` 4/4,
+`zip` 19/19, and `pdf` 24/24. These groups produced no failed or errored
+checks and keep the ASan tree bound to source manifest `4b6322…`. The full
+aggregate `libclamav` timeout remains unresolved and is not relabelled as a
+pass; certified runner/profile and final release evidence remain open. No
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R03-asan-suite-slice-diagnostics-2026-09-13.md`.
+
+R03 current-source `cl_api` ASan/UBSan slice (2026-09-13 UTC): with
+`CVD_CERTS_DIR` explicitly bound to the mounted source certificate directory,
+the Check runner completed all 528 `cl_api` checks with zero failures and zero
+errors. Retained output contained no ASan, UBSan, LeakSanitizer, or
+runtime-error diagnostics. This is ARM64 development evidence only; the
+aggregate `libclamav` sanitizer timeout, certified x86-64, exact
+32-GiB/materialized edges, production CVD/service, privileged fanotify,
+Sonic1, independent format-8, and final release evidence remain open. No
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R03-asan-cl-api-current-2026-09-13.md`.
+
+R03 current-source API ASan/UBSan slices (2026-09-13 UTC): with the same
+explicit certificate-directory binding, `cl_callback_api` passed 4/4 and
+`cl_scan_api` passed 836/836, both with zero failures or errors and no retained
+ASan, UBSan, LeakSanitizer, or runtime-error diagnostics. A zero-check
+`cl_load` selection was not counted. This is ARM64 development evidence only;
+the aggregate `libclamav` sanitizer timeout, certified x86-64, exact
+32-GiB/materialized edges, production CVD/service, privileged fanotify,
+Sonic1, independent format-8, and final release evidence remain open. No
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R03-asan-api-slices-current-2026-09-13.md`.
+
+R08 current-source parser ASan/UBSan slices (2026-09-13 UTC): `arj_map` 8/8,
+`arj` 14/14, `xar_metadata` 3/3, `hwp3_map` 3/3, `hwp3` 27/27, `xar` 19/19,
+`arjsfx` 5/5, and `mspack_map` 8/8 passed for 87 checks total, with zero
+failures/errors and no sanitizer diagnostics. This is ARM64 development
+evidence only; capability-specific R04 records, full-size/materialized
+fixtures, certified x86-64, production CVD/service, resource/fanotify,
+independent format-8, Sonic1, and final release evidence remain open. No
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R08-asan-parser-slices-current-2026-09-13.md`.
+
+R08 current-source container and mail ASan/UBSan slices (2026-09-13 UTC):
+`hwpole2_map` 5/5, `hwpole2_corpus` 1/1, `xdp_map` 5/5, `xdp` 3/3,
+`mail_api` 4/4, `mail_map` 2/2, `mail_partial` 1/1, and `macho_map` 3/3
+passed for 24 checks total, with zero failures/errors and no sanitizer
+diagnostics. This is ARM64 development evidence only; capability-specific R04
+records, full-size/materialized fixtures, certified x86-64, production
+CVD/service, resource/fanotify, independent format-8, Sonic1, and final
+release evidence remain open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R08-asan-container-mail-slices-current-2026-09-13.md`.
+
+R08 current-source map, boundary, and cleanup ASan/UBSan slices (2026-09-13
+UTC): `pdf_map` 7/7, `pdf_corpus` 1/1, `xdp_corpus` 1/1, `macho_timeout` 2/2,
+`macho_boundary` 2/2, `dmg_map` 12/12, `7z_map` 4/4, `7z_cleanup` 1/1, and
+`compressed_cleanup` 1/1 passed for 31 checks total, with zero
+failures/errors and no sanitizer diagnostics. This is ARM64 development
+evidence only; capability-specific R04 records, full-size/materialized
+fixtures, certified x86-64, production CVD/service, resource/fanotify,
+independent format-8, Sonic1, and final release evidence remain open. No
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R08-asan-map-boundary-cleanup-slices-current-2026-09-13.md`.
+
+R03 current-source Release CTest after provenance rebind (2026-09-13 UTC):
+the Release tree was reconfigured/rebuilt so its CMake and build manifest
+match the current source manifest `4b6322…`. Targets 1–25 passed in the first
+CTest invocation; the disposable container then reached its configured
+one-hour sleep lifetime with `oom=false` while entering `clamd`. After
+restarting the same container, targeted `clamd`, `freshclam`, and `sigtool`
+passed 3/3. Combined target coverage is 28/28, with no source/build option
+changes during the rebind. This remains ARM64 development evidence only; no
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R03-current-source-release-ctest-r07-2026-09-13.md`.
+
+R04 current-source Release `clamscan` vertical slice after provenance rebind
+(2026-09-13 UTC): six fresh records passed independent validation against
+source manifest `4b6322…`, covering clean, exact detection, and MaxFileSize
+limit outcomes over file and stdin ingress (two records per outcome). This is
+small-fixture ARM64 development evidence only; exact 32-GiB/materialized,
+certified x86-64, production CVD/service, resource, fanotify, Sonic1, and
+final release evidence remain open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R04-development-clamscan-vertical-slice-current-r07-2026-09-13.md`.
+
+R10/R11 current-source Release service capture after provenance rebind
+(2026-09-13 UTC): fresh `clamd`/`clamdscan` development capture produced 36
+records bound to source manifest `4b6322…`: 12 `COMPLETE`, 12
+`DETECTION_TERMINATED`, and 12 `LIMIT_INCOMPLETE` across all six structured
+daemon report commands and six client modes. All retained lifecycle health and
+cleanup checks passed, and the standalone acceptance verifier passed. This is
+small-fixture ARM64 development evidence only; exact 32-GiB/materialized,
+certified x86-64, production CVD, resource, fanotify, Sonic1, independent
+format-8, and final release evidence remain open. No capability was promoted.
+Receipt:
+`docs/largefile-task-receipts/R10-development-service-current-r07-2026-09-13.md`.
+
+R08 current-source OLE, VBA, MSExpand, NSIS, and SWF ASan/UBSan slices
+(2026-09-13 UTC): `ole2_map` 7/7, `ole2_xlm` 3/3, `vba` 3/3, `msexpand` 8/8,
+`msexpand_map` 2/2, `nulsft` 8/8, `nulsft_map` 2/2, `nulsft_corpus` 1/1,
+`swf` 16/16, `swf_map` 3/3, `swf_api` 1/1, and `swf_corpus` 2/2 passed for
+56 checks total, with zero failures/errors and no sanitizer diagnostics. This
+is ARM64 development evidence only; capability-specific R04 records,
+full-size/materialized fixtures, certified x86-64, production CVD/service,
+resource/fanotify, independent format-8, Sonic1, and final release evidence
+remain open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R08-asan-ole-swf-slices-current-2026-09-13.md`.
+
+R08 current-source executable parser ASan/UBSan slices (2026-09-13 UTC):
+`elf_map` 17/17, `elf_corpus` 1/1, `elf` 4/4, `pe32plus_common` 8/8,
+`pe_map` 18/18, `pe_corpus` 1/1, `macho` 12/12, `macho_fat` 3/3,
+`macho_sections` 1/1, and `macho_corpus` 2/2 passed for 67 checks total,
+with zero failures/errors and no sanitizer diagnostics. This is ARM64
+development evidence only; capability-specific R04 records,
+full-size/materialized fixtures, certified x86-64, production CVD/service,
+resource/fanotify, independent format-8, Sonic1, and final release evidence
+remain open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R08-asan-executable-parser-slices-current-2026-09-13.md`.
+
+R08 current-source filesystem/container ASan/UBSan slices (2026-09-13 UTC):
+TAR/CPIO groups passed 39/39, ISO groups 20/20, UDF groups 15/15 (the base
+`udf` selector contained zero checks), partition-map 5/5, GPT 9/9, and MBR
+12/12, for 100 substantive checks total. All completed with zero
+failures/errors and no sanitizer diagnostics. This is ARM64 development
+evidence only; capability-specific R04 records, full-size/materialized
+fixtures, certified x86-64, production CVD/service, resource/fanotify,
+independent format-8, Sonic1, and final release evidence remain open. No
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R08-asan-filesystem-container-slices-current-20260913.md`.
+
+R08 current-source graphics and image ASan/UBSan slices (2026-09-13 UTC):
+graphics groups passed 13/13, GIF groups 18/18, PNG groups 10/10, TIFF groups
+17/17, and JPEG groups 15/15, for 73 checks total. All completed with zero
+failures/errors and no sanitizer diagnostics. This is ARM64 development
+evidence only; capability-specific R04 records, full-size/materialized
+fixtures, certified x86-64, production CVD/service, resource/fanotify,
+independent format-8, Sonic1, and final release evidence remain open. No
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R08-asan-graphics-image-slices-current-2026-09-13.md`.
+
+R08 current-source archive and compression ASan/UBSan slices (2026-09-13
+UTC): DMG/HFS+ groups passed 41/41, SIS 8/8, AutoIt 11/11, ZIP-SFX/RAR/CAB
+79/79, XZ 6/6, and BinHex/MyDoom/BZip2 35/35, for 120 checks total. All
+completed with zero failures/errors and no sanitizer diagnostics. This is
+ARM64 development evidence only; capability-specific R04 records,
+full-size/materialized fixtures, certified x86-64, production CVD/service,
+resource/fanotify, independent format-8, Sonic1, and final release evidence
+remain open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R08-asan-archive-compression-slices-current-20260913.md`.
+
+R06/R08 current-source API, text, and Rust ASan/UBSan slices (2026-09-13
+UTC): API/fmap/CVD groups passed 24/24, text/document groups 54/54, and
+Rust/MSXML groups 27/27, for 105 checks total. All completed with zero
+failures/errors and no sanitizer diagnostics. This is ARM64 development
+evidence only; capability-specific R04 records, full-size/materialized
+fixtures, certified x86-64, production CVD/service, resource/fanotify,
+independent format-8, Sonic1, and final release evidence remain open. No
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R06-R08-asan-api-text-rust-slices-current-20260913.md`.
+
+R06/R08 current-source document and mail ASan/UBSan slices (2026-09-13 UTC):
+TNEF groups passed 23/23, HWP/HWPML groups 14/14, RIFF groups 11/11, and the
+broader mail group 16/16, for 59 checks total. All completed with zero
+failures/errors and no sanitizer diagnostics. This is ARM64 development
+evidence only; capability-specific R04 records, full-size/materialized
+fixtures, certified x86-64, production CVD/service, resource/fanotify,
+independent format-8, Sonic1, and final release evidence remain open. No
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R06-R08-asan-document-mail-slices-current-20260913.md`.
+
+R08 current-source XAR, SFX, and Office-entry ASan/UBSan slices (2026-09-13
+UTC): XAR passed 7/7, APM 12/12, 7-Zip SFX 4/4, IShield SFX/map 5/5,
+OLE10/PPT/OOXML entries 19/19, and binary-data 1/1, for 48 substantive
+checks total. The `digital` and `assorted functions` selectors were empty.
+All completed with zero failures/errors and no sanitizer diagnostics. This is
+ARM64 development evidence only; capability-specific R04 records,
+full-size/materialized fixtures, certified x86-64, production CVD/service,
+resource/fanotify, independent format-8, Sonic1, and final release evidence
+remain open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R08-asan-xar-sfx-office-slices-current-20260913.md`.
+
+R08/R09 current-source broad ASan/UBSan suite slices (2026-09-13 UTC):
+`mspack` 8/8, `ole2` 24/24, `pe` 16/16, `parser_regressions` 4/4, and
+`required_unsupported` 57/57 passed for 109 checks total, with zero
+failures/errors and no sanitizer diagnostics. The complete aggregate
+`libclamav` sanitizer timeout remains separately unresolved and is not
+relabeled as a pass. This is ARM64 development evidence only; capability-
+specific R04 records, full-size/materialized fixtures, certified x86-64,
+production CVD/service, resource/fanotify, independent format-8, Sonic1, and
+final release evidence remain open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R08-asan-broad-suite-slices-current-20260913.md`.
+
+R03 large-file qualification platform gate (2026-09-13 UTC): the existing
+ARM64 ASan build's `largefile_qualification` selector contained zero checks
+because the dedicated option is off. A separate out-of-tree ASan/UBSan
+configuration with `ENABLE_LARGE_FILE_QUALIFICATION_TEST=ON` failed closed at
+CMake with the repository's explicit restriction to the qualified Linux
+x86-64 profile. The enabled Mach-O unsupported-policy slice passed 2/2 with no
+sanitizer diagnostics. No platform guard was bypassed and no capability was
+promoted. Receipt:
+`docs/largefile-task-receipts/R03-largefile-qualification-platform-gate-2026-09-13.md`.
+
+R03/R10 current-source Release application smoke (2026-09-13 UTC): the
+rebuilt Release `clamscan` reported `ClamAV 1.5.3-largefile-devel`, returned
+`OK` for a clean repository README, and returned the expected
+`ClamAV-Test-File.UNOFFICIAL FOUND` for the repository ZIP test fixture using
+the explicitly bound test certificate directory. An initial missing-certs
+invocation failed closed as expected and was not counted as application
+evidence. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R03-current-source-release-application-smoke-2026-09-13.md`.
+
+R06 current-source Release OneNote reader parity (2026-09-13 UTC): the
+production-linked Release `rust_onenote` group passed 4/4, including the
+logical input above the former 256-MiB whole-input cap and reader-backed
+attachment detection with zero residual temporary charge. This closes the
+local Release-side parity gap for the bounded reader implementation; it is
+still ARM64 development evidence and no capability was promoted. Receipt:
+`docs/largefile-task-receipts/R06-onenote-reader-release-parity-2026-09-13.md`.
+
+R09 current-source Release required-parser policy parity (2026-09-13 UTC):
+the complete `required_unsupported` group passed 57/57, covering the seven
+in-scope rows for RAR/RAR-SFX, ignored types, compiled Python, AI-model
+parsing, and fuzzy-image admission/matching. This closes the local Release
+parity gap alongside the existing ASan/UBSan result; no capability was
+promoted. Receipt:
+`docs/largefile-task-receipts/R09-required-parser-policy-release-parity-2026-09-13.md`.
+
+R03 current-source build rebind after working-tree documentation changes
+(2026-09-13 UTC): the existing ARM64 Release and ASan/UBSan trees were
+reconfigured and rebuilt against source-manifest
+`12aecbdf…`; all targets built successfully. Release application smoke,
+`rust_onenote` 4/4, and `required_unsupported` 57/57 passed, with the same
+results in ASan/UBSan for the two focused groups. The explicit missing-default-
+database invocation failed closed and was not counted. This is development
+evidence only; no capability was promoted. Receipt:
+`docs/largefile-task-receipts/R03-current-source-rebind-2026-09-13.md`.
+
+R03 current-source Release CTest revalidation after the provenance rebind
+(2026-09-13 UTC): the full application matrix passed 28/28 in 194.94 seconds
+against source-manifest `12aecbdf…`. This included `libclamav`, Rust,
+clamscan, clamd, clamdscan, milter, freshclam, sigtool, and all large-file
+controls. No test failures or sanitizer diagnostics occurred; this remains
+ARM64 development evidence only. Receipt:
+`docs/largefile-task-receipts/R03-current-source-release-ctest-r08-2026-09-13.md`.
+
+R11 current-source service vertical slice after the provenance rebind
+(2026-09-13 UTC): fresh ARM64 Release `clamd`/`clamdscan` capture wrote 36
+records, independently validated against the current case map, with 12 each
+of `COMPLETE`, `DETECTION_TERMINATED`, and `LIMIT_INCOMPLETE` across the six
+structured daemon report commands and six client modes. Lifecycle health and
+cleanup remained bound and passing. This is ingress-only development evidence
+and does not qualify parser rows or release readiness. Receipt:
+`docs/largefile-task-receipts/R11-development-service-vertical-slice-current-rebind-2026-09-13.md`.
+
+R04 runtime POC record-integrity hardening (2026-09-13 UTC): duplicate
+`poc/results.tsv` rows are now rejected instead of being silently overwritten
+by the runtime acceptance producer. The new regression passes and preserves
+independent POC result binding for the file-edge detection case; no capability
+was promoted. This is a local verifier improvement, not qualification evidence.
+
+R04 resource-binding record-integrity hardening (2026-09-13 UTC): the
+standalone resource sidecar binder now rejects duplicate acceptance-case rows
+before mutating records, closing the same silent-overwrite class at the
+resource-binding boundary. The new regression passes; no capability was
+promoted.
+
+R04 structured-report parsing hardening (2026-09-13 UTC): all current
+acceptance/service report readers now share a strict JSON-object loader that
+rejects duplicate keys before validation. This prevents a later duplicate
+field from replacing an independently emitted status, completion, signature,
+or offset. The shared regression passes; no capability was promoted.
+
+The same strict loader now protects the service input identity documents, so a
+duplicate `version` or `inputs` key cannot silently replace the recorded
+fixture binding during qualification. Its regression passes; no capability was
+promoted.
+
+R04/R13 retained-proof parsing hardening (2026-09-13): the fanotify permission
+and PCRE phase evidence verifiers now reject duplicate JSON keys through the
+shared strict loader. New regressions passed alongside the shared loader
+tests; this is verifier hardening only and does not promote an on-access or
+PCRE capability. Receipt:
+`docs/largefile-task-receipts/R04-r13-proof-duplicate-json-key-hardening-2026-09-13.md`.
+
+R03 current-source rebind and application verification (2026-09-13 UTC): the
+existing ARM64 Release and ASan/UBSan trees were rebuilt against the current
+1,697-entry source manifest `bf4f97…`. Release CTest passed 28/28 and the
+complete local large-file Python harness passed 172 tests with two
+Linux-only skips on macOS. The aggregate ASan/UBSan `libclamav` target
+reached its configured 1,200-second timeout without sanitizer diagnostics, so
+the sanitizer suite remains incomplete rather than being reported as passed.
+Receipt:
+`docs/largefile-task-receipts/R03-current-source-rebind-r09-2026-09-13.md`.
+
+R04 evidence-consumer JSON hardening (2026-09-13 UTC): service-input,
+oversize-combiner, and clamscan-admission consumers now reject duplicate JSON
+keys through the shared strict loader. The complete local large-file harness
+passed 174 tests with two Linux-only allocation skips; no capability was
+promoted. Receipt:
+`docs/largefile-task-receipts/R04-evidence-consumer-json-hardening-2026-09-13.md`.
+
+R03 current-source control rebind (2026-09-13 UTC): Release and ASan/UBSan
+trees were rebuilt against source manifest `4ff626…`; the non-aggregate
+control/frontend subsets passed 27/27 in each build, with no sanitizer
+diagnostics. The aggregate ASan/UBSan `libclamav` result was not rerun after
+the Python-only changes and remains incomplete under the prior documented
+1,200-second timeout. Receipt:
+`docs/largefile-task-receipts/R03-current-source-rebind-r10-2026-09-13.md`.
+
+R08 current-source parser-family revalidation (2026-09-13 UTC): focused
+current-source ARM64 Release and ASan/UBSan `cl_suite` cases passed 54/54 in
+each build across ARJ compression/map, BinHex, MyDoom, BZip2, CAB SFX, SIS,
+and InstallShield SFX paths. No sanitizer diagnostics were emitted. This is
+development evidence only; complete parser corpus, certified Linux x86-64,
+exact/materialized 32-GiB, production CVD/service, resource/fanotify, Sonic1,
+independent format-8, and final release evidence remain open. No capability
+was promoted. Receipt:
+`docs/largefile-task-receipts/R08-parser-family-revalidation-current-20260913.md`.
+
+R05 current-source sparse oversize admission attempt (2026-09-13 UTC): the
+corrected 32-GiB daemon profile initialized the current ARM64 Release engine,
+then failed closed at the explicit platform guard before service admission:
+`certified large-file daemon admission is limited to Linux x86-64`. No live
+FILDESREPORT result or capability evidence was counted. The exact probe remains
+ready for the authorized certified Linux x86-64 runner. Receipt:
+`docs/largefile-task-receipts/R05-arm64-oversize-admission-blocker-20260913.md`.
+
+R08 current-source matcher/YARA revalidation (2026-09-13 UTC): production-
+linked ARM64 Release and ASan/UBSan matcher slices passed 72/72 in each build,
+covering AC/BM/PCRE/logical/hash/bytecode compatibility and YARA admission,
+arena, VM, accounting, and deadline cases. No sanitizer diagnostics were
+emitted. This is development evidence only; complete matcher/YARA corpus,
+certified Linux x86-64, exact/materialized 32-GiB, production CVD/service,
+resource/fanotify, Sonic1, independent format-8, and final release evidence
+remain open. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R08-matcher-yara-revalidation-current-20260913.md`.
+
+R06/R08 current-source Rust CTest revalidation (2026-09-13 UTC): the
+repository-configured `libclamav_rust` target passed 1/1 in both Release and
+ASan/UBSan builds using the locked AArch64 Rust test command. No sanitizer
+diagnostics were emitted. This is development evidence only; certified Linux
+x86-64, exact/materialized 32-GiB, production CVD/service, resource/fanotify,
+Sonic1, independent format-8, and final release evidence remain open. No
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R06-rust-reader-ctest-current-20260913.md`.
+
+R03 aggregate ASan/UBSan duration revalidation (2026-09-13 UTC): the
+repository-configured `libclamav` CTest target stopped at its generated
+1,200-second Python cap. A direct invocation with `T=2400` and a
+2,700-second aggregate allowance reached the same current-source
+`cl_scan_api` callback region but stopped at 2,700.418 seconds. No ASan or
+UBSan diagnostic was emitted; this remains incomplete ARM64 duration
+evidence, not a pass or capability promotion. Certified Linux x86-64
+aggregate evidence remains open. Receipt:
+`docs/largefile-task-receipts/R03-asan-libclamav-aggregate-timeout-current-20260913.md`.
+
+R03 aggregate-test timeout configurability (2026-09-13 UTC): the sanitizer
+CTest environment no longer hard-codes its outer Python timeout. The new
+positive-integer `CLAMAV_LIBCLAMAV_TEST_TIMEOUT` CMake cache setting defaults
+to the prior 1,200 seconds and is propagated into generated CTest state, so a
+slow qualification runner can select a larger explicit budget without
+editing generated files or changing per-case scan deadlines. CMake
+propagation, source guards, snapshot freshness, syntax, and the 601-row
+acceptance-map check passed. No aggregate sanitizer pass was claimed; the
+current ARM64 result remains incomplete at 2,700.418 seconds. Receipt:
+`docs/largefile-task-receipts/R03-aggregate-test-timeout-configurable-20260913.md`.
+
+R03 timeout-option follow-up verification (2026-09-13 UTC): the existing
+current-source ASan `check_clamav` target rebuilt successfully; the four
+acceptance/source controls covering the setting passed 4/4; and an isolated
+`CLAMAV_LIBCLAMAV_TEST_TIMEOUT=0` configure failed closed with the expected
+positive-integer diagnostic. This verifies the option's build integration and
+validation only; the ARM64 aggregate sanitizer run remains incomplete and no
+capability was promoted.
+
+R06 OneNote object-group payload spooling (2026-09-13 UTC): stream-backed
+modern OneNote `BinaryItem` payloads now use the existing private bounded
+`ReaderBlob` spool and temporary-budget interface instead of materializing each
+structural payload as a `Vec<u8>`. OneStore header and object-property parsing
+now consumes those payloads through bounded readers. The current CMake
+RelWithDebInfo consumer target rebuilt with ASan/UBSan flags; the vendored
+parser suite passed 78/78; `rust_onenote` passed 4/4; and
+`required_unsupported` passed 57/57. This remains ARM64 development evidence;
+materialized late-child, certified x86-64, production, and release evidence
+remain open. Receipt:
+`docs/largefile-task-receipts/R06-object-group-payload-spooling-20260913.md`.
+
+R06 OneNote object-group spool Release parity (2026-09-13 UTC): the current
+source Release `check_clamav` target rebuilt and the focused `rust_onenote`
+group passed 4/4. The complete configured Release CTest matrix then passed
+28/28 in 274.99 seconds. This is ARM64 development parity only; no capability
+was promoted and certified full-size, x86-64, production, resource/fanotify,
+and final release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R06-onenote-object-group-release-parity-2026-09-13.md`.
+
+R03/R06 current-source ASan/UBSan matrix after OneNote spooling
+(2026-09-13 UTC): the fresh ARM64 `RelWithDebInfo` sanitizer build passed
+27/27 configured CTest tests in 531.55 seconds with no sanitizer diagnostics;
+the known long aggregate `libclamav` test was excluded and remains incomplete
+at its documented duration limit. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R03-current-source-asan-ctest-r06-object-spool-2026-09-13.md`.
+
+R06 current-source nested OneNote spool-budget propagation (2026-09-13 UTC):
+OneStore header and object-property parsing now opens spooled object-group
+payloads with the originating private-spool directory and shared temporary
+budget. The parser unit suite passed 79/79; the full ARM64 Release CTest
+matrix passed 28/28 in 199.01 seconds; and the bounded ASan/UBSan matrix
+passed 27/27 in 533.65 seconds with no sanitizer diagnostics. The aggregate
+`libclamav` sanitizer target remains explicitly excluded and incomplete under
+the established ARM64 duration limit. This is development evidence only; no
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R06-current-source-nested-spool-budget-2026-09-13.md`.
+
+R06 current-source FSSHTTPB fragment spooling (2026-09-13 UTC): stream-backed
+modern OneNote `DataElementFragment` payloads now use the bounded `ReaderBlob`
+spool instead of materializing a declared chunk as `Vec<u8>`. The parser unit
+suite passed 80/80; current Release and ASan/UBSan `check_clamav` targets
+rebuilt; focused runtime/service evidence passed 2/2 in each build; and the
+corrected source guard passed 1/1 in each build. Inventory freshness and
+`git diff --check` passed. This is ARM64 development evidence only; no
+capability was promoted and certified full-size, x86-64, production, and final
+release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R06-current-source-data-element-fragment-spool-2026-09-13.md`.
+
+R03/R06 current-source Release and sanitizer revalidation after fragment
+spooling (2026-09-13 UTC): the complete ARM64 Release CTest matrix passed
+28/28 in 192.61 seconds, and the bounded ASan/UBSan matrix passed 27/27 in
+500.85 seconds with no sanitizer diagnostics; the known long aggregate
+`libclamav` sanitizer test was excluded. Both `check_clamav` targets and the
+80-test parser suite passed, with inventory, snapshot, source guards, and
+`git diff --check` green. This is development evidence only; no capability was
+promoted and certified x86-64, exact/materialized 32-GiB, production,
+resource/fanotify, independent format-8, and final release evidence remain
+open. Receipt:
+`docs/largefile-task-receipts/R03-current-source-release-asan-ctest-r06-fragment-2026-09-13.md`.
+
+R08 current-source ALZ empty-member MaxFiles accounting (2026-09-13 UTC): a
+valid ALZ archive containing two zero-byte stored members previously returned
+clean with `MaxFiles=2`, bypassing the inclusive root/child budget. The
+scanner-facing descriptor ingress now charges zero-byte children, the Rust
+ALZ size-budget fast path preserves valid empty stored members, and the ALZ
+sink sends them through nested descriptor admission. The production-linked
+Release regression passed 3/3 and the ASan/UBSan regression passed 2/2; source
+guards, inventory freshness, and `git diff --check` also passed. A broader
+current-source Release CTest attempt was not counted after the container
+filesystem filled with generated temporary scan files; the build itself
+completed. This remains ARM64 development evidence only, with no capability
+promotion; certified x86-64, exact/materialized 32-GiB, production,
+resource/fanotify, independent format-8, and final release evidence remain
+open. Receipt:
+`docs/largefile-task-receipts/R08-alz-empty-member-maxfiles-2026-09-13.md`.
+
+R06 current-source legacy OneNote empty-attachment MaxFiles accounting
+(2026-09-13 UTC): a valid legacy OneNote marker with two zero-length
+attachments previously returned clean with `MaxFiles=2` because the legacy
+attachment sink skipped the empty nested scan. The sink now routes empty
+attachments through descriptor admission. The pre-fix false success was
+reproduced; rebuilt ARM64 Release and ASan/UBSan `rust_onenote` slices passed
+5/5 in each build, with no sanitizer diagnostics. Source guards, inventory
+freshness, and `git diff --check` passed. No capability was promoted; certified
+x86-64, exact/materialized 32-GiB, production, resource/fanotify,
+independent format-8, and final release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R06-onenote-empty-attachment-maxfiles-2026-09-13.md`.
+
+R08 current-source ZIP empty-member MaxFiles accounting (2026-09-13 UTC): the
+ZIP catalogue loop skipped members with both compressed and uncompressed sizes
+zero before shared nested admission. It now charges the logical child through
+`cli_updatelimits(ctx, 0)` and fails visibly on a configured limit result. The
+production-linked ARM64 Release and ASan/UBSan `zip` slices passed 20/20 in
+each build with no sanitizer diagnostics; source guards, inventory freshness,
+and `git diff --check` passed. No capability was promoted; certified x86-64,
+exact/materialized 32-GiB, production, resource/fanotify, independent
+format-8, and final release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R08-zip-empty-member-maxfiles-2026-09-13.md`.
+
+R08 current-source AutoIt empty-member MaxFiles accounting (2026-09-13 UTC):
+the EA05 and EA06 handlers skipped declared zero-byte members before shared
+nested admission. Both formats now charge the logical child through
+`cli_updatelimits(ctx, 0)` and fail visibly on a configured limit result. The
+production-linked ARM64 Release and ASan/UBSan `autoit_map` slices passed
+10/10 in each build with no sanitizer diagnostics; source guards, inventory
+freshness, and `git diff --check` passed. No capability was promoted; certified
+x86-64, exact/materialized 32-GiB, production, resource/fanotify, independent
+format-8, and final release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R08-autoit-empty-member-maxfiles-2026-09-13.md`.
+
+R08 current-source CPIO empty-member MaxFiles accounting (2026-09-13 UTC):
+the old, ODC, newc, and CRC handlers skipped ordinary zero-length members
+before shared nested admission. A shared CPIO admission helper now charges
+each ordinary empty child through `cli_updatelimits(ctx, 0)` while leaving the
+`TRAILER!!!` terminator non-counting. The production-linked ARM64 Release
+slice passed 3/3 across the CPIO group, and the ASan/UBSan rerun passed 2/2
+with leak detection disabled after a prior container exit-137; no sanitizer
+diagnostics were emitted. Source guards, inventory freshness, and
+`git diff --check` passed. No capability was promoted; certified x86-64,
+exact/materialized 32-GiB, production, resource/fanotify, independent
+format-8, and final release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R08-cpio-empty-member-maxfiles-2026-09-13.md`.
+
+R08 current-source InstallShield empty-member MaxFiles accounting
+(2026-09-13 UTC): the legacy InstallShield path skipped declared zero-length
+embedded files before shared nested admission, both in the outer metadata
+records and in the CAB-backed header file table. `is_dump_and_scan()` and
+`is_parse_hdr()` now charge each empty logical child through
+`cli_updatelimits(ctx, 0)` and fail visibly on a configured limit result. The
+production-linked ARM64 Release and ASan/UBSan `ishield_map` slices passed
+6/6 in each build with no sanitizer diagnostics; source guards, inventory
+freshness, and `git diff --check` passed. No capability was promoted;
+certified x86-64, exact/materialized 32-GiB, production, resource/fanotify,
+independent format-8, and final release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R08-ishield-empty-member-maxfiles-2026-09-13.md`.
+
+R08 current-source NSIS empty-member MaxFiles accounting (2026-09-13 UTC):
+non-solid NSIS members now charge declared zero-byte logical children through
+shared nested admission, while the archive CRC trailer remains excluded. The
+solid path also decodes zero-byte member headers before applying size-based
+byte limits; no synthetic solid fixture was retained because it was
+incompatible with the bundled NSIS decoder. The production-linked ARM64
+Release and ASan/UBSan `nulsft` slices passed 1/1 in each build with no
+sanitizer diagnostics; source guards, inventory freshness, and
+`git diff --check` passed. No capability was promoted; certified x86-64,
+exact/materialized 32-GiB, production, resource/fanotify, independent
+format-8, and final release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R08-nsis-empty-member-maxfiles-2026-09-13.md`.
+
+R08 current-source SIS empty-member MaxFiles accounting (2026-09-13 UTC): the
+legacy Symbian SIS language-member loop skipped declared zero-byte variants
+before shared nested admission. It now charges each empty language variant
+through `cli_updatelimits(ctx, 0)` and retains configured-limit failures as
+fail-visible parser results. The production-linked ARM64 Release and
+ASan/UBSan `sis_member` slices passed 1/1 in each build with no sanitizer
+diagnostics; source guards, inventory freshness, and `git diff --check` passed.
+No capability was promoted; certified x86-64, exact/materialized 32-GiB,
+production, resource/fanotify, independent format-8, and final release
+evidence remain open. Receipt:
+`docs/largefile-task-receipts/R08-sis-empty-member-maxfiles-2026-09-13.md`.
+
+R08 current-source 7-Zip empty-member MaxFiles accounting (2026-09-13 UTC):
+the 7-Zip zero-output member path extracted logical empty files without
+passing them through nested descriptor admission. It now routes empty output
+through `cli_magic_scan_desc_type_reserved()`, preserving directory skips
+while charging empty files to inclusive `MaxFiles` and cache invalidation.
+The production-linked ARM64 Release and ASan/UBSan `7z` slices passed 29/29
+cases in each build with no sanitizer diagnostics; source guards, inventory
+freshness, and `git diff --check` passed. No capability was promoted;
+certified x86-64, exact/materialized 32-GiB, production, resource/fanotify,
+independent format-8, and final release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R08-7z-empty-member-maxfiles-2026-09-13.md`.
+
+R08 current-source HFS+ empty catalog-file MaxFiles accounting (2026-09-13
+UTC): ordinary HFS+ catalog files with both data and resource forks empty
+were recognized but skipped before shared child admission. The catalog walker
+now charges that logical child through `cli_updatelimits(ctx, 0)` while
+leaving directories and compressed-file handling on their existing paths. The
+production-linked ARM64 Release and ASan/UBSan `hfs_map` slices passed 1/1 in
+each build with no sanitizer diagnostics; source guards, inventory freshness,
+and `git diff --check` passed. No capability was promoted; certified x86-64,
+exact/materialized 32-GiB, production, resource/fanotify, independent
+format-8, and final release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R08-hfsplus-empty-catalog-file-maxfiles-2026-09-13.md`.
+
+R08 current-source UDF empty-file MaxFiles accounting (2026-09-13 UTC): valid
+regular UDF files with no allocation descriptors, or only zero-length
+extents, returned clean without shared nested admission. Both paths now
+charge the logical child through `cli_updatelimits(ctx, 0)` and preserve
+fail-visible limit results. The production-linked ARM64 Release and
+ASan/UBSan `udf_corpus` slices passed 1/1 in each build with no sanitizer
+diagnostics; source guards, inventory freshness, and `git diff --check`
+passed. No capability was promoted; certified x86-64, exact/materialized
+32-GiB, production, resource/fanotify, independent format-8, and final
+release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R08-udf-empty-file-maxfiles-2026-09-13.md`.
+
+R08 current-source empty nested-range MaxFiles accounting (2026-09-13 UTC):
+the shared nested-fmap helper returned a zero-byte nested range as a clean
+no-match without consuming a logical-child slot; it now routes the range
+through `cli_updatelimits(ctx, 0)` before clean-result reconciliation. The
+production-linked ARM64 Release and ASan/UBSan `hwpole2_map` slices passed
+1/1 in each build with no sanitizer diagnostics; source guards, inventory
+freshness, and `git diff --check` passed. No capability was promoted;
+certified x86-64, exact/materialized 32-GiB, production, resource/fanotify,
+independent format-8, and final release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R08-empty-nested-range-maxfiles-2026-09-13.md`.
+
+R08 current-source TNEF empty-attachment MaxFiles accounting (2026-09-13
+UTC): the TNEF loop previously treated every zero-length attribute as
+metadata and skipped attachment-level `attAttachData` before creating or
+admitting a logical child. Valid zero-length attachment data now consumes one
+inclusive MaxFiles slot through the shared admission helper, while message
+metadata remains non-child and still consumes its checksum. The Release and
+ASan/UBSan production-linked `tnef` slices passed 19/19 in each build; the
+initial Release assertion failure correctly exposed the canonical MaxFiles
+reason, and the corrected regression verifies both rejection and exact
+completion. No sanitizer diagnostics were emitted. Source guards, inventory
+freshness, and `git diff --check` passed; no capability was promoted. Certified
+x86-64, exact/materialized
+32-GiB, production, resource/fanotify, independent format-8, and final
+release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R08-tnef-empty-attachment-maxfiles-2026-09-13.md`.
+
+R08 current-source TNEF empty-attachment-title format handling (2026-09-13
+UTC): a zero-length attachment-level `attAttachTitle` attribute was accepted
+as clean before reaching the existing attachment string validation. The loop
+now rejects that malformed case with `CL_EFORMAT`, records the explicit
+incomplete reason `TNEF attachment title is empty`, and preserves cache taint.
+The new regression reproduced the pre-fix clean result, then the corrected
+production-linked ARM64 Release and ASan/UBSan `tnef` slices passed 20/20 in
+each build with no sanitizer diagnostics. Source guards, inventory freshness,
+and `git diff --check` passed; no capability was promoted. Certified x86-64,
+exact/materialized 32-GiB, production, resource/fanotify, independent
+format-8, and final release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R08-tnef-empty-title-format-2026-09-13.md`.
+
+R08 current-source PDF empty extracted-object MaxFiles accounting (2026-09-13
+UTC): `pdf_extract_obj()` previously skipped descriptor admission whenever a
+successfully materialized object decoded to zero bytes, and an empty PDF
+stream returned before that shared path entirely. Both paths now route the
+empty output through descriptor admission so the logical child consumes the
+inclusive MaxFiles slot and preserves cache invalidation; zero-byte output
+continues to skip PDF bytecode/content hooks that require a mappable payload.
+The new regressions first reproduced the uncounted raw-object path, then
+covered the empty-stream path; the corrected production-linked ARM64 Release
+and ASan/UBSan `pdf` slices passed 26/26 in each build with no sanitizer
+diagnostics. Source guards, inventory freshness, and `git diff --check` passed,
+and no capability was promoted. Certified x86-64, exact/materialized 32-GiB, production,
+resource/fanotify, independent format-8, Sonic1, and final parser/release
+evidence remain open. Receipt:
+`docs/largefile-task-receipts/R08-pdf-empty-object-maxfiles-2026-09-13.md`.
+
+R03 current-source Release control revalidation (2026-09-13 UTC): the
+current working tree rebuilt successfully in the retained ARM64 container;
+the configured Release matrix excluding only the documented aggregate
+`libclamav` timeout passed 27/27 in 149.63 seconds. The pass includes all
+large-file controls, Rust integration, milter, `clamscan`, `clamd`, freshclam,
+and sigtool; bounded ARJ slices also passed 14/14, 8/8, 2/2, and 5/5. This is
+current-source development evidence only. The aggregate ARM64 `libclamav`
+run remains incomplete, and certified x86-64, exact/materialized 32-GiB,
+production CVD/service, resource/fanotify, independent format-8, Sonic1,
+and final release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R03-current-source-release-controls-revalidation-2026-09-13.md`.
+
+R03 current-source ASAN/UBSAN control revalidation (2026-09-13 UTC): the
+current working tree rebuilt successfully in the retained ARM64 container;
+the bounded matrix excluding only the documented aggregate `libclamav`
+timeout passed 27/27 in 533.43 seconds with no sanitizer diagnostics in the
+CTest or unit-test stderr artifacts. The pass includes all large-file
+controls, Rust integration, milter, `clamscan`, `clamd`, freshclam, and
+sigtool. This is current-source development evidence only. The aggregate
+ARM64 `libclamav` run remains incomplete, and certified x86-64,
+exact/materialized 32-GiB, production CVD/service, resource/fanotify,
+independent format-8, Sonic1, and final release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R03-current-source-asan-controls-revalidation-2026-09-13.md`.
+
+R08 current-source HTML CSS empty-child MaxFiles accounting (2026-09-13 UTC):
+the shared Rust reader-to-temporary-spool helper previously returned clean
+without descriptor admission when a decoded child was zero bytes. It now
+routes empty reader output through the same admission path as non-empty
+children, preserving inclusive MaxFiles accounting and cache taint. The
+production-linked current-source ARM64 Release and ASan/UBSan HTML regression
+both passed 1/1 with no sanitizer diagnostic; source guards, snapshot
+freshness, regenerated inventory, and `git diff --check` passed. No capability
+was promoted; exact/materialized 32-GiB, certified x86-64, production
+CVD/service, resource/fanotify, Sonic1, independent format-8, and final
+release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R08-html-css-empty-child-maxfiles-2026-09-13.md`.
+
+R08 current-source MSXML streaming empty-Base64 MaxFiles accounting (2026-09-13 UTC): the streaming MSXML Base64 path previously skipped nested descriptor admission when a recognized element decoded to zero bytes. Every created Base64 spool now reaches the existing callback or descriptor-admission path, preserving inclusive MaxFiles accounting and cache taint for empty and whitespace-only values. The production-linked current-source ARM64 Release and ASan/UBSan regression both passed 1/1 with no sanitizer diagnostic; source guards, snapshot freshness, regenerated inventory, and `git diff --check` passed. No capability was promoted; exact/materialized 32-GiB, certified x86-64, production CVD/service, resource/fanotify, Sonic1, independent format-8, and final release qualification remain open. Receipt: `docs/largefile-task-receipts/R08-msxml-empty-base64-maxfiles-2026-09-13.md`.
+
+R08 current-source MSXML empty-callback MaxFiles accounting (2026-09-13 UTC): the streaming MSXML callback path previously skipped a recognized callback element when it had no character data, even though its temporary spool had been created. Every created callback spool now reaches the callback and its owning descriptor-admission path, preserving inclusive MaxFiles accounting and cache taint for empty values. The production-linked current-source ARM64 Release and ASan/UBSan regression both passed 1/1 with no sanitizer diagnostic; source guards, snapshot freshness, regenerated inventory, and `git diff --check` passed. No capability was promoted; exact/materialized 32-GiB, certified x86-64, production CVD/service, resource/fanotify, Sonic1, independent format-8, and final release qualification remain open. Receipt: `docs/largefile-task-receipts/R08-msxml-empty-child-maxfiles-2026-09-13.md`.
+
+R08 current-source MSXML legacy self-closing empty-child MaxFiles accounting (2026-09-13 UTC): recognized self-closing MSXML Base64 and callback elements now use shared empty-child admission, preserving inclusive MaxFiles accounting and cache taint; current-source ARM64 Release and ASAN/UBSAN regressions pass 4/4 each, source guards, snapshot, inventory, and `git diff --check` pass, and no capability was promoted. Certified x86-64, exact/materialized 32-GiB, production CVD/service, resource/fanotify, Sonic1, independent format-8, and final release qualification remain open. Receipt: `docs/largefile-task-receipts/R08-msxml-self-closing-empty-child-maxfiles-2026-09-13.md`.
+
+R08 current-source XAR empty-subdocument MaxFiles accounting (2026-09-13 UTC): recognized XAR subdocuments now remain on the descriptor-admission path even when their XML body is empty or self-closing, preserving inclusive MaxFiles accounting and cache taint; the current-source ARM64 Release and ASAN/UBSAN `xar_subdoc` suites pass 2/2 each, source guards/snapshot/inventory/case-map/diff checks pass, no capability was promoted, and certified x86-64, exact/materialized 32-GiB, production CVD/service, resource/fanotify, Sonic1, independent format-8, and final release qualification remain open. Receipt: `docs/largefile-task-receipts/R08-xar-empty-subdocument-maxfiles-2026-09-13.md`.
+
+R08 current-source MIME empty-attachment export (2026-09-14 UTC): recognized MIME attachments with no body lines now produce a named zero-byte fileblob and remain eligible for the owning descriptor scan path, instead of being discarded before nested MaxFiles admission; with the checked-in test root certificate bound through `CVD_CERTS_DIR`, the current-source ARM64 Release and ASAN/UBSAN `cl_api` runs each execute 529 checks with zero failures, including the new regression, and the sanitizer run reports no diagnostic. Focused Release and ASAN/UBSAN mail controls also pass `mail` 16/16, `mail_api` 4/4, `mail_map` 2/2, `mail_partial` 1/1, and `mhtml` 5/5; the separate MHTML TCase now receives the explicit `T` timeout, and the ASAN/UBSAN run passes with only `T=1200`. Source guards/snapshot/inventory/case-map/diff checks pass. No capability was promoted; certified x86-64, exact/materialized 32-GiB, production CVD/service, resource/fanotify, Sonic1, independent format-8, complete MIME corpus, and final release qualification remain open. Receipt: `docs/largefile-task-receipts/R08-mime-empty-attachment-admission-2026-09-14.md`.
+
+R03 current-source bounded Release and ASAN/UBSAN matrix (2026-09-14 UTC): after rebuilding the complete current-source trees, the bounded CTest matrix excluding only the established ARM64 aggregate `libclamav` timeout passed 27/27 in Release and 27/27 under ASAN/UBSAN, including application, daemon, milter, Rust, freshclam, sigtool, ingress, protocol, resource, source-guard, acceptance-schema, case-map, and late-member controls. The sanitizer log contains no ASan/UBSan/LeakSanitizer/runtime diagnostic. No capability was promoted; certified x86-64, exact/materialized 32-GiB, production CVD/service, resource/fanotify, independent format-8, Sonic1, complete parser-family evidence, and final release candidate review remain open. Receipt: `docs/largefile-task-receipts/R03-current-source-release-asan-matrix-2026-09-14.md`.
+
+R08 current-source EGG parser revalidation (2026-09-14 UTC): current-source Release and ASAN/UBSAN EGG selectors each pass `egg_map` 16/16, `egg_metadata` 1/1, and `egg_sfx` 3/3 with zero failures or errors and no sanitizer diagnostics. The empty `egg` selector has zero registered tests and is not counted. No capability was promoted; complete EGG/SFX corpus, certified x86-64, exact/materialized 32-GiB, production CVD/service, resource/fanotify, Sonic1, independent format-8, and final release evidence remain open. Receipt: `docs/largefile-task-receipts/R08-egg-current-source-revalidation-2026-09-14.md`.
+
+R08 current-source Rust parser revalidation (2026-09-14 UTC): current-source Release and ASAN/UBSAN Rust selectors each pass `rust_lha` 10/10, `rust_alz` 3/3, `rust_onenote` 5/5, and `rust_map` 2/2 with zero failures or errors and no sanitizer diagnostics. The exact 32-GiB OneNote reader-boundary case remains covered; the attachment handoff regression is bounded just above the former 256-MiB whole-input parser ceiling to avoid synthetic-tail compatibility scanning. Source guards, snapshot, inventory, acceptance map/schema, and `git diff --check` pass. No capability was promoted; certified x86-64, exact/materialized 32-GiB attachment coverage, production CVD/service, resource/fanotify, Sonic1, independent format-8, complete parser-family corpus breadth, and final release evidence remain open. Receipt: `docs/largefile-task-receipts/R08-rust-current-source-revalidation-2026-09-14.md`.
+
+R03 current-source Release and ASAN/UBSAN matrix refresh (2026-09-14 UTC): after reconfiguring both retained build trees so their CMake and build-manifest identities match the current source, the bounded CTest matrix excluding only the established aggregate ARM64 `libclamav` timeout passed 27/27 in Release in 128.81 seconds and 27/27 under ASAN/UBSAN in 502.89 seconds. The sanitizer log contains no ASan/UBSan/LeakSanitizer/runtime diagnostic. No capability was promoted; certified x86-64, exact/materialized 32-GiB, production CVD/service, resource/fanotify, independent format-8, Sonic1, complete acceptance records, and final release review remain open. Receipt: `docs/largefile-task-receipts/R03-current-source-release-asan-matrix-rust-2026-09-14.md`.
+
+R04/R10 current-source service acceptance parity (2026-09-14 UTC): current-source ARM64 Release and ASAN/UBSAN development service captures each wrote 36 independently schema-verified records covering six structured clamd report commands and six clamdscan modes across clean, detection, and limit outcomes. Each set has 12 `COMPLETE`, 12 `DETECTION_TERMINATED`, and 12 `LIMIT_INCOMPLETE` records, with exact identities, resource phases, health, cleanup, and lifecycle artifacts; the sanitizer capture has no diagnostics. No capability was promoted; exact/materialized 32-GiB, certified x86-64, production CVD, resource/fanotify, milter, Sonic1, independent format-8, and final release evidence remain open. Receipt: `docs/largefile-task-receipts/R04-R10-current-source-service-parity-2026-09-14.md`.
+
+R02/R04 resource-phase budget binding (2026-09-14 UTC): the generic acceptance-record parser now validates measured `rss`, `pcre`, `post-pcre`, and `temporary` tokens against the reviewed 32-GiB overall, 40-GiB PCRE, strictly-below-12-GiB post-PCRE, and 64-GiB temporary budgets; runtime producers and fixtures now serialize the strict post-PCRE operator. New boundary tests and the existing resource/producer/schema/source-guard suites pass. No capability was promoted and no full-size or certified evidence was produced. Receipt: `docs/largefile-task-receipts/R02-R04-resource-phase-budget-binding-2026-09-14.md`.
+
+R08 current-source PDF native-width LZW filter chain (2026-09-14 UTC): supported multi-filter PDF chains containing LZW no longer hit the stale top-level `UINT32_MAX`/allocation pre-admission checks; the reader-based LZW path now receives the same native-width bounded-chain admission as the other supported filters, while an LZW/FAX mixed chain preserves the legacy fail-visible boundary. The current-source ARM64 Release and ASan/UBSan `cl_api` runs each pass 529/529 with zero failures or errors, and the sanitizer log has no diagnostics. Source guards, snapshot, inventory, acceptance map/schema, and `git diff --check` remain required after the receipt/documentation update; no capability was promoted. Certified x86-64, exact/materialized multi-gigabyte PDF, production CVD/service, resource/fanotify, Sonic1, independent format-8, complete parser-family, and final release evidence remain open. Receipt: `docs/largefile-task-receipts/R08-pdf-native-width-lzw-chain-2026-09-14.md`.
+
+R03 current-source application smoke (2026-09-14 UTC): the retained ARM64 Release `clamscan` loaded an independently generated temporary HDB, returned `OK` for `/src/README.md`, detected the exact generated 21-byte input with exit 1 and `LargeFile.Runtime.Smoke.UNOFFICIAL`, and emitted a matching structured `--report-json` record with `DETECTION_TERMINATED`, exact alert, and byte counters. Temporary smoke files were removed. This confirms basic current-binary clean/detection/report behavior but does not qualify a capability or release; certified x86-64, exact/materialized 32-GiB, sanitizer service parity, production CVD, resource/fanotify, Sonic1, complete case records, and final readiness remain open. Receipt: `docs/largefile-task-receipts/R03-current-source-application-smoke-2026-09-14.md`.
+
+R03 current-source `ENABLE_WERROR` flag propagation (2026-09-14 UTC): both CMake warning-flag helpers now preserve prior accumulator contents, so an isolated `ENABLE_WERROR=ON` configuration reports `-Werror -Wall -Wextra -Wformat-security` in `WARNCFLAGS`; the focused `clamav` build fails on pre-existing bundled-regex signedness warnings, providing deterministic proof that Werror is active without claiming global warning-clean qualification or promoting the capability. Receipt: `docs/largefile-task-receipts/R03-werror-flag-propagation-2026-09-14.md`.
+
+R03 current-source Werror warning cleanup (2026-09-14 UTC): regex, XZ/7-Zip, generated YARA, fileblob, AC/BM matcher, TFLite, and InstallShield warning sites were corrected and their focused objects/targets compile cleanly under effective Werror; the global library build now reaches the legacy NSIS bzip2 macro-driven fallthrough warnings, so warning-clean release qualification remains pending and the capability stays pending. Receipt: `docs/largefile-task-receipts/R03-werror-warning-cleanup-2026-09-14.md`.
+
+R09 current-source required-unsupported revalidation (2026-09-14 UTC): the dedicated seven-capability R09 Check group passes 57/57 in both the current ARM64 Release and ASAN/UBSAN binaries, with no sanitizer diagnostic. The run is bound to source manifest `19330bf9d99e14ef53661bf531e3cb402200abe0e395dbb44b49af86356a7667` and the rebuilt test binaries; no capability was promoted because certified x86-64, full-size, independent corpus, production-CVD/service, and final evidence remain open. Receipt: `docs/largefile-task-receipts/R09-required-unsupported-revalidation-2026-09-14.md`.
+
+R04 current-source `clamscan` file/stdin development acceptance (2026-09-14 UTC): the retained ARM64 Release and ASAN/UBSAN `clamscan` binaries each pass the existing development acceptance producer's six cases: clean, exact-marker detection, and MaxFileSize limit over both file and stdin ingress. Each capture writes six schema-validated records with source/build/oracle provenance; targeted log inspection finds no ASan/UBSan/LeakSanitizer/runtime diagnostic. Evidence is retained outside the source tree under `/private/tmp/clamav-r04-clamscan-development-20260914` and `/private/tmp/clamav-r04-clamscan-asan-development-20260914`; no capability was promoted because the fixtures are small ARM64 development inputs and do not establish certified x86-64, full-size, production-CVD, resource, service, or final release evidence. Receipt: `docs/largefile-task-receipts/R04-clamscan-file-stdin-development-2026-09-14.md`.
+
+R03 current-source Werror application closure (2026-09-14 UTC): the complete current-source `ENABLE_WERROR=ON` build now passes all configured library and application targets, after portable fixes for legacy state-machine fall-through, signedness/width checks, pointer typing, allocation bounds, daemon portability, and clamsubmit MIME form handling. Rebuilt ARM64 Release and ASAN/UBSAN trees each pass `cl_api` 529/529 with zero failures or errors; the sanitizer run reports no diagnostic. This remains development evidence only: no capability was promoted, and certified x86-64, exact/materialized 32-GiB, production-CVD/service, resource/fanotify, Sonic1, independent format-8, complete acceptance records, and final release review remain open. Receipt: `docs/largefile-task-receipts/R03-werror-application-closure-2026-09-14.md`.
+
+R04/R10 current-source service and CLI capture (2026-09-14 UTC): current-source ARM64 Release and ASAN/UBSAN development producers each wrote 36 schema-verified clamd/clamdscan records and 6 schema-verified clamscan file/stdin records, covering clean, exact detection, and MaxFileSize-limit outcomes. All records report health and cleanup pass; the sanitizer captures emit no diagnostics. This is development-only small-fixture evidence and does not promote capabilities or replace certified x86-64, exact/materialized 32-GiB, production-CVD, measured resource/fanotify, Sonic1, independent format-8, or final release evidence. Receipt: `docs/largefile-task-receipts/R04-R10-current-source-service-capture-2026-09-14.md`.
+
+R03 current-source warning gate refresh (2026-09-14 UTC): the complete current-source `ENABLE_WERROR=ON` build passed with exit 0 across the configured library and application targets. Release `cl_api` passed 529/529; focused Release and ASAN/UBSAN 7-Zip, YARA, and regex suites passed with no sanitizer diagnostics. The current ASAN aggregate `cl_api` rerun did not return and is not counted as a pass. The maximal-warning exploration advanced through generated YARA and core utility layers before reaching broad legacy conversion diagnostics in `libclamav/str.c`. The current-source manifest is `b1955dbea032097610e1917cd70be7db4ffad87e20079d4ba7cc2d225f1a8bcc`. No capability was promoted; certified x86-64, exact/materialized 32-GiB, production CVD/service, resource/fanotify, Sonic1, independent format-8, complete acceptance records, and final release review remain open. Receipt: `docs/largefile-task-receipts/R03-werror-application-closure-2026-09-14.md`.
+
+R03 current-source warning gate revalidation (2026-09-14 UTC): after the
+strict-cleanup edits, the complete current-source `ENABLE_WERROR=ON` build
+still passed all configured library and application targets. The rebuilt
+Release `cl_api` subset passed 529/529, and focused Release and ASAN/UBSAN
+7-Zip, YARA, and regex cases passed with no sanitizer diagnostics. An
+unfiltered Release `check_clamav` run exposed five HTML/MSXML MaxFiles
+assertions in aggregate ordering; each of those five cases passes when
+isolated, so that run is not counted as a clean aggregate. The ASAN aggregate
+was not repeated after this rebuild because the prior bounded rerun did not
+return. Maximal-warning exploration now passes `str.c`, `strlcat.c`, `table.c`,
+`www.c`, `disasm.c`, and `filtering.c` before the larger legacy warning set in
+`matcher-ac.c`. The current-source manifest is
+`5b64f7a13b71b0320aa5104d9c8f9bbc1e941a30c99bb62a612686e0fc8f0fe4`. No
+capability was promoted; certified x86-64, exact/materialized 32-GiB,
+production CVD/service, resource/fanotify, Sonic1, independent format-8,
+complete acceptance records, and final release review remain open. Receipt:
+`docs/largefile-task-receipts/R03-werror-application-closure-2026-09-14.md`.
+
+R03 current-source Release and ASAN/UBSAN strict-refresh (2026-09-14 UTC):
+the complete Werror, Release, and ASAN/UBSAN application builds passed after
+the strict-warning cleanup. Release `cl_api` passed 529/529, and focused
+Release/ASAN/UBSAN 7-Zip, YARA, and regex cases passed without sanitizer
+diagnostics. The bounded Release matrix completed 26/27 because the procfs
+RSS sampler raced a short-lived process; its isolated retry passed, making all
+27 bounded Release tests pass across the two runs. The ASAN/UBSAN matrix
+reached `clamscan` (24/27) before the daemon test terminated the retained
+container with exit 137; the remaining cases are not counted. An unfiltered
+Release aggregate reached 2,942 checks with five HTML/MSXML MaxFiles failures
+only in group ordering; all five cases pass in isolation. The current-source
+manifest is `5b64f7a13b71b0320aa5104d9c8f9bbc1e941a30c99bb62a612686e0fc8f0fe4`.
+No capability was promoted; certified x86-64, exact/materialized 32-GiB,
+production CVD/service, resource/fanotify, Sonic1, independent format-8,
+complete acceptance records, and final release review remain open. Receipt:
+`docs/largefile-task-receipts/R03-current-source-release-asan-matrix-strict-refresh-2026-09-14.md`.
+
+R03/R08 current-source HTML and MSXML MaxFiles revalidation
+(2026-09-14 UTC): the remaining five Release aggregate failures were
+reproduced as real issues rather than test-order artifacts. HTML normalization
+now preserves nested non-success limit results such as `CL_EMAXFILES`, and
+the four direct MSXML regressions now use a compiled engine, shared
+configuration, and recursion layer. The final Release aggregate passes
+2,942/2,942; direct Release and ASAN/UBSAN HTML and MSXML runs pass 14/14
+each, the complete Werror build passes, and the ASAN/UBSAN runs emit no
+sanitizer diagnostics. Source guards, snapshot, acceptance map/schema,
+regenerated inventory, and `git diff --check` pass. The current-source
+manifest is `ec37159c793ad0a9b41589a54baf4c8533ca95fd32935b5d79093bc7f955cbfb`.
+The complete configured current-source Release CTest suite also passes 28/28
+in 196.47 seconds.
+No capability was promoted; certified x86-64, exact/materialized 32-GiB,
+production CVD/service, resource/fanotify, Sonic1, independent format-8,
+complete capability-specific records, and final release review remain open.
+Receipt:
+`docs/largefile-task-receipts/R03-R08-html-msxml-maxfiles-2026-09-14.md`.
+
+R07 independent format-8 prerequisite re-audit (2026-09-14 UTC): Apple
+Clang 21.0.0 is installed on the arm64 macOS host, but no `llvm-as`, `llc`,
+or external `clambc` compiler is available on the host or in the retained
+Docker image. Generic Clang output would not provide a ClamAV CBC format-8
+artifact with the required v2 ABI metadata, so the external compiler/artifact
+blocker remains precise and unchanged. No software was installed or
+downloaded, and no capability was promoted. Receipt:
+`docs/largefile-task-receipts/R07-format8-artifact-prerequisite-2026-09-12.md`.

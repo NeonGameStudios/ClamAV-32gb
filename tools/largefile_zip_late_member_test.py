@@ -29,6 +29,72 @@ class ZipLateMemberTests(unittest.TestCase):
         fixture.build_fixture(second)
         self.assertEqual(self.path.read_bytes(), second.read_bytes())
 
+    def test_custom_sizes_round_trip_through_streaming_fixture_and_oracle(self):
+        custom = Path(self.work.name) / "late-member-custom.zip"
+        prefix_size = 2 * 1024 * 1024 + 3
+        target_prefix_size = 1024 * 1024 + 5
+        fixture.build_fixture(
+            custom,
+            prefix_size=prefix_size,
+            target_prefix_size=target_prefix_size,
+        )
+        oracle = fixture.build_oracle(custom)
+        self.assertEqual(
+            oracle["target_member_size"],
+            target_prefix_size + len(fixture.MARKER) + 1,
+        )
+        self.assertGreater(oracle["marker_file_offset"], prefix_size)
+        self.assertEqual(oracle["fixture_size"], custom.stat().st_size)
+        self.assertEqual(fixture.validate_oracle(custom, oracle), oracle)
+
+    def test_zip64_directory_metadata_is_parsed(self):
+        original = self.path.read_bytes()
+        eocd_offset = original.rfind(b"PK\x05\x06")
+        eocd = fixture.EOCD.unpack(original[eocd_offset:eocd_offset + fixture.EOCD.size])
+        zip64_offset = eocd_offset
+        zip64 = fixture.ZIP64_EOCD.pack(
+            b"PK\x06\x06",
+            44,
+            45,
+            45,
+            0,
+            0,
+            eocd[3],
+            eocd[4],
+            eocd[5],
+            eocd[6],
+        )
+        locator = fixture.ZIP64_LOCATOR.pack(b"PK\x06\x07", 0, zip64_offset, 1)
+        legacy = fixture.EOCD.pack(
+            b"PK\x05\x06",
+            0,
+            0,
+            fixture.UINT16_MAX,
+            fixture.UINT16_MAX,
+            fixture.UINT32_MAX,
+            fixture.UINT32_MAX,
+            0,
+        )
+        zip64_path = Path(self.work.name) / "late-member-zip64.zip"
+        zip64_path.write_bytes(original[:eocd_offset] + zip64 + locator + legacy)
+        oracle = fixture.build_oracle(zip64_path)
+        for key in (
+            "version",
+            "target_member",
+            "target_member_data_offset",
+            "target_member_size",
+            "marker",
+            "marker_member_offset",
+            "marker_file_offset",
+            "marker_sha256",
+        ):
+            self.assertEqual(oracle[key], self.oracle[key], key)
+        self.assertEqual(
+            oracle["fixture_size"],
+            self.oracle["fixture_size"] + fixture.ZIP64_EOCD.size + fixture.ZIP64_LOCATOR.size,
+        )
+        self.assertNotEqual(oracle["fixture_sha256"], self.oracle["fixture_sha256"])
+
     def test_marker_tampering_is_rejected_by_raw_oracle(self):
         data = bytearray(self.path.read_bytes())
         marker_offset = self.oracle["marker_file_offset"]

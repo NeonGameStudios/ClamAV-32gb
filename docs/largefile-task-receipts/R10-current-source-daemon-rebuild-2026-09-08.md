@@ -10,7 +10,7 @@ authorized Linux x86-64 runner.
 
 Canonical source and branch:
 
-- `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- `<repository-root>`
 - `largefile-roadmap-qualification`
 - `HEAD`: `41cde8160286813f0f98e109c1450e40ff4117fb`
 - working tree intentionally remained dirty; no reset, commit, or push

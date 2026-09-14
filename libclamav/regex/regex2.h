@@ -60,7 +60,8 @@
  * immediately *preceding* "execution" of that operator.
  */
 typedef unsigned long sop;	/* strip operator */
-typedef long sopno;
+/* Strip positions, counts, and nesting levels are never negative. */
+typedef size_t sopno;
 #define	OPRMASK	0xf8000000LU
 #define	OPDMASK	0x07ffffffLU
 #define	OPSHIFT	((unsigned)27)
@@ -109,21 +110,25 @@ typedef struct {
 } cset;
 
 static inline void
-CHadd(cset *cs, char c)
+CHadd(cset *cs, int c)
 {
-	cs->ptr[(uch)c] |= cs->mask;
-	cs->hash += c;
+	const uch uc = (uch)c;
+
+	cs->ptr[uc] |= cs->mask;
+	cs->hash = (uch)(cs->hash + uc);
 }
 
 static inline void
-CHsub(cset *cs, char c)
+CHsub(cset *cs, int c)
 {
-	cs->ptr[(uch)c] &= ~cs->mask;
-	cs->hash -= c;
+	const uch uc = (uch)c;
+
+	cs->ptr[uc] &= (uch)~cs->mask;
+	cs->hash = (uch)(cs->hash - uc);
 }
 
 static inline int
-CHIN(const cset *cs, char c)
+CHIN(const cset *cs, int c)
 {
 	return (cs->ptr[(uch)c] & cs->mask) != 0;
 }

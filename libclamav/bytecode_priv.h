@@ -220,6 +220,12 @@ struct cli_bc_ctx {
     unsigned line;
     unsigned col;
     mpool_t *mpool;
+#if !USE_MPOOL
+    /* The no-mmap allocator has no arena to reclaim bytecode API buffers.
+     * Keep ownership in the context so a hook reset cannot leak them. */
+    void **mallocs;
+    size_t nmallocs;
+#endif
     struct bc_inflate *inflates;
     struct bc_lzma *lzmas;
     struct bc_bzip2 *bzip2s;

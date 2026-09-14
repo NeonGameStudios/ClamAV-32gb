@@ -49,10 +49,11 @@ Verified commands:
 - `python3 -B tools/largefile_service_oversize_test.py` — 22 tests passed,
   including both AlertExceedsMax modes and bundle publication.
 
-Remaining R05 work: execute the prepared current-source FILDESREPORT
-oversized run with alerts on and off, plus produce fully materialized
-release-family fixtures. Those require the unavailable certified Linux x86-64
-build/runner and are not substituted by this sparse-oracle control.
+The prepared current-source FILDESREPORT oversized run was completed on
+Sonic1 in development Docker with alerts on and off, as recorded below.
+Remaining R05 work is reproducing the probe on the certified Linux x86-64
+runner and producing fully materialized release-family fixtures. Those are
+not substituted by this sparse-oracle control.
 
 Runner-boundary revalidation:
 
@@ -97,5 +98,31 @@ Materialized 32-GiB edge development run on Sonic1 (2026-09-09 UTC):
 This is retained development evidence for the materialized edge case. It is
 not promoted into the R04 structured acceptance records or release readiness:
 the remote image still came from the isolated repaired-source graph rather
-than a frozen, complete current-source checkout, and the remaining family,
-FILDESREPORT, and dependency-bound checks are still outstanding.
+than a frozen, complete current-source checkout, and the remaining full-family,
+certified-runner, and dependency-bound checks are still outstanding.
+
+Current-source Sonic1 FILDESREPORT oversize development run (2026-09-11 UTC):
+
+- The current-source `clamd` and `clamscan` targets built successfully in the
+  existing Sonic1 Docker build tree. The daemon hash was
+  `b5eecedfbfb2d92c948b6bfb911304d415318f570ce19a96b2697c3273c943a3`; the
+  scanner hash was
+  `f4e54a1482d4325c05ac5467c4b8606d959cbd3dfbbbd1af8343ce67a33337df`.
+- The exact sparse `32 GiB + 1` descriptor was probed through
+  `FILDESREPORT` with `MaxFileSize=32G` and `MaxScanSize=64G`. Both modes
+  returned exact PONG health checks before and after, reported zero allocated
+  bytes, and confirmed fixture removal.
+- `AlertExceedsMax=no`: `completion=LIMIT_INCOMPLETE`, `status=24`
+  (`CL_EMAXSIZE`), `verdict=0`, `reason=Heuristics.Limits.Exceeded.MaxFileSize`.
+- `AlertExceedsMax=yes`: `completion=DETECTION_TERMINATED`, `status=0`,
+  `verdict=3`, `last_alert=Heuristics.Limits.Exceeded.MaxFileSize`, and the
+  same zero parser/matcher/logical/temporary work counters.
+- The combined validated evidence is retained at
+  `/tmp/clamav-32gb-oversize-evidence-20260911/oversize-both.json` on Sonic1,
+  SHA-256
+  `c86af2c4164d46219c52ad426b4c52ad0700dc9a0c70c66b619907b92cbc516a`.
+
+This is current-source development evidence, not certified or release
+qualification. The complete materialized release-family matrix, certified
+runner, sanitizer parity, R04 case records, and final release gates remain
+open.

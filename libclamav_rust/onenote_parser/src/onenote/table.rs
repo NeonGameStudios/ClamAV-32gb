@@ -237,3 +237,46 @@ fn parse_cell_at_depth(cell_id: ExGuid, space: &ObjectSpace, depth: usize) -> Re
 
     Ok(cell)
 }
+
+pub(crate) fn scan_table_at_depth<F>(
+    table_id: ExGuid,
+    space: &ObjectSpace,
+    depth: usize,
+    callback: &mut F,
+) -> Result<bool>
+where
+    F: FnMut(Option<&str>, &mut dyn std::io::Read) -> bool,
+{
+    Reader::check_recursion_depth(depth)?;
+    let table_object = space
+        .get_object(table_id)
+        .ok_or_else(|| ErrorKind::MalformedOneNoteData("table object is missing".into()))?;
+    let data = table_node::parse(table_object)?;
+
+    for row_id in data.rows {
+        Reader::check_recursion_depth(depth + 1)?;
+        let row_object = space
+            .get_object(row_id)
+            .ok_or_else(|| ErrorKind::MalformedOneNoteData("table row is missing".into()))?;
+        let row = table_row_node::parse(row_object)?;
+        for cell_id in row.cells {
+            Reader::check_recursion_depth(depth + 2)?;
+            let cell_object = space
+                .get_object(cell_id)
+                .ok_or_else(|| ErrorKind::MalformedOneNoteData("table cell is missing".into()))?;
+            let cell = table_cell_node::parse(cell_object)?;
+            for element_id in cell.contents {
+                if !super::outline::scan_outline_element(
+                    element_id,
+                    space,
+                    depth + 3,
+                    callback,
+                )? {
+                    return Ok(false);
+                }
+            }
+        }
+    }
+
+    Ok(true)
+}

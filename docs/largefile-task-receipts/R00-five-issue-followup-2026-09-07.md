@@ -10,7 +10,7 @@ to release-qualified.
 
 Canonical source and branch:
 
-- `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- `<repository-root>`
 - `largefile-roadmap-qualification`
 - working tree intentionally remains dirty and was not reset or cleaned
 - pre-receipt source-manifest SHA-256:
@@ -482,7 +482,7 @@ tests passed 147 with 2 expected skips; full source guards passed with 597
 capability bindings, refreshed snapshot/inventory checks passed, and the
 current source-manifest SHA-256 is
 `5183c325e03e21e3fd09e6f01723d4a1bc100104484857198fd3971daccaed94`. No
-capability promotion, remote execution, MCP-SSH, usage reset, commit, push,
+capability promotion, remote execution, remote SSH, usage reset, commit, push,
 or workflow action was used.
 
 Follow-on R10 shared command-send width hardening (2026-09-11): `sendln()`

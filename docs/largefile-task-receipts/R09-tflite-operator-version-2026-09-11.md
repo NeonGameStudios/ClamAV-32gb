@@ -36,7 +36,7 @@ encoded values must not be admitted as valid model metadata.
 The linked C test/build remains unavailable in this environment because the
 retained ARM64 Docker image lacks JSON-C development headers (`json.h`) and a
 coherent JSON-C/Zlib/check toolchain. No software was installed, no
-MCP-SSH/remote execution was used, no usage-reset or banked-reset credit was
+remote SSH/remote execution was used, no usage-reset or banked-reset credit was
 used, and no GitHub workflow action was triggered.
 
 No capability was promoted. Certified Linux x86-64 Release, sanitizer,

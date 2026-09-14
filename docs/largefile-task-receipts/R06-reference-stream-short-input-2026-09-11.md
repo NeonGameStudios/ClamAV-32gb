@@ -35,7 +35,7 @@ The current-source manifest generated after this slice is bound by SHA-256
 The generated line inventory was refreshed. Certified Linux x86-64,
 sanitizer, materialized late-content, production service, R03 runner, R04
 records, and final release qualification remain open. No capability was
-promoted. No remote execution, MCP-SSH, usage reset, GitHub workflow action,
+promoted. No remote execution, remote SSH, usage reset, GitHub workflow action,
 commit, or push was used.
 
 State: implementation slice development-verified; release qualification

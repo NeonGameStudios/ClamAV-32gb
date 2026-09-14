@@ -229,7 +229,7 @@ class TestCase(unittest.TestCase):
             - `AssertionError`: is raised if `options` is not a list.
         """
         executor = Executor(logger=self.log)
-        return executor.execute(cmd, cwd=cwd, kwargs=kwargs)
+        return executor.execute(cmd, cwd=cwd, **kwargs)
 
     def verify_output(self, text, expected=[], unexpected=[], order=ANY_ORDER):
         """Method verifies text. Check for expected or unexpected results.

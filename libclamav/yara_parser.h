@@ -51,6 +51,15 @@ int yr_parser_lookup_loop_variable(
     yyscan_t yyscanner,
     const char* identifier);
 
+int _yr_parser_write_string(
+    const char* identifier,
+    int flags,
+    YR_COMPILER* compiler,
+    SIZED_STRING* str,
+    RE* re,
+    YR_STRING** string,
+    int* min_atom_length);
+
 
 int yr_parser_reduce_rule_declaration(
     yyscan_t yyscanner,

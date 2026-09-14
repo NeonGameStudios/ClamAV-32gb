@@ -36,7 +36,7 @@ The linked current-source C test remains unavailable because the retained
 ARM64 Docker image lacks JSON-C development headers (`json.h`) and a coherent
 JSON-C/Zlib/check toolchain. The new C regression is source-registered and
 guarded but not claimed as linked execution. No software was installed, no
-MCP-SSH/remote execution was used, no usage-reset or banked-reset credit was
+remote SSH/remote execution was used, no usage-reset or banked-reset credit was
 used, and no GitHub workflow action was triggered.
 
 No capability was promoted. Independent format-8, certified Linux x86-64

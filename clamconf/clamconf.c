@@ -426,12 +426,10 @@ int main(int argc, char **argv)
         printopts(toolopts, optget(opts, "non-default")->enabled);
         if (cfgfile[i].tool == OPT_FRESHCLAM) {
             opt = optget(toolopts, "DatabaseDirectory");
-            strncpy(dbdir, opt->strarg, sizeof(dbdir));
-            dbdir[sizeof(dbdir) - 1] = 0;
+            snprintf(dbdir, sizeof(dbdir), "%s", opt->strarg);
         } else if (cfgfile[i].tool == OPT_CLAMD) {
             opt = optget(toolopts, "DatabaseDirectory");
-            strncpy(clamd_dbdir, opt->strarg, sizeof(clamd_dbdir));
-            clamd_dbdir[sizeof(clamd_dbdir) - 1] = 0;
+            snprintf(clamd_dbdir, sizeof(clamd_dbdir), "%s", opt->strarg);
         }
         optfree(toolopts);
     }
@@ -469,12 +467,11 @@ int main(int argc, char **argv)
     if (!strlen(dbdir)) {
         pt = freshdbdir();
         if (pt) {
-            strncpy(dbdir, pt, sizeof(dbdir));
+            snprintf(dbdir, sizeof(dbdir), "%s", pt);
             free(pt);
         } else {
-            strncpy(dbdir, OPT_DATADIR, sizeof(dbdir));
+            snprintf(dbdir, sizeof(dbdir), "%s", OPT_DATADIR);
         }
-        dbdir[sizeof(dbdir) - 1] = 0;
     }
 
     printf("\nDatabase information\n--------------------\n");

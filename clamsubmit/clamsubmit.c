@@ -58,6 +58,36 @@ char *read_stream(void);
 void usage(char *name);
 void version(void);
 
+static int add_mime_data(curl_mime *mime, const char *name, const char *value)
+{
+    curl_mimepart *part;
+
+    if (mime == NULL || name == NULL || value == NULL)
+        return -1;
+
+    part = curl_mime_addpart(mime);
+    if (part == NULL || curl_mime_name(part, name) != CURLE_OK ||
+        curl_mime_data(part, value, CURL_ZERO_TERMINATED) != CURLE_OK)
+        return -1;
+
+    return 0;
+}
+
+static int add_mime_file(curl_mime *mime, const char *name, const char *filename)
+{
+    curl_mimepart *part;
+
+    if (mime == NULL || name == NULL || filename == NULL)
+        return -1;
+
+    part = curl_mime_addpart(mime);
+    if (part == NULL || curl_mime_name(part, name) != CURLE_OK ||
+        curl_mime_filedata(part, filename) != CURLE_OK)
+        return -1;
+
+    return 0;
+}
+
 typedef struct _header_data {
     int len;
     char *session;
@@ -182,7 +212,7 @@ int main(int argc, char *argv[])
     CURL *clam_curl = NULL, *aws_curl = NULL;
     CURLcode res;
     int ch;
-    struct curl_httppost *post = NULL, *last = NULL;
+    curl_mime *post = NULL;
     struct curl_slist *slist = NULL;
     char *name = NULL, *email = NULL, *filename = NULL;
     int setURL = 0, fromStream = 0;
@@ -475,63 +505,96 @@ int main(int argc, char *argv[])
     set_tls_ca_bundle(aws_curl);
 #endif
 
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "key", CURLFORM_COPYCONTENTS, json_str, CURLFORM_END);
+    post = curl_mime_init(aws_curl);
+    if (post == NULL) {
+        logg(LOGG_ERROR, "ERROR: Could not initialize AWS multipart form\n");
+        goto done;
+    }
+
+    if (add_mime_data(post, "key", json_str) != 0) {
+        logg(LOGG_ERROR, "ERROR: Could not add key to AWS form\n");
+        goto done;
+    }
 
     json_str = presigned_get_string(ps_json_obj, "acl");
     if (json_str == NULL) {
         logg(LOGG_ERROR, "Error in presigned_get_string parsing acl from json object\n");
         goto done;
     }
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "acl", CURLFORM_COPYCONTENTS, json_str, CURLFORM_END);
+    if (add_mime_data(post, "acl", json_str) != 0) {
+        logg(LOGG_ERROR, "ERROR: Could not add acl to AWS form\n");
+        goto done;
+    }
 
     json_str = presigned_get_string(ps_json_obj, "policy");
     if (json_str == NULL) {
         logg(LOGG_ERROR, "Error in presigned_get_string parsing policy from json object\n");
         goto done;
     }
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "policy", CURLFORM_COPYCONTENTS, json_str, CURLFORM_END);
+    if (add_mime_data(post, "policy", json_str) != 0) {
+        logg(LOGG_ERROR, "ERROR: Could not add policy to AWS form\n");
+        goto done;
+    }
 
     json_str = presigned_get_string(ps_json_obj, "x-amz-meta-original-filename");
     if (json_str == NULL) {
         logg(LOGG_ERROR, "Error in presigned_get_string parsing x-amz-meta-original-filename from json object\n");
         goto done;
     }
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "x-amz-meta-original-filename", CURLFORM_COPYCONTENTS, json_str, CURLFORM_END);
+    if (add_mime_data(post, "x-amz-meta-original-filename", json_str) != 0) {
+        logg(LOGG_ERROR, "ERROR: Could not add original filename to AWS form\n");
+        goto done;
+    }
 
     json_str = presigned_get_string(ps_json_obj, "x-amz-credential");
     if (json_str == NULL) {
         logg(LOGG_ERROR, "Error in presigned_get_string parsing x-amz-credential from json object\n");
         goto done;
     }
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "x-amz-credential", CURLFORM_COPYCONTENTS, json_str, CURLFORM_END);
+    if (add_mime_data(post, "x-amz-credential", json_str) != 0) {
+        logg(LOGG_ERROR, "ERROR: Could not add credential to AWS form\n");
+        goto done;
+    }
 
     json_str = presigned_get_string(ps_json_obj, "x-amz-algorithm");
     if (json_str == NULL) {
         logg(LOGG_ERROR, "Error in presigned_get_string parsing x-amz-algorithm from json object\n");
         goto done;
     }
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "x-amz-algorithm", CURLFORM_COPYCONTENTS, json_str, CURLFORM_END);
+    if (add_mime_data(post, "x-amz-algorithm", json_str) != 0) {
+        logg(LOGG_ERROR, "ERROR: Could not add algorithm to AWS form\n");
+        goto done;
+    }
 
     json_str = presigned_get_string(ps_json_obj, "x-amz-date");
     if (json_str == NULL) {
         logg(LOGG_ERROR, "Error in presigned_get_string parsing x-amz-date from json object\n");
         goto done;
     }
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "x-amz-date", CURLFORM_COPYCONTENTS, json_str, CURLFORM_END);
+    if (add_mime_data(post, "x-amz-date", json_str) != 0) {
+        logg(LOGG_ERROR, "ERROR: Could not add date to AWS form\n");
+        goto done;
+    }
 
     json_str = presigned_get_string(ps_json_obj, "x-amz-signature");
     if (json_str == NULL) {
         logg(LOGG_ERROR, "Error in presigned_get_string parsing x-amz-signature from json object\n");
         goto done;
     }
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "x-amz-signature", CURLFORM_COPYCONTENTS, json_str, CURLFORM_END);
+    if (add_mime_data(post, "x-amz-signature", json_str) != 0) {
+        logg(LOGG_ERROR, "ERROR: Could not add signature to AWS form\n");
+        goto done;
+    }
 
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "file", CURLFORM_FILE, filename, CURLFORM_END);
+    if (add_mime_file(post, "file", filename) != 0) {
+        logg(LOGG_ERROR, "ERROR: Could not add sample to AWS form\n");
+        goto done;
+    }
 
     slist = curl_slist_append(slist, "Expect:");
     curl_easy_setopt(aws_curl, CURLOPT_HTTPHEADER, slist);
     curl_easy_setopt(aws_curl, CURLOPT_URL, "https://clamav-site.s3.amazonaws.com/");
-    curl_easy_setopt(aws_curl, CURLOPT_HTTPPOST, post);
+    curl_easy_setopt(aws_curl, CURLOPT_MIMEPOST, post);
 
     res = curl_easy_perform(aws_curl);
     if (res != CURLE_OK) {
@@ -540,9 +603,8 @@ int main(int argc, char *argv[])
     }
     curl_slist_free_all(slist);
     slist = NULL;
-    curl_formfree(post);
+    curl_mime_free(post);
     post = NULL;
-    last = NULL;
     curl_easy_cleanup(aws_curl);
     aws_curl = NULL;
     json_object_put(ps_json_obj);
@@ -560,23 +622,40 @@ int main(int argc, char *argv[])
         curl_easy_setopt(clam_curl, CURLOPT_COOKIE, session_cookie);
     }
 
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "utf8", CURLFORM_COPYCONTENTS, "\x27\x13", CURLFORM_END);
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "authenticity_token", CURLFORM_COPYCONTENTS, authenticity_token, CURLFORM_END);
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "submissionID", CURLFORM_COPYCONTENTS, submissionID, CURLFORM_END);
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "type", CURLFORM_COPYCONTENTS, malware ? "malware" : "fp", CURLFORM_END);
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "sendername", CURLFORM_COPYCONTENTS, name, CURLFORM_END);
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "email", CURLFORM_COPYCONTENTS, email, CURLFORM_END);
-    if (malware == true) {
-        curl_formadd(&post, &last, CURLFORM_COPYNAME, "shareSample", CURLFORM_COPYCONTENTS, "on", CURLFORM_END);
-    } else {
-        curl_formadd(&post, &last, CURLFORM_COPYNAME, "virusname", CURLFORM_COPYCONTENTS, fpvname, CURLFORM_END);
+    post = curl_mime_init(clam_curl);
+    if (post == NULL) {
+        logg(LOGG_ERROR, "ERROR: Could not initialize report multipart form\n");
+        goto done;
     }
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "description", CURLFORM_COPYCONTENTS, "clamsubmit", CURLFORM_END);
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "notify", CURLFORM_COPYCONTENTS, "on", CURLFORM_END);
-    curl_formadd(&post, &last, CURLFORM_COPYNAME, "privacy", CURLFORM_COPYCONTENTS, "on", CURLFORM_END);
+    if (add_mime_data(post, "utf8", "\x27\x13") != 0 ||
+        add_mime_data(post, "authenticity_token", authenticity_token) != 0 ||
+        add_mime_data(post, "submissionID", submissionID) != 0 ||
+        add_mime_data(post, "type", malware ? "malware" : "fp") != 0 ||
+        add_mime_data(post, "sendername", name) != 0 ||
+        add_mime_data(post, "email", email) != 0) {
+        logg(LOGG_ERROR, "ERROR: Could not add report fields to multipart form\n");
+        goto done;
+    }
+    if (malware == true) {
+        if (add_mime_data(post, "shareSample", "on") != 0) {
+            logg(LOGG_ERROR, "ERROR: Could not add shareSample to report form\n");
+            goto done;
+        }
+    } else {
+        if (add_mime_data(post, "virusname", fpvname) != 0) {
+            logg(LOGG_ERROR, "ERROR: Could not add virusname to report form\n");
+            goto done;
+        }
+    }
+    if (add_mime_data(post, "description", "clamsubmit") != 0 ||
+        add_mime_data(post, "notify", "on") != 0 ||
+        add_mime_data(post, "privacy", "on") != 0) {
+        logg(LOGG_ERROR, "ERROR: Could not add report options to multipart form\n");
+        goto done;
+    }
     curl_easy_setopt(clam_curl, CURLOPT_HTTPHEADER, slist);
     curl_easy_setopt(clam_curl, CURLOPT_URL, "https://www.clamav.net/reports/submit");
-    curl_easy_setopt(clam_curl, CURLOPT_HTTPPOST, post);
+    curl_easy_setopt(clam_curl, CURLOPT_MIMEPOST, post);
     curl_easy_setopt(clam_curl, CURLOPT_HEADERFUNCTION, NULL);
     res = curl_easy_perform(clam_curl);
     if (res != CURLE_OK) {
@@ -621,7 +700,7 @@ done:
         curl_slist_free_all(slist);
     }
     if (post != NULL) {
-        curl_formfree(post);
+        curl_mime_free(post);
     }
     if (clam_curl != NULL) {
         curl_easy_cleanup(clam_curl);

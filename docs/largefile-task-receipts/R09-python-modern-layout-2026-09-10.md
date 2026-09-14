@@ -1,4 +1,4 @@
-# Task receipt: R09 Python modern marshal-layout correction
+# Task receipt: R09 Python modern marshal-layout correction and revalidation
 
 Task ID / parent milestone: `R09` / `R00`
 
@@ -9,43 +9,49 @@ Starting commit and working-tree/source manifest identity: branch
 generated inventory and snapshot were refreshed after this slice.
 
 Prerequisites verified: the bounded marshal walker and its synthetic modern
-code-object regression were compared with the CPython 3.11+ marshal writer
-layout in the official `Python/marshal.c` source. No dependency installation,
-remote runner, Docker execution, usage reset, commit, push, or GitHub workflow
-action was used.
+code-object regression were compared with a locally generated CPython 3.11
+marshal stream. No dependency installation, remote runner, Docker execution,
+usage reset, commit, push, or GitHub workflow action was used.
 
 Observed failing case and expected behavior: Python 3.11+ marshal code
-objects carry five leading 32-bit fields, eight object fields, then first-line,
-line-table, and exception-table objects. The walker had been changed to an
-incorrect six-leading/nine-object interpretation, which would reject valid
-modern compiled files or parse them at the wrong boundaries. Valid modern
-input must reach the end of the file without executing bytecode; malformed
-input remains fail-visible.
+objects carry six leading 32-bit fields, eight object fields, then first-line,
+line-table, and exception-table objects. The prior five-leading interpretation
+was incorrect: it could accept only a synthetic shape and would reject the
+real current CPython layout. Valid modern input must reach the end of the file
+without executing bytecode; malformed input remains fail-visible.
 
 Changes made:
 
 - Added an explicit object-field count to each supported code-object layout.
-- Corrected the Python 3.11+ layout to five leading integers and eight
-  objects, matching CPython's removal of `co_nlocals` from the marshalled
-  code-object sequence.
-- Updated the modern regression fixture to retain the locals-plus name/kind
-  and qualname object fields without the obsolete `co_nlocals` field.
+- Corrected the Python 3.11+ layout to six leading integers and eight
+  objects, including `co_nlocals`, matching the locally generated CPython
+  3.11 marshal output.
+- Updated the modern regression fixture to include `co_nlocals` before the
+  stack-size and flags fields while retaining the locals-plus name/kind and
+  qualname object fields.
 - Added source guards for the layout contract.
 
 Authoritative reference: `https://github.com/python/cpython/blob/3.11/Python/marshal.c`.
 
 Commands, exits, logs and fixture/database hashes:
 
-- `git diff --check` — run before the final controls.
-- Inventory and snapshot freshness checks passed after the source/test change.
-- Full source/evidence guard sweep passed, including the acceptance map and
-  schema controls.
+- `python3 -B -c '...marshal.dumps(compile(...))...'` — exit 0; the local
+  CPython stream reports six leading uint32 fields.
+- `python3 -B -m unittest discover -s tools -p '*_test.py'` — 147 tests
+  passed, 2 expected skips.
+- `python3 -B tools/largefile_acceptance_cases.py --check-map` — 597
+  capabilities passed.
+- `python3 -B tools/largefile_acceptance_cases.py --check-records` — 14
+  records passed schema validation.
+- `python3 -B tools/largefile_status_snapshot.py --check 32gb-current-snapshot.md`,
+  `sh -n tools/largefile_source_guards.sh`, and `git diff --check` — passed.
 - The linked current-source C test binary was unavailable on this host because
   the required OpenSSL development headers are absent; no software was
   installed.
 
-Development tests passed: source-level registration and guard coverage passed;
-direct C execution remains unavailable on this host.
+Development tests passed: the source-level registration/guard contract and
+the host-side qualification controls passed; direct C execution remains
+unavailable on this host.
 
 Full-size/certified evidence produced, or explicitly not run: not run. No
 independent format-8 artifact, certified Linux x86-64 Release/sanitizer build,

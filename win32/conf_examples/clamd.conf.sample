@@ -157,6 +157,7 @@ TCPAddr localhost
 #MaxThreads 20
 
 # Waiting for data from a client socket will timeout after this time (seconds).
+# Set to 0 to wait indefinitely.
 # Default: 120
 #ReadTimeout 300
 

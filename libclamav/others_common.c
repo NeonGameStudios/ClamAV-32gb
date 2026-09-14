@@ -172,7 +172,7 @@ void cli_infomsg_simple(const char *str, ...)
     msg_callback(CL_MSG_INFO_VERBOSE, buff, buff + len, NULL);
 }
 
-inline void cli_dbgmsg(const char *str, ...)
+void cli_dbgmsg(const char *str, ...)
 {
     if (UNLIKELY(cli_get_debug_flag())) {
         MSGCODE(buff, len, "LibClamAV debug: ");
@@ -193,9 +193,12 @@ size_t cli_eprintf(const char *str, ...)
     size_t bytes_written = 0;
     va_list args;
     char buff[MSGBUFSIZ];
+    int written;
     va_start(args, str);
-    bytes_written = vsnprintf(buff, sizeof(buff), str, args);
+    written = vsnprintf(buff, sizeof(buff), str, args);
     va_end(args);
+    if (written >= 0)
+        bytes_written = (size_t)written;
     clrs_eprint(buff);
 
     return bytes_written;
@@ -456,7 +459,7 @@ size_t cli_readn(int fd, void *buff, size_t count)
         if ((size_t)retval > todo) {
             break;
         } else {
-            todo -= retval;
+            todo -= (size_t)retval;
         }
 
         current += retval;
@@ -507,7 +510,7 @@ size_t cli_writen(int fd, const void *buff, size_t count)
         if ((size_t)retval > todo) {
             break;
         } else {
-            todo -= retval;
+            todo -= (size_t)retval;
         }
 
         current += retval;
@@ -577,9 +580,9 @@ const char *cli_gettmpdir(void)
     unsigned int i;
 
 #ifdef _WIN32
-    char *envs[] = {"TEMP", "TMP", NULL};
+    const char *envs[] = {"TEMP", "TMP", NULL};
 #else
-    char *envs[] = {"TMPDIR", NULL};
+    const char *envs[] = {"TMPDIR", NULL};
 #endif
 
     for (i = 0; envs[i] != NULL; i++)
@@ -615,11 +618,11 @@ static int ftw_compare(const void *a, const void *b)
 {
     const struct dirent_data *da = a;
     const struct dirent_data *db = b;
-    long diff                    = da->is_dir - db->is_dir;
-    if (!diff) {
-        diff = da->ino - db->ino;
-    }
-    return diff;
+    if (da->is_dir != db->is_dir)
+        return da->is_dir > db->is_dir ? 1 : -1;
+    if (da->ino != db->ino)
+        return da->ino > db->ino ? 1 : -1;
+    return 0;
 }
 
 enum filetype {
@@ -988,14 +991,15 @@ static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_
                     free(statbufp);
                 break;
             } else {
+                struct dirent_data *entry;
                 entries = new_entries;
-                struct dirent_data *entry = &entries[entries_cnt - 1];
+                entry = &entries[entries_cnt - 1];
                 entry->filename           = fname;
                 entry->statbuf            = statbufp;
                 entry->is_dir             = ft == ft_directory;
                 entry->dirname            = entry->is_dir ? fname : NULL;
 #ifdef _XOPEN_UNIX
-                entry->ino = dent->d_ino;
+                entry->ino = (long)dent->d_ino;
 #else
                 entry->ino = -1;
 #endif
@@ -1090,7 +1094,8 @@ unsigned int cli_rndnum(unsigned int max)
     if (!rand_seeded) { /* minimizes re-seeding after the first call to cli_gentemp() */
         struct timeval tv;
         gettimeofday(&tv, (struct timezone *)0);
-        srand(tv.tv_usec + clock() + rand());
+        srand((unsigned int)tv.tv_usec ^ (unsigned int)clock() ^
+              (unsigned int)rand());
         rand_seeded = true;
     }
 
@@ -1189,6 +1194,7 @@ char *cli_sanitize_filepath(const char *filepath, size_t filepath_len, char **sa
             }
 #endif
         } else {
+            size_t segment_len;
             /*
              * Is not "/", "./", or "../".
              */
@@ -1219,11 +1225,12 @@ char *cli_sanitize_filepath(const char *filepath, size_t filepath_len, char **sa
                 break;
             }
             next_pathsep += strlen(PATHSEP); /* Include the path separator in the copy */
+            segment_len = (size_t)(next_pathsep - (filepath + index));
 
             /* Copy next directory name into the sanitized path */
-            strncpy(sanitized_filepath + sanitized_index, filepath + index, next_pathsep - (filepath + index));
-            sanitized_index += next_pathsep - (filepath + index);
-            index += next_pathsep - (filepath + index);
+            strncpy(sanitized_filepath + sanitized_index, filepath + index, segment_len);
+            sanitized_index += segment_len;
+            index += segment_len;
             depth++;
 
 #ifdef _WIN32
@@ -1281,7 +1288,7 @@ char *cli_genfname(const char *prefix)
     memcpy(salt, name_salt, 16);
 
     for (i = 16; i < 48; i++)
-        salt[i] = cli_rndnum(255);
+        salt[i] = (unsigned char)cli_rndnum(255);
 
     tmp = cli_md5buff(salt, 48, name_salt);
 

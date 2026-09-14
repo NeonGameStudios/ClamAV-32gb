@@ -9,7 +9,7 @@ Exact capability kind:id list: `clamd:SCANREPORT`,
 
 Starting commit and working-tree/source manifest identity:
 
-- canonical source: `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- canonical source: `<repository-root>`
 - branch: `largefile-roadmap-qualification`
 - HEAD at capture: `b4cde643fce085fa016338339830b2b28ff9a42a`
 - working tree was intentionally dirty and preserved

@@ -44,7 +44,7 @@
 
 #include "utils.h"
 
-static const char *regatoi(const regex_t *, char *, int);
+static const char *regatoi(const regex_t *, char *, size_t);
 
 static const struct rerr {
 	int code;
@@ -114,7 +114,7 @@ cli_regerror(int errcode, const regex_t *preg, char *errbuf, size_t errbuf_size)
  - regatoi - internal routine to implement REG_ATOI
  */
 static const char *
-regatoi(const regex_t *preg, char *localbuf, int localbufsize)
+regatoi(const regex_t *preg, char *localbuf, size_t localbufsize)
 {
 	const struct rerr *r;
 

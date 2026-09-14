@@ -30,6 +30,13 @@
 #include "clamav-config.h"
 #endif
 
+#if defined(__GNUC__) || defined(__clang__)
+/* This imported BSD qsort implementation uses size_t-sized pointer
+ * arithmetic internally while retaining its historical int temporaries. */
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
 #include <stdlib.h>
 
 #include "clamav.h"

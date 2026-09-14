@@ -208,7 +208,8 @@ Default: 10
 .TP
 \fBReadTimeout NUMBER\fR
 This option specifies the time (in seconds) after which clamd should
-timeout if a client doesn't provide any data.
+timeout if a client doesn't provide any data. A value of 0 disables this
+timeout and makes clamd wait indefinitely for client data.
 .br
 Default: 120
 .TP

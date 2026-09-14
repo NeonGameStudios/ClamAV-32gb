@@ -6,7 +6,7 @@ Updated: 2026-09-05. This is an execution guide, not a release certificate.
 
 The goal is to finish the contract in [PLAN.md](../PLAN.md), not merely make tests green or increase the number of capability rows. Use this guide to give one bounded task at a time to a Luna 5.6 subagent. A coordinator owns integration, the acceptance specification, source identity and final qualification. Larger cards below are milestones: split them into the indicated slices before delegation. No model can guarantee completion of unknown parser work; a failed acceptance case becomes a concrete next task, not permission to weaken the contract.
 
-Canonical checkout on the current host: `/Volumes/512gbNVME/github-external/ClamAV-32gb`, branch `largefile-roadmap-qualification`. The similarly named `/Volumes/512gbNVME/github-external/ClamAV` is a separate, stale source folder. The existing container's `/src` mount is not sufficient proof of current source. On another runner use the actual transferred candidate's absolute path, never these host paths blindly.
+Canonical checkout on the current host: `<repository-root>`, branch `largefile-roadmap-qualification`. The similarly named `<related-checkout>` is a separate, stale source folder. The existing container's `/src` mount is not sufficient proof of current source. On another runner use the actual transferred candidate's absolute path, never these host paths blindly.
 
 Read in order:
 
@@ -21,9 +21,9 @@ Read in order:
 - Base HEAD: `ff8905891b2b58a66c71859ab2c807cc4dee2dec`; the working tree also contains uncommitted fixes and new files. A checkout of HEAD alone loses those fixes.
 - Recorded before the R09 slice: 597 capability rows, 0 qualified, 143 bounded, 433 pending, 21 unsupported, and 583 release blockers. Counts are not percentage complete; recompute from the current snapshot before acting.
 - Already implemented: strict materialized/exact-edge input binding, mutation checks, contradictory outcome rejection, exact signature log parsing, a separate sparse 32 GiB + 1 FILDESREPORT probe, and a short snapshot generator. Do not reimplement them.
-- Latest development verification: 59 focused Linux tests plus shell evidence controls and source/readiness guards passed. This is ARM64 development evidence, not certified x86-64 release evidence.
-- No current-source live report from the new oversize probe: the attempted daemon rebuild ended with Rust compiler SIGKILLs. A stale binary must not be substituted.
-- Known open areas include modern OneNote's whole-input cap, contiguous parser/unpacker paths, independent bytecode format-8 execution, capability-specific proof coverage, full materialized ingress/parser qualification, PCRE memory phases, fanotify and the production canary.
+- Latest development verification includes the current-source ARM64 Release and ASan/UBSan control matrices, the current Release application smoke, and focused parser slices. The reader-backed `rust_onenote` group passes 4/4 in both Release and sanitizer builds, including a logical input above the former 256-MiB whole-input cap and streamed attachment detection. This is ARM64 development evidence, not certified x86-64 release evidence.
+- No current-source live report from the exact oversized qualification probe exists: the dedicated qualification option is correctly restricted to the certified Linux x86-64 profile, and the current ARM64 container cannot satisfy that contract. A stale binary must not be substituted.
+- Known open areas include certified exact/materialized 32-GiB qualification, contiguous parser/unpacker paths that still retain documented bounds, independent bytecode format-8 execution, capability-specific proof coverage, full materialized ingress/parser qualification, PCRE memory phases, fanotify and the production canary. The bounded modern OneNote reader path is implemented and locally verified; its full-size qualification remains open.
 
 ## What finished means
 
@@ -42,12 +42,20 @@ All of these are mandatory unless the user explicitly changes PLAN.md:
 | Evidence | Current immutable source/build/dependency/database identities; Release plus C/Rust sanitizer evidence, full materialized edges, exact signatures/offsets, resource phases, cleanup and daemon health. |
 | Release | Every required capability has verified capability-specific cases; readiness passes on the final default-enabled candidate, and the authorized production canary passes. |
 
-Keep the 14 explicitly allowlisted unsupported exclusions. The seven currently unsupported **required** rows are `matcher:rust-fuzzy-image-ffi-admission`, `matcher:fuzzy-image`, and parser IDs `CL_TYPE_AI_MODEL`, `CL_TYPE_IGNORED`, `CL_TYPE_PYTHON_COMPILED`, `CL_TYPE_RAR`, `CL_TYPE_RARSFX`. Their wording does not authorize excluding them. Implement/qualify their required behavior or bring a precise scope decision to the coordinator/user; leave release blocked until resolved. RAR backend absence is distinct from unsupported encrypted content with no key.
+Keep the 14 explicitly allowlisted unsupported exclusions. The earlier R09
+analysis identified seven rows that must remain in scope: matcher admission
+and fuzzy-image boundaries, plus `CL_TYPE_AI_MODEL`, `CL_TYPE_IGNORED`,
+`CL_TYPE_PYTHON_COMPILED`, `CL_TYPE_RAR`, and `CL_TYPE_RARSFX`. The current
+manifest records those rows as `pending` rather than `kind=unsupported`, while
+the 14 `kind=unsupported` rows are the explicit first-release exclusions.
+That classification does not qualify the pending behavior or release: every
+pending row still needs its required implementation and capability-specific
+evidence. RAR backend absence is distinct from unsupported encrypted content
+with no key.
 
-The R09 development slice keeps those seven rows in scope as `pending`: their
-fail-visible admission, raw-matching, parser-policy, RAR backend, and
-fuzzy-image boundary behavior is now explicit and covered by current-source
-focused checks. This resolves the required-unsupported classification without
+The R09 development slice keeps these rows in scope with fail-visible
+admission, raw-matching, parser-policy, RAR backend, and fuzzy-image boundary
+checks. This resolves the manifest classification contradiction without
 claiming release qualification; full parser/matcher implementation where still
 needed and certified evidence remain mandatory.
 

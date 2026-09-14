@@ -186,6 +186,9 @@ static void context_safe(struct cli_bc_ctx *ctx)
 static void bytecode_context_reset(struct cli_bc_ctx *ctx)
 {
     unsigned i;
+#if !USE_MPOOL
+    size_t j;
+#endif
 
     free(ctx->opsizes);
     ctx->opsizes = NULL;
@@ -280,7 +283,11 @@ static void bytecode_context_reset(struct cli_bc_ctx *ctx)
         ctx->mpool = NULL;
     }
 #else
-    /*TODO: implement for no-mmap case too*/
+    for (j = 0; j < ctx->nmallocs; j++)
+        free(ctx->mallocs[j]);
+    free(ctx->mallocs);
+    ctx->mallocs  = NULL;
+    ctx->nmallocs = 0;
 #endif
     for (i = 0; i < ctx->ninflates; i++)
         cli_bcapi_inflate_done(ctx, i);

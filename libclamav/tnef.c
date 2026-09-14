@@ -96,6 +96,16 @@ static int tnef_fileblob_ready(const fileblob *fb)
     return fb->fp != NULL && fb->fullname != NULL;
 }
 
+static cl_error_t tnef_admit_empty_attachment(cli_ctx *ctx)
+{
+    cl_error_t status = cli_updatelimits(ctx, 0);
+
+    if (status != CL_SUCCESS && status != CL_ETIMEOUT && status != CL_BREAK)
+        cli_mark_scan_incomplete(ctx, "TNEF empty attachment exceeds configured scan limits");
+
+    return status;
+}
+
 int cli_tnef(const char *dir, cli_ctx *ctx)
 {
     uint32_t i32;
@@ -182,6 +192,19 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
         if (alldone)
             break;
         if (length == 0) {
+            if (part == LVL_ATTACHMENT && tag == attATTACHTITLE) {
+                cli_mark_scan_incomplete(ctx, "TNEF attachment title is empty");
+                ret     = CL_EFORMAT;
+                alldone = 1;
+                break;
+            }
+            if (part == LVL_ATTACHMENT && tag == attATTACHDATA) {
+                ret = tnef_admit_empty_attachment(ctx);
+                if (ret != CL_SUCCESS) {
+                    alldone = 1;
+                    break;
+                }
+            }
             ret = tnef_read_checksum(ctx->fmap, &pos, fsize, ctx);
             if (ret != CL_SUCCESS) {
                 alldone = 1;

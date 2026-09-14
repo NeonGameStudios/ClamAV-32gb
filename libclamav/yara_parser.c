@@ -58,9 +58,13 @@ limitations under the License.
 #include "others.h"
 #endif
 
-#define todigit(x) ((x) >= 'A' && (x) <= 'F')      \
-                       ? ((uint8_t)(x - 'A' + 10)) \
-                       : ((uint8_t)(x - '0'))
+#ifndef REAL_YARA
+#define REAL_YARA 0
+#endif
+
+#if !REAL_YARA
+#include "yara_parser.h"
+#endif
 
 int yr_parser_emit(
     yyscan_t yyscanner,
@@ -159,7 +163,7 @@ int yr_parser_emit_pushes_for_strings(
                 yr_parser_emit_with_arg_reloc(
                     yyscanner,
                     OP_PUSH,
-                    PTR_TO_UINT64(string),
+                    (int64_t)PTR_TO_UINT64(string),
                     NULL);
 
                 string->g_flags |= STRING_GFLAGS_REFERENCED;
@@ -287,7 +291,7 @@ int _yr_parser_write_string(
     int* min_atom_length)
 {
     SIZED_STRING* literal_string;
-#ifdef REAL_YARA
+#if REAL_YARA
     YR_AC_MATCH* new_match;
 
     YR_ATOM_LIST_ITEM* atom;
@@ -446,7 +450,7 @@ int _yr_parser_write_string(
     result = yr_arena_write_data(
         compiler->sz_arena,
         literal_string->c_string,
-        literal_string->length,
+        (size_t)literal_string->length,
         (void*)&(*string)->string);
 
 #endif
@@ -726,7 +730,7 @@ YR_STRING* yr_parser_reduce_string_declaration(
         STAILQ_CONCAT(&rule->strings, &compiler->current_rule_string_q);
         STAILQ_INIT(&compiler->current_rule_string_q);
 
-        rule->g_flags = flags | compiler->current_rule_flags;
+        rule->g_flags = (uint32_t)(flags | compiler->current_rule_flags);
 #if REAL_YARA
         rule->tags    = tags;
         rule->strings = strings;
@@ -745,7 +749,7 @@ YR_STRING* yr_parser_reduce_string_declaration(
         FAIL_ON_COMPILER_ERROR(yr_parser_emit_with_arg_reloc(
             yyscanner,
             OP_MATCH_RULE,
-            PTR_TO_UINT64(rule),
+            (int64_t)PTR_TO_UINT64(rule),
             NULL));
 
         FAIL_ON_COMPILER_ERROR(yr_hash_table_add(
@@ -828,7 +832,7 @@ YR_STRING* yr_parser_reduce_string_declaration(
                 yr_parser_emit_with_arg_reloc(
                     yyscanner,
                     OP_PUSH,
-                    PTR_TO_UINT64(string),
+                    (int64_t)PTR_TO_UINT64(string),
                     NULL);
 
                 if (instruction != OP_STR_FOUND)

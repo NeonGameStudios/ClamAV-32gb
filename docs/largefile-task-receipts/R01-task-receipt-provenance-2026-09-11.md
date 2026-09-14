@@ -7,7 +7,7 @@ status changes.
 
 Canonical checkout and branch:
 
-- `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- `<repository-root>`
 - `largefile-roadmap-qualification`
 - working tree intentionally remains dirty; no existing changes were reset,
   cleaned, committed, or pushed
@@ -48,10 +48,10 @@ run metadata identity.
 - `sh tools/largefile_source_guards.sh` — **passed**; 597 capability entries,
   release-readiness tests, acceptance schema/map tests, and all source guards
   passed.
-- `sh tools/largefile_source_manifest.sh /Volumes/512gbNVME/github-external/ClamAV-32gb /private/tmp/clamav-r01-receipt-exclusion-source-manifest.txt` — **exit 0**; SHA-256 matched the identity above.
+- `sh tools/largefile_source_manifest.sh <repository-root> /private/tmp/clamav-r01-receipt-exclusion-source-manifest.txt` — **exit 0**; SHA-256 matched the identity above.
 - `git diff --check` — **passed**.
 
-No compiler, runtime, remote host, MCP-SSH, installation, usage reset,
+No compiler, runtime, remote host, remote SSH, installation, usage reset,
 GitHub workflow action, commit, or push was used. No capability was promoted.
 
 ## Remaining failures / next action

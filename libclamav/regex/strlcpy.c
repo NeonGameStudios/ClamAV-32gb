@@ -32,7 +32,7 @@
 size_t
 cli_strlcpy(char *dst, const char *src, size_t siz)
 {
-#if HAVE_STRLCPY
+#if defined(HAVE_STRLCPY) && HAVE_STRLCPY
     return strlcpy(dst, src, siz);
 #else
 	char *d = dst;
@@ -55,6 +55,6 @@ cli_strlcpy(char *dst, const char *src, size_t siz)
 			;
 	}
 
-	return(s - src - 1);	/* count does not include NUL */
+	return (size_t)(s - src - 1); /* count does not include NUL */
 #endif
 }

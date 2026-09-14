@@ -33,13 +33,20 @@ from files.
 
 #include <yara_arena.h>
 #include "yara_clam.h"
+
+#ifndef REAL_YARA
+#define REAL_YARA 0
+#endif
+
 #if REAL_YARA
 #include <yara/mem.h>
 #include <yara/error.h>
 #include <yara/limits.h>
 #endif
 
+#if REAL_YARA
 #define ARENA_FILE_VERSION      3
+#endif
 
 
 #pragma pack(push)
@@ -103,7 +110,7 @@ static void _yr_arena_rollback_relocations(
 //    A pointer to the newly created YR_ARENA_PAGE structure
 //
 
-YR_ARENA_PAGE* _yr_arena_new_page(
+static YR_ARENA_PAGE* _yr_arena_new_page(
     size_t size)
 {
   YR_ARENA_PAGE* new_page;
@@ -149,7 +156,7 @@ YR_ARENA_PAGE* _yr_arena_new_page(
 //    resides.
 //
 
-YR_ARENA_PAGE* _yr_arena_page_for_address(
+static YR_ARENA_PAGE* _yr_arena_page_for_address(
     YR_ARENA* arena,
     void* address)
 {
@@ -197,7 +204,7 @@ YR_ARENA_PAGE* _yr_arena_page_for_address(
 //    ERROR_SUCCESS if succeed or the corresponding error code otherwise.
 //
 
-int _yr_arena_make_relocatable(
+static int _yr_arena_make_relocatable(
     YR_ARENA* arena,
     void* base,
     va_list offsets)
@@ -219,7 +226,7 @@ int _yr_arena_make_relocatable(
 
   old_head = page->reloc_list_head;
   old_tail = page->reloc_list_tail;
-  base_offset = (uint8_t*) base - page->address;
+  base_offset = (size_t)((uint8_t*)base - page->address);
   offset = va_arg(offsets, size_t);
 
   while (offset != EOL)
@@ -240,7 +247,7 @@ int _yr_arena_make_relocatable(
       return ERROR_INSUFICIENT_MEMORY;
     }
 
-    reloc->offset = base_offset + offset;
+    reloc->offset = (int32_t)(base_offset + offset);
     reloc->next = NULL;
 
     if (page->reloc_list_head == NULL)
@@ -722,6 +729,8 @@ int yr_arena_allocate_struct(
   YR_ARENA_PAGE* old_page;
   size_t old_used;
   int old_flags;
+  va_list offsets;
+  YR_ARENA_PAGE* new_page;
 
   if (allocated_memory == NULL)
     return ERROR_INVALID_ARGUMENT;
@@ -730,7 +739,6 @@ int yr_arena_allocate_struct(
   old_page = arena != NULL ? arena->current_page : NULL;
   old_used = old_page != NULL ? old_page->used : 0;
   old_flags = arena != NULL ? arena->flags : 0;
-  va_list offsets;
   va_start(offsets, allocated_memory);
 
   result = yr_arena_allocate_memory(arena, size, allocated_memory);
@@ -749,7 +757,7 @@ int yr_arena_allocate_struct(
   {
     if (arena != NULL && arena->current_page != old_page)
     {
-      YR_ARENA_PAGE* new_page = arena->current_page;
+      new_page = arena->current_page;
 
       if (old_page != NULL)
         old_page->next = NULL;

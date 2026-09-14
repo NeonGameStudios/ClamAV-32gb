@@ -10,14 +10,14 @@ have not undergone the gate's final evidence verification. Focused tests are not
 
 | Generated measure | Value |
 | --- | ---: |
-| Total capability rows | 597 |
+| Total capability rows | 604 |
 | Labeled qualified | 0 |
-| Bounded | 143 |
-| Pending | 440 |
+| Bounded | 147 |
+| Pending | 443 |
 | Unsupported (all kinds) | 14 |
 | Unsupported required rows (still blockers) | 0 |
 | Deliberate unsupported exclusions (allowlisted) | 14 |
-| Release-blocking rows | 583 |
+| Release-blocking rows | 590 |
 | All parser rows blocked / total | 80 / 80 |
 | Enabled parser rows blocked / total | 80 / 80 |
 | Unsupported required parser rows | 0 |
@@ -29,7 +29,7 @@ Required unsupported rows remain blockers. Only allowlisted `kind=unsupported` r
 
 These reminders require human review as implementation and evidence change:
 
-- Implementation: finish remaining modern OneNote/contiguous parser paths and independent format-8 bytecode fixtures.
+- Implementation: the bounded modern OneNote reader path is implemented; finish any remaining parser-family gaps and independent format-8 bytecode fixtures.
 - Evidence: qualify current-source Linux x86-64 Release and ASan/UBSan builds with production databases.
 - Acceptance: run the oversized descriptor probe on the certified runner; complete materialized edges, ingress/on-access parity, and resource measurements.
 - Release: obtain revision-bound evidence for each required capability and run the full release gate.
@@ -38,8 +38,8 @@ See [PLAN.md](PLAN.md), [audit1.md](audit1.md), and [32gb-status-summary.md](32g
 
 ## Snapshot provenance
 
-- Capability manifest SHA-256: `cbbb31df69d50d26e51266ff6a2d7cd3d4c07fab7e6cef151815c16d6550c2fb`
-- Readiness gate SHA-256: `d743b422d660d8ae6350e3debf7f5e997f6b6f4ecd48e5d5f7467b70e96ca95a`
+- Capability manifest SHA-256: `965f50728aa0878b65d3bd9190b031415f3e822071172ba29b6cf787fbf29fd0`
+- Readiness gate SHA-256: `983aaa45924a611f108a9e2e44d282ace52256ef3e8a693ec09c0317d9cf96dc`
 - Unsupported allowlist SHA-256: `105b9437c8027ba18ab7deb78e97a883566ed112b65c61def4f3458e01d82b33`
 - This tracked dashboard intentionally excludes Git HEAD; source/build identity belongs to external run provenance.
 - Freshness compares this generated text and the inputs above; it does not certify the entire source tree or external evidence.

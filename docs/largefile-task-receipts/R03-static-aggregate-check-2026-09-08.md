@@ -7,7 +7,7 @@ large-file roadmap work. It is development evidence from an ARM64 disposable
 container, not certified Linux x86-64 Release, sanitizer, or 32 GiB runtime
 qualification evidence.
 
-- Source: `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- Source: `<repository-root>`
 - Branch: `largefile-roadmap-qualification`
 - Source revision: `41cde8160286813f0f98e109c1450e40ff4117fb`
 - Build directory: `/tmp/clamav-largefile-static-build` inside the container

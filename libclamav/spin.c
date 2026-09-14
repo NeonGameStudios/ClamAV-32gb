@@ -518,7 +518,8 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
         for (j = 0; j < sectcnt; j++) {
             if (sections[j].rva <= key32 && key32 - sections[j].rva < sections[j].vsz &&
                 CLI_ISCONTAINED_0_TO((size_t)ssize, sections[j].raw, sections[j].rsz) &&
-                CLI_ISCONTAINED_0_TO(sections[j].rsz, 0, key32 - sections[j].rva))
+                sections[j].rsz > 0 &&
+                (uint64_t)(key32 - sections[j].rva) <= (uint64_t)sections[j].rsz)
                 break;
         }
 

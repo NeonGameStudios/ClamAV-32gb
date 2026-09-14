@@ -34,7 +34,7 @@ SizeT IA64_Convert(Byte *data, SizeT size, UInt32 ip, int encoding)
       bitRes = bitPos & 0x7;
       instruction = 0;
       for (j = 0; j < 6; j++)
-        instruction += (UInt64)data[i + j + bytePos] << (8 * j);
+        instruction += (UInt64)data[i + (SizeT)j + (SizeT)bytePos] << (8 * j);
 
       instNorm = instruction >> bitRes;
       if (((instNorm >> 37) & 0xF) == 0x5 && ((instNorm >> 9) & 0x7) == 0)
@@ -56,10 +56,10 @@ SizeT IA64_Convert(Byte *data, SizeT size, UInt32 ip, int encoding)
         instNorm |= ((UInt64)(dest & 0xFFFFF) << 13);
         instNorm |= ((UInt64)(dest & 0x100000) << (36 - 20));
         
-        instruction &= (1 << bitRes) - 1;
+        instruction &= ((UInt64)1 << bitRes) - 1;
         instruction |= (instNorm << bitRes);
         for (j = 0; j < 6; j++)
-          data[i + j + bytePos] = (Byte)(instruction >> (8 * j));
+          data[i + (SizeT)j + (SizeT)bytePos] = (Byte)(instruction >> (8 * j));
       }
     }
   }

@@ -6,7 +6,7 @@ Exact capability kind:id list: `parser:CL_TYPE_AI_MODEL`
 
 Canonical source and branch:
 
-- `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- `<repository-root>`
 - `largefile-roadmap-qualification`
 - starting commit: `b4cde643fce085fa016338339830b2b28ff9a42a`
 - current generated inventory SHA-256:

@@ -63,10 +63,9 @@ static int regex_allocation_size(size_t count, size_t element_size, size_t *size
 }
 
 /* macros for manipulating states, small version */
-#define	states	long
-#define	states1	long		/* for later use in cli_regexec() decision */
+#define	states	unsigned long
+#define	states1	unsigned long	/* for later use in cli_regexec() decision */
 #define	CLEAR(v)	((v) = 0)
-#define	SET0(v, n)	((v) &= ~((unsigned long)1 << (n)))
 #define	SET1(v, n)	((v) |= (unsigned long)1 << (n))
 #define	ISSET(v, n)	(((v) & ((unsigned long)1 << (n))) != 0)
 #define	ASSIGN(d, s)	((d) = (s))
@@ -75,7 +74,7 @@ static int regex_allocation_size(size_t count, size_t element_size, size_t *size
 #define	STATESETUP(m, n)	/* nothing */
 #define	STATETEARDOWN(m)	/* nothing */
 #define	SETUP(v)	((v) = 0)
-#define	onestate	long
+#define	onestate	unsigned long
 #define	INIT(o, n)	((o) = (unsigned long)1 << (n))
 #define	INC(o)		((o) <<= 1)
 #define	ISSTATEIN(v, o)	(((v) & (o)) != 0)
@@ -92,7 +91,6 @@ static int regex_allocation_size(size_t count, size_t element_size, size_t *size
 /* now undo things */
 #undef	states
 #undef	CLEAR
-#undef	SET0
 #undef	SET1
 #undef	ISSET
 #undef	ASSIGN
@@ -113,12 +111,11 @@ static int regex_allocation_size(size_t count, size_t element_size, size_t *size
 /* macros for manipulating states, large version */
 #define	states	char *
 #define	CLEAR(v)	memset(v, 0, m->g->nstates)
-#define	SET0(v, n)	((v)[n] = 0)
 #define	SET1(v, n)	((v)[n] = 1)
 #define	ISSET(v, n)	((v)[n])
 #define	ASSIGN(d, s)	memcpy(d, s, m->g->nstates)
 #define	EQ(a, b)	(memcmp(a, b, m->g->nstates) == 0)
-#define	STATEVARS	long vn; char *space
+#define	STATEVARS	size_t vn; char *space
 #define	STATESETUP(m, nv)	{ size_t state_size; \
 				if (!regex_allocation_size((size_t)(nv), (size_t)(m)->g->nstates, &state_size)) return(REG_ESPACE); \
 				(m)->space = cli_max_malloc(state_size); \
@@ -126,7 +123,7 @@ static int regex_allocation_size(size_t count, size_t element_size, size_t *size
 				(m)->vn = 0; }
 #define	STATETEARDOWN(m)	{ free((m)->space); }
 #define	SETUP(v)	((v) = &m->space[m->vn++ * m->g->nstates])
-#define	onestate	long
+#define	onestate	size_t
 #define	INIT(o, n)	((o) = (n))
 #define	INC(o)	((o)++)
 #define	ISSTATEIN(v, o)	((v)[o])

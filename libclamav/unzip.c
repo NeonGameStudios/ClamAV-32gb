@@ -3118,6 +3118,7 @@ static cl_error_t find_central_directory_header(
                 const char *locator;
                 const char *zip64_eocd;
                 uint64_t zip64_offset;
+                uint64_t zip64_record_size;
 
                 if (eocoff < ZIP64_LOCATOR_SIZE)
                     goto next_eocd;
@@ -3144,15 +3145,17 @@ static cl_error_t find_central_directory_header(
                 if (cli_readint32(zip64_eocd) != ZIP_MAGIC_ZIP64_END)
                     goto next_eocd;
 
+                zip64_record_size = (uint64_t)cli_readint64(zip64_eocd + 4);
+
                 /* The fixed ZIP64 EOCD fields occupy 56 bytes in total,
                  * while the size field excludes the 12-byte signature/size
                  * prefix.  Do not trust the fixed-field window unless the
                  * record itself declares at least that much structure and
                  * fits inside the containing map. */
-                if (cli_readint64(zip64_eocd + 4) < ZIP64_END_RECORD_SIZE - 12U ||
+                if (zip64_record_size < ZIP64_END_RECORD_SIZE - 12U ||
                     (uint64_t)(ZIP64_END_RECORD_SIZE - 12U) >
                         (uint64_t)(map->len - (size_t)zip64_offset - 12U) ||
-                    cli_readint64(zip64_eocd + 4) >
+                    zip64_record_size >
                         (uint64_t)(map->len - (size_t)zip64_offset - 12U))
                     goto next_eocd;
 
@@ -3513,6 +3516,15 @@ scan_catalogue:
         }
 
         if (zip_catalogue[i].compressed_size == 0 && zip_catalogue[i].uncompressed_size == 0) {
+            /* An empty ZIP member has no payload to materialize, but it is
+             * still a logical child. Charge it to the inclusive MaxFiles
+             * budget instead of silently bypassing nested admission. */
+            status = cli_updatelimits(ctx, 0);
+            if (status != CL_SUCCESS) {
+                if (status != CL_ETIMEOUT && status != CL_BREAK)
+                    cli_mark_scan_incomplete(ctx, "ZIP empty member exceeds configured scan limits");
+                goto done;
+            }
             continue;
         }
         if (zip_catalogue[i].compressed_size == 0) {

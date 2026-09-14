@@ -135,7 +135,7 @@ matcher(struct re_guts *g, const char *string, size_t nmatch,
     regmatch_t pmatch[], int eflags)
 {
 	const char *endp;
-	int i;
+	size_t i;
 	struct match mv;
 	struct match *m = &mv;
 	const char *dp;
@@ -161,7 +161,7 @@ matcher(struct re_guts *g, const char *string, size_t nmatch,
 	if (g->must != NULL) {
 		for (dp = start; dp < stop; dp++)
 			if (*dp == g->must[0] && stop - dp >= g->mlen &&
-			    memcmp(dp, g->must, g->mlen) == 0)
+			    memcmp(dp, g->must, (size_t)g->mlen) == 0)
 				break;
 		if (dp == stop)		/* we didn't find g->must */
 			return(REG_NOMATCH);
@@ -237,7 +237,7 @@ matcher(struct re_guts *g, const char *string, size_t nmatch,
 						STATETEARDOWN(m);
 						return(REG_ESPACE);
 				}
-				m->lastpos = (char **)cli_max_malloc(lastpos_size);
+				m->lastpos = (const char **)cli_max_malloc(lastpos_size);
 			}
 			if (g->nplus > 0 && m->lastpos == NULL) {
 				free(m->pmatch);
@@ -322,7 +322,7 @@ dissect(struct match *m, const char *start, const char *stop, sopno startst,
 	const char *ssp;	/* start of string matched by subsubRE */
 	const char *sep;	/* end of string matched by subsubRE */
 	const char *oldssp;	/* previous ssp */
-	const char *dp;
+	const char *dp = NULL;
 
 	AT("diss", start, stop, startst, stopst);
 	sp = start;
@@ -482,6 +482,7 @@ dissect(struct match *m, const char *start, const char *stop, sopno startst,
 	}
 
 	assert(sp == stop);
+	(void)dp;
 	return(sp);
 }
 
@@ -592,7 +593,7 @@ backref(struct match *m, const char *start, const char *stop, sopno startst,
 		if (m->pmatch[i].rm_eo == -1)
 			return(NULL);
 		assert(m->pmatch[i].rm_so != -1);
-		len = m->pmatch[i].rm_eo - m->pmatch[i].rm_so;
+		len = (size_t)(m->pmatch[i].rm_eo - m->pmatch[i].rm_so);
 		if (len == 0 && rec++ > MAX_RECURSION)
 			return(NULL);
 		assert(stop - m->beginp >= len);

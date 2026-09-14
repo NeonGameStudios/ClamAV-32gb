@@ -15,6 +15,8 @@ import struct
 import sys
 import tempfile
 
+import largefile_acceptance_cases as acceptance_cases
+
 MAX_FILE_SIZE = 34359738368
 OVERSIZE_BYTES = 34359738369
 CL_EMAXSIZE = 24  # cl_error_t in libclamav/clamav.h
@@ -215,8 +217,14 @@ def main(argv):
             print("usage: largefile_service_oversize.py --combine OUTPUT_JSON ALERT_OFF_JSON ALERT_ON_JSON", file=sys.stderr)
             return 2
         output, off_path, on_path = map(Path, argv[1:])
-        bundle = combine_evidence(json.loads(off_path.read_text(encoding="utf-8")),
-                                  json.loads(on_path.read_text(encoding="utf-8")))
+        bundle = combine_evidence(
+            acceptance_cases.load_json_object(
+                off_path.read_text(encoding="utf-8"), f"alerts-off evidence: {off_path}"
+            ),
+            acceptance_cases.load_json_object(
+                on_path.read_text(encoding="utf-8"), f"alerts-on evidence: {on_path}"
+            ),
+        )
         write_evidence(output, bundle)
         return 0
     if len(argv) not in (3, 4, 5):

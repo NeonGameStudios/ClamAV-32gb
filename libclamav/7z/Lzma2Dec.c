@@ -26,9 +26,7 @@
 */
 
 #define LZMA2_CONTROL_LZMA (1 << 7)
-#define LZMA2_CONTROL_COPY_NO_RESET 2
 #define LZMA2_CONTROL_COPY_RESET_DIC 1
-#define LZMA2_CONTROL_EOF 0
 
 #define LZMA2_IS_UNCOMPRESSED_STATE(p) (((p)->control & LZMA2_CONTROL_LZMA) == 0)
 
@@ -147,8 +145,8 @@ static ELzma2State Lzma2Dec_UpdateState(CLzma2Dec *p, Byte b)
       lp = b % 5;
       if (lc + lp > LZMA2_LCLP_MAX)
         return LZMA2_STATE_ERROR;
-      p->decoder.prop.lc = lc;
-      p->decoder.prop.lp = lp;
+      p->decoder.prop.lc = (unsigned)lc;
+      p->decoder.prop.lp = (unsigned)lp;
       p->needInitProp = False;
       return LZMA2_STATE_DATA;
     }

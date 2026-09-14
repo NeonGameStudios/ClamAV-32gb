@@ -6,7 +6,7 @@ Exact capability kind:id list: parser:`CL_TYPE_AI_MODEL`
 
 Canonical checkout and branch:
 
-- `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- `<repository-root>`
 - `largefile-roadmap-qualification`
 - starting commit: `b4cde643fce085fa016338339830b2b28ff9a42a`
 - intentionally dirty working tree preserved; no reset, clean, commit, or push
@@ -40,7 +40,7 @@ installed.
 
 No capability was promoted. Full AI-model parser semantics, certified Linux
 x86-64, full-size, sanitizer, privileged, production-service, R04 acceptance,
-and final release qualification remain open. No remote execution, MCP-SSH,
+and final release qualification remain open. No remote execution, remote SSH,
 usage reset, GitHub workflow action, commit, or push was used.
 
 State: source and host-control verified; linked runtime and certification

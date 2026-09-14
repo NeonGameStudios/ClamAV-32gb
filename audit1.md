@@ -22,6 +22,25 @@ capability dispositions are unchanged. See
 [the follow-up details](docs/largefile-qualification-followups.md) and
 [the current snapshot](32gb-current-snapshot.md).
 
+## Current-source OneNote reader parity refresh — 2026-09-13
+
+The current source contains a reader-backed modern OneNote path rather than
+the former whole-input-only scanner path. `onenote_parser` now parses from a
+bounded sequential reader, spools object-data blobs through the caller's
+temporary budget, and exposes streamed attachment readers to the ClamAV
+scanner. The current-source ARM64 Docker Release `rust_onenote` group passes
+4/4, including a logical input above the former 256-MiB cap and a nested
+attachment detection above that cap; the aligned ASan/UBSan group also passes
+4/4. The exact source/build identities and command are retained in
+`docs/largefile-task-receipts/R06-onenote-reader-release-parity-2026-09-13.md`
+and the sanitizer receipt.
+
+This closes the local implementation and Release-parity gap described by the
+older audit text. It does not establish full-size/materialized 32-GiB
+qualification, certified Linux x86-64 resources, production CVD/service
+coverage, or final release readiness; no capability status is promoted by
+this refresh.
+
 ## Working-tree service input qualification controls — 2026-09-04
 
 The service gate previously accepted arbitrary caller-bound sizes for its edge
@@ -676,10 +695,10 @@ not a release claim:
 | Shared logical/matcher/contiguous/temporary/file/recursion/time accounting | Partially implemented | The current source contains the shared ledgers, readers, spools, deadlines, and fail-visible status reconciliation; production-linked x86-64 execution, sanitizer evidence, and resource measurements for every enabled path remain open. |
 | Certified daemon startup and one-worker/two-entry service profile | Source and synthetic gate implemented; runtime qualification open | `clamd/largefile_admission.c` requires `MaxThreads=1`; `tools/largefile_service_qualification.sh` exercises two clients against `MaxQueue=2`; the verifier regression passes. A current-source production daemon run and Sonic1 resource evidence are still required. |
 | Common library/CLI/clamd/clamdscan/milter/on-access ingress contract | Partially implemented | Static guards and focused harnesses cover the contract, and the exact-edge milter proof is independently checked. Full current-source parity across every command family, production CVDs, materialized edge files, and on-access evidence remain open. |
-| Complete enabled parser, matcher, decoder, and bytecode coverage | Not complete | 75 enabled parser rows, five explicitly unsupported parser entries, logical/YARA/bytecode matcher rows, and many parser-family rows remain pending or bounded. The pinned modern OneNote dependency only exposes `parse_section_buffer(&[u8])`; the scanner therefore returns `CL_ERESOURCE` above `FMap::WHOLE_INPUT_MAX` (256 MiB) rather than claiming reader-backed 32 GiB support. |
+| Complete enabled parser, matcher, decoder, and bytecode coverage | Not complete | 75 enabled parser rows, five explicitly unsupported parser entries, logical/YARA/bytecode matcher rows, and many parser-family rows remain pending or bounded. The modern OneNote path now has a bounded reader/spool implementation and current Release/ASan parity, but full-size/materialized qualification and the remaining parser-family evidence are still open. |
 | Fail-visible unsupported and malformed-layer behavior | Substantially implemented; qualification open | ZIP confirmed malformed-central fallback, milter digest/offset/completion checks, release allowlisting, and numerous parser fault paths are now guarded and regression-tested. These source fixes do not replace complete corpus, sanitizer, production-CVD, or materialized-large-file evidence. |
 | Release-default activation | Not started by design | `LARGE_FILE_DEFAULTS` and related build/feature rows remain pending; defaults must stay gated until the enabled-parser and ingress release blockers are closed. |
-| PLAN.md acceptance workload and final certification | Not complete | No current certified Linux x86-64 production-CVD/Sonic1 canary, full 32 GiB materialized parser matrix, four-hour/resource/RSS/temporary-peak record, or final requirement-by-requirement proof bundle exists for this checkout. The latest MCP-SSH check to Sonic1 timed out; this is an evidence gap, not a local implementation blocker. |
+| PLAN.md acceptance workload and final certification | Not complete | No current certified Linux x86-64 production-CVD/Sonic1 canary, full 32 GiB materialized parser matrix, four-hour/resource/RSS/temporary-peak record, or final requirement-by-requirement proof bundle exists for this checkout. The latest remote SSH check to Sonic1 timed out; this is an evidence gap, not a local implementation blocker. |
 
 Conclusion: the branch remains on track for incremental fail-closed hardening,
 but is not on track for an immediate production release. The critical path is
@@ -9814,7 +9833,7 @@ evidence remain open.
 
 **Review date:** 2026-08-16  
 **Reviewed report:** audit.md, SHA-256 ce78ba7003031e6007bfe000c8ee6718175252ec5fed5e149ddda47617fb4e48  
-**Review target:** the delivered source tree at /Volumes/512gbNVME/github-external/ClamAV  
+**Review target:** the delivered source tree at <related-checkout>
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
@@ -11564,7 +11583,7 @@ CTest matrices each passed all 12 supported targets, including the exact
 compiled C/Rust/sanitizer regressions, fail-closed controls, and the updated
 runtime-evidence verifier. The runtime gate also assembled self-contained
 source/build/component/sanitizer evidence through
-`/work/evidence/runtime-v5-final6`. The tracked MCP-SSH wrapper later timed out
+`/work/evidence/runtime-v5-final6`. The tracked remote SSH wrapper later timed out
 with exit 124, but its bounded stdout reported that the runtime gates passed;
 direct job status/output retrieval confirmed that result, and running the
 repository evidence verifier in the same container exited 0. The evidence
@@ -12529,7 +12548,7 @@ fail-closed, accepts the valid NSIS header layout where the uncompressed header
 can exceed the compressed archive size, and runs phishing URL inspection on
 completed streamed mail bodies before raw scanning. These changes still need
 compiled Sonic1 verification; the transfer attempt was stopped before any
-bytes were written because MCP-SSH required explicit authorization for the
+bytes were written because remote SSH required explicit authorization for the
 source payload and destination.
 
 The NSIS admission regression now uses a 0x1105-byte header and 0x54d-byte
@@ -12563,11 +12582,11 @@ The authoritative source checkpoint `1091a494cd5064582d11e803ae56e973d2c9b57a`
 was archived locally at 15,045,340 bytes with SHA-256
 `1711a682ef50cd2306eff0f31efaf26b263c0bf3b54c923815a9a6fb5b0cf165`. Sonic1
 could not clone the private GitHub repository (`could not read Username`), and
-the unauthenticated codeload endpoint returned 404. The MCP-SSH durable upload
+the unauthenticated codeload endpoint returned 404. The remote SSH durable upload
 handoff reached its listener but failed before transfer with a read-only local
 staging directory; its subsequent cleanup found no remote temporary file. A
 direct upload source was also rejected because neither `/private/tmp` nor the
-canonical workspace is in the MCP-SSH server's configured local transfer roots.
+canonical workspace is in the remote SSH server's configured local transfer roots.
 
 The existing Sonic1 mount remains stale and no current-source bytes were
 written to it. No build or scan result from Sonic1 is therefore attributed to
@@ -13100,7 +13119,7 @@ the policy and the regression registration.
 
 Local shell syntax, the capability manifest, source guards, and `git diff
 --check` pass. The local macOS host lacks the OpenSSL development headers for a
-C syntax/build check. MCP-SSH rejected exporting the complete current private
+C syntax/build check. remote SSH rejected exporting the complete current private
 worktree archive to Sonic1, so compiled current-source and memory-qualification
 evidence for this change remains open and no remote result is attributed to it.
 
@@ -13114,7 +13133,7 @@ retained 32 GiB contiguous matcher subject cannot be under-admitted when only
 the file and logical-scan limits are lowered. The source-guard suite, capability
 manifest, and `git diff --check` pass. A compiled current-source Sonic1 result
 remains open because the current private worktree export is not permitted by
-MCP-SSH.
+remote SSH.
 
 The same gate now rejects large-file `clamd` admission on non-Linux-x86-64
 targets. This preserves the plan's first-release boundary: CMake may still
@@ -14708,7 +14727,7 @@ second-window cumulative quota rejection, overlapping dump/Base64 accounting,
 exact peak counters, zero-byte rollback, non-cacheability, and rejected-partial
 cleanup. Production XDP corpus, sanitizer, Linux x86-64, materialized large-file,
 and Sonic1 evidence remain release gates. Sonic1 accepted the configured
-MCP-SSH profile during this milestone, but its SSH service timed out and then
+remote SSH profile during this milestone, but its SSH service timed out and then
 refused the connection before any remote command started.
 
 ## HTML output-boundary deadlines — 2026-08-22
@@ -16357,9 +16376,9 @@ sanitizer runs, and Sonic1 qualification remain open.
 
 ## Sonic1 qualification connectivity recheck — 2026-08-22
 
-The administrator-provided `sonic1` host and `sonic1-camera-key` profile were
-accepted by MCP-SSH policy and resolved to `192.168.1.216:4456`; the declared
-login is `camera` with key authentication and sudo capability. The 20-second
+The administrator-provided `sonic1` host and `<redacted-login-profile>` profile were
+accepted by remote SSH policy and resolved to `<redacted-private-address>:4456`; the declared
+login is <redacted> with key authentication and sudo capability. The 20-second
 connection check passed policy and address resolution but timed out during TCP
 connect with `remote_started: false` and a retryable transport result. No
 compiled or test result from Sonic1 is attributed to this worktree.
@@ -17175,8 +17194,8 @@ corpus, sanitizer, and Sonic1 qualification remain open.
 
 ## Sonic1 qualification connectivity blocker — 2026-08-23
 
-The exact configured MCP-SSH host/profile (`sonic1` / `sonic1-camera-key`)
-remains unavailable at the connect phase on `192.168.1.216:4456`. A new
+The exact configured remote SSH host/profile (`sonic1` / `<redacted-login-profile>`)
+remains unavailable at the connect phase on `<redacted-private-address>:4456`. A new
 read-only checkout-state probe timed out after 20 seconds with
 `remote_started=false`; no remote command ran. Sonic1 production and sanitizer
 qualification therefore remain an external blocker, while local non-CMake
@@ -18579,7 +18598,7 @@ structured reports, resource observations, database/runtime provenance, and
 source hashes. The deterministic generator passes 37 tests, and shell syntax,
 Python syntax, whitespace, capability-manifest, and source-guard checks pass
 locally. The Linux x86-64 orchestrator and current production scanner run
-remain pending: Sonic1 accepted the configured MCP-SSH profile but its SSH
+remain pending: Sonic1 accepted the configured remote SSH profile but its SSH
 service refused or timed out before any remote command started. Materialized
 multi-gigabyte encrypted streams and production-scanner fault injection also
 remain release gates.
@@ -22197,9 +22216,9 @@ clamdscan path, multiscan, stream, fdpass, reload, command, queue, and stress
 behavior, with no service process or socket left by the test.
 
 This is current-object clamd/clamdscan service evidence, not final release
-certification. The authoritative MCP-SSH capability enumeration was completed
+certification. The authoritative remote SSH capability enumeration was completed
 before checking Sonic1 with host `sonic1` and login profile
-`sonic1-camera-key`; policy and address resolution passed, but the TCP connect
+`<redacted-login-profile>`; policy and address resolution passed, but the TCP connect
 phase timed out after 20 seconds, so no remote command or transfer was started.
 Full resource/service parity, real production CVD service runs, milter and
 on-access coverage, sanitizer, certified Linux x86-64, materialized-large-file,

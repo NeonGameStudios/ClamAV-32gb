@@ -42,6 +42,7 @@ limitations under the License.
 
 #include <math.h>
 #include <stdio.h>
+#include <limits.h>
 #ifdef REAL_YARA
 #include <stdint.h>
 #endif
@@ -64,6 +65,10 @@ limitations under the License.
 #include "yara_lexer.h"
 #endif
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#endif
+
 #define LEX_CHECK_SPACE_OK(data, current_size, max_length) \
     if (strlen(data) + current_size >= max_length - 1) \
     { \
@@ -84,6 +89,16 @@ limitations under the License.
 
 #ifdef _WIN32
 #define snprintf _snprintf
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#ifdef yynoreturn
+#undef yynoreturn
+#endif
+#define YARA_NORETURN __attribute__((__noreturn__))
+#define yynoreturn __attribute__((__noreturn__, __unused__))
+#else
+#define YARA_NORETURN
 #endif
 
 %}
@@ -208,7 +223,8 @@ include[ \t]+\"         {
     {
       f = (b > s)? (b + 1): (s + 1);
 
-      strlcpy(f, yyextra->lex_buf, sizeof(buffer) - (f - buffer));
+      strlcpy(f, yyextra->lex_buf,
+              sizeof(buffer) - (size_t)(f - buffer));
 
       f = buffer;
 
@@ -259,8 +275,9 @@ include[ \t]+\"         {
     }
     else
     {
+      /* Keep the diagnostic bounded when the include path is unusually long. */
       snprintf(buffer, sizeof(buffer),
-               "can't open include file: %s", yyextra->lex_buf);
+               "can't open include file: %.997s", yyextra->lex_buf);
       yyerror(yyscanner, compiler, buffer);
     }
   }
@@ -276,7 +293,6 @@ include[ \t]+\"         {
 
 <<EOF>> {
 
-  YR_COMPILER* compiler = yyget_extra(yyscanner);
   FILE* file = _yr_compiler_pop_file(compiler);
 
   if (file != NULL)
@@ -372,7 +388,7 @@ $({letter}|{digit}|_)*  {
 
 {digit}+(MB|KB){0,1}  {
 
-  yylval->integer = (size_t) atol(yytext);
+  yylval->integer = (int64_t)atol(yytext);
 
   if (strstr(yytext, "KB") != NULL)
   {
@@ -455,7 +471,7 @@ $({letter}|{digit}|_)*  {
 
    sscanf( yytext + 2, "%x", &result );
    LEX_CHECK_SPACE_OK("X", yyextra->lex_buf_len, LEX_BUF_SIZE);
-   *yyextra->lex_buf_ptr++ = result;
+   *yyextra->lex_buf_ptr++ = (char)result;
    yyextra->lex_buf_len++;
 }
 
@@ -498,7 +514,7 @@ $({letter}|{digit}|_)*  {
     s->flags |= SIZED_STRING_FLAGS_DOT_ALL;
 
   s->length = yyextra->lex_buf_len;
-  strlcpy(s->c_string, yyextra->lex_buf, s->length + 1);
+  strlcpy(s->c_string, yyextra->lex_buf, (size_t)s->length + 1);
 
   yylval->sized_string = s;
 
@@ -551,13 +567,21 @@ $({letter}|{digit}|_)*  {
 
 \{({hexdigit}|[ \-|\?\[\]\(\)\n\t])+\}  {
 
-  int len = strlen(yytext);
-  SIZED_STRING* s = (SIZED_STRING*) yr_malloc(len + sizeof(SIZED_STRING));
+  size_t len = strlen(yytext);
+  SIZED_STRING* s;
 
-  s->length = len;
+  if (len > (size_t)INT_MAX)
+  {
+    yyerror(yyscanner, compiler, "hex string too long");
+    yyterminate();
+  }
+
+  s = (SIZED_STRING*)yr_malloc(len + sizeof(SIZED_STRING));
+
+  s->length = (int)len;
   s->flags = 0;
 
-  strlcpy(s->c_string, yytext, s->length + 1);
+  strlcpy(s->c_string, yytext, len + 1);
   yylval->sized_string = s;
 
   return _HEX_STRING_;
@@ -606,7 +630,7 @@ void yywarning(
 }
 
 
-void yyfatal(
+YARA_NORETURN void yyfatal(
     yyscan_t yyscanner,
     const char *error_message)
 {

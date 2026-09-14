@@ -155,9 +155,9 @@ int Ppmd7_DecodeSymbol(CPpmd7 *p, IPpmd7_RangeDec *rc)
     do
     {
       int k = (int)(MASK(s->Symbol));
-      hiCnt += (s->Freq & k);
+      hiCnt += (k != 0) ? (UInt32)s->Freq : 0;
       ps[i] = s++;
-      i -= k;
+      i += (unsigned)(k != 0);
     }
     while (i != num);
     

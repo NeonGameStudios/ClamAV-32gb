@@ -8,7 +8,7 @@ not certified release qualification.
 
 Starting identity:
 
-- Canonical source: `/Volumes/512gbNVME/github-external/ClamAV-32gb`.
+- Canonical source: `<repository-root>`.
 - Branch: `largefile-roadmap-qualification`.
 - Rebuilt static/debug artifacts: `/private/tmp/clamav-largefile-static-build`.
 - Build and runtime dependencies were installed only inside disposable Docker

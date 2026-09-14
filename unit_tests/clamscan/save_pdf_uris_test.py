@@ -50,8 +50,8 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 2  # malformed PDF is fail-closed
-        self.verify_output(output.out, expected=["Can't parse data ERROR"])
+        assert output.ec == 0  # valid PDF
+        self.verify_output(output.out, expected=['OK'])
 
         expected_strings = [
             'URIs',

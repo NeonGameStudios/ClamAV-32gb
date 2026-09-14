@@ -148,11 +148,12 @@ cl_error_t cli_egg_extract_file(
 /**
  * @brief Extract the next file without materializing the member in memory.
  *
- * Stored and supported compressed blocks are read from the archive in bounded
- * windows and their output is delivered through the callback.  Solid EGG,
- * encrypted members, and unsupported codecs remain explicit extraction
- * failures.  The current file index is advanced on both success and failure,
- * matching cli_egg_extract_file().
+ * Stored, independently framed BZIP2, and persistent-state DEFLATE/LZMA
+ * blocks are read from the archive in bounded windows and their output is
+ * delivered through the callback. Solid EGG streams using AZO or other
+ * unsupported codecs, encrypted members, and mixed codec boundaries remain
+ * explicit extraction failures. The current file index is advanced on both
+ * success and failure, matching cli_egg_extract_file().
  *
  * @param hArchive       An open EGG archive handle from cli_egg_open().
  * @param write          Callback receiving bounded decoded output.

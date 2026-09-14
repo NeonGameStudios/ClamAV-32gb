@@ -593,6 +593,12 @@ static void assert_dsreport_path_request_accepts_sendln_success(int scantype, co
         ssize_t received;
 
         close(pair[0]);
+        /* The negative report case intentionally makes dsreport() close its
+         * socket as soon as it sees an infected frame without an alert. The
+         * child may therefore race that close while sending the terminator;
+         * keep the fixture alive long enough to report its protocol result
+         * instead of turning the expected peer-close into SIGPIPE. */
+        signal(SIGPIPE, SIG_IGN);
         received = recv(pair[1], command, sizeof(command), 0);
         if (received <= 0 || !memchr(command, '\0', (size_t)received) || strcmp(command, expected_command) != 0)
             _exit(1);
@@ -990,6 +996,38 @@ START_TEST(test_largefile_worker_count_policy)
 }
 END_TEST
 
+START_TEST(test_clamd_queue_limit_arithmetic_is_checked)
+{
+    uint64_t queue_limit;
+    uint64_t effective_queue;
+
+    ck_assert_int_eq(clamd_queue_limit_calculate(1024, 17, 1, 2, &queue_limit, &effective_queue), 1);
+    ck_assert_uint_eq(queue_limit, 1002);
+    ck_assert_uint_eq(effective_queue, 2);
+
+    ck_assert_int_eq(clamd_queue_limit_calculate(10, 17, 1, 2, &queue_limit, &effective_queue), 1);
+    ck_assert_uint_eq(queue_limit, 1);
+    ck_assert_uint_eq(effective_queue, 1);
+
+    ck_assert_int_eq(clamd_queue_limit_calculate(
+                         UINT64_MAX, 17, (uint64_t)INT_MAX, (uint64_t)INT_MAX,
+                         &queue_limit, &effective_queue),
+                     1);
+    ck_assert_uint_eq(queue_limit, (uint64_t)INT_MAX);
+    ck_assert_uint_eq(effective_queue, (uint64_t)INT_MAX);
+
+    ck_assert_int_eq(clamd_queue_limit_calculate(
+                         UINT64_MAX, UINT64_MAX, 2, 2, &queue_limit, &effective_queue),
+                     0);
+    ck_assert_int_eq(clamd_queue_limit_calculate(
+                         UINT64_MAX, 1, (uint64_t)INT_MAX + 1, 2, &queue_limit, &effective_queue),
+                     0);
+    ck_assert_int_eq(clamd_queue_limit_calculate(
+                         UINT64_MAX, 1, 1, (uint64_t)INT_MAX + 1, &queue_limit, &effective_queue),
+                     0);
+}
+END_TEST
+
 #if defined(C_LINUX)
 static void write_cgroup_fixture_file(const char *path, const char *value)
 {
@@ -1367,6 +1405,26 @@ START_TEST(test_maxscantime_cli_boundaries)
         ck_assert_ptr_null(optparse(NULL, 3, argv, 0, OPT_CLAMD, 0, NULL));
     }
     opterr = saved_opterr;
+}
+END_TEST
+
+START_TEST(test_numeric_option_parser_rejects_overflow)
+{
+    const char *names[] = {"MaxThreads", "MaxQueue", "MaxRecursion"};
+    size_t i;
+
+    for (i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
+        struct optstruct *opts = optadditem(names[i], "9223372036854775807", 1, OPT_CLAMD, 0, NULL);
+        const struct optstruct *option;
+
+        ck_assert_ptr_nonnull(opts);
+        option = optget(opts, names[i]);
+        ck_assert_ptr_nonnull(option);
+        ck_assert_int_eq(option->numarg, LLONG_MAX);
+        optfree(opts);
+
+        ck_assert_ptr_null(optadditem(names[i], "9223372036854775808", 1, OPT_CLAMD, 0, NULL));
+    }
 }
 END_TEST
 
@@ -2702,6 +2760,7 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_dsreport_rejects_multiple_report_frames);
 #endif
     tcase_add_test(tc_parser, test_maxscantime_cli_boundaries);
+    tcase_add_test(tc_parser, test_numeric_option_parser_rejects_overflow);
     tcase_add_test(tc_parser, test_stream_limit_zero_selects_large_file_ceiling);
     tcase_add_test(tc_parser, test_stream_chunk_length_is_wrap_safe);
     tcase_add_test(tc_parser, test_large_file_size_parser_ceiling);
@@ -2710,6 +2769,7 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_largefile_fsize_limit_policy);
     tcase_add_test(tc_parser, test_largefile_temporary_filesystem_policy);
     tcase_add_test(tc_parser, test_largefile_worker_count_policy);
+    tcase_add_test(tc_parser, test_clamd_queue_limit_arithmetic_is_checked);
 #if defined(C_LINUX)
     tcase_add_test(tc_parser, test_largefile_cgroup_membership_and_ancestor_headroom);
 #endif

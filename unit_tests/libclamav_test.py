@@ -19,6 +19,18 @@ os_platform = platform.platform()
 operating_system = os_platform.split('-')[0].lower()
 
 
+def libclamav_test_timeout():
+    """Return the explicitly configured timeout for the aggregate C test."""
+    raw_timeout = os.environ.get('CLAMAV_LIBCLAMAV_TEST_TIMEOUT', '600')
+    try:
+        timeout = int(raw_timeout)
+    except ValueError:
+        raise RuntimeError('CLAMAV_LIBCLAMAV_TEST_TIMEOUT must be an integer')
+    if timeout <= 0:
+        raise RuntimeError('CLAMAV_LIBCLAMAV_TEST_TIMEOUT must be positive')
+    return timeout
+
+
 class TC(testcase.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -42,7 +54,7 @@ class TC(testcase.TestCase):
         command = '{valgrind} {valgrind_args} {check_clamav}'.format(
             valgrind=TC.valgrind, valgrind_args=TC.valgrind_args, check_clamav=TC.check_clamav
         )
-        output = self.execute_command(command)
+        output = self.execute_command(command, timeout=libclamav_test_timeout())
 
         assert output.ec == 0  # success
 

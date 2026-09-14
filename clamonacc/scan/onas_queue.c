@@ -46,12 +46,16 @@
 #include "../c-thread-pool/thpool.h"
 #include "thread.h"
 #include "onas_queue.h"
+#if defined(HAVE_SYS_FANOTIFY_H)
+#include "../fanotif/fanotif.h"
+#endif
 
 static void onas_scan_queue_exit(void *arg);
 static void onas_scan_queue_unlock(void *arg);
 static int onas_consume_event(threadpool thpool);
 static cl_error_t onas_new_event_queue_node(struct onas_event_queue_node **node);
 static void onas_destroy_event_queue_node(struct onas_event_queue_node *node);
+static void onas_destroy_queued_event(struct onas_scan_event *event_data);
 static void onas_destroy_event_queue(void);
 
 static pthread_mutex_t onas_queue_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -142,6 +146,7 @@ static void onas_destroy_event_queue_node(struct onas_event_queue_node *node)
         return;
     }
 
+    onas_destroy_queued_event(node->data);
     node->next = NULL;
     node->prev = NULL;
     node->data = NULL;
@@ -150,6 +155,30 @@ static void onas_destroy_event_queue_node(struct onas_event_queue_node *node)
     node = NULL;
 
     return;
+}
+
+/* The thread pool owns an event after onas_consume_event detaches it from the
+ * linked list.  Events still linked at queue teardown remain queue-owned and
+ * must release every resource they carry, including a permission event that
+ * would otherwise remain unresolved after its metadata fd is forgotten. */
+static void onas_destroy_queued_event(struct onas_scan_event *event_data)
+{
+    if (event_data == NULL)
+        return;
+
+#if defined(HAVE_SYS_FANOTIFY_H)
+    if (event_data->fmd != NULL) {
+        if (event_data->fmd->fd >= 0) {
+            (void)onas_release_failed_event(event_data->fan_fd, event_data->fmd);
+            event_data->fmd->fd = -1;
+        }
+        free(event_data->fmd);
+        event_data->fmd = NULL;
+    }
+#endif
+    free(event_data->pathname);
+    event_data->pathname = NULL;
+    free(event_data);
 }
 
 static void onas_destroy_event_queue(void)
@@ -259,19 +288,23 @@ static int onas_consume_event(threadpool thpool)
     }
 
     struct onas_event_queue_node *popped_node = g_onas_event_queue_head->next;
+    struct onas_scan_event *event_data        = popped_node->data;
     g_onas_event_queue_head->next             = g_onas_event_queue_head->next->next;
     g_onas_event_queue_head->next->prev       = g_onas_event_queue_head;
     g_onas_event_queue.size--;
+    /* The event is now owned by the worker pool (or the inline fallback), not
+     * by the queue node.  Clear the node before any teardown can walk it. */
+    popped_node->data = NULL;
 
     pthread_mutex_unlock(&onas_queue_lock);
 
-    if (0 != thpool_add_work(thpool, (void *)onas_scan_worker, (void *)popped_node->data)) {
+    if (0 != thpool_add_work(thpool, (void *)onas_scan_worker, (void *)event_data)) {
         /* The event is already detached from the queue.  Run the worker
          * inline when the pool cannot allocate a job so its fanotify fd and
          * owned event data are still released and the permission event gets
          * a response instead of remaining blocked forever. */
         logg(LOGG_ERROR, "ClamScanQueue: unable to enqueue event in worker pool; processing it inline\n");
-        onas_scan_worker((void *)popped_node->data);
+        onas_scan_worker((void *)event_data);
     }
     onas_destroy_event_queue_node(popped_node);
 

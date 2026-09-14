@@ -6,7 +6,7 @@ Exact capability kind:id list: `parser:CL_TYPE_AI_MODEL`.
 
 Starting identity: branch `largefile-roadmap-qualification`; the existing
 intentionally dirty working tree was preserved. No dependency installation,
-remote execution, MCP-SSH, usage reset, commit, push, or GitHub workflow action
+remote execution, remote SSH, usage reset, commit, push, or GitHub workflow action
 was used.
 
 Observed gap and expected behavior: the bounded TFLite structural validator

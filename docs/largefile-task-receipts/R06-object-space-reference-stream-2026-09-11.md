@@ -8,7 +8,7 @@ Starting commit and working-tree/source manifest identity: branch
 `largefile-roadmap-qualification`, starting commit `b4cde643fce085fa016338339830b2b28ff9a42a`; existing dirty working tree preserved; pre-receipt current-source manifest SHA-256 `487525d327c15e5063e65160243ae16c7bdad6347067b2de607ef3ffce1a7d48`.
 
 Prerequisites verified: the vendored OneNote parser source and its object-space
-mapping model were inspected. No remote runner, MCP-SSH, usage reset, banked
+mapping model were inspected. No remote runner, remote SSH, usage reset, banked
 reset, GitHub workflow action, commit, or push was used. No host software was
 installed.
 

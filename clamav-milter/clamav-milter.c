@@ -421,8 +421,7 @@ int main(int argc, char **argv)
     }
     readtimeout = optget(opts, "ReadTimeout")->numarg;
 
-    cpool_init(opts);
-    if (!cp) {
+    if (cpool_init(opts) != 0 || !cp) {
         logg(LOGG_ERROR, "Failed to init the socket pool\n");
         localnets_free();
         allow_list_free();

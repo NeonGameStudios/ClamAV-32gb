@@ -478,7 +478,8 @@ void fds_remove(struct fd_data *data, int fd)
  * is received on any of the sockets.
  * Must be called with buf_mutex lock held.
  */
-/* TODO: handle ReadTimeout */
+/* Apply each descriptor's command/read deadline before polling. A zero
+ * timeout_at is the explicit no-deadline sentinel used by ReadTimeout=0. */
 int fds_poll_recv(struct fd_data *data, int timeout, int check_signals,
                   void *event)
 {
@@ -506,8 +507,8 @@ int fds_poll_recv(struct fd_data *data, int timeout, int check_signals,
         closest_timeout = 0;
     for (i = 0; i < data->nfds; i++) {
         time_t timeout_at = data->buf[i].timeout_at;
-        if (timeout_at && timeout_at < now) {
-            /* timed out */
+        if (timeout_at && timeout_at <= now) {
+            /* timed out at or beyond the configured deadline */
             data->buf[i].got_newdata = -2;
             /* we must return immediately from poll/select, we have a timeout! */
             closest_timeout = now;

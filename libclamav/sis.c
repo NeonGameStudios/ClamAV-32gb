@@ -858,6 +858,16 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
 
                         if (!lens[j]) {
                             cli_dbgmsg("\tSkipping empty file\n");
+                            {
+                                cl_error_t limitret = cli_updatelimits(ctx, 0);
+
+                                if (limitret != CL_SUCCESS) {
+                                    if (limitret != CL_ETIMEOUT)
+                                        cli_mark_scan_incomplete(ctx, "SIS empty member exceeds configured scan limits");
+                                    if (limit_status == CL_CLEAN)
+                                        limit_status = limitret;
+                                }
+                            }
                             continue;
                         }
 

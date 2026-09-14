@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 from pathlib import Path, PurePosixPath
 import re
 import sys
 
+import largefile_acceptance_cases as acceptance_cases
 
 HASH_RE = re.compile(r"[0-9a-f]{64}\Z")
 CASE_CONTRACT = {
@@ -201,10 +201,9 @@ def validate(proof_path: Path, evidence_root: Path | None = None) -> dict:
     require(proof_candidate.is_file() and not proof_candidate.is_symlink(),
             "fanotify evidence proof is missing or symlinked")
     proof_path = proof_candidate.resolve()
-    try:
-        document = json.loads(proof_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as error:
-        raise ValueError("fanotify evidence proof is not valid JSON") from error
+    document = acceptance_cases.load_json(
+        proof_path.read_text(encoding="utf-8"), "fanotify evidence proof"
+    )
     require(isinstance(document, dict), "fanotify evidence proof is not an object")
     require(document.get("proof_format_version") == 1 and document.get("evidence_type") == "fanotify",
             "fanotify evidence proof format is invalid")

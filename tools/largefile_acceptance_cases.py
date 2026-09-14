@@ -39,10 +39,17 @@ RESOURCE_PHASE_TOKEN_RE = re.compile(
     r"(?P<measured>rss|pcre|post-pcre|temporary)(?:<=|<)[0-9]+(?:[A-Za-z]+)?|"
     r"(?P<development>max-file|max-scan|max-temp)=[0-9]+(?:[A-Za-z]+)?|"
     r"development-envelope|mode=[A-Za-z0-9_.:/+\\-]+|"
+    r"resource-records=[0-9a-f]{64}|"
     r"daemon-rss=unmeasured|socket=tempfs|"
     r"daemon-health=ping-before-and-after|cleanup=lifecycle-verified"
     r")\Z"
 )
+RESOURCE_PHASE_BUDGETS = {
+    "rss": ("<=", 32 * 1024 * 1024),
+    "pcre": ("<=", 40 * 1024 * 1024),
+    "post-pcre": ("<", 12 * 1024 * 1024),
+    "temporary": ("<=", 64 * 1024 * 1024 * 1024),
+}
 REQUIRED_UNSUPPORTED = {
     ("matcher", "rust-fuzzy-image-ffi-admission"),
     ("matcher", "fuzzy-image"),
@@ -102,6 +109,31 @@ def fail(message: str) -> None:
     raise ValueError(message)
 
 
+def load_json(value: str, label: str):
+    """Parse one structured JSON value without accepting duplicate keys."""
+    def reject_duplicate_keys(pairs):
+        result = {}
+        for key, item in pairs:
+            if key in result:
+                fail(f"{label} has duplicate JSON key: {key}")
+            result[key] = item
+        return result
+
+    try:
+        result = json.loads(value, object_pairs_hook=reject_duplicate_keys)
+    except json.JSONDecodeError as error:
+        fail(f"{label} has invalid JSON: {error}")
+    return result
+
+
+def load_json_object(value: str, label: str) -> dict:
+    """Parse one structured evidence object without accepting duplicate keys."""
+    result = load_json(value, label)
+    if not isinstance(result, dict):
+        fail(f"{label} is not a JSON object")
+    return result
+
+
 def parse_resource_phases(value: str, line_number: int) -> set[str]:
     """Parse the reviewed resource-phase grammar without ignoring junk."""
     tokens = value.split(";")
@@ -119,6 +151,25 @@ def parse_resource_phases(value: str, line_number: int) -> set[str]:
                 f"structured resource phases at line {line_number}: {token!r}"
             )
         phase = match.group("measured") or match.group("development")
+        if phase in RESOURCE_PHASE_BUDGETS:
+            budget_match = re.fullmatch(
+                r"(?P<phase>rss|pcre|post-pcre|temporary)"
+                r"(?P<operator><=|<)(?P<value>[0-9]+)",
+                token,
+            )
+            if budget_match is None:
+                fail(
+                    f"acceptance record has an invalid measured resource phase "
+                    f"at line {line_number}: {token!r}"
+                )
+            expected_operator, expected_value = RESOURCE_PHASE_BUDGETS[phase]
+            actual_operator = budget_match.group("operator")
+            actual_value = int(budget_match.group("value"))
+            if actual_operator != expected_operator or actual_value > expected_value:
+                fail(
+                    f"acceptance record exceeds the {phase} resource budget "
+                    f"at line {line_number}: {token!r}"
+                )
         if phase is not None and phase in phases:
             fail(
                 f"acceptance record repeats resource phase {phase} at line "
@@ -426,8 +477,11 @@ def validate_records(
                         f"at line {line_number}"
                     )
                 try:
-                    service_inputs = json.loads(inputs_path.read_text(encoding="utf-8"))
-                except (OSError, KeyError, TypeError, json.JSONDecodeError) as error:
+                    service_inputs = load_json(
+                        inputs_path.read_text(encoding="utf-8"),
+                        "service input identity evidence",
+                    )
+                except OSError as error:
                     raise ValueError("service input identity evidence is malformed") from error
                 if not isinstance(service_inputs, dict) or \
                         type(service_inputs.get("version")) is not int or \

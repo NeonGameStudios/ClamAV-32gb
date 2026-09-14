@@ -4,6 +4,7 @@ use crate::fsshttpb::data::exguid::ExGuid;
 use crate::fsshttpb::data::object_types::ObjectType;
 use crate::fsshttpb::data::stream_object::ObjectHeader;
 use crate::fsshttpb::data_element::DataElement;
+use crate::reader::ReaderBlob;
 use crate::Reader;
 
 fn validate_fragment_range(size: u64, offset: u64, length: u64) -> Result<()> {
@@ -29,7 +30,7 @@ pub(crate) struct DataElementFragment {
     pub(crate) id: ExGuid,
     pub(crate) size: u64,
     pub(crate) chunk_reference: DataElementFragmentChunkReference,
-    pub(crate) data: Vec<u8>,
+    pub(crate) data: ReaderBlob,
 }
 
 #[derive(Debug)]
@@ -53,7 +54,7 @@ impl DataElement {
         let length = CompactU64::parse(reader)?.value();
 
         validate_fragment_range(size, offset, length)?;
-        let data = reader.read_vec_u64(length)?;
+        let data = reader.read_blob(length)?;
 
         ObjectHeader::try_parse_end_8(reader, ObjectType::DataElement)?;
 
@@ -73,7 +74,8 @@ impl DataElement {
 mod tests {
     use super::validate_fragment_range;
     use crate::fsshttpb::data_element::DataElement;
-    use crate::reader::Reader;
+    use crate::reader::{Reader, ReaderBlob};
+    use std::io::{Cursor, Read};
 
     #[test]
     fn fragment_range_accepts_a_chunk_inside_the_declared_element() {
@@ -110,7 +112,51 @@ mod tests {
         assert_eq!(fragment.size, total_size);
         assert_eq!(fragment.chunk_reference.offset, offset);
         assert_eq!(fragment.chunk_reference.length, 1);
-        assert_eq!(fragment.data, vec![0xA5]);
+        let mut data = Vec::new();
+        fragment
+            .data
+            .open_reader()
+            .expect("fragment data should be readable")
+            .read_to_end(&mut data)
+            .expect("fragment data should be complete");
+        assert_eq!(data, vec![0xA5]);
+    }
+
+    #[test]
+    fn fragment_parse_spools_stream_payload_in_refill_sized_chunks() {
+        let payload = (0..(Reader::REFILL_SIZE + 17))
+            .map(|value| (value % 251) as u8)
+            .collect::<Vec<_>>();
+        let total_size = payload.len() as u64;
+        let offset = 0u64;
+        let mut encoded = Vec::new();
+        encoded.extend_from_slice(&((0x06A_u32 << 3) | 0x2).to_le_bytes());
+        encoded.push(0); // nil outer ExGuid
+        for value in [total_size, offset, total_size] {
+            encoded.push(0x80); // compact-u64 64-bit form
+            encoded.extend_from_slice(&value.to_le_bytes());
+        }
+        encoded.extend_from_slice(&payload);
+        encoded.push((0x01u8 << 2) | 0x1); // Data Element End.
+
+        let fragment = DataElement::parse_data_element_fragment(&mut Reader::from_reader(
+            Cursor::new(encoded),
+        ))
+        .expect("stream-backed fragment should parse");
+
+        match &fragment.data {
+            ReaderBlob::Spool(spool) => assert_eq!(spool.length(), payload.len() as u64),
+            ReaderBlob::Memory(_) => panic!("stream-backed fragments must use a private spool"),
+        }
+
+        let mut data = Vec::new();
+        fragment
+            .data
+            .open_reader()
+            .expect("fragment spool should open")
+            .read_to_end(&mut data)
+            .expect("fragment spool should be readable");
+        assert_eq!(data, payload);
     }
 
     #[test]

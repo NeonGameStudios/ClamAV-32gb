@@ -134,7 +134,11 @@ def run_case(
 
 def load_report(path: Path, label: str) -> dict:
     require_file(path, f"{label} report")
-    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
+    rows = [
+        acceptance_cases.load_json_object(line, label)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line
+    ]
     if len(rows) != 1 or not isinstance(rows[0], dict):
         fail(f"{label} report is not one JSON object")
     return rows[0]

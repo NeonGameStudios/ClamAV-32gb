@@ -34,7 +34,7 @@ Limitations:
 - The host still lacks the generated build configuration and required C
   dependency headers, so the edited C translation unit was not linked here.
 - No independent format-8 compiler/artifact, certified Linux x86-64 run,
-  full-size materialized evidence, Docker/MCP-SSH execution, or R04
+  full-size materialized evidence, Docker/remote SSH execution, or R04
   qualification record is claimed.
 
 State: `development-verified`; release readiness remains blocked.

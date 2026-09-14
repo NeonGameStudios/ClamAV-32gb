@@ -119,10 +119,14 @@ target_sources(check_clamav
         check_matchers.c
         check_regex.c
         check_str.c
-        check_uniq.c)
+        check_uniq.c
+        ${PROJECT_SOURCE_DIR}/common/actions.c
+        ${PROJECT_SOURCE_DIR}/common/misc.c
+        ${PROJECT_SOURCE_DIR}/common/output.c
+        ${PROJECT_SOURCE_DIR}/common/optparser.c
+        ${PROJECT_SOURCE_DIR}/common/getopt.c)
 target_link_libraries(check_clamav
     PRIVATE
-        ClamAV::common
         libcheck::check)
 if(ENABLE_STATIC_LIB)
     # The unit tests exercise private parser entry points that are deliberately
@@ -151,8 +155,14 @@ if(LLVM_FOUND)
     target_link_directories( check_clamav PUBLIC ${LLVM_LIBRARY_DIRS} )
     target_link_libraries( check_clamav PUBLIC ${LLVM_LIBRARIES} )
 endif()
-target_include_directories(check_clamav PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/libclamav ${CMAKE_BINARY_DIR})
+target_include_directories(check_clamav PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/libclamav ${PROJECT_SOURCE_DIR}/common ${CMAKE_BINARY_DIR})
 target_compile_definitions(check_clamav PUBLIC OBJDIR="${OBJDIR}" SRCDIR="${SRCDIR}")
+
+# A targeted check_clamav build must carry the complete decrypted fixture set.
+# Without this dependency, a fresh build can omit optional-backend fixtures
+# even though the corresponding backend is enabled, making the harness fail
+# before it reaches any library assertions.
+add_dependencies(check_clamav tgt_clamd_test_inputs)
 
 # Exercise the decompressor-construction failure contract with the exact
 # external call sites used by libclamav. GNU ld's --wrap is deliberately
@@ -278,6 +288,104 @@ target_include_directories(check_clamfi_quota
         ${PROJECT_SOURCE_DIR}/clamav-milter
         ${JSONC_INCLUDE_DIRS})
 set_target_properties(check_clamfi_quota PROPERTIES COMPILE_FLAGS "${WARNCFLAGS}")
+
+# A zero-worker on-access pool can accept permission events without ever
+# producing a response. Exercise the actual bundled pool implementation so
+# this configuration failure stays fail-closed and a normal one-worker pool
+# still runs its queued work.
+if(ENABLE_APP AND ENABLE_CLAMONACC AND UNIX)
+    add_executable(check_onas_threadpool
+        check_onas_threadpool.c
+        ${PROJECT_SOURCE_DIR}/clamonacc/c-thread-pool/thpool.c)
+    target_include_directories(check_onas_threadpool
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/clamonacc/c-thread-pool
+            ${PROJECT_SOURCE_DIR}/common
+            ${CMAKE_BINARY_DIR})
+    target_link_libraries(check_onas_threadpool
+        PRIVATE
+            ClamAV::common
+            Threads::Threads)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_compile_definitions(check_onas_threadpool PRIVATE
+            CLAMAV_TEST_PTHREAD_CREATE_WRAP)
+        target_link_options(check_onas_threadpool PRIVATE
+            "-Wl,--wrap=pthread_create")
+    endif()
+    set_target_properties(check_onas_threadpool PROPERTIES COMPILE_FLAGS "${WARNCFLAGS}")
+    add_test(NAME largefile_onaccess_threadpool COMMAND check_onas_threadpool
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    set_tests_properties(largefile_onaccess_threadpool PROPERTIES
+        LABELS "largefile;release-controls"
+        TIMEOUT 60)
+    add_test(NAME largefile_onaccess_config_admission
+        COMMAND sh "${CMAKE_SOURCE_DIR}/tools/largefile_onaccess_config_admission_test.sh"
+            "$<TARGET_FILE:clamonacc>"
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    set_tests_properties(largefile_onaccess_config_admission PROPERTIES
+        LABELS "largefile;release-controls"
+        TIMEOUT 60)
+endif()
+
+# A clamd dispatch must reject a request if it cannot start the worker that
+# would consume it. This exercises the actual daemon pool implementation and
+# injects pthread_create() failure on Linux.
+if(ENABLE_APP AND UNIX)
+    add_executable(check_clamd_threadpool
+        check_clamd_threadpool.c
+        ${PROJECT_SOURCE_DIR}/clamd/thrmgr.c)
+    target_include_directories(check_clamd_threadpool
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/clamd
+            ${PROJECT_SOURCE_DIR}/common
+            ${PROJECT_SOURCE_DIR}/libclamav
+            ${CMAKE_BINARY_DIR})
+    target_link_libraries(check_clamd_threadpool
+        PRIVATE
+            ClamAV::common
+            Threads::Threads)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_compile_definitions(check_clamd_threadpool PRIVATE
+            CLAMAV_TEST_PTHREAD_CREATE_WRAP)
+        target_link_options(check_clamd_threadpool PRIVATE
+            "-Wl,--wrap=pthread_create")
+    endif()
+    set_target_properties(check_clamd_threadpool PROPERTIES COMPILE_FLAGS "${WARNCFLAGS}")
+    add_test(NAME largefile_clamd_threadpool COMMAND check_clamd_threadpool
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    set_tests_properties(largefile_clamd_threadpool PROPERTIES
+        LABELS "largefile;release-controls"
+        TIMEOUT 60)
+endif()
+
+# A configured milter must not continue with a non-null but unusable
+# connection pool when its monitor thread cannot start.
+if(ENABLE_APP AND ENABLE_MILTER AND UNIX)
+    add_executable(check_milter_connpool
+        check_milter_connpool.c
+        ${PROJECT_SOURCE_DIR}/clamav-milter/connpool.c)
+    target_include_directories(check_milter_connpool
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/clamav-milter
+            ${PROJECT_SOURCE_DIR}/common
+            ${CMAKE_BINARY_DIR})
+    target_link_libraries(check_milter_connpool
+        PRIVATE
+            ClamAV::common
+            Threads::Threads)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_compile_definitions(check_milter_connpool PRIVATE
+            CLAMAV_TEST_PTHREAD_CREATE_WRAP)
+        target_link_options(check_milter_connpool PRIVATE
+            "-Wl,--wrap=pthread_create")
+    endif()
+    set_target_properties(check_milter_connpool PROPERTIES COMPILE_FLAGS "${WARNCFLAGS}")
+    add_test(NAME largefile_milter_connpool COMMAND check_milter_connpool
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    set_tests_properties(largefile_milter_connpool PROPERTIES
+        LABELS "largefile;release-controls"
+        TIMEOUT 60)
+endif()
 
 #
 # Paths to pass to our tests via environment variables
@@ -512,7 +620,17 @@ list(APPEND ENVIRONMENT "OPENSSL_LIB_DIR=${OPENSSL_LIB_DIR}")
 
 add_test(NAME libclamav COMMAND ${PythonTest_COMMAND};libclamav_test.py
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-set_property(TEST libclamav PROPERTY ENVIRONMENT ${ENVIRONMENT})
+set(LIBCLAMAV_TEST_ENVIRONMENT ${ENVIRONMENT})
+if(UNIX AND CMAKE_EXE_LINKER_FLAGS MATCHES "-fsanitize=")
+    # The aggregate C test is substantially slower under ASan/UBSan. Keep the
+    # regular 600-second fail-safe, but give sanitizer CI an explicit, cache-
+    # configurable allowance for the complete API group and its child-case
+    # timeouts. The default preserves the existing behavior; slow qualified
+    # runners can set -DCLAMAV_LIBCLAMAV_TEST_TIMEOUT=<seconds>.
+    list(APPEND LIBCLAMAV_TEST_ENVIRONMENT
+        CLAMAV_LIBCLAMAV_TEST_TIMEOUT=${CLAMAV_LIBCLAMAV_TEST_TIMEOUT})
+endif()
+set_property(TEST libclamav PROPERTY ENVIRONMENT ${LIBCLAMAV_TEST_ENVIRONMENT})
 
 if(ENABLE_LARGE_FILE_QUALIFICATION_TEST)
     add_test(NAME largefile_library_exact_32g
@@ -543,21 +661,47 @@ add_test(NAME largefile_source_guards
 add_test(NAME largefile_runtime_evidence_check
     COMMAND sh "${CMAKE_SOURCE_DIR}/tools/largefile_runtime_evidence_check_test.sh"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME largefile_service_evidence_check
+    COMMAND sh "${CMAKE_SOURCE_DIR}/tools/largefile_service_evidence_check_test.sh"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 add_test(NAME largefile_acceptance_case_schema
     COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_acceptance_cases_test.py"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME largefile_acceptance_case_resources
+    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_acceptance_resources_test.py"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME largefile_acceptance_resource_capture
+    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_acceptance_resource_capture_test.py"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME largefile_acceptance_case_producer
+    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_acceptance_case_producer_test.py"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME largefile_runtime_acceptance_case_producer
+    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_runtime_acceptance_case_producer_test.py"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 add_test(NAME largefile_development_acceptance_capture
     COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_development_acceptance_capture_test.py"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-add_test(NAME largefile_clamscan_admission
-    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_clamscan_admission_test.py"
-        "$<TARGET_FILE:clamscan>" "${CMAKE_SOURCE_DIR}"
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+if(ENABLE_APP)
+    add_test(NAME largefile_clamscan_admission
+        COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_clamscan_admission_test.py"
+            "$<TARGET_FILE:clamscan>" "${CMAKE_SOURCE_DIR}"
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endif()
 add_test(NAME largefile_clamd_report_protocol
     COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_clamd_report_protocol_test.py"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 add_test(NAME largefile_zip_late_member
     COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_zip_late_member_test.py"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME largefile_procfs_tree_rss
+    COMMAND sh "${CMAKE_SOURCE_DIR}/tools/largefile_procfs_tree_rss_test.sh"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME largefile_procfs_tree_metrics
+    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_procfs_tree_metrics_test.py"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME largefile_procfs_tree_oom
+    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_procfs_tree_oom_test.py"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 add_test(NAME clamav_milter_quota COMMAND check_clamfi_quota)
 if(ENABLE_APP AND ENABLE_MILTER AND UNIX)
@@ -575,10 +719,18 @@ set_tests_properties(
     largefile_poc_fail_closed
     largefile_source_guards
     largefile_runtime_evidence_check
+    largefile_service_evidence_check
     largefile_acceptance_case_schema
+    largefile_acceptance_case_resources
+    largefile_acceptance_resource_capture
+    largefile_acceptance_case_producer
+    largefile_runtime_acceptance_case_producer
     largefile_development_acceptance_capture
     largefile_clamd_report_protocol
     largefile_zip_late_member
+    largefile_procfs_tree_rss
+    largefile_procfs_tree_metrics
+    largefile_procfs_tree_oom
     clamav_milter_quota
     PROPERTIES
         LABELS "largefile;release-controls"
@@ -590,6 +742,7 @@ set_tests_properties(
 set_tests_properties(
     largefile_source_guards
     largefile_runtime_evidence_check
+    largefile_service_evidence_check
     largefile_development_acceptance_capture
     PROPERTIES
         TIMEOUT 300)
@@ -612,35 +765,23 @@ if(RUSTFLAGS MATCHES "(^| )-Zsanitizer=address($| )" AND TARGET ClamAV::libmspac
     list(FILTER RUST_TEST_ENVIRONMENT EXCLUDE REGEX "^LIBCLAMMSPACK=")
     list(APPEND RUST_TEST_ENVIRONMENT LIBCLAMMSPACK=$<TARGET_FILE:ClamAV::libmspack_static>)
 endif()
-if(UNIX AND CMAKE_EXE_LINKER_FLAGS MATCHES "-fsanitize=address")
-    # Rust's test linker can resolve the C sanitizer runtimes while still
-    # loading libasan after another shared object.  Preload the runtimes so
-    # ASan's required initialization order is deterministic.
-    execute_process(
-        COMMAND ${CMAKE_C_COMPILER} -print-file-name=libasan.so
-        OUTPUT_VARIABLE ASAN_RUNTIME
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-    execute_process(
-        COMMAND ${CMAKE_C_COMPILER} -print-file-name=libubsan.so
-        OUTPUT_VARIABLE UBSAN_RUNTIME
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if(EXISTS "${ASAN_RUNTIME}")
-        set(RUST_SANITIZER_PRELOAD "${ASAN_RUNTIME}")
-        if(EXISTS "${UBSAN_RUNTIME}")
-            string(APPEND RUST_SANITIZER_PRELOAD ":${UBSAN_RUNTIME}")
-        endif()
-        list(APPEND RUST_TEST_ENVIRONMENT
-            "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER=env LD_PRELOAD=${RUST_SANITIZER_PRELOAD}")
-    endif()
-endif()
 set_property(TEST libclamav_rust PROPERTY ENVIRONMENT ${RUST_TEST_ENVIRONMENT})
 
 if(ENABLE_APP)
-    add_test(NAME clamscan COMMAND ${PythonTest_COMMAND};clamscan
+    # pytest accepts the clamscan directory as a collection target, while
+    # unittest treats it as a module name and silently runs zero tests because
+    # the directory intentionally has no __init__.py. Use unittest discovery
+    # explicitly when pytest is unavailable so this test cannot pass vacuously.
+    set(CLAMSCAN_TEST_COMMAND ${PythonTest_COMMAND};clamscan)
+    if(PythonTest_COMMAND MATCHES "unittest")
+        set(CLAMSCAN_TEST_COMMAND
+            ${Python3_EXECUTABLE};-m;unittest;discover;-s;clamscan;-p;*_test.py;--verbose)
+    endif()
+    add_test(NAME clamscan COMMAND ${CLAMSCAN_TEST_COMMAND}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
     set_property(TEST clamscan PROPERTY ENVIRONMENT ${ENVIRONMENT})
     if(Valgrind_FOUND)
-        add_test(NAME clamscan_valgrind COMMAND ${PythonTest_COMMAND};clamscan
+        add_test(NAME clamscan_valgrind COMMAND ${CLAMSCAN_TEST_COMMAND}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
         set_property(TEST clamscan_valgrind PROPERTY ENVIRONMENT ${ENVIRONMENT} VALGRIND=${Valgrind_EXECUTABLE})
     endif()

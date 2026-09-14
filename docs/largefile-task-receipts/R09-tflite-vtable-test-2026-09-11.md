@@ -10,7 +10,7 @@ promote the AI-model capability or claim release qualification.
 
 Canonical checkout and branch:
 
-- `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- `<repository-root>`
 - `largefile-roadmap-qualification`
 - starting commit: `b4cde643fce085fa016338339830b2b28ff9a42a`
 - intentionally dirty working tree preserved; no reset, clean, commit, or push
@@ -37,7 +37,7 @@ listed in the AI-model capability evidence description.
 The new C test was not linked in this environment: the retained CMake binary
 predates the edit and the available Docker images lack the JSON-C/Zlib test
 development headers needed for a fresh build. No software was installed and
-no remote execution or MCP-SSH path was available.
+no remote execution or remote SSH path was available.
 
 Release readiness remains blocked at 597 total, 0 qualified, 143 bounded, 440
 pending, 14 deliberate unsupported exclusions, 0 unsupported required rows,

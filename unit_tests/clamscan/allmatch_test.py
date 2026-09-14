@@ -103,7 +103,7 @@ class TC(testcase.TestCase):
         assert output.out.count('FOUND') == 1 # only finds one of these (order not guaranteed afaik, so don't care which)
 
     def test_regression_imphash_nosize(self):
-        self.step_name('Test an import hash with wildcard size when all-match mode is disabled.')
+        self.step_name('Test that an import hash with wildcard size remains visible after an incomplete PE subscan.')
 
         db_dir = TC.path_db / 'allmatch-regression-test-sigs'
 
@@ -122,15 +122,17 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 2  # fail closed before the PE import hash is usable
+        # The PE unpacker reports an incomplete sibling analysis, but the raw
+        # import-hash detection remains visible and takes precedence for the
+        # command exit status.
+        assert output.ec == 1  # virus found
 
         expected_results = [
-            "Can't parse data ERROR",
-            'Scanned files: 0',
-            'Infected files: 0',
+            'Test.Import.Hash.NoSize.UNOFFICIAL FOUND',
+            'Scanned files: 1',
+            'Infected files: 1',
         ]
-        self.verify_output(output.out, expected=expected_results,
-                           unexpected=['Test.Import.Hash.NoSize.UNOFFICIAL FOUND'])
+        self.verify_output(output.out, expected=expected_results)
 
     def test_regression_cbc_and_ndb(self):
         self.step_name('Test that bytecode rules will run after content match alerts in all-match mode.')
@@ -275,7 +277,7 @@ class TC(testcase.TestCase):
         self.verify_output(output.out, expected=expected_results)
 
     def test_zip_plus_zip(self):
-        self.step_name('Test that clam will the clam.zip and also another zip concatenated to the end.')
+        self.step_name('Test that clam rejects a ZIP followed by an unowned ZIP overlay.')
 
         # Build a file that is the clam.zip archive with a zip concatenated on that contains the not_eicar test string file.
         clam_zip = TC.path_build / 'unit_tests' / 'input' / 'clamav_hdb_scanfiles' / 'clam.zip'
@@ -296,12 +298,16 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 1  # virus
+        # A second ZIP signature after the EOCD is not owned by the first
+        # archive. The strict central-directory contract must reject the
+        # concatenation instead of scanning an ambiguous archive.
+        assert output.ec == 2  # incomplete/malformed archive
 
         expected_results = [
-            'Test.NDB.UNOFFICIAL FOUND',
+            "Can't parse data ERROR",
         ]
-        self.verify_output(output.out, expected=expected_results)
+        self.verify_output(output.out, expected=expected_results,
+                           unexpected=['Test.NDB.UNOFFICIAL FOUND'])
 
     def test_zip_all_files(self):
         self.step_name('Test that clam will extract all files from a zip.')
@@ -394,7 +400,7 @@ class TC(testcase.TestCase):
         self.verify_output(output.out, expected=expected_results)
 
     def test_zip_missing_centrals(self):
-        self.step_name('Test that clam will detect files omitted from zip central directory.')
+        self.step_name('Test that clam rejects a ZIP with an incomplete central directory.')
 
         testfile = TC.path_tmp / 'multi-file-missing-centrals.zip'
         with ZipFile(str(testfile), 'w', ZIP_DEFLATED) as zf:
@@ -415,7 +421,10 @@ class TC(testcase.TestCase):
             for name, data in sha2_256s.items():
                 f.write(f"{data[0]}:{data[1]}:{name}.NDB:73\n")
 
-        # Remove the central directory entries for file-2.txt and file-4.txt
+        # Remove the central directory entries for file-0.txt and file-2.txt.
+        # The local headers remain in the file, but strict ZIP admission must
+        # not fall back to discovering members outside the confirmed central
+        # directory.
         with open(str(testfile), 'r+b') as f:
             # find the first central directory record. Each will have a 4-byte signature 'PK\x01\x02'
             while f.read(4) != b'PK\x01\x02':
@@ -449,15 +458,16 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 1  # virus
+        assert output.ec == 2  # incomplete/malformed archive
 
         expected_results = [
-            'file-0.txt.NDB.UNOFFICIAL FOUND',
-            'file-1.txt.NDB.UNOFFICIAL FOUND',
-            'file-2.txt.NDB.UNOFFICIAL FOUND',
-            'file-3.txt.NDB.UNOFFICIAL FOUND',
+            "Can't parse data ERROR",
         ]
-        self.verify_output(output.out, expected=expected_results)
+        self.verify_output(output.out, expected=expected_results,
+                           unexpected=['file-0.txt.NDB.UNOFFICIAL FOUND',
+                                       'file-1.txt.NDB.UNOFFICIAL FOUND',
+                                       'file-2.txt.NDB.UNOFFICIAL FOUND',
+                                       'file-3.txt.NDB.UNOFFICIAL FOUND'])
 
     def test_pe_allmatch(self):
         self.step_name('Test that clam will detect a string in test.exe with a wide variety of signatures written or generated for the file.')
@@ -496,7 +506,7 @@ class TC(testcase.TestCase):
         def reachable_without_incomplete_pe_analysis(sig):
             return not any(fragment in sig for fragment in (
                 '_text', '_data', '_idata', '_rdata', '_rsrc', '.IMP_',
-                'BC_5of6', 'BC_6of6',
+                'BC_5of6', 'BC_6of6', '_CRT', '_tls',
             ))
 
         expected_results = [

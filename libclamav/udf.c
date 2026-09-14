@@ -160,6 +160,16 @@ static cl_error_t udf_checktimelimit(cli_ctx *ctx, const char *reason)
     return ret;
 }
 
+static cl_error_t udf_admit_empty_file(cli_ctx *ctx)
+{
+    cl_error_t status = cli_updatelimits(ctx, 0);
+
+    if (status != CL_SUCCESS && status != CL_ETIMEOUT && status != CL_BREAK)
+        cli_mark_scan_incomplete(ctx, "UDF empty file exceeds configured scan limits");
+
+    return status;
+}
+
 static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_t *map, const udf_extent *extents,
                                  size_t extent_count, uint64_t dataLen)
 {
@@ -657,7 +667,7 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
             ret = CL_EPARSE;
             goto done;
         }
-        ret = CL_SUCCESS;
+        ret = udf_admit_empty_file(ctx);
         goto done;
     }
 
@@ -710,7 +720,7 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
     }
 
     if (0 == total_length) {
-        ret = CL_SUCCESS;
+        ret = udf_admit_empty_file(ctx);
         goto done;
     }
 

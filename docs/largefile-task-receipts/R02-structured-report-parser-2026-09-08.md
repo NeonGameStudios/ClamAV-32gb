@@ -8,7 +8,7 @@ slice.
 
 Starting commit and working-tree/source manifest identity:
 
-- canonical checkout: `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- canonical checkout: `<repository-root>`
 - branch: `largefile-roadmap-qualification`
 - starting HEAD for this slice: `41cde8160286813f0f98e109c1450e40ff4117fb`
 - working tree intentionally remained dirty; pre-existing changes were

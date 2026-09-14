@@ -18,6 +18,10 @@ limitations under the License.
 #include <assert.h>
 #include <time.h>
 
+#ifndef REAL_YARA
+#define REAL_YARA 0
+#endif
+
 #if REAL_YARA
 #include <yara/exec.h>
 #include <yara/limits.h>
@@ -60,7 +64,7 @@ typedef struct _YR_MATCH
 
 #define push(x)  \
     do { \
-      if (sp < STACK_SIZE) stack[sp++] = (x); \
+      if (sp < STACK_SIZE) stack[sp++] = (int64_t)(x); \
       else return ERROR_EXEC_STACK_OVERFLOW; \
     } while(0)
 
@@ -105,6 +109,13 @@ typedef struct _YR_MATCH
     };
 #else
 #define YARA_READ_ERROR ((int64_t)0xFFFABADAFABADAFE)
+
+int64_t read_uint8_t(fmap_t *fmap, size_t offset);
+int64_t read_uint16_t(fmap_t *fmap, size_t offset);
+int64_t read_uint32_t(fmap_t *fmap, size_t offset);
+int64_t read_int8_t(fmap_t *fmap, size_t offset);
+int64_t read_int16_t(fmap_t *fmap, size_t offset);
+int64_t read_int32_t(fmap_t *fmap, size_t offset);
 
 static const void *yara_need_value(fmap_t *fmap, size_t offset, size_t length, int *read_error)
 {
@@ -200,8 +211,8 @@ int yr_execute_code(
 
   uint32_t i_u32;
   int64_t i_i64;
-  int found;
-  int count;
+  size_t found;
+  size_t count;
   int result = -1;
   int cycle = 0;
 #if !REAL_YARA
@@ -211,7 +222,7 @@ int yr_execute_code(
   int tidx = yr_get_tidx();
 #else
 
-  cli_dbgmsg("yara_exec: beginning execution for lsig %u (%s)\n", aclsig->id, aclsig->virname);
+  cli_dbgmsg_no_inline("yara_exec: beginning execution for lsig %u (%s)\n", aclsig->id, aclsig->virname);
 #endif
 
   #ifdef PROFILING_ENABLED
@@ -224,14 +235,14 @@ int yr_execute_code(
 
   while(1)
   {
-    cli_dbgmsg("yara_exec: executing %d\n", *ip);
+    cli_dbgmsg_no_inline("yara_exec: executing %d\n", *ip);
     switch(*ip)
     {
       case OP_HALT:
         // When the halt instruction is reached the stack
         // should be empty.
         if (sp != 0) {
-          cli_dbgmsg("error executing yara rule, stack should be empty when halt instruction reached\n");
+          cli_dbgmsg_no_inline("error executing yara rule, stack should be empty when halt instruction reached\n");
           return CL_EPARSE;
         }
 #if REAL_YARA
@@ -852,7 +863,7 @@ int yr_execute_code(
         while (r1 != UNDEFINED)
         {
           string = UINT64_TO_PTR(YR_STRING*, r1);
-          lsig_id = string->subsig_id;
+          lsig_id = (uint32_t)string->subsig_id;
           if (acdata->lsigsuboff_first[aclsig->id][lsig_id] != CLI_OFF_NONE64)
             found++;
           count++;
@@ -863,7 +874,7 @@ int yr_execute_code(
         pop(r2);
 
         if (r2 != UNDEFINED)
-          push(found >= r2 ? 1 : 0);
+          push(r2 < 0 || found >= (size_t)r2 ? 1 : 0);
         else
           push(found >= count ? 1 : 0);
 
@@ -910,7 +921,7 @@ int yr_execute_code(
 #else
       case OP_INT8:
         pop(r1);
-        r1 = read_int8_t_context(context, r1);
+          r1 = read_int8_t_context(context, (size_t)r1);
         if (r1 == YARA_READ_ERROR)
           return CL_EREAD;
         push(r1);
@@ -918,7 +929,7 @@ int yr_execute_code(
 
       case OP_INT16:
         pop(r1);
-        r1 = read_int16_t_context(context, r1);
+          r1 = read_int16_t_context(context, (size_t)r1);
         if (r1 == YARA_READ_ERROR)
           return CL_EREAD;
         push(r1);
@@ -926,7 +937,7 @@ int yr_execute_code(
 
       case OP_INT32:
         pop(r1);
-        r1 = read_int32_t_context(context, r1);
+          r1 = read_int32_t_context(context, (size_t)r1);
         if (r1 == YARA_READ_ERROR)
           return CL_EREAD;
         push(r1);
@@ -934,7 +945,7 @@ int yr_execute_code(
 
       case OP_UINT8:
         pop(r1);
-        r1 = read_uint8_t_context(context, r1);
+          r1 = read_uint8_t_context(context, (size_t)r1);
         if (r1 == YARA_READ_ERROR)
           return CL_EREAD;
         push(r1);
@@ -942,7 +953,7 @@ int yr_execute_code(
 
       case OP_UINT16:
         pop(r1);
-        r1 = read_uint16_t_context(context, r1);
+          r1 = read_uint16_t_context(context, (size_t)r1);
         if (r1 == YARA_READ_ERROR)
           return CL_EREAD;
         push(r1);
@@ -950,7 +961,7 @@ int yr_execute_code(
 
       case OP_UINT32:
         pop(r1);
-        r1 = read_uint32_t_context(context, r1);
+          r1 = read_uint32_t_context(context, (size_t)r1);
         if (r1 == YARA_READ_ERROR)
           return CL_EREAD;
         push(r1);
@@ -1005,7 +1016,7 @@ int yr_execute_code(
         break;
 
       default:
-        cli_dbgmsg("yara_exec: unknown YARA opcode %u\n", (unsigned int)*ip);
+        cli_dbgmsg_no_inline("yara_exec: unknown YARA opcode %u\n", (unsigned int)*ip);
         return CL_EPARSE;
     }
 

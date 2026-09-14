@@ -1822,6 +1822,7 @@ cl_error_t pdf_derive_object_key(struct pdf_struct *pdf, uint32_t id,
 {
     unsigned char *key;
     unsigned char *q;
+    size_t key_bytes;
     size_t hash_input_length;
 
     if (pdf == NULL || result == NULL || key_length == NULL ||
@@ -1833,12 +1834,13 @@ cl_error_t pdf_derive_object_key(struct pdf_struct *pdf, uint32_t id,
         noisy_warnmsg("decrypt_any: decrypt failed for obj %u %u:  PDF key never identified.\n", id >> 8, id & 0xff);
         return CL_EPARSE;
     }
-    if ((size_t)pdf->keylen > SIZE_MAX - 9U) {
+    key_bytes = (size_t)pdf->keylen;
+    if (key_bytes > SIZE_MAX - 9U) {
         noisy_warnmsg("decrypt_any: object-key input length overflowed\n");
         return CL_ERESOURCE;
     }
 
-    hash_input_length = (size_t)pdf->keylen + 5U;
+    hash_input_length = key_bytes + 5U;
     if (enc_method == ENC_AESV2)
         hash_input_length += 4U;
 
@@ -2269,9 +2271,12 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
             if (0 == length) {
                 cli_dbgmsg("pdf_extract_obj: Alleged or calculated stream length and stream buffer size both 0\n");
 
-                /* Empty stream, nothing to scan */
+                /* An empty stream is still a logical extracted child. Leave
+                 * the output empty and route it through the shared descriptor
+                 * admission path below so MaxFiles accounting and cache
+                 * invalidation match non-empty streams. */
                 status = CL_SUCCESS;
-                goto done;
+                goto scan_extracted_objects;
             }
         }
 
@@ -2573,10 +2578,13 @@ scan_extracted_objects:
     cli_dbgmsg("pdf_extract_obj: extracted %td bytes %u %u obj\n", sum, obj->id >> 8, obj->id & 0xff);
     cli_dbgmsg("pdf_extract_obj:         ... to %s\n", fullname);
 
-    if ((flags & PDF_EXTRACT_OBJ_SCAN) && (sum > 0)) {
+    if (flags & PDF_EXTRACT_OBJ_SCAN) {
         /*
          * Scan the extracted objects for potential threats.
-         * PDF_EXTRACT_OBJ_SCAN is used when the extracted object should be scanned and then deleted.
+         * PDF_EXTRACT_OBJ_SCAN is used when the extracted object should be
+         * scanned and then deleted. An object that decodes to zero bytes is
+         * still a logical child: descriptor admission must account for it
+         * against MaxFiles and preserve the empty-file scan semantics.
          */
 
         /* TODO: invoke bytecode on this pdf obj with metainformation associated */
@@ -2591,7 +2599,11 @@ scan_extracted_objects:
             goto done;
         }
 
-        if ((status == CL_CLEAN) || (status == CL_VIRUS)) {
+        /* Bytecode hooks require a readable fmap and cannot be created for a
+         * zero-length descriptor. The empty child has already been admitted
+         * and scanned above; preserve the historical no-hook behavior for
+         * that case while retaining normal hooks for materialized output. */
+        if (sum > 0 && ((status == CL_CLEAN) || (status == CL_VIRUS))) {
             ret = run_pdf_hooks(pdf, PDF_PHASE_POSTDUMP, fout, fullname);
             if (ret != CL_SUCCESS && ret != CL_BREAK) {
                 status = ret;
@@ -2599,7 +2611,7 @@ scan_extracted_objects:
             }
         }
 
-        if (((status == CL_CLEAN) || (status == CL_VIRUS)) && (obj->flags & (1 << OBJ_CONTENTS))) {
+        if (sum > 0 && ((status == CL_CLEAN) || (status == CL_VIRUS)) && (obj->flags & (1 << OBJ_CONTENTS))) {
             if (lseek(fout, 0, SEEK_SET) == (off_t)-1) {
                 cli_mark_scan_incomplete(pdf->ctx, "PDF extracted object could not be rewound before content scanning");
                 status = CL_ESEEK;

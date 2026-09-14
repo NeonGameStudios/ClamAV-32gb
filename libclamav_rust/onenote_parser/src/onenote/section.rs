@@ -87,6 +87,24 @@ pub(crate) fn parse_section(store: OneStore, filename: String) -> Result<Section
     })
 }
 
+/// Walk only the attachment-bearing portions of a section. This is separate
+/// from [`parse_section`] so stream-backed object-data blobs can be delivered
+/// to a caller without constructing a public `Section` or copying the blob
+/// into an owned `Vec`.
+pub(crate) fn scan_attachments<F>(store: &OneStore, callback: &mut F) -> Result<bool>
+where
+    F: FnMut(Option<&str>, &mut dyn std::io::Read) -> bool,
+{
+    let content = parse_content(store.data_root())?;
+    for page_series_id in content.page_series {
+        if !super::page_series::scan_page_series(page_series_id, store, callback)? {
+            return Ok(false);
+        }
+    }
+
+    Ok(true)
+}
+
 fn parse_content(space: &ObjectSpace) -> Result<section_node::Data> {
     let content_root_id = space
         .content_root()

@@ -320,6 +320,12 @@ impl AlzLocalFileHeader {
             && self.compressed_size <= MIN_SCANNED_FILE_SIZE as u64
     }
 
+    const fn is_empty_stored_member(&self) -> bool {
+        self.compression_method == ALZ_COMP_NOCOMP
+            && self.compressed_size == 0
+            && self.uncompressed_size == 0
+    }
+
     const fn has_valid_compressed_size(&self) -> bool {
         self.compressed_size != 0
             || (self.compression_method == ALZ_COMP_NOCOMP && self.uncompressed_size == 0)
@@ -1019,7 +1025,11 @@ impl<'aa> Alz {
                 max_extracted_size
             };
 
-            if max_extracted_size == 0 {
+            /* A valid empty stored member still needs to reach the sink: the
+             * scanner-facing sink charges its zero-byte nested descriptor to
+             * the inclusive MaxFiles budget. Other zero-output decisions are
+             * genuine size-budget skips and must remain deferred. */
+            if max_extracted_size == 0 && !local_fileheader.is_empty_stored_member() {
                 debug!(
                     "ALZ file {:?} skipped because the extraction size budget is exhausted.",
                     local_fileheader.file_name

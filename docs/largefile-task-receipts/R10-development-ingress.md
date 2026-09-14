@@ -8,7 +8,7 @@ smoke slice, not ingress qualification.
 
 Prerequisites verified:
 
-- Canonical source: `/Volumes/512gbNVME/github-external/ClamAV-32gb`.
+- Canonical source: `<repository-root>`.
 - Branch: `largefile-roadmap-qualification`.
 - Current-source ARM64 Debug build: `/private/tmp/clamav-largefile-build`.
 - Build and runtime dependencies were used only inside disposable Docker

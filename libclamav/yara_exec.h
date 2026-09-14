@@ -17,7 +17,7 @@ limitations under the License.
 #ifndef YR_EXEC_H
 #define YR_EXEC_H
 
-#if REAL_YARA
+#if defined(REAL_YARA) && REAL_YARA
 #include <yara/hash.h>
 #include <yara/scan.h>
 #include <yara/types.h>
@@ -90,7 +90,7 @@ limitations under the License.
 
 
 int yr_execute_code(
-#if REAL_YARA
+#if defined(REAL_YARA) && REAL_YARA
     YR_RULES* rules,
 #else
     struct cli_ac_lsig * aclsig,

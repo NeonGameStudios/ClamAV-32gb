@@ -866,11 +866,11 @@ cl_error_t cli_mew_section_table_size(size_t section_count, size_t *bytes)
  * @param dsize 	diff size
  * @param base 		OPTIONAL_HEADER32.ImageBase
  * @param vadd 		RVA of pe section
- * @param uselzma 	Bool - use LZMA
+ * @param uselzma 	Offset of the LZMA tag, or zero when LZMA is not used
  * @param filedesc 	File descriptor
  * @return int 		Returns -1 on failure, 1 on success.
  */
-int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t base, uint32_t vadd, int uselzma, int filedesc, cli_ctx *ctx)
+int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t base, uint32_t vadd, uint32_t uselzma, int filedesc, cli_ctx *ctx)
 {
     uint32_t entry_point, newedi, loc_ds = dsize, loc_ss = ssize;
     char *source     = NULL;

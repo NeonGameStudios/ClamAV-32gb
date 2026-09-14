@@ -4998,7 +4998,7 @@ rfc1341(mbox_ctx *mctx, message *m)
     }
 
     errno = 0;
-    if ((mkdir(pdir, S_IRUSR | S_IWUSR) < 0) && (errno != EEXIST)) {
+    if ((mkdir(pdir, S_IRUSR | S_IWUSR | S_IXUSR) < 0) && (errno != EEXIST)) {
         cli_errmsg("Can't create the directory '%s'\n", pdir);
         mbox_record_status(
             mctx, CL_ECREAT,

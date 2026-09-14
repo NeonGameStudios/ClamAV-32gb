@@ -5,7 +5,7 @@ certified release record.
 
 ## Identity
 
-- Canonical source: `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- Canonical source: `<repository-root>`
 - Pre-receipt source-manifest SHA-256:
   `f4ac50b8210a717b549b669663e0b67c25ea39331821d2b58f2b56092a9f0774`
 - `clamd` SHA-256:
@@ -45,4 +45,3 @@ path, staged-stream, and descriptor-passing multiscan forms; it cannot be
 mistaken for a clean scan. It does not qualify the ingress rows: certified
 Linux x86-64 execution, full-size fixtures, sanitizer evidence, and the wider
 R04 case matrix remain required.
-

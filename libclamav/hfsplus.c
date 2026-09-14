@@ -48,15 +48,35 @@ static void nodedescriptor_print(const char *, hfsNodeDescriptor *);
 static void forkdata_to_host(hfsPlusForkData *);
 static void forkdata_print(const char *, hfsPlusForkData *);
 
+static uint16_t hfsplus_read_be16(const uint8_t *data)
+{
+    uint16_t value;
+
+    memcpy(&value, data, sizeof(value));
+    return be16_to_host(value);
+}
+
+static uint32_t hfsplus_read_be32(const uint8_t *data)
+{
+    uint32_t value;
+
+    memcpy(&value, data, sizeof(value));
+    return be32_to_host(value);
+}
+
 static cl_error_t hfsplus_volumeheader(cli_ctx *, hfsPlusVolumeHeader **);
 static cl_error_t hfsplus_readheader(cli_ctx *, hfsPlusVolumeHeader *, hfsNodeDescriptor *,
                                      hfsHeaderRecord *, int, const char *);
 static cl_error_t hfsplus_scanfile(cli_ctx *, hfsPlusVolumeHeader *, hfsHeaderRecord *,
-                                   hfsPlusForkData *, const char *, char **, uint64_t *, char *);
+                                   uint32_t, uint8_t, hfsPlusForkData *, const char *, char **, uint64_t *, char *);
 static cl_error_t hfsplus_validate_catalog(cli_ctx *, hfsPlusVolumeHeader *, hfsHeaderRecord *);
 static cl_error_t hfsplus_fetch_node(cli_ctx *, hfsPlusVolumeHeader *, hfsHeaderRecord *,
                                      hfsHeaderRecord *, hfsPlusForkData *, uint32_t, uint8_t *,
-                                     size_t);
+                                     size_t, uint32_t, uint8_t);
+static cl_error_t hfsplus_find_overflow_block(cli_ctx *, hfsPlusVolumeHeader *, hfsHeaderRecord *,
+                                              uint32_t, uint8_t, uint32_t, uint64_t *);
+static cl_error_t hfsplus_resolve_fork_block(cli_ctx *, hfsPlusVolumeHeader *, hfsHeaderRecord *,
+                                             hfsPlusForkData *, uint32_t, uint8_t, uint64_t, uint64_t *);
 static cl_error_t hfsplus_walk_catalog(cli_ctx *, hfsPlusVolumeHeader *, hfsHeaderRecord *,
                                        hfsHeaderRecord *, hfsHeaderRecord *, const char *);
 
@@ -476,6 +496,8 @@ static cl_error_t hfsplus_readheader(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
  * @param ctx           The current scan context
  * @param volHeader     Volume header
  * @param extHeader     Extent overflow file header
+ * @param fileID        Catalog file ID owning the fork
+ * @param forkType      HFS+ data or resource fork selector
  * @param fork          Fork Data
  * @param dirname       Temp directory name
  * @param[out] filename (optional) temp file name
@@ -483,25 +505,22 @@ static cl_error_t hfsplus_readheader(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
  * @return cl_error_t
  */
 static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader, hfsHeaderRecord *extHeader,
-                                   hfsPlusForkData *fork, const char *dirname, char **filename,
+                                   uint32_t fileID, uint8_t forkType, hfsPlusForkData *fork,
+                                   const char *dirname, char **filename,
                                    uint64_t *temporary_reserved_out, char *orig_filename)
 {
     cl_error_t status = CL_SUCCESS;
-    hfsPlusExtentDescriptor *currExt;
     const uint8_t *mPtr = NULL;
     char *tmpname       = NULL;
     int ofd             = -1;
     uint64_t targetSize;
     uint64_t temporary_reserved = 0;
-    uint32_t outputBlocks = 0;
-    uint8_t ext;
+    uint64_t logicalBlock = 0;
 
     if (filename)
         *filename = NULL;
     if (temporary_reserved_out)
         *temporary_reserved_out = 0;
-
-    UNUSEDPARAM(extHeader);
 
     /* An empty fork has no data to extract. A non-empty fork with no
      * allocation blocks, however, is structurally incomplete and must not be
@@ -553,117 +572,67 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
     }
     cli_dbgmsg("hfsplus_scanfile: Extracting to %s\n", tmpname);
 
-    ext = 0;
-    /* Dump file, extent by extent */
-    do {
-        uint32_t currBlock, endBlock;
-        if (targetSize == 0) {
-            cli_dbgmsg("hfsplus_scanfile: output complete\n");
-            break;
-        }
-        if (outputBlocks >= fork->totalBlocks) {
+    /* Dump file, logical block by logical block. The resolver transparently
+     * follows the inline record and any ExtentOverflow records. */
+    while (targetSize != 0) {
+        uint64_t realFileBlock;
+        uint64_t blockOffset64;
+        if (logicalBlock >= fork->totalBlocks) {
             cli_dbgmsg("hfsplus_scanfile: output all blocks, remaining size " STDu64 "\n", targetSize);
             break;
         }
 
-        /* Prepare extent */
-        if (ext < 8) {
-            currExt = &(fork->extents[ext]);
-            cli_dbgmsg("hfsplus_scanfile: extent %u\n", ext);
-        } else {
-            cli_dbgmsg("hfsplus_scanfile: need next extent from ExtentOverflow\n");
-            /* The inline fork record is exhausted.  ExtentOverflow records
-             * are a valid HFS+ representation, but this parser does not yet
-             * implement their B-tree lookup.  Never scan the prefix as a
-             * complete fork or let the containing layer report clean. */
-            cli_mark_scan_incomplete(ctx, "HFS+ fork requires unsupported ExtentOverflow records");
-            status = CL_EUNPACK;
+        status = hfsplus_resolve_fork_block(ctx, volHeader, extHeader, fork, fileID, forkType,
+                                            logicalBlock, &realFileBlock);
+        if (status != CL_SUCCESS)
+            goto done;
+
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "HFS+ fork extraction reached the configured time limit");
             goto done;
         }
 
-        /* have extent, so validate and get block range */
-        if ((currExt->startBlock == 0) || (currExt->blockCount == 0)) {
-            cli_dbgmsg("hfsplus_scanfile: next extent empty, done\n");
-            break;
+        size_t to_write = (targetSize < (uint64_t)volHeader->blockSize) ? (size_t)targetSize : (size_t)volHeader->blockSize;
+        size_t written;
+        if (realFileBlock > UINT64_MAX / volHeader->blockSize) {
+            cli_mark_scan_incomplete(ctx, "HFS+ fork block coordinate overflowed");
+            status = CL_EFORMAT;
+            goto done;
         }
-
-        if ((currExt->startBlock & 0x10000000) && (currExt->blockCount & 0x10000000)) {
-            cli_dbgmsg("hfsplus_scanfile: next extent illegal!\n");
-            cli_mark_scan_incomplete(ctx, "HFS+ fork extent is malformed");
+        blockOffset64 = realFileBlock * volHeader->blockSize;
+        if (blockOffset64 > SIZE_MAX || blockOffset64 > ctx->fmap->len ||
+            volHeader->blockSize > ctx->fmap->len - (size_t)blockOffset64) {
+            cli_dbgmsg("hfsplus_scanfile: block offset exceeds the input map\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ fork block is outside the input map");
             status = CL_EFORMAT;
             goto done;
         }
 
-        currBlock = currExt->startBlock;
-        if ((currBlock > volHeader->totalBlocks) ||
-            (currExt->blockCount > volHeader->totalBlocks - currBlock)) {
-            cli_dbgmsg("hfsplus_scanfile: bad extent!\n");
-            cli_mark_scan_incomplete(ctx, "HFS+ fork extent is outside the volume");
-            status = CL_EFORMAT;
+        mPtr = fmap_need_off_once(ctx->fmap, (size_t)blockOffset64, volHeader->blockSize);
+        if (!mPtr) {
+            cli_errmsg("hfsplus_scanfile: map error\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ fork contents could not be read completely");
+            status = CL_EREAD;
             goto done;
         }
-        endBlock = currExt->startBlock + currExt->blockCount - 1;
 
-        /* Write the blocks, walking the map */
-        while (currBlock <= endBlock) {
-            status = cli_checktimelimit(ctx);
-            if (status != CL_SUCCESS) {
-                cli_mark_scan_incomplete(ctx, "HFS+ fork extraction reached the configured time limit");
-                goto done;
-            }
-
-            size_t to_write = (targetSize < (uint64_t)volHeader->blockSize) ? (size_t)targetSize : (size_t)volHeader->blockSize;
-            size_t written;
-            uint64_t blockOffset = (uint64_t)currBlock * volHeader->blockSize;
-
-            if (blockOffset > SIZE_MAX || blockOffset > ctx->fmap->len ||
-                volHeader->blockSize > ctx->fmap->len - (size_t)blockOffset) {
-                cli_dbgmsg("hfsplus_scanfile: block offset exceeds the input map\n");
-                cli_mark_scan_incomplete(ctx, "HFS+ fork block is outside the input map");
-                status = CL_EFORMAT;
-                goto done;
-            }
-
-            /* move map to next block */
-            mPtr = fmap_need_off_once(ctx->fmap, (size_t)blockOffset, volHeader->blockSize);
-            if (!mPtr) {
-                cli_errmsg("hfsplus_scanfile: map error\n");
-                cli_mark_scan_incomplete(ctx, "HFS+ fork contents could not be read completely");
-                status = CL_EREAD;
-                goto done;
-            }
-
-            status = cli_checktimelimit(ctx);
-            if (status != CL_SUCCESS) {
-                cli_mark_scan_incomplete(ctx, "HFS+ fork output reached the configured time limit");
-                goto done;
-            }
-            written = cli_writen(ofd, mPtr, to_write);
-            if (written != to_write) {
-                cli_errmsg("hfsplus_scanfile: write error\n");
-                cli_mark_scan_incomplete(ctx, "HFS+ fork contents could not be written completely");
-                status = CL_EWRITE;
-                goto done;
-            }
-
-            targetSize -= to_write;
-            outputBlocks++;
-            currBlock++;
-
-            if (targetSize == 0) {
-                cli_dbgmsg("hfsplus_scanfile: all data written\n");
-                break;
-            }
-
-            if (outputBlocks >= fork->totalBlocks) {
-                cli_dbgmsg("hfsplus_scanfile: output all blocks, remaining size " STDu64 "\n", targetSize);
-                break;
-            }
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "HFS+ fork output reached the configured time limit");
+            goto done;
+        }
+        written = cli_writen(ofd, mPtr, to_write);
+        if (written != to_write) {
+            cli_errmsg("hfsplus_scanfile: write error\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ fork contents could not be written completely");
+            status = CL_EWRITE;
+            goto done;
         }
 
-        /* Finished the extent, move to next */
-        ext++;
-    } while (status == CL_SUCCESS);
+        targetSize -= to_write;
+        logicalBlock++;
+    }
 
     if (targetSize != 0) {
         cli_mark_scan_incomplete(ctx, "HFS+ fork ended before its declared size");
@@ -692,7 +661,6 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
             goto done;
         }
 
-        /* TODO: Scan overlay if outputBlocks >= fork->totalBlocks ? */
     }
 
 done:
@@ -751,7 +719,9 @@ static cl_error_t hfsplus_validate_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *vo
 }
 
 /* Check if an attribute is present in the attribute map */
-static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader, hfsHeaderRecord *attrHeader, uint32_t expectedCnid, const uint8_t name[], uint32_t nameLen, int *found, uint8_t record[], size_t *recordSize)
+static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader, hfsHeaderRecord *attrHeader,
+                                          hfsHeaderRecord *extHeader, uint32_t expectedCnid, const uint8_t name[],
+                                          uint32_t nameLen, int *found, uint8_t record[], size_t *recordSize)
 {
     cl_error_t status = CL_SUCCESS;
     uint16_t nodeSize, recordNum, topOfOffsets;
@@ -815,7 +785,8 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
         nodesScanned++;
 
         /* fetch node into buffer */
-        status = hfsplus_fetch_node(ctx, volHeader, attrHeader, NULL, &(volHeader->attributesFile), thisNode, nodeBuf, nodeSize);
+        status = hfsplus_fetch_node(ctx, volHeader, attrHeader, extHeader, &(volHeader->attributesFile), thisNode,
+                                    nodeBuf, nodeSize, hfsAttributesFileID, HFSPLUS_FORKTYPE_DATA);
         if (status != CL_SUCCESS) {
             cli_dbgmsg("hfsplus_check_attribute: node fetch failed.\n");
             goto done;
@@ -984,21 +955,16 @@ done:
 /* Fetch a node's contents into the buffer */
 static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader, hfsHeaderRecord *catHeader,
                                      hfsHeaderRecord *extHeader, hfsPlusForkData *catFork, uint32_t node, uint8_t *buff,
-                                     size_t buffSize)
+                                     size_t buffSize, uint32_t fileID, uint8_t forkType)
 {
-    bool foundBlock = false;
     uint64_t catalogOffset;
     uint64_t startBlock, startOffset;
     uint64_t endBlock, endSize;
     uint64_t curBlock;
-    uint32_t extentNum = 0;
     uint64_t realFileBlock;
     uint32_t readSize;
     size_t fileOffset = 0;
-    uint64_t searchBlock;
     uint32_t buffOffset = 0;
-
-    UNUSEDPARAM(extHeader);
 
     /* Make sure node is in range */
     if (node >= catHeader->totalNodes) {
@@ -1023,49 +989,10 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
     }
 
     for (curBlock = startBlock; curBlock <= endBlock; ++curBlock) {
-
-        foundBlock  = false;
-        searchBlock = curBlock;
-        /* Find which extent has that block */
-        for (extentNum = 0; extentNum < 8; extentNum++) {
-            hfsPlusExtentDescriptor *currExt = &(catFork->extents[extentNum]);
-
-            /* Beware empty extent */
-            if ((currExt->startBlock == 0) || (currExt->blockCount == 0)) {
-                cli_dbgmsg("hfsplus_fetch_node: extent " STDu32 " empty!\n", extentNum);
-                cli_mark_scan_incomplete(ctx, "HFS+ file-tree extent is incomplete");
-                return CL_EFORMAT;
-            }
-            /* Beware too long extent */
-            if ((currExt->startBlock & 0x10000000) && (currExt->blockCount & 0x10000000)) {
-                cli_dbgmsg("hfsplus_fetch_node: extent " STDu32 " illegal!\n", extentNum);
-                cli_mark_scan_incomplete(ctx, "HFS+ file-tree extent is malformed");
-                return CL_EFORMAT;
-            }
-            if (currExt->startBlock >= volHeader->totalBlocks ||
-                currExt->blockCount > volHeader->totalBlocks - currExt->startBlock) {
-                cli_dbgmsg("hfsplus_fetch_node: extent " STDu32 " exceeds the volume\n", extentNum);
-                cli_mark_scan_incomplete(ctx, "HFS+ file-tree extent is outside the volume");
-                return CL_EFORMAT;
-            }
-            /* Check if block found in current extent */
-            if (searchBlock < currExt->blockCount) {
-                cli_dbgmsg("hfsplus_fetch_node: found block in extent " STDu32 "\n", extentNum);
-                realFileBlock = currExt->startBlock + searchBlock;
-                foundBlock    = true;
-                break;
-            } else {
-                cli_dbgmsg("hfsplus_fetch_node: not in extent " STDu32 "\n", extentNum);
-                searchBlock -= currExt->blockCount;
-            }
-        }
-
-        if (foundBlock == false) {
-            cli_dbgmsg("hfsplus_fetch_node: not in first 8 extents\n");
-            cli_dbgmsg("hfsplus_fetch_node: finding this node requires extent overflow support\n");
-            cli_mark_scan_incomplete(ctx, "HFS+ file-tree node requires unsupported ExtentOverflow records");
-            return CL_EFORMAT;
-        }
+        cl_error_t resolve_status = hfsplus_resolve_fork_block(ctx, volHeader, extHeader, catFork, fileID,
+                                                                forkType, curBlock, &realFileBlock);
+        if (resolve_status != CL_SUCCESS)
+            return resolve_status;
 
         /* Block found */
         if (realFileBlock >= volHeader->totalBlocks) {
@@ -1125,6 +1052,265 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
     }
 
     return CL_CLEAN;
+}
+
+/* Resolve one logical fork block through the inline extent record and, when
+ * the eight inline descriptors are exhausted, the ExtentOverflow B-tree. */
+static cl_error_t hfsplus_resolve_fork_block(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
+                                             hfsHeaderRecord *extHeader, hfsPlusForkData *fork,
+                                             uint32_t fileID, uint8_t forkType, uint64_t logicalBlock,
+                                             uint64_t *realFileBlock)
+{
+    uint64_t remaining = logicalBlock;
+    uint8_t extentNum;
+
+    if (ctx == NULL || volHeader == NULL || fork == NULL || realFileBlock == NULL ||
+        volHeader->blockSize == 0 || logicalBlock >= fork->totalBlocks) {
+        cli_mark_scan_incomplete(ctx, "HFS+ fork logical block is invalid");
+        return CL_EFORMAT;
+    }
+
+    for (extentNum = 0; extentNum < 8; extentNum++) {
+        hfsPlusExtentDescriptor *extent = &fork->extents[extentNum];
+        uint32_t startBlock            = extent->startBlock;
+        uint32_t blockCount            = extent->blockCount;
+
+        if (startBlock == 0 || blockCount == 0) {
+            if (extentNum < 7) {
+                cli_mark_scan_incomplete(ctx, "HFS+ fork extent is incomplete");
+                return CL_EFORMAT;
+            }
+            break;
+        }
+        if ((startBlock & 0x10000000U) && (blockCount & 0x10000000U)) {
+            cli_mark_scan_incomplete(ctx, "HFS+ fork extent is malformed");
+            return CL_EFORMAT;
+        }
+        if (startBlock >= volHeader->totalBlocks ||
+            blockCount > volHeader->totalBlocks - startBlock) {
+            cli_mark_scan_incomplete(ctx, "HFS+ fork extent is outside the volume");
+            return CL_EFORMAT;
+        }
+        if (remaining < blockCount) {
+            *realFileBlock = (uint64_t)startBlock + remaining;
+            return CL_SUCCESS;
+        }
+        remaining -= blockCount;
+    }
+
+    if (fileID == hfsExtentsFileID && forkType == HFSPLUS_FORKTYPE_DATA) {
+        cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow file exceeds its inline extents");
+        return CL_EFORMAT;
+    }
+    if (logicalBlock > UINT32_MAX) {
+        cli_mark_scan_incomplete(ctx, "HFS+ fork ExtentOverflow coordinate is not representable");
+        return CL_EFORMAT;
+    }
+
+    return hfsplus_find_overflow_block(ctx, volHeader, extHeader, fileID, forkType,
+                                       (uint32_t)logicalBlock, realFileBlock);
+}
+
+/* Find the physical block for a logical block in one file/fork's
+ * ExtentOverflow records. The extents B-tree is itself read through its
+ * inline fork record; recursively overflowing the ExtentOverflow file is an
+ * invalid input rather than an unbounded lookup. */
+static cl_error_t hfsplus_find_overflow_block(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
+                                              hfsHeaderRecord *extHeader, uint32_t fileID,
+                                              uint8_t forkType, uint32_t logicalBlock,
+                                              uint64_t *realFileBlock)
+{
+    uint8_t *nodeBuf = NULL;
+    uint32_t thisNode;
+    uint32_t nodeLimit;
+    uint32_t nodesScanned = 0;
+    uint64_t leafRecordsScanned = 0;
+    uint64_t foundFileBlock = 0;
+    bool reachedLastLeaf;
+    bool found = false;
+    cl_error_t status = CL_SUCCESS;
+
+    if (ctx == NULL || volHeader == NULL || extHeader == NULL || realFileBlock == NULL) {
+        cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow lookup arguments are invalid");
+        return CL_EFORMAT;
+    }
+
+    nodeLimit       = MIN(extHeader->totalNodes, HFSPLUS_NODE_LIMIT);
+    thisNode        = extHeader->firstLeafNode;
+    reachedLastLeaf = (thisNode == 0);
+    if (thisNode == 0 || nodeLimit == 0) {
+        cli_mark_scan_incomplete(ctx, "HFS+ fork ExtentOverflow record is missing");
+        return CL_EFORMAT;
+    }
+
+    nodeBuf = cli_max_malloc(extHeader->nodeSize);
+    if (nodeBuf == NULL) {
+        cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow node buffer could not be allocated");
+        return CL_EMEM;
+    }
+
+    while (status == CL_SUCCESS && thisNode != 0) {
+        hfsNodeDescriptor nodeDesc;
+        uint16_t nodeSize = extHeader->nodeSize;
+        uint16_t recordNum;
+        uint16_t recordStart = sizeof(hfsNodeDescriptor);
+        uint16_t topOfOffsets;
+
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow traversal reached the configured time limit");
+            goto done;
+        }
+        if (nodesScanned++ >= nodeLimit) {
+            cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow node scan limit reached");
+            status = CL_EMAXFILES;
+            goto done;
+        }
+
+        status = hfsplus_fetch_node(ctx, volHeader, extHeader, NULL, &volHeader->extentsFile,
+                                    thisNode, nodeBuf, nodeSize, hfsExtentsFileID,
+                                    HFSPLUS_FORKTYPE_DATA);
+        if (status != CL_SUCCESS)
+            goto done;
+
+        memcpy(&nodeDesc, nodeBuf, sizeof(nodeDesc));
+        nodedescriptor_to_host(&nodeDesc);
+        if (nodeDesc.kind != HFS_NODEKIND_LEAF || nodeDesc.height != 1) {
+            cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow leaf node is malformed");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        if (nodeDesc.numRecords > nodeSize / 4U) {
+            cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow leaf node is malformed");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        if ((uint32_t)nodeDesc.numRecords * 2U + 2U > nodeSize) {
+            cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow leaf offsets are malformed");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        topOfOffsets = (uint16_t)(nodeSize - ((uint32_t)nodeDesc.numRecords * 2U) - 2U);
+
+        for (recordNum = 0; recordNum < nodeDesc.numRecords; recordNum++) {
+            uint16_t nextDist = (uint16_t)(nodeSize - ((uint32_t)recordNum * 2U) - 2U);
+            uint16_t nextStart;
+            uint16_t keyLength;
+            size_t extentOffset;
+            hfsPlusExtentKey key;
+            uint64_t relative;
+            uint8_t extentNum;
+
+            nextStart = hfsplus_read_be16(nodeBuf + nextDist);
+            if (nextStart < recordStart || nextStart >= topOfOffsets) {
+                cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow record offset is malformed");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            recordStart = nextStart;
+            if (recordStart > topOfOffsets - sizeof(uint16_t)) {
+                cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow record is incomplete");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            keyLength = hfsplus_read_be16(nodeBuf + recordStart);
+            if (keyLength != sizeof(hfsPlusExtentKey) - sizeof(uint16_t)) {
+                cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow key is malformed");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            if ((size_t)recordStart + sizeof(hfsPlusExtentKey) > topOfOffsets) {
+                cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow record is incomplete");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            extentOffset = (size_t)recordStart + sizeof(hfsPlusExtentKey);
+            if (sizeof(hfsPlusExtentRecord) > (size_t)topOfOffsets - extentOffset) {
+                cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow extent record is incomplete");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            memcpy(&key, nodeBuf + recordStart, sizeof(key));
+            key.keyLength = be16_to_host(key.keyLength);
+            key.fileID    = be32_to_host(key.fileID);
+            key.startBlock = be32_to_host(key.startBlock);
+            leafRecordsScanned++;
+
+            if (key.fileID != fileID || key.forkType != forkType || key.startBlock > logicalBlock)
+                continue;
+
+            relative = (uint64_t)logicalBlock - key.startBlock;
+            for (extentNum = 0; extentNum < 8; extentNum++) {
+                const uint8_t *extentData = nodeBuf + extentOffset + extentNum * sizeof(hfsPlusExtentDescriptor);
+                uint32_t startBlock        = hfsplus_read_be32(extentData);
+                uint32_t blockCount        = hfsplus_read_be32(extentData + sizeof(uint32_t));
+
+                if (startBlock == 0 || blockCount == 0)
+                    break;
+                if ((startBlock & 0x10000000U) && (blockCount & 0x10000000U)) {
+                    cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow extent is malformed");
+                    status = CL_EFORMAT;
+                    goto done;
+                }
+                if (startBlock >= volHeader->totalBlocks ||
+                    blockCount > volHeader->totalBlocks - startBlock) {
+                    cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow extent is outside the volume");
+                    status = CL_EFORMAT;
+                    goto done;
+                }
+                if (!found) {
+                    if (relative < blockCount) {
+                        foundFileBlock = (uint64_t)startBlock + relative;
+                        found          = true;
+                    } else {
+                        relative -= blockCount;
+                    }
+                }
+            }
+        }
+
+        if (thisNode == extHeader->lastLeafNode) {
+            if (nodeDesc.fLink != 0) {
+                cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow leaf chain exceeds its declared last leaf");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            if (leafRecordsScanned != extHeader->leafRecords) {
+                cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow leaf record count is inconsistent");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            reachedLastLeaf = true;
+            thisNode = 0;
+        } else if (nodeDesc.fLink == 0) {
+            cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow leaf chain ended before its declared last leaf");
+            status = CL_EFORMAT;
+            goto done;
+        } else if (thisNode == nodeDesc.fLink) {
+            cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow traversal contains a cycle");
+            status = CL_EFORMAT;
+            goto done;
+        } else {
+            thisNode = nodeDesc.fLink;
+        }
+    }
+
+    if (!reachedLastLeaf) {
+        cli_mark_scan_incomplete(ctx, "HFS+ ExtentOverflow leaf chain ended before its declared last leaf");
+        status = CL_EFORMAT;
+        goto done;
+    }
+    if (found) {
+        *realFileBlock = foundFileBlock;
+        status          = CL_SUCCESS;
+        goto done;
+    }
+    cli_mark_scan_incomplete(ctx, "HFS+ fork ExtentOverflow record is missing");
+    status = CL_EFORMAT;
+
+done:
+    free(nodeBuf);
+    return status;
 }
 
 static cl_error_t hfsplus_readn_full(cli_ctx *ctx, int fd, void *buffer, size_t length, const char *reason)
@@ -1532,7 +1718,8 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
         nodesScanned++;
 
         /* fetch node into buffer */
-        status = hfsplus_fetch_node(ctx, volHeader, catHeader, extHeader, &(volHeader->catalogFile), thisNode, nodeBuf, nodeSize);
+        status = hfsplus_fetch_node(ctx, volHeader, catHeader, extHeader, &(volHeader->catalogFile), thisNode,
+                                    nodeBuf, nodeSize, hfsCatalogFileID, HFSPLUS_FORKTYPE_DATA);
         if (status != CL_SUCCESS) {
             cli_dbgmsg("hfsplus_walk_catalog: node fetch failed.\n");
             goto done;
@@ -1656,7 +1843,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                 forkdata_print("resource fork:", &(fileRec.resourceFork));
 
                 if (attrHeader != NULL) {
-                    cl_error_t attribute_status = hfsplus_check_attribute(ctx, volHeader, attrHeader, fileRec.fileID,
+                    cl_error_t attribute_status = hfsplus_check_attribute(ctx, volHeader, attrHeader, extHeader, fileRec.fileID,
                                                                           COMPRESSED_ATTR, sizeof(COMPRESSED_ATTR), &compressed,
                                                                           attribute, &attributeSize);
                     if (attribute_status != CL_SUCCESS) {
@@ -1789,7 +1976,8 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                 goto done;
                             }
 
-                            if ((status = hfsplus_scanfile(ctx, volHeader, extHeader, &(fileRec.resourceFork), dirname,
+                            if ((status = hfsplus_scanfile(ctx, volHeader, extHeader, fileRec.fileID, HFSPLUS_FORKTYPE_RSRC,
+                                                           &(fileRec.resourceFork), dirname,
                                                            &resourceFile, &resource_reserved, name_utf8)) != CL_SUCCESS) {
                                 cli_dbgmsg("hfsplus_walk_catalog: Error while extracting the resource fork\n");
                                 goto done;
@@ -2107,7 +2295,8 @@ resource_block_done:
 
                 /* Scan data fork */
                 if (fileRec.dataFork.logicalSize) {
-                    status = hfsplus_scanfile(ctx, volHeader, extHeader, &(fileRec.dataFork), dirname, NULL, NULL, name_utf8);
+                    status = hfsplus_scanfile(ctx, volHeader, extHeader, fileRec.fileID, HFSPLUS_FORKTYPE_DATA,
+                                              &(fileRec.dataFork), dirname, NULL, NULL, name_utf8);
                     if (status != CL_SUCCESS) {
                         cli_dbgmsg("hfsplus_walk_catalog: data fork retcode %d\n", status);
                         goto done;
@@ -2115,9 +2304,24 @@ resource_block_done:
                 }
                 /* Scan resource fork */
                 if (fileRec.resourceFork.logicalSize) {
-                    status = hfsplus_scanfile(ctx, volHeader, extHeader, &(fileRec.resourceFork), dirname, NULL, NULL, name_utf8);
+                    status = hfsplus_scanfile(ctx, volHeader, extHeader, fileRec.fileID, HFSPLUS_FORKTYPE_RSRC,
+                                              &(fileRec.resourceFork), dirname, NULL, NULL, name_utf8);
                     if (status != CL_SUCCESS) {
                         cli_dbgmsg("hfsplus_walk_catalog: resource fork retcode %d", status);
+                        goto done;
+                    }
+                }
+
+                /* A regular catalog file with no data or resource fork is
+                 * still a logical child of the HFS+ volume. Admit it through
+                 * the shared counter so an empty file cannot bypass
+                 * MaxFiles and leave a clean cacheable result. */
+                if (!compressed && fileRec.dataFork.logicalSize == 0 &&
+                    fileRec.resourceFork.logicalSize == 0) {
+                    status = cli_updatelimits(ctx, 0);
+                    if (status != CL_SUCCESS) {
+                        if (status != CL_ETIMEOUT && status != CL_BREAK)
+                            cli_mark_scan_incomplete(ctx, "HFS+ empty file exceeds configured scan limits");
                         goto done;
                     }
                 }
@@ -2304,7 +2508,8 @@ cli_dbgmsg("sizeof(hfsNodeDescriptor) is %lu\n", sizeof(hfsNodeDescriptor));
     cli_dbgmsg("cli_scanhfsplus: Extracting into %s\n", targetdir);
 
     /* Can build and scan catalog file if we want ***
-    ret = hfsplus_scanfile(ctx, volHeader, &extentFileHeader, &(volHeader->catalogFile), targetdir);
+    ret = hfsplus_scanfile(ctx, volHeader, &extentFileHeader, hfsCatalogFileID, HFSPLUS_FORKTYPE_DATA,
+                           &(volHeader->catalogFile), targetdir, NULL, NULL, NULL);
      */
 
     status = hfsplus_validate_catalog(ctx, volHeader, &catFileHeader);

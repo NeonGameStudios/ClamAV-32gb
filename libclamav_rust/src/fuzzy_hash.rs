@@ -354,6 +354,7 @@ fn fuzzy_hash_reader_status(error: &Error) -> sys::cl_error_t {
 
     match error {
         Error::ContiguousBudget(status) => *status,
+        Error::NullParam(_) => sys::cl_error_t_CL_ENULLARG,
         Error::ImageReader(error) => io_status(error),
         Error::ImageLoad(image::ImageError::IoError(error)) => io_status(error),
         Error::ImageLoad(image::ImageError::Limits(_)) => sys::cl_error_t_CL_ERESOURCE,
@@ -1009,5 +1010,15 @@ mod tests {
         });
         assert!(!error.is_null());
         unsafe { crate::ffi_util::ffierror_free(error) };
+    }
+
+    #[test]
+    fn fuzzy_hash_reader_rejects_null_scan_context_with_null_argument_status() {
+        let error = Error::NullParam("scan_ctx");
+
+        assert_eq!(
+            fuzzy_hash_reader_status(&error),
+            sys::cl_error_t_CL_ENULLARG
+        );
     }
 }

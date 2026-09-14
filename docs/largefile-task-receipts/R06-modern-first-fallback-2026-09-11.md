@@ -9,7 +9,7 @@ qualification.
 
 Canonical checkout and branch:
 
-- `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- `<repository-root>`
 - `largefile-roadmap-qualification`
 - intentionally dirty working tree preserved; no reset, clean, commit, or push
 
@@ -52,7 +52,7 @@ Release readiness remains intentionally blocked and unchanged at 597 total,
 0 qualified, 143 bounded, 440 pending, 14 allowlisted unsupported,
 0 unsupported required, and 583 blockers. No certified Linux x86-64,
 sanitizer, full-size, materialized-edge, production-service, or final-canary
-evidence was produced. No remote execution, MCP-SSH, usage reset, GitHub
+evidence was produced. No remote execution, remote SSH, usage reset, GitHub
 workflow action, commit, or push was used.
 
 State: implementation slice verified by source/host controls; release

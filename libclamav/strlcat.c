@@ -27,6 +27,8 @@
 #include <sys/types.h>
 #include <string.h>
 
+#include "str.h"
+
 /*
  * Appends src to string dst of size siz (unlike strncat, siz is the
  * full size of dst, not space left).  At most siz-1 characters
@@ -37,7 +39,7 @@
 size_t
 cli_strlcat(char *dst, const char *src, size_t siz)
 {
-#if HAVE_STRLCAT
+#if defined(HAVE_STRLCAT) && HAVE_STRLCAT
     return strlcat(dst, src, siz);
 #else
     char *d       = dst;
@@ -48,7 +50,7 @@ cli_strlcat(char *dst, const char *src, size_t siz)
     /* Find the end of dst and adjust bytes left but don't go past end */
     while (n-- != 0 && *d != '\0')
         d++;
-    dlen = d - dst;
+    dlen = (size_t)(d - dst);
     n    = siz - dlen;
 
     if (n == 0)
@@ -62,6 +64,6 @@ cli_strlcat(char *dst, const char *src, size_t siz)
     }
     *d = '\0';
 
-    return (dlen + (s - src)); /* count does not include NUL */
+    return (dlen + (size_t)(s - src)); /* count does not include NUL */
 #endif
 }

@@ -23,6 +23,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -121,9 +122,19 @@ int main(int argc, char **argv)
     opts = optparse(NULL, argc, argv, 1, OPT_CLAMONACC, OPT_CLAMSCAN, NULL);
     if (opts == NULL) {
         mprintf(LOGG_ERROR, "Clamonacc: can't parse command line options\n");
+        onas_cleanup(ctx);
         return 2;
     }
     ctx->opts = opts;
+
+    /* Help is a local command and must remain usable on a host that has not
+     * configured or started clamd yet.  Do not make it depend on parsing the
+     * daemon configuration or acquiring privileged fanotify state. */
+    if (optget(opts, "help")->enabled) {
+        help();
+        onas_cleanup(ctx);
+        return 0;
+    }
 
     /* initialize logger */
 
@@ -131,6 +142,7 @@ int main(int argc, char **argv)
         logg_file = opt->strarg;
         if (logg(LOGG_INFO, "--------------------------------------\n")) {
             mprintf(LOGG_ERROR, "ClamClient: problem with internal logger\n");
+            onas_cleanup(ctx);
             return CL_EARG;
         }
     } else {
@@ -146,10 +158,21 @@ int main(int argc, char **argv)
     clamdopts = optparse(optget(opts, "config-file")->strarg, 0, NULL, 1, OPT_CLAMD, 0, NULL);
     if (clamdopts == NULL) {
         logg(LOGG_ERROR, "Clamonacc: can't parse clamd configuration file %s\n", optget(opts, "config-file")->strarg);
-        optfree((struct optstruct *)opts);
+        onas_cleanup(ctx);
         return 2;
     }
     ctx->clamdopts = clamdopts;
+
+    /* The queue consumer requires at least one worker. Keep the parsed
+     * long-long value within the context's native int32_t field before the
+     * thread pool is started; accepting zero would leave queued fanotify
+     * permission events with no worker to deliver a response. */
+    if (optget(clamdopts, "OnAccessMaxThreads")->numarg <= 0 ||
+        optget(clamdopts, "OnAccessMaxThreads")->numarg > INT32_MAX) {
+        logg(LOGG_ERROR, "Clamonacc: OnAccessMaxThreads must be between 1 and %lld\n", (long long)INT32_MAX);
+        onas_cleanup(ctx);
+        return 2;
+    }
 
     /* Make sure we're good to begin spinup */
     ret = startup_checks(ctx);
@@ -165,7 +188,8 @@ int main(int argc, char **argv)
     if (!optget(ctx->opts, "foreground")->enabled) {
         if (-1 == daemonize()) {
             logg(LOGG_ERROR, "Clamonacc: could not daemonize\n");
-            return 2;
+            ret = 2;
+            goto done;
         }
     }
 #endif
@@ -464,7 +488,6 @@ void help(void)
     mprintf(LOGG_INFO, "    --stream                           Force streaming files to clamd (for debugging and unit testing)\n");
     mprintf(LOGG_INFO, "\n");
 
-    exit(0);
 }
 
 void onas_cleanup(struct onas_context *ctx)

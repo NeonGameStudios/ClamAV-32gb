@@ -786,10 +786,8 @@ static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
                 goto subdocument_cleanup;
             }
 
-            if (!wrote_data) {
-                cli_dbgmsg("cli_scanxar: no content in subdoc element.\n");
-                goto subdocument_cleanup;
-            }
+            if (!wrote_data)
+                cli_dbgmsg("cli_scanxar: subdoc element has no serialized content; admitting empty logical child.\n");
 
             if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
                 cli_mark_scan_incomplete(ctx, "XAR subdocument temporary output could not be rewound");

@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <limits.h>
 #include <sys/types.h>
 #ifndef _WIN32
 #include <sys/socket.h>
@@ -769,14 +770,26 @@ static void defer_stream_until_admitted(client_conn_t *conn,
     buf->structured_report        = (cmd == COMMAND_INSTREAMREPORT);
     buf->stream_admission_reserved = 0;
     if (!already_waiting) {
-        if (readtimeout) {
+        if (readtimeout > 0) {
             time(&buf->timeout_at);
             buf->timeout_at += readtimeout;
         } else {
+            /* ReadTimeout=0 means wait indefinitely. */
             buf->timeout_at = 0;
         }
     }
     logg(LOGG_DEBUG_NV, "INSTREAM admission pending: waiting for an available scan worker\n");
+}
+
+static void set_read_timeout(struct fd_buf *buf, int readtimeout)
+{
+    if (readtimeout > 0) {
+        time(&buf->timeout_at);
+        buf->timeout_at += readtimeout;
+    } else {
+        /* Keep the fd_buf zero sentinel: ReadTimeout=0 disables the deadline. */
+        buf->timeout_at = 0;
+    }
 }
 
 static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, size_t *ppos, int *error, const struct optstruct *opts, int readtimeout)
@@ -894,9 +907,8 @@ static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, s
                 buf->fd = -1;
             }
         }
-        /* we received a command, set readtimeout */
-        time(&buf->timeout_at);
-        buf->timeout_at += readtimeout;
+        /* We received a command, set or clear the read timeout. */
+        set_read_timeout(buf, readtimeout);
         pos += cmdlen + 1;
         if (conn->mode == MODE_STREAM) {
             /* TODO: this doesn't belong here */
@@ -962,9 +974,8 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
 
     logg(LOGG_DEBUG_NV, "mode == MODE_STREAM\n");
     buf->response_sent = 0;
-    /* we received some data, set readtimeout */
-    time(&buf->timeout_at);
-    buf->timeout_at += readtimeout;
+    /* We received some data, set or clear the read timeout. */
+    set_read_timeout(buf, readtimeout);
     while (pos <= buf->off) {
         if (!buf->chunksize) {
             /* read chunksize */
@@ -1628,8 +1639,19 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
     }
 
     logg(LOGG_DEBUG, "Listening daemon: PID: %u\n", (unsigned int)getpid());
-    max_threads               = optget(opts, "MaxThreads")->numarg;
-    max_queue                 = optget(opts, "MaxQueue")->numarg;
+    {
+        const long long configured_max_threads = optget(opts, "MaxThreads")->numarg;
+        const long long configured_max_queue   = optget(opts, "MaxQueue")->numarg;
+
+        if (configured_max_threads <= 0 || configured_max_threads > INT_MAX ||
+            configured_max_queue <= 0 || configured_max_queue > INT_MAX) {
+            logg(LOGG_ERROR, "MaxThreads and MaxQueue must be positive values representable by the daemon thread pool\n");
+            cl_engine_free(engine);
+            return 1;
+        }
+        max_threads = (int)configured_max_threads;
+        max_queue   = (int)configured_max_queue;
+    }
     acceptdata.commandtimeout = optget(opts, "CommandReadTimeout")->numarg;
     readtimeout               = optget(opts, "ReadTimeout")->numarg;
 
@@ -1637,9 +1659,9 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
     if (getrlimit(RLIMIT_NOFILE, &rlim) == 0) {
         /* don't warn if default value is too high, silently fix it */
         unsigned maxrec;
-        int max_max_queue;
+        uint64_t max_max_queue;
+        uint64_t effective_max_queue;
         unsigned warn             = optget(opts, "MaxQueue")->active;
-        const unsigned clamdfiles = 6;
 #ifdef C_SOLARIS
         int solaris_has_extended_stdio = 0;
 #endif
@@ -1693,28 +1715,34 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
 #endif
         opt           = optget(opts, "MaxRecursion");
         maxrec        = opt->numarg;
-        max_max_queue = rlim.rlim_cur - maxrec * max_threads - clamdfiles + max_threads;
+        if (!clamd_queue_limit_calculate(
+                (uint64_t)rlim.rlim_cur,
+                (uint64_t)maxrec,
+                (uint64_t)max_threads,
+                (uint64_t)max_queue,
+                &max_max_queue,
+                &effective_max_queue)) {
+            logg(LOGG_ERROR, "Unable to calculate a representable MaxQueue limit\n");
+            cl_engine_free(engine);
+            return 1;
+        }
         if (max_queue < max_threads) {
-            max_queue = max_threads;
             if (warn)
-                logg(LOGG_WARNING, "MaxQueue value too low, increasing to: %d\n", max_queue);
+                logg(LOGG_WARNING, "MaxQueue value too low, increasing to: %llu\n", (unsigned long long)effective_max_queue);
         }
-        if (max_max_queue < max_threads) {
-            logg(LOGG_WARNING, "MaxThreads * MaxRecursion is too high: %d, open file descriptor limit is: %lu\n",
-                 maxrec * max_threads, (unsigned long)rlim.rlim_cur);
-            max_max_queue = max_threads;
+        if (max_max_queue < (uint64_t)max_threads) {
+            logg(LOGG_WARNING, "MaxThreads * MaxRecursion is too high: %llu, open file descriptor limit is: %lu\n",
+                 (unsigned long long)((uint64_t)maxrec * (uint64_t)max_threads), (unsigned long)rlim.rlim_cur);
         }
-        if (max_queue > max_max_queue) {
-            max_queue = max_max_queue;
+        if ((uint64_t)max_queue > max_max_queue) {
             if (warn)
-                logg(LOGG_WARNING, "MaxQueue value too high, lowering to: %d\n", max_queue);
-        } else if (max_queue < 2 * max_threads && max_queue < max_max_queue) {
-            max_queue = 2 * max_threads;
-            if (max_queue > max_max_queue)
-                max_queue = max_max_queue;
+                logg(LOGG_WARNING, "MaxQueue value too high, lowering to: %llu\n", (unsigned long long)effective_max_queue);
+        } else if ((uint64_t)max_queue < 2ULL * (uint64_t)max_threads &&
+                   (uint64_t)max_queue < max_max_queue) {
             /* always warn here */
-            logg(LOGG_WARNING, "MaxQueue is lower than twice MaxThreads, increasing to: %d\n", max_queue);
+            logg(LOGG_WARNING, "MaxQueue is lower than twice MaxThreads, increasing to: %llu\n", (unsigned long long)effective_max_queue);
         }
+        max_queue = (int)effective_max_queue;
     }
 #endif
     logg(LOGG_DEBUG, "MaxQueue set to: %d\n", max_queue);

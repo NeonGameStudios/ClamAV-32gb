@@ -8,7 +8,7 @@ ARM64 development verification only and does not promote the capability.
 
 ## Source and build identity
 
-- Canonical checkout: `/Volumes/512gbNVME/github-external/ClamAV-32gb`.
+- Canonical checkout: `<repository-root>`.
 - Branch: `largefile-roadmap-qualification`.
 - Base HEAD: `ff8905891b2b58a66c71859ab2c807cc4dee2dec`.
 - The pre-receipt dirty-source manifest SHA-256 was

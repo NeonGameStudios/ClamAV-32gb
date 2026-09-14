@@ -11,11 +11,11 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 from pathlib import Path, PurePosixPath
 import re
 import sys
 
+import largefile_acceptance_cases as acceptance_cases
 
 HASH_RE = re.compile(r"[0-9a-f]{64}\Z")
 PCRE_RSS_BUDGET_KB = 41943040
@@ -99,6 +99,36 @@ def validate_artifacts(root: Path, artifacts: object) -> None:
     require(required_roles <= seen_roles,
             "PCRE proof lacks required retained artifacts: "
             f"{sorted(required_roles - seen_roles)}")
+
+
+def validate_runtime_markers(root: Path, artifacts: object) -> None:
+    require(isinstance(artifacts, list), "PCRE proof artifacts are invalid")
+    process_logs = [artifact for artifact in artifacts
+                    if isinstance(artifact, dict) and artifact.get("role") == "process-log"]
+    require(len(process_logs) == 1, "PCRE proof must have one process-log artifact")
+    process_log = relative_file(root, process_logs[0].get("path"),
+                                "PCRE process-log artifact")
+    lines = process_log.read_text(encoding="utf-8").splitlines()
+    required = (
+        "largefile_pcre_phase: phase=before-pcre ",
+        "largefile_pcre_phase: phase=pcre ",
+        "largefile_pcre_phase: phase=post-pcre-before-deep-parse ",
+        "largefile_pcre_phase: phase=deep-parse ",
+    )
+    positions = []
+    for marker in required:
+        matches = [index for index, line in enumerate(lines) if marker in line]
+        require(matches, f"PCRE process log lacks runtime marker: {marker.strip()}")
+        positions.append(matches[0])
+    require(positions == sorted(positions),
+            "PCRE runtime phase markers are out of order")
+
+    post_line = lines[positions[2]]
+    deep_line = lines[positions[3]]
+    require("subject_released=1" in post_line,
+            "PCRE process log does not record subject release")
+    require("subject_released=1" in deep_line,
+            "PCRE process log does not bind deep parsing after release")
 
 
 def integer(value: object, label: str, minimum: int = 0) -> int:
@@ -192,10 +222,10 @@ def validate(proof_path: Path, evidence_root: Path | None = None) -> dict:
     root = (evidence_root or proof_candidate.parent.parent).resolve()
     require(proof_candidate.is_file() and not proof_candidate.is_symlink(),
             "PCRE phase evidence proof is missing or symlinked")
-    try:
-        document = json.loads(proof_candidate.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as error:
-        raise ValueError("PCRE phase evidence proof is not valid JSON") from error
+    document = acceptance_cases.load_json(
+        proof_candidate.read_text(encoding="utf-8"),
+        "PCRE phase evidence proof",
+    )
     require(isinstance(document, dict), "PCRE phase evidence proof is not an object")
     require(document.get("proof_format_version") == 1 and
             document.get("evidence_type") == "pcre-rss-phases" and
@@ -220,6 +250,7 @@ def validate(proof_path: Path, evidence_root: Path | None = None) -> dict:
     validate_samples(document.get("samples"))
     validate_transition(document.get("transition"))
     validate_artifacts(root, document.get("artifacts"))
+    validate_runtime_markers(root, document.get("artifacts"))
     return document
 
 

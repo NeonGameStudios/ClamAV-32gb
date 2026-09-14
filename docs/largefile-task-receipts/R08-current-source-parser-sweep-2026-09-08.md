@@ -9,7 +9,7 @@ container from accumulating the memory used by unrelated test families.
 
 Evidence identity:
 
-- Canonical source: `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- Canonical source: `<repository-root>`
 - Test binary: `/private/tmp/clamav-largefile-tests-static/unit_tests/check_clamav`
 - Current test-binary SHA-256:
   `bc1857bffc084e2a067c2b2a054cfcfb96aea0655cbe48d3db81df89563fc980`

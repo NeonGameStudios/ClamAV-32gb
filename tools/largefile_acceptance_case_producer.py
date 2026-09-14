@@ -12,13 +12,13 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
-import json
 import os
 from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import largefile_acceptance_cases as acceptance_cases
+import largefile_acceptance_resources as acceptance_resources
 import largefile_service_workload_check as workload_check
 
 
@@ -110,10 +110,11 @@ def read_summary(out: Path) -> dict[str, str]:
 
 def load_inputs(out: Path) -> dict[str, dict]:
     path = require_file(out / "provenance/service-inputs-before.json", "service input evidence")
-    try:
-        record = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as error:
-        raise ValueError(f"service input evidence is not JSON: {path}") from error
+    record = acceptance_cases.load_json(
+        path.read_text(encoding="utf-8"), f"service input evidence: {path}"
+    )
+    if not isinstance(record, dict):
+        fail(f"service input evidence has an invalid schema: {path}")
     if record.get("version") != 1 or set(record.get("inputs", {})) != workload_check.ROLES:
         fail("service input evidence has an invalid schema")
     inputs = record["inputs"]
@@ -273,7 +274,7 @@ def record_from_workload(
         "resource_phase": (
             f"rss<={summary['rss_budget_kb']};"
             f"pcre<={summary['pcre_rss_budget_kb']};"
-            f"post-pcre<={summary['post_pcre_rss_budget_kb']};"
+            f"post-pcre<{summary['post_pcre_rss_budget_kb']};"
             f"temporary<={summary['service_temp_budget_bytes']}"
         ),
         "health": "pass",
@@ -287,6 +288,8 @@ def produce(
     manifest: Path,
     mapping_path: Path,
     output: Path | None = None,
+    resource_sidecar: Path | None = None,
+    require_resource_sidecar: bool = False,
 ) -> int:
     out = out.resolve()
     mapping = acceptance_cases.validate_map(manifest, mapping_path)
@@ -345,6 +348,13 @@ def produce(
         for key in sorted(records):
             writer.writerow(records[key])
     os.replace(staging, destination)
+    if require_resource_sidecar and resource_sidecar is None:
+        resource_sidecar = Path(acceptance_resources.RESOURCE_PATH)
+    if resource_sidecar is not None:
+        sidecar = resource_sidecar
+        if not sidecar.is_absolute():
+            sidecar = out / sidecar
+        acceptance_resources.bind(destination, out, sidecar)
     return len(records)
 
 
@@ -356,12 +366,23 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--map", dest="mapping", type=Path,
                         default=Path("docs/largefile-capability-case-map.tsv"))
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--resource-sidecar", type=Path,
+        help="bind an independently captured per-case resource sidecar",
+    )
+    parser.add_argument(
+        "--require-resource-sidecar", action="store_true",
+        help="require the default per-case resource sidecar and bind it",
+    )
     args = parser.parse_args(argv)
     try:
-        count = produce(args.service_output, args.manifest, args.mapping, args.output)
+        count = produce(
+            args.service_output, args.manifest, args.mapping, args.output,
+            args.resource_sidecar, args.require_resource_sidecar,
+        )
         print(f"large-file acceptance case producer wrote {count} records")
         return 0
-    except (OSError, ValueError, KeyError, csv.Error, json.JSONDecodeError) as error:
+    except (OSError, ValueError, KeyError, csv.Error) as error:
         print(f"large-file acceptance case producer failed: {error}", file=sys.stderr)
         return 1
 

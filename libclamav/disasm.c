@@ -1425,7 +1425,7 @@ static const uint8_t *disasm_x86(const uint8_t *command, unsigned int len, struc
                     case ADDR_NOADDR:
                         if (x86ops[table][s->table_op].dsize != SIZE_NOSIZE) {
                             assert(x86ops[table][s->table_op].dsize == SIZE_WD);
-                            s->real_op += (s->opsize != 0);
+                            s->real_op = (uint16_t)(s->real_op + (s->opsize != 0));
                         }
                         s->args[0].access = ACCESS_NOARG;
                         s->state          = STATE_FINALIZE;
@@ -1528,7 +1528,7 @@ static const uint8_t *disasm_x86(const uint8_t *command, unsigned int len, struc
                             s->args[reversed].reg    = mrm_regmap[s->args[reversed].size][rm];
 
                             if (x86ops[table][s->table_op].dmethod == ADDR_MRM_EXTRA_1A) {
-                                uint8_t opcache = s->real_op;
+                                uint8_t opcache = (uint8_t)s->real_op;
                                 assert(opcache < (sizeof(extra_1a) / sizeof(extra_1a[0][0])));
                                 s->args[0].size += extra_1a[opcache][rop].addsz;
                                 if ((s->real_op = extra_1a[opcache][rop].op) == OP_INVALID) INVALIDATE;
@@ -1580,7 +1580,7 @@ static const uint8_t *disasm_x86(const uint8_t *command, unsigned int len, struc
                             }
                             if (mod) {
                                 shiftme <<= ((8 - mod) * 8);
-                                s->args[reversed].arg.marg.disp = shiftme >> ((8 - mod) * 8);
+                                s->args[reversed].arg.marg.disp = (int32_t)(shiftme >> ((8 - mod) * 8));
                             } else
                                 s->args[reversed].arg.marg.disp = 0;
                         } else {
@@ -1597,10 +1597,10 @@ static const uint8_t *disasm_x86(const uint8_t *command, unsigned int len, struc
                                 shiftme += b << (i * 8);
                             }
                             shiftme <<= ((8 - mod) * 8);
-                            s->args[reversed].arg.marg.disp = shiftme >> ((8 - mod) * 8);
+                            s->args[reversed].arg.marg.disp = (int32_t)(shiftme >> ((8 - mod) * 8));
                         }
                         if (x86ops[table][s->table_op].dmethod == ADDR_MRM_EXTRA_1A || x86ops[table][s->table_op].dmethod == ADDR_MRM_EXTRA_1A_M) {
-                            uint8_t opcache = s->real_op;
+                            uint8_t opcache = (uint8_t)s->real_op;
                             assert(opcache < (sizeof(extra_1a) / sizeof(extra_1a[0][0])));
                             s->args[0].size += extra_1a[opcache][rop].addsz;
                             if ((s->real_op = extra_1a[opcache][rop].op) == OP_INVALID) INVALIDATE;
@@ -1733,9 +1733,9 @@ const uint8_t *cli_disasm_one(const uint8_t *buff, unsigned int len,
         cli_dbgmsg("%s\n", hr);
     }
     w->real_op = le16_to_host(s.real_op);
-    w->opsize  = s.opsize;
-    w->adsize  = s.adsize;
-    w->segment = s.segment;
+    w->opsize  = (uint8_t)s.opsize;
+    w->adsize  = (uint8_t)s.adsize;
+    w->segment = (uint8_t)s.segment;
 
     for (i = 0; i < 3; i++) {
         w->arg[i][0] = s.args[i].access;
@@ -1773,7 +1773,7 @@ int disasmbuf(const uint8_t *buff, unsigned int len, int fd)
             return gotsome;
         }
 
-        len -= next - buff;
+        len -= (unsigned int)(next - buff);
         buff = next;
 
         cli_writen(fd, &w, sizeof(w));

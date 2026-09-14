@@ -1237,7 +1237,9 @@ END_TEST
 START_TEST(test_cvd_directory_preserves_long_database_path)
 {
     char long_dir[PATH_MAX];
+    char backing_dir[PATH_MAX];
     char cvd_path[PATH_MAX];
+    char link_path[PATH_MAX];
     char component[241];
     const char *fixture = SRCDIR PATHSEP "input" PATHSEP "freshclam_testfiles" PATHSEP "test-1.cvd";
     time_t age_seconds = 0;
@@ -1248,6 +1250,9 @@ START_TEST(test_cvd_directory_preserves_long_database_path)
     memset(component, 'c', sizeof(component) - 1);
     component[sizeof(component) - 1] = '\0';
     ck_assert(strlen(tmpdir) + 5 * (1 + sizeof(component) - 1) + 1 < sizeof(long_dir));
+    written = snprintf(backing_dir, sizeof(backing_dir), "%s" PATHSEP "backing", tmpdir);
+    ck_assert(written > 0 && (size_t)written < sizeof(backing_dir));
+    ck_assert_int_eq(mkdir(backing_dir, 0700), 0);
     strcpy(long_dir, tmpdir);
     path_len = strlen(long_dir);
     for (i = 0; i < 5; i++) {
@@ -1255,7 +1260,13 @@ START_TEST(test_cvd_directory_preserves_long_database_path)
         memcpy(long_dir + path_len, component, sizeof(component));
         path_len += sizeof(component) - 1;
         long_dir[path_len] = '\0';
-        ck_assert_int_eq(mkdir(long_dir, 0700), 0);
+        if (i == 0) {
+            ck_assert_int_eq(symlink("backing", long_dir), 0);
+        } else if (i == 1) {
+            written = snprintf(link_path, sizeof(link_path), "%s" PATHSEP "%s", backing_dir, component);
+            ck_assert(written > 0 && (size_t)written < sizeof(link_path));
+            ck_assert_int_eq(symlink(".", link_path), 0);
+        }
     }
     ck_assert(path_len > 1023);
 
@@ -1736,9 +1747,13 @@ START_TEST(test_cl_scanfile)
     close(fd);
 
     cli_dbgmsg("scanning (scanfile) %s\n", file);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
     clamav_test_force_nsis_bzip_decoder_end = 1;
+#endif
     ret = cl_scanfile(file, &virname, &scanned, g_engine, &options);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
     clamav_test_force_nsis_bzip_decoder_end = 0;
+#endif
     cli_dbgmsg("scan end (scanfile) %s\n", file);
 
     if (!FALSE_NEGATIVE) {
@@ -2944,14 +2959,17 @@ static void assert_library_exact_edge_result(
     cl_scan_completion_t completion;
     cl_error_t report_status;
 
-    ck_assert_msg(status == CL_SUCCESS, "%s returned %d", api, status);
+    /* The current public *_ex2 implementation preserves CL_VIRUS for a
+     * strong indicator. The separate verdict/report fields remain the
+     * authoritative bindings for this exact-tail qualification. */
+    ck_assert_msg(status == CL_VIRUS, "%s returned %d", api, status);
     ck_assert_msg(verdict == CL_VERDICT_STRONG_INDICATOR,
                   "%s did not return the strong-indicator verdict", api);
     ck_assert_ptr_nonnull(last_alert);
     ck_assert_str_eq(last_alert, "LargeFile.Library.32G.UNOFFICIAL");
     ck_assert_ptr_nonnull(report);
     ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
-    ck_assert_int_eq(report_status, CL_SUCCESS);
+    ck_assert_int_eq(report_status, CL_VIRUS);
     ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
     ck_assert_int_eq(completion, CL_SCAN_COMPLETION_DETECTION_TERMINATED);
     ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
@@ -3872,6 +3890,42 @@ START_TEST(test_mime_body_byte_span_preserves_embedded_nul)
 }
 END_TEST
 
+START_TEST(test_mime_empty_attachment_is_exported_for_scan)
+{
+    struct cl_engine *engine;
+    cli_ctx ctx;
+    message *m;
+    fileblob *fb;
+    struct stat output_stat;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = engine;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    /* A MIME attachment can be recognized before it has any body lines. It
+     * is still a logical child and must reach the fileblob scan path, where
+     * MaxFiles admission and cache taint are applied. */
+    m = messageCreate();
+    ck_assert_ptr_nonnull(m);
+    messageAddArgument(m, "name=empty_attachment");
+    messageSetCTX(m, &ctx);
+
+    fb = messageToFileblob(m, tmpdir, 1);
+    ck_assert_ptr_nonnull(fb);
+    ck_assert_ptr_nonnull(fb->fp);
+    ck_assert_str_eq(fileblobGetFilename(fb), "empty_attachment");
+    ck_assert_int_eq(fflush(fb->fp), 0);
+    ck_assert_int_eq(fstat(fb->fd, &output_stat), 0);
+    ck_assert_int_eq(output_stat.st_size, 0);
+
+    fileblobDestructiveDestroy(fb);
+    messageDestroy(m);
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_multipart_body_uses_streaming_spool)
 {
     char *path = create_streaming_multipart_fixture();
@@ -3948,6 +4002,81 @@ START_TEST(test_nsis_crc_trailer_is_not_a_member_header)
 
     ck_assert_msg(ret == CL_VIRUS, "valid NSIS archive with a four-byte CRC trailer failed: %s", cl_strerror(ret));
     ck_assert_msg(virname && !strcmp(virname, "ClamAV-Test-File.UNOFFICIAL"), "virusname: %s", virname);
+}
+END_TEST
+
+static size_t nsis_test_empty_members_archive(uint8_t *archive, size_t capacity)
+{
+    ck_assert_ptr_nonnull(archive);
+    ck_assert_uint_ge(capacity, 0x28U);
+
+    memset(archive, 0, 0x28U);
+    cli_writeint32(archive, UINT32_C(0xdeadbeef));
+    memcpy(archive + 4, "NullsoftInst", 12);
+    cli_writeint32(archive + 0x14, 0x1c);
+    cli_writeint32(archive + 0x18, 0x28);
+    /* Two zero-sized logical members followed by the four-byte archive CRC. */
+    cli_writeint32(archive + 0x1c, 0);
+    cli_writeint32(archive + 0x20, 0);
+    return 0x28;
+}
+
+static cl_error_t scan_nsis_empty_members_archive(const uint8_t *archive, size_t archive_size,
+                                                  uint32_t maxfiles, bool *dont_cache)
+{
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    scan_engine->maxfiles = maxfiles;
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(archive, archive_size);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_NULSFT", NULL);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    *dont_cache = map->dont_cache_flag;
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    return ret;
+}
+
+START_TEST(test_nsis_empty_members_count_toward_maxfiles)
+{
+    uint8_t archive[0x28];
+    size_t archive_size;
+    bool dont_cache;
+    cl_error_t ret;
+
+    archive_size = nsis_test_empty_members_archive(archive, sizeof(archive));
+
+    /* The root consumes one MaxFiles slot. Both empty members are logical
+     * children, while the final four-byte CRC is not a member header. */
+    ret = scan_nsis_empty_members_archive(archive, archive_size, 2, &dont_cache);
+    ck_assert_msg(ret == CL_EMAXFILES, "NSIS returned %s (%d) for MaxFiles=2",
+                  cl_strerror(ret), ret);
+    ck_assert(dont_cache);
+
+    ret = scan_nsis_empty_members_archive(archive, archive_size, 3, &dont_cache);
+    ck_assert_msg(ret == CL_SUCCESS, "NSIS returned %s (%d) for MaxFiles=3",
+                  cl_strerror(ret), ret);
+    ck_assert(!dont_cache);
 }
 END_TEST
 
@@ -4860,6 +4989,44 @@ START_TEST(test_html_normalized_view_uses_matcher_work_budget)
 }
 END_TEST
 
+START_TEST(test_html_css_empty_image_counts_toward_maxfiles)
+{
+    static const unsigned char data[] =
+        "<html><style>body{background:url(data:image/png;base64,);}</style></html>";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cl_verdict_t verdict = CL_VERDICT_STRONG_INDICATOR;
+    const char *last_alert = "stale";
+    uint64_t scanned       = UINT64_MAX;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_str(engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    /* The root consumes the only slot. The empty decoded CSS image is still
+     * a logical extracted child and must therefore fail visibly. */
+    engine->maxfiles = 1;
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_HTML;
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data) - 1U);
+    ck_assert_ptr_nonnull(map);
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_HTML", NULL);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_script_normalized_view_uses_matcher_work_budget)
 {
     static const unsigned char data[] = "var marker = 1;\n";
@@ -5267,7 +5434,6 @@ START_TEST(test_html_corpus_detects_embedded_mz)
     ck_assert_int_eq(close(fd), 0);
     map = cl_fmap_open_memory(data, data_size);
     ck_assert_ptr_nonnull(map);
-
     verdict    = CL_VERDICT_NOTHING_FOUND;
     last_alert = NULL;
     scanned    = 0;
@@ -10441,6 +10607,7 @@ START_TEST(test_zip_local_filename_read_failure_is_fail_visible)
     archive[30] = 'x';
 
     memset(&engine, 0, sizeof(engine));
+    engine.maxcontiguoussize = CLI_DEFAULT_MAX_CONTIGUOUS_SIZE;
     memset(&ctx, 0, sizeof(ctx));
     memset(&layer, 0, sizeof(layer));
     map = cl_fmap_open_memory(archive, sizeof(archive));
@@ -12386,6 +12553,9 @@ START_TEST(test_msxml_value_metadata_array_add_failure_is_fail_visible)
 END_TEST
 #endif
 
+static cl_error_t msxml_empty_callback_scan_cb(int fd, const char *filepath, cli_ctx *ctx, int num_attribs,
+                                               struct attrib_entry *attribs, void *cbdata);
+
 START_TEST(test_msxml_stream_time_limit_is_fail_visible)
 {
     static const uint8_t document[] = "<chunk>QUJD</chunk>";
@@ -12415,6 +12585,204 @@ START_TEST(test_msxml_stream_time_limit_is_fail_visible)
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_msxml_empty_base64_counts_toward_maxfiles)
+{
+    static const uint8_t document[] = "<chunk></chunk>";
+    static const struct key_entry keys[] = {{"chunk", "Chunk", MSXML_SCAN_B64}};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+
+    scan_engine->maxfiles = 1;
+    ctx.engine            = scan_engine;
+    ctx.dconf             = scan_engine->dconf;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+    ctx.scannedfiles      = 1; /* the enclosing XML layer is admitted */
+    ctx.recursion_stack   = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap             = map;
+    layer.type             = CL_TYPE_MSOLE2;
+    layer.size             = map->len;
+
+    ret = cli_msxml_parse_document_streaming(&ctx, map, keys, sizeof(keys) / sizeof(keys[0]),
+                                             MSXML_FLAG_FAIL_INCOMPLETE, NULL);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxFiles");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_msxml_empty_callback_counts_toward_maxfiles)
+{
+    static const uint8_t document[] = "<chunk></chunk>";
+    static const struct key_entry keys[] = {{"chunk", "Chunk", MSXML_SCAN_CB}};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct msxml_ctx mxctx;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    memset(&mxctx, 0, sizeof(mxctx));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+
+    scan_engine->maxfiles = 1;
+    ctx.engine            = scan_engine;
+    ctx.dconf             = scan_engine->dconf;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+    ctx.scannedfiles      = 1; /* the enclosing XML layer is admitted */
+    ctx.recursion_stack   = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap             = map;
+    layer.type             = CL_TYPE_MSOLE2;
+    layer.size             = map->len;
+    mxctx.scan_cb         = msxml_empty_callback_scan_cb;
+
+    ret = cli_msxml_parse_document_streaming(&ctx, map, keys, sizeof(keys) / sizeof(keys[0]),
+                                             MSXML_FLAG_FAIL_INCOMPLETE, &mxctx);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxFiles");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_msxml_self_closing_base64_counts_toward_maxfiles)
+{
+    static const uint8_t document[] = "<chunk/>";
+    static const struct key_entry keys[] = {{"chunk", "Chunk", MSXML_SCAN_B64}};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    xmlTextReaderPtr reader;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    reader = xmlReaderForMemory((const char *)document, (int)(sizeof(document) - 1U), "msxml-empty.xml", NULL, 0);
+    ck_assert_ptr_nonnull(reader);
+
+    scan_engine->maxfiles = 1;
+    ctx.engine             = scan_engine;
+    ctx.dconf              = scan_engine->dconf;
+    ctx.options            = &options;
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir  = tmpdir;
+    ctx.scannedfiles       = 1; /* the enclosing XML layer is admitted */
+    ctx.recursion_stack    = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap              = map;
+    layer.type              = CL_TYPE_MSOLE2;
+    layer.size              = map->len;
+
+    ret = cli_msxml_parse_document(&ctx, reader, keys, sizeof(keys) / sizeof(keys[0]),
+                                   MSXML_FLAG_FAIL_INCOMPLETE, NULL);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxFiles");
+    ck_assert(map->dont_cache_flag);
+
+    xmlFreeTextReader(reader);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_msxml_self_closing_callback_counts_toward_maxfiles)
+{
+    static const uint8_t document[] = "<chunk/>";
+    static const struct key_entry keys[] = {{"chunk", "Chunk", MSXML_SCAN_CB}};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct msxml_ctx mxctx;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    xmlTextReaderPtr reader;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    memset(&mxctx, 0, sizeof(mxctx));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    reader = xmlReaderForMemory((const char *)document, (int)(sizeof(document) - 1U), "msxml-empty-callback.xml", NULL, 0);
+    ck_assert_ptr_nonnull(reader);
+
+    scan_engine->maxfiles = 1;
+    ctx.engine             = scan_engine;
+    ctx.dconf              = scan_engine->dconf;
+    ctx.options            = &options;
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir  = tmpdir;
+    ctx.scannedfiles       = 1; /* the enclosing XML layer is admitted */
+    ctx.recursion_stack    = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap              = map;
+    layer.type              = CL_TYPE_MSOLE2;
+    layer.size              = map->len;
+    mxctx.scan_cb          = msxml_empty_callback_scan_cb;
+
+    ret = cli_msxml_parse_document(&ctx, reader, keys, sizeof(keys) / sizeof(keys[0]),
+                                   MSXML_FLAG_FAIL_INCOMPLETE, &mxctx);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxFiles");
+    ck_assert(map->dont_cache_flag);
+
+    xmlFreeTextReader(reader);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
 }
 END_TEST
 
@@ -18794,6 +19162,10 @@ static uint8_t *pdf_test_lzw_encode(const uint8_t *input, size_t input_size,
                                     int early_change, bool include_eoi,
                                     size_t *encoded_size);
 
+static uint8_t *pdf_test_lzw_literal_fixture(size_t output_size, int early_change,
+                                             bool include_eoi, uint8_t **expected,
+                                             size_t *encoded_size);
+
 static uint8_t *pdf_test_filter_encode(uint32_t filter, const uint8_t *input,
                                        size_t input_size, size_t *encoded_size)
 {
@@ -20708,17 +21080,19 @@ END_TEST
 START_TEST(test_pdf_filter_chain_accepts_native_input_width)
 {
     const size_t decoded_size = 37U;
-    static const uint32_t filters[] = {OBJ_FILTER_AH, OBJ_FILTER_FLATE};
+    static const uint32_t filters[] = {OBJ_FILTER_AH, OBJ_FILTER_LZW};
     uint8_t input[PDF_INPUT_WINDOW_SIZE] = {0};
     uint8_t *expected = NULL;
-    size_t stage_size;
+    size_t lzw_size;
     size_t encoded_size;
-    uint8_t *encoded = pdf_test_filter_chain_fixture(
-        decoded_size, false, &expected, &stage_size, &encoded_size);
+    uint8_t *lzw = pdf_test_lzw_literal_fixture(
+        decoded_size, 1, true, &expected, &lzw_size);
+    uint8_t *encoded = pdf_test_asciihex_encode(lzw, lzw_size,
+                                                &encoded_size);
     struct pdf_single_filter_result result;
 
     ck_assert(encoded_size <= sizeof(input));
-    ck_assert(stage_size > 0);
+    ck_assert(lzw_size > 0);
     memcpy(input, encoded, encoded_size);
     pdf_test_decode_filter_chain(
         input, sizeof(input), (size_t)UINT32_MAX + 1U, filters,
@@ -20733,6 +21107,7 @@ START_TEST(test_pdf_filter_chain_accepts_native_input_width)
 
     free(result.output);
     free(encoded);
+    free(lzw);
     free(expected);
 }
 END_TEST
@@ -21751,11 +22126,11 @@ START_TEST(test_pdf_stream_width_boundary_is_fail_visible)
     ctx.this_layer_tmpdir = tmpdir;
     pdf.ctx               = &ctx;
     obj.id                = 8U << 8;
-    /* Filter chains retain this explicit native-width boundary. Ordinary
-     * supported single filters use bounded streaming paths instead. */
+    /* An unsupported/mixed chain still reaches the legacy filter boundary;
+     * supported chains use bounded native-width readers instead. */
     obj.numfilters        = 2;
     obj.filterlist[0]     = OBJ_FILTER_LZW;
-    obj.filterlist[1]     = OBJ_FILTER_LZW;
+    obj.filterlist[1]     = OBJ_FILTER_FAX;
 
     status  = CL_SUCCESS;
     written = pdf_decodestream(&pdf, &obj, NULL, (const char *)input,
@@ -21810,7 +22185,7 @@ START_TEST(test_pdf_stream_allocation_boundary_is_fail_visible)
     obj.id                = 9U << 8;
     obj.numfilters        = 2;
     obj.filterlist[0]     = OBJ_FILTER_LZW;
-    obj.filterlist[1]     = OBJ_FILTER_LZW;
+    obj.filterlist[1]     = OBJ_FILTER_FAX;
 
     status  = CL_SUCCESS;
     written = pdf_decodestream(&pdf, &obj, NULL, (const char *)input,
@@ -22194,6 +22569,120 @@ START_TEST(test_pdf_empty_flate_stream_is_fail_visible)
     close(fd);
     cli_unlink(path);
     free(path);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_pdf_empty_extracted_object_counts_toward_maxfiles)
+{
+    static const uint8_t input[] = {'%'};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct pdf_obj obj;
+    struct pdf_struct pdf;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    memset(&obj, 0, sizeof(obj));
+    memset(&pdf, 0, sizeof(pdf));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    scan_engine->maxfiles = 2;
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    layer.fmap               = map;
+    layer.type               = CL_TYPE_PDF;
+    layer.size               = map->len;
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir   = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    ctx.scannedfiles         = 1; /* the enclosing PDF layer is admitted */
+
+    pdf.ctx  = &ctx;
+    pdf.map  = (const char *)input;
+    pdf.size = sizeof(input);
+    pdf.dir  = tmpdir;
+    obj.id   = 31U << 8U;
+    obj.flags = (1U << OBJ_FORCEDUMP);
+
+    ret = pdf_extract_obj(&pdf, &obj, PDF_EXTRACT_OBJ_SCAN);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    ck_assert_uint_eq(ctx.scannedfiles, 2);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_pdf_empty_stream_counts_toward_maxfiles)
+{
+    static const uint8_t input[] = {'%'};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct pdf_obj obj;
+    struct pdf_struct pdf;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    memset(&obj, 0, sizeof(obj));
+    memset(&pdf, 0, sizeof(pdf));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    scan_engine->maxfiles = 2;
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    layer.fmap                = map;
+    layer.type                = CL_TYPE_PDF;
+    layer.size                = map->len;
+    ctx.engine                = scan_engine;
+    ctx.dconf                 = scan_engine->dconf;
+    ctx.options               = &options;
+    ctx.fmap                  = map;
+    ctx.this_layer_tmpdir     = tmpdir;
+    ctx.recursion_stack       = &layer;
+    ctx.recursion_stack_size  = 1;
+    ctx.scannedfiles          = 1; /* the enclosing PDF layer is admitted */
+
+    pdf.ctx         = &ctx;
+    pdf.map         = (const char *)input;
+    pdf.size        = sizeof(input);
+    pdf.dir         = tmpdir;
+    obj.id          = 32U << 8U;
+    obj.flags       = (1U << OBJ_STREAM) | (1U << OBJ_EMBEDDED_FILE);
+    obj.stream      = (const char *)input;
+    obj.stream_size = 0;
+
+    ret = pdf_extract_obj(&pdf, &obj, PDF_EXTRACT_OBJ_SCAN);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    ck_assert_uint_eq(ctx.scannedfiles, 2);
+
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
 }
@@ -25385,7 +25874,7 @@ START_TEST(test_python_compiled_parser_accepts_marshal_string_reference)
         0, 0, 0, 0, /* flags */
         's', 0, 0, 0, 0, /* co_code */
         ')', 2, /* co_consts */
-        (uint8_t)('s' | 0x80), 1, 0, 0, 0, 'x', /* referenced string */
+        't', 1, 0, 0, 0, 'x', /* referenced interned string */
         'R', 0, 0, 0, 0, /* TYPE_STRINGREF */
         ')', 0, /* co_names */
         ')', 0, /* co_varnames */
@@ -25401,6 +25890,87 @@ START_TEST(test_python_compiled_parser_accepts_marshal_string_reference)
 }
 END_TEST
 
+START_TEST(test_python_compiled_parser_rejects_string_reference_without_interned_string)
+{
+    static const uint8_t data[] = {
+        0x42, 0x0d, 0x0d, 0x0a, 0, 0, 0, 0,
+        'c',
+        0, 0, 0, 0, /* argcount */
+        0, 0, 0, 0, /* nlocals */
+        0, 0, 0, 0, /* stacksize */
+        0, 0, 0, 0, /* flags */
+        's', 0, 0, 0, 0, /* co_code */
+        ')', 2, /* co_consts */
+        's', 1, 0, 0, 0, 'x', /* not an interned string */
+        'R', 0, 0, 0, 0, /* no TYPE_INTERNED entry exists */
+        ')', 0, /* co_names */
+        ')', 0, /* co_varnames */
+        ')', 0, /* co_freevars */
+        ')', 0, /* co_cellvars */
+        's', 0, 0, 0, 0, /* co_filename */
+        's', 0, 0, 0, 0, /* co_name */
+        0, 0, 0, 0, /* co_firstlineno */
+        's', 0, 0, 0, 0 /* co_lnotab */
+    };
+
+    assert_python_compiled_scan_result(data, sizeof(data), CL_EPARSE);
+}
+END_TEST
+
+START_TEST(test_python_compiled_parser_rejects_flagged_string_reference)
+{
+    static const uint8_t data[] = {
+        0x42, 0x0d, 0x0d, 0x0a, 0, 0, 0, 0,
+        'c',
+        0, 0, 0, 0, /* argcount */
+        0, 0, 0, 0, /* nlocals */
+        0, 0, 0, 0, /* stacksize */
+        0, 0, 0, 0, /* flags */
+        's', 0, 0, 0, 0, /* co_code */
+        ')', 2, /* co_consts */
+        't', 1, 0, 0, 0, 'x', /* referenced interned string */
+        (uint8_t)('R' | 0x80), 0, 0, 0, 0, /* TYPE_STRINGREF cannot carry FLAG_REF */
+        ')', 0, /* co_names */
+        ')', 0, /* co_varnames */
+        ')', 0, /* co_freevars */
+        ')', 0, /* co_cellvars */
+        's', 0, 0, 0, 0, /* co_filename */
+        's', 0, 0, 0, 0, /* co_name */
+        0, 0, 0, 0, /* co_firstlineno */
+        's', 0, 0, 0, 0 /* co_lnotab */
+    };
+
+    assert_python_compiled_scan_result(data, sizeof(data), CL_EPARSE);
+}
+END_TEST
+
+START_TEST(test_python_compiled_parser_rejects_reference_to_nonreferencable_object)
+{
+    static const uint8_t data[] = {
+        0x42, 0x0d, 0x0d, 0x0a, 0, 0, 0, 0,
+        'c',
+        0, 0, 0, 0, /* argcount */
+        0, 0, 0, 0, /* nlocals */
+        0, 0, 0, 0, /* stacksize */
+        0, 0, 0, 0, /* flags */
+        's', 0, 0, 0, 0, /* co_code */
+        ')', 2, /* co_consts */
+        (uint8_t)('N' | 0x80), /* FLAG_REF does not register None */
+        'r', 0, 0, 0, 0, /* no reference-table entry exists */
+        ')', 0, /* co_names */
+        ')', 0, /* co_varnames */
+        ')', 0, /* co_freevars */
+        ')', 0, /* co_cellvars */
+        's', 0, 0, 0, 0, /* co_filename */
+        's', 0, 0, 0, 0, /* co_name */
+        0, 0, 0, 0, /* co_firstlineno */
+        's', 0, 0, 0, 0 /* co_lnotab */
+    };
+
+    assert_python_compiled_scan_result(data, sizeof(data), CL_EPARSE);
+}
+END_TEST
+
 START_TEST(test_python_compiled_parser_accepts_modern_code_object)
 {
     static const uint8_t data[] = {
@@ -25411,6 +25981,7 @@ START_TEST(test_python_compiled_parser_accepts_modern_code_object)
         0, 0, 0, 0, /* argcount */
         0, 0, 0, 0, /* posonlyargcount */
         0, 0, 0, 0, /* kwonlyargcount */
+        0, 0, 0, 0, /* nlocals */
         0, 0, 0, 0, /* stacksize */
         0, 0, 0, 0, /* flags */
         's', 0, 0, 0, 0, /* co_code */
@@ -26133,6 +26704,151 @@ START_TEST(test_ai_model_onnx_accepts_node_metadata_properties)
 }
 END_TEST
 
+static void assert_ai_model_onnx_scan_result(const uint8_t *data,
+                                             size_t data_len,
+                                             cl_error_t expected);
+
+START_TEST(test_ai_model_onnx_accepts_named_typed_attribute)
+{
+    /* ModelProto -> GraphProto -> NodeProto -> AttributeProto. */
+    static const uint8_t data[] = {
+        0x08, 0x01,                         /* ir_version = 1 */
+        0x3a, 0x10,                         /* graph */
+        0x0a, 0x0e,                         /* node */
+        0x2a, 0x0c,                         /* attribute */
+        0x0a, 0x05, 'a', 'l', 'p', 'h', 'a', /* name */
+        0xa0, 0x01, 0x02,                   /* type = INT */
+        0x18, 0x07,                         /* i = 7 */
+        0x42, 0x02, 0x10, 0x01              /* opset_import { version = 1 } */
+    };
+
+    assert_ai_model_onnx_scan_result(data, sizeof(data), CL_SUCCESS);
+}
+END_TEST
+
+START_TEST(test_ai_model_onnx_rejects_unnamed_attribute)
+{
+    static const uint8_t data[] = {
+        0x08, 0x01,                         /* ir_version = 1 */
+        0x3a, 0x09,                         /* graph */
+        0x0a, 0x07,                         /* node */
+        0x2a, 0x05,                         /* unnamed attribute */
+        0xa0, 0x01, 0x02,                   /* type = INT */
+        0x18, 0x07,                         /* i = 7 */
+        0x42, 0x02, 0x10, 0x01              /* opset_import { version = 1 } */
+    };
+
+    assert_ai_model_onnx_scan_result(data, sizeof(data), CL_EPARSE);
+}
+END_TEST
+
+START_TEST(test_ai_model_onnx_rejects_invalid_attribute_type)
+{
+    static const uint8_t data[] = {
+        0x08, 0x01,                         /* ir_version = 1 */
+        0x3a, 0x10,                         /* graph */
+        0x0a, 0x0e,                         /* node */
+        0x2a, 0x0c,                         /* attribute */
+        0x0a, 0x05, 'a', 'l', 'p', 'h', 'a', /* name */
+        0xa0, 0x01, 0x0f,                   /* type = 15 (undefined) */
+        0x18, 0x07,                         /* i = 7 */
+        0x42, 0x02, 0x10, 0x01              /* opset_import { version = 1 } */
+    };
+
+    assert_ai_model_onnx_scan_result(data, sizeof(data), CL_EPARSE);
+}
+END_TEST
+
+static void assert_ai_model_onnx_scan_result(const uint8_t *data,
+                                             size_t data_len,
+                                             cl_error_t expected)
+{
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = "stale";
+    uint64_t scanned = UINT64_MAX;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, data_len);
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, expected);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag == (expected != CL_SUCCESS));
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+
+START_TEST(test_ai_model_onnx_accepts_latest_tensor_data_type)
+{
+    /* The current ONNX TensorProto.DataType enum ends at INT2 = 28. */
+    static const uint8_t data[] = {
+        0x08, 0x01,                         /* ir_version = 1 */
+        0x3a, 0x04,                         /* graph */
+        0x2a, 0x02,                         /* initializer TensorProto */
+        0x10, 0x1c,                         /* data_type = INT2 (28) */
+        0x42, 0x02, 0x10, 0x01              /* opset_import { version = 1 } */
+    };
+
+    assert_ai_model_onnx_scan_result(data, sizeof(data), CL_SUCCESS);
+}
+END_TEST
+
+START_TEST(test_ai_model_onnx_rejects_invalid_tensor_data_type)
+{
+    static const uint8_t data[] = {
+        0x08, 0x01,                         /* ir_version = 1 */
+        0x3a, 0x04,                         /* graph */
+        0x2a, 0x02,                         /* initializer TensorProto */
+        0x10, 0x1d,                         /* data_type = 29 (undefined) */
+        0x42, 0x02, 0x10, 0x01              /* opset_import { version = 1 } */
+    };
+
+    assert_ai_model_onnx_scan_result(data, sizeof(data), CL_EPARSE);
+}
+END_TEST
+
+START_TEST(test_ai_model_onnx_rejects_invalid_tensor_data_location)
+{
+    static const uint8_t data[] = {
+        0x08, 0x01,                         /* ir_version = 1 */
+        0x3a, 0x06,                         /* graph */
+        0x2a, 0x04,                         /* initializer TensorProto */
+        0x70, 0x02,                         /* data_location = 2 (undefined) */
+        0x42, 0x02, 0x10, 0x01              /* opset_import { version = 1 } */
+    };
+
+    assert_ai_model_onnx_scan_result(data, sizeof(data), CL_EPARSE);
+}
+END_TEST
+
+START_TEST(test_ai_model_onnx_rejects_missing_tensor_data_type)
+{
+    static const uint8_t data[] = {
+        0x08, 0x01,             /* ir_version = 1 */
+        0x3a, 0x02,             /* graph */
+        0x2a, 0x00,             /* empty initializer TensorProto */
+        0x42, 0x02, 0x10, 0x01  /* opset_import { version = 1 } */
+    };
+
+    assert_ai_model_onnx_scan_result(data, sizeof(data), CL_EPARSE);
+}
+END_TEST
+
 START_TEST(test_ai_model_onnx_modelproto_missing_graph_is_fail_visible)
 {
     static const uint8_t data[] = {
@@ -26521,6 +27237,54 @@ START_TEST(test_ai_model_gguf_empty_metadata_key_is_fail_visible)
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_empty_metadata_array_type_is_fail_visible)
+{
+    uint8_t data[64];
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert = "stale";
+    uint64_t scanned       = UINT64_MAX;
+    cl_error_t ret;
+
+    /* An empty array still carries a GGUF metadata element type. The old
+     * walker only validated that type while iterating elements, so an
+     * invalid type with count zero reached a clean result. Keep the header,
+     * metadata entry, and default alignment padding otherwise valid. */
+    memset(data, 0, sizeof(data));
+    memcpy(data, "GGUF", 4);
+    cli_writeint32(data + 4, 1);   /* version */
+    cli_writeint32(data + 16, 1);  /* metadata count */
+    data[24] = 1;                  /* key length: one byte */
+    data[32] = 'x';
+    cli_writeint32(data + 33, 9);  /* ARRAY */
+    cli_writeint32(data + 37, UINT32_MAX); /* invalid element type */
+    /* data[41..48] is the zero element count; data[49..63] is alignment. */
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -27496,6 +28260,89 @@ START_TEST(test_sis_compressed_member_streams_to_nested_scan)
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
+}
+END_TEST
+
+static size_t sis_test_empty_language_members(uint8_t *data, size_t capacity)
+{
+    ck_assert_ptr_nonnull(data);
+    ck_assert_uint_ge(capacity, 148U);
+
+    /* Minimal pre-9.x SIS package with one file represented by two empty
+     * language variants. The final eight bytes are the record's trailing
+     * fields skipped by the legacy parser; no payload is materialized. */
+    memset(data, 0, 148U);
+    data[8]  = 0x19;
+    data[9]  = 0x04;
+    data[11] = 0x10;
+    data[18] = 2;
+    data[20] = 1;
+    data[36] = 0x08; /* package is not compressed */
+    cli_writeint32(data + 48, 84);
+    cli_writeint32(data + 52, 88);
+    data[84] = 1;
+    data[86] = 1;
+    cli_writeint32(data + 88, 0); /* PKGfile */
+    cli_writeint32(data + 92, 0); /* FTsimple */
+    return 148U;
+}
+
+static cl_error_t scan_sis_empty_language_members(const uint8_t *data, size_t data_size,
+                                                   uint32_t maxfiles, bool *dont_cache)
+{
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    scan_engine->maxfiles = maxfiles;
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, data_size);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_SIS", NULL);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    *dont_cache = map->dont_cache_flag;
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    return ret;
+}
+
+START_TEST(test_sis_empty_language_members_count_toward_maxfiles)
+{
+    uint8_t data[148];
+    size_t data_size;
+    bool dont_cache;
+    cl_error_t ret;
+
+    data_size = sis_test_empty_language_members(data, sizeof(data));
+
+    /* The root consumes one slot. Both empty language variants are logical
+     * children, so MaxFiles=2 rejects the second and MaxFiles=3 completes. */
+    ret = scan_sis_empty_language_members(data, data_size, 2, &dont_cache);
+    ck_assert_msg(ret == CL_EMAXFILES, "SIS returned %s (%d) for MaxFiles=2",
+                  cl_strerror(ret), ret);
+    ck_assert(dont_cache);
+
+    ret = scan_sis_empty_language_members(data, data_size, 3, &dont_cache);
+    ck_assert_msg(ret == CL_SUCCESS, "SIS returned %s (%d) for MaxFiles=3",
+                  cl_strerror(ret), ret);
+    ck_assert(!dont_cache);
 }
 END_TEST
 
@@ -28608,6 +29455,7 @@ static size_t cpio_test_append_crc_entry(uint8_t *archive, size_t capacity, size
                                          const char *name, const uint8_t *payload,
                                          size_t payload_size, uint32_t checksum)
 {
+    char encoded[7];
     size_t name_size;
     size_t position;
 
@@ -29286,6 +30134,177 @@ static void cpio_test_write_u16le(uint8_t *field, uint16_t value)
     field[0] = (uint8_t)(value & 0xffU);
     field[1] = (uint8_t)(value >> 8);
 }
+
+static size_t cpio_test_append_empty_newc_entry(uint8_t *archive, size_t capacity,
+                                                size_t offset, const char *magic,
+                                                const char *name)
+{
+    size_t name_size;
+    size_t position;
+
+    ck_assert_ptr_nonnull(archive);
+    ck_assert_ptr_nonnull(magic);
+    ck_assert_ptr_nonnull(name);
+    name_size = strlen(name) + 1U;
+    ck_assert_uint_le(offset, capacity);
+    ck_assert_uint_le(110U + name_size + 3U, capacity - offset);
+
+    memset(archive + offset, '0', 110U);
+    memcpy(archive + offset, magic, 6U);
+    cpio_test_write_hex8(archive + offset + 54U, 0);
+    cpio_test_write_hex8(archive + offset + 94U, (uint32_t)name_size);
+    position = offset + 110U;
+    memcpy(archive + position, name, name_size);
+    position += name_size;
+    while (position % 4U)
+        archive[position++] = 0;
+    return position;
+}
+
+static size_t cpio_test_append_empty_odc_entry(uint8_t *archive, size_t capacity,
+                                               size_t offset, const char *name)
+{
+    char encoded[7];
+    size_t name_size;
+    size_t position;
+
+    ck_assert_ptr_nonnull(archive);
+    ck_assert_ptr_nonnull(name);
+    name_size = strlen(name) + 1U;
+    ck_assert_uint_le(offset, capacity);
+    ck_assert_uint_le(76U + name_size, capacity - offset);
+
+    memset(archive + offset, '0', 76U);
+    memcpy(archive + offset, "070707", 6U);
+    ck_assert_uint_le(name_size, 0777777U);
+    ck_assert_int_eq(snprintf(encoded, sizeof(encoded), "%06lo", (unsigned long)name_size), 6);
+    memcpy(archive + offset + 59U, encoded, 6U);
+    position = offset + 76U;
+    memcpy(archive + position, name, name_size);
+    return position + name_size;
+}
+
+static size_t cpio_test_append_empty_old_entry(uint8_t *archive, size_t capacity,
+                                               size_t offset, const char *name)
+{
+    size_t name_size;
+    size_t position;
+
+    ck_assert_ptr_nonnull(archive);
+    ck_assert_ptr_nonnull(name);
+    name_size = strlen(name) + 1U;
+    ck_assert_uint_le(offset, capacity);
+    ck_assert_uint_le(26U + name_size + 1U, capacity - offset);
+
+    memset(archive + offset, 0, 26U);
+    cpio_test_write_u16le(archive + offset, 070707);
+    cpio_test_write_u16le(archive + offset + 20U, (uint16_t)name_size);
+    position = offset + 26U;
+    memcpy(archive + position, name, name_size);
+    position += name_size;
+    if (position % 2U)
+        archive[position++] = 0;
+    return position;
+}
+
+static size_t cpio_test_empty_members_archive(uint8_t *archive, size_t capacity,
+                                              const char *type)
+{
+    size_t offset;
+
+    ck_assert_ptr_nonnull(archive);
+    ck_assert_ptr_nonnull(type);
+    memset(archive, 0, capacity);
+
+    if (!strcmp(type, "CL_TYPE_CPIO_OLD")) {
+        offset = cpio_test_append_empty_old_entry(archive, capacity, 0, "a1");
+        offset = cpio_test_append_empty_old_entry(archive, capacity, offset, "a2");
+        return cpio_test_append_empty_old_entry(archive, capacity, offset, "TRAILER!!!");
+    }
+    if (!strcmp(type, "CL_TYPE_CPIO_ODC")) {
+        offset = cpio_test_append_empty_odc_entry(archive, capacity, 0, "a1");
+        offset = cpio_test_append_empty_odc_entry(archive, capacity, offset, "a2");
+        return cpio_test_append_empty_odc_entry(archive, capacity, offset, "TRAILER!!!");
+    }
+    if (!strcmp(type, "CL_TYPE_CPIO_NEWC") || !strcmp(type, "CL_TYPE_CPIO_CRC")) {
+        const char *magic = !strcmp(type, "CL_TYPE_CPIO_CRC") ? "070702" : "070701";
+
+        offset = cpio_test_append_empty_newc_entry(archive, capacity, 0, magic, "a1");
+        offset = cpio_test_append_empty_newc_entry(archive, capacity, offset, magic, "a2");
+        return cpio_test_append_empty_newc_entry(archive, capacity, offset, magic, "TRAILER!!!");
+    }
+
+    return 0;
+}
+
+static cl_error_t scan_cpio_public_archive(const uint8_t *archive, size_t archive_size,
+                                           const char *type, uint32_t maxfiles,
+                                           bool *dont_cache)
+{
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine   = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    scan_engine->maxfiles = maxfiles;
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(archive, archive_size);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        type, NULL);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    *dont_cache = map->dont_cache_flag;
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    return ret;
+}
+
+START_TEST(test_cpio_empty_members_count_toward_maxfiles)
+{
+    static const char *const types[] = {
+        "CL_TYPE_CPIO_OLD",
+        "CL_TYPE_CPIO_ODC",
+        "CL_TYPE_CPIO_NEWC",
+        "CL_TYPE_CPIO_CRC",
+    };
+    uint8_t archive[512];
+    size_t archive_size;
+    bool dont_cache;
+    cl_error_t ret;
+    size_t i;
+
+    /* The root consumes one MaxFiles slot. Two ordinary empty members must
+     * therefore exceed MaxFiles=2, while the zero-byte trailer is not a
+     * child and must still permit completion at MaxFiles=3. */
+    for (i = 0; i < sizeof(types) / sizeof(types[0]); i++) {
+        archive_size = cpio_test_empty_members_archive(archive, sizeof(archive), types[i]);
+        ck_assert_uint_gt(archive_size, 0U);
+        ret = scan_cpio_public_archive(archive, archive_size, types[i], 2, &dont_cache);
+        ck_assert_msg(ret == CL_EMAXFILES, "%s returned %s (%d) for MaxFiles=2",
+                      types[i], cl_strerror(ret), ret);
+        ck_assert(dont_cache);
+        ret = scan_cpio_public_archive(archive, archive_size, types[i], 3, &dont_cache);
+        ck_assert_msg(ret == CL_SUCCESS, "%s returned %s (%d) for MaxFiles=3",
+                      types[i], cl_strerror(ret), ret);
+        ck_assert(!dont_cache);
+    }
+}
+END_TEST
 
 static void cpio_test_make_newc_zero_name_archive(uint8_t *archive, const char *magic)
 {
@@ -32186,6 +33205,61 @@ START_TEST(test_xar_subdocument_serializes_inner_close)
 }
 END_TEST
 
+START_TEST(test_xar_empty_subdocuments_count_toward_maxfiles)
+{
+    static const uint8_t toc[] =
+        "<?xml version=\"1.0\"?><xar><subdoc/><toc></toc></xar>";
+    uint8_t *data;
+    size_t data_length;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* The enclosing XAR layer and the serialized TOC consume two MaxFiles
+     * slots. The recognized empty subdocument is a logical child as well, so
+     * it must fail visibly at MaxFiles=2. */
+    data = xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, &data_length);
+    ck_assert_ptr_nonnull(data);
+    memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    scan_engine->maxfiles = 2;
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, data_length);
+    ck_assert_ptr_nonnull(map);
+    layers[0].fmap = map;
+    layers[0].type = CL_TYPE_XAR;
+    layers[0].size = map->len;
+    layers[0].tmpdir = tmpdir;
+    ctx.engine = scan_engine;
+    ctx.dconf = scan_engine->dconf;
+    ctx.options = &options;
+    ctx.fmap = map;
+    ctx.this_layer_tmpdir = tmpdir;
+    ctx.recursion_stack = layers;
+    ctx.recursion_stack_size = 2;
+    ctx.scannedfiles = 1; /* the enclosing XAR layer is admitted */
+
+    ret = cli_scanxar(&ctx);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxFiles");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+
 START_TEST(test_partition_parser_errors_are_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -32741,6 +33815,102 @@ START_TEST(test_mbr_zero_length_partition_is_fail_visible)
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_mbr_zero_start_partition_is_fail_visible)
+{
+    uint8_t data[1024] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    /* LBA zero contains the MBR itself. A typed partition that starts there
+     * must not be dispatched as a nested child over the boot record. */
+    data[446 + 4] = 0x83; /* Linux partition type. */
+    cli_writeint32(data + 446 + 12, 1); /* number of LBAs */
+    data[510] = 0x55;
+    data[511] = 0xaa;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_MBR;
+    layer.size               = sizeof(data);
+    layer.fmap               = map;
+
+    ck_assert_int_eq(cli_scanmbr(&ctx, 512), CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_mbr_ebr_zero_start_partition_is_fail_visible)
+{
+    enum { SECTOR_SIZE = 512, EXTENDED_LBA = 1, DISK_SECTORS = 3 };
+    uint8_t data[SECTOR_SIZE * DISK_SECTORS] = {0};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+
+    /* The logical partition is relative to the EBR. A typed entry at
+     * relative LBA zero overlaps that EBR and must not be dispatched. */
+    data[446 + 4] = MBR_EXTENDED;
+    cli_writeint32(data + 446 + 8, EXTENDED_LBA);
+    cli_writeint32(data + 446 + 12, 1);
+    data[510] = 0x55;
+    data[511] = 0xaa;
+
+    data[EXTENDED_LBA * SECTOR_SIZE + 446 + 4] = 0x83; /* Linux partition type. */
+    cli_writeint32(data + EXTENDED_LBA * SECTOR_SIZE + 446 + 12, 1);
+    data[EXTENDED_LBA * SECTOR_SIZE + 510] = 0x55;
+    data[EXTENDED_LBA * SECTOR_SIZE + 511] = 0xaa;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = scan_engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].type           = CL_TYPE_MBR;
+    layers[0].size           = sizeof(data);
+    layers[0].fmap           = map;
+
+    ck_assert_int_eq(cli_scanmbr(&ctx, SECTOR_SIZE), CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
 }
 END_TEST
 
@@ -34124,6 +35294,314 @@ START_TEST(test_rust_lha_corpus_detects_nested_png)
 }
 END_TEST
 
+static cl_error_t scan_alz_public_archive(const uint8_t *archive, size_t archive_size,
+                                          uint32_t maxfiles, bool *dont_cache)
+{
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine   = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    scan_engine->maxfiles = maxfiles;
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(archive, archive_size);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_ALZ", NULL);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    *dont_cache = map->dont_cache_flag;
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    return ret;
+}
+
+static cl_error_t scan_onenote_public_archive(const uint8_t *archive, size_t archive_size,
+                                              uint32_t maxfiles, bool *dont_cache)
+{
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ONENOTE;
+    scan_engine   = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    scan_engine->maxfiles = maxfiles;
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(archive, archive_size);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_ONENOTE", NULL);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    *dont_cache = map->dont_cache_flag;
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    return ret;
+}
+
+static cl_error_t scan_zip_public_archive(const uint8_t *archive, size_t archive_size,
+                                          uint32_t maxfiles, bool *dont_cache)
+{
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine   = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    scan_engine->maxfiles = maxfiles;
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(archive, archive_size);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_ZIP", NULL);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    *dont_cache = map->dont_cache_flag;
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    return ret;
+}
+
+static cl_error_t scan_autoit_public_archive(const uint8_t *archive, size_t archive_size,
+                                             uint32_t maxfiles, bool *dont_cache)
+{
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    memset(&engine, 0, sizeof(engine));
+    engine.maxfiles = maxfiles;
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_size);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+    ctx.scannedfiles      = 1; /* the root object has already been admitted */
+    ret                   = cli_scanautoit(&ctx, 0);
+    *dont_cache = map->dont_cache_flag;
+
+    cl_fmap_close(map);
+    return ret;
+}
+
+static size_t autoit_empty_archive(uint8_t *archive, uint8_t version)
+{
+    const size_t header_length  = 17U;
+    const size_t member_length  = 41U;
+    const size_t terminator_len = 8U;
+    const size_t archive_length = header_length + 2U * member_length + terminator_len;
+    uint32_t file_magic;
+    uint32_t magic_length;
+    uint32_t filename_length;
+    uint32_t empty_size;
+    size_t i;
+
+    if (!archive || (version != 0x35U && version != 0x36U))
+        return 0;
+
+    memset(archive, 0, archive_length);
+    archive[0] = version;
+    if (version == 0x35U) {
+        file_magic      = 0xceb06dffU;
+        magic_length    = 0x29bcU;
+        filename_length = 0x29acU;
+        empty_size      = 0x45aaU;
+    } else {
+        file_magic      = 0x52ca436bU;
+        magic_length    = 0xadbcU;
+        filename_length = 0xf820U;
+        empty_size      = 0x87bcU;
+    }
+
+    for (i = 0; i < 2U; i++) {
+        uint8_t *member = archive + header_length + i * member_length;
+
+        zip_stream_write_u32(member, file_magic);
+        zip_stream_write_u32(member + 4U, magic_length);
+        zip_stream_write_u32(member + 8U, filename_length);
+        member[12] = 0; /* stored member with no payload */
+        zip_stream_write_u32(member + 13U, empty_size);
+        zip_stream_write_u32(member + 17U, empty_size);
+    }
+
+    return archive_length;
+}
+
+static size_t zip_empty_central_archive(uint8_t *archive, size_t capacity)
+{
+    static const uint8_t names[] = {'a', 'b'};
+    const size_t local_length   = 31U;
+    const size_t central_length = 47U;
+    const size_t central_offset = 2U * local_length;
+    const size_t archive_length = central_offset + 2U * central_length + 22U;
+    size_t i;
+
+    if (archive == NULL || capacity < archive_length)
+        return 0;
+    memset(archive, 0, archive_length);
+
+    for (i = 0; i < 2U; i++) {
+        uint8_t *local = archive + i * local_length;
+        uint8_t *central = archive + central_offset + i * central_length;
+
+        zip_stream_write_u32(local, 0x04034b50U);
+        zip_stream_write_u16(local + 4, 20U);
+        zip_stream_write_u16(local + 26, 1U);
+        local[30] = names[i];
+
+        zip_stream_write_u32(central, 0x02014b50U);
+        zip_stream_write_u16(central + 4, 20U);
+        zip_stream_write_u16(central + 6, 20U);
+        zip_stream_write_u16(central + 28, 1U);
+        zip_stream_write_u32(central + 42, (uint32_t)(i * local_length));
+        central[46] = names[i];
+    }
+
+    {
+        uint8_t *end = archive + central_offset + 2U * central_length;
+        zip_stream_write_u32(end, 0x06054b50U);
+        zip_stream_write_u16(end + 8, 2U);
+        zip_stream_write_u16(end + 10, 2U);
+        zip_stream_write_u32(end + 12, (uint32_t)(2U * central_length));
+        zip_stream_write_u32(end + 16, (uint32_t)central_offset);
+    }
+
+    return archive_length;
+}
+
+START_TEST(test_rust_alz_empty_members_count_toward_maxfiles)
+{
+    /* The root consumes one MaxFiles slot. Two valid empty stored members
+     * must therefore exceed MaxFiles=2 after the first child is inspected. */
+    static const uint8_t archive[] = {
+        0x41, 0x4c, 0x5a, 0x01, 0x00, 0x00, 0x00, 0x00,
+        0x42, 0x4c, 0x5a, 0x01, 0x01, 0x00, 0x20, 0x00,
+        0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x61,
+        0x42, 0x4c, 0x5a, 0x01, 0x01, 0x00, 0x20, 0x00,
+        0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x62,
+        0x43, 0x4c, 0x5a, 0x02,
+    };
+    bool dont_cache;
+
+    ck_assert_int_eq(scan_alz_public_archive(archive, sizeof(archive), 2, &dont_cache),
+                     CL_EMAXFILES);
+    ck_assert(dont_cache);
+}
+END_TEST
+
+START_TEST(test_rust_onenote_empty_attachments_count_toward_maxfiles)
+{
+    /* The legacy marker is followed by two zero-length attachment records.
+     * The root consumes one MaxFiles slot, so the second empty child must
+     * exceed MaxFiles=2 even though it has no payload bytes to match. */
+    static const uint8_t archive[] = {
+        0xe4, 0x52, 0x5c, 0x7b, 0x8c, 0xd8, 0xa7, 0x4d,
+        0xae, 0xb1, 0x53, 0x78, 0xd0, 0x29, 0x96, 0xd3,
+        0xe7, 0x16, 0xe3, 0xbd, 0x65, 0x26, 0x11, 0x45,
+        0xa4, 0xc4, 0x8d, 0x4d, 0x0b, 0x7a, 0x9e, 0xac,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0xe7, 0x16, 0xe3, 0xbd, 0x65, 0x26, 0x11, 0x45,
+        0xa4, 0xc4, 0x8d, 0x4d, 0x0b, 0x7a, 0x9e, 0xac,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    bool dont_cache;
+
+    ck_assert_int_eq(scan_onenote_public_archive(archive, sizeof(archive), 2, &dont_cache),
+                     CL_EMAXFILES);
+    ck_assert(dont_cache);
+}
+END_TEST
+
+START_TEST(test_zip_empty_members_count_toward_maxfiles)
+{
+    uint8_t archive[178];
+    const size_t archive_size = zip_empty_central_archive(archive, sizeof(archive));
+    bool dont_cache;
+
+    /* The root consumes one MaxFiles slot. Two valid empty members must
+     * therefore exceed MaxFiles=2 after the first child is admitted. */
+    ck_assert_uint_eq(archive_size, sizeof(archive));
+    ck_assert_int_eq(scan_zip_public_archive(archive, archive_size, 2, &dont_cache),
+                     CL_EMAXFILES);
+    ck_assert(dont_cache);
+}
+END_TEST
+
+START_TEST(test_autoit_empty_members_count_toward_maxfiles)
+{
+    uint8_t archive[107];
+    bool dont_cache;
+    size_t archive_size;
+
+    /* The root consumes one MaxFiles slot. Two valid empty members in each
+     * AutoIt format must therefore exceed MaxFiles=2 after the first child
+     * is admitted. */
+    archive_size = autoit_empty_archive(archive, 0x35U);
+    ck_assert_uint_eq(archive_size, sizeof(archive));
+    ck_assert_int_eq(scan_autoit_public_archive(archive, archive_size, 2, &dont_cache),
+                     CL_EMAXFILES);
+    ck_assert(dont_cache);
+
+    archive_size = autoit_empty_archive(archive, 0x36U);
+    ck_assert_uint_eq(archive_size, sizeof(archive));
+    ck_assert_int_eq(scan_autoit_public_archive(archive, archive_size, 2, &dont_cache),
+                     CL_EMAXFILES);
+    ck_assert(dont_cache);
+}
+END_TEST
+
 START_TEST(test_rust_alz_bad_crc_is_fail_visible)
 {
     /* A structurally valid stored member with a deliberately wrong CRC. */
@@ -34316,6 +35794,170 @@ START_TEST(test_rust_onenote_truncated_prefix_is_parse_error)
     fmap_free(map);
 }
 END_TEST
+
+#if defined(ANONYMOUS_MAP) && !defined(_WIN32)
+START_TEST(test_rust_onenote_reader_crosses_former_whole_input_cap)
+{
+    const char *sample_path = SRCDIR PATHSEP ".." PATHSEP "libclamav_rust" PATHSEP
+                              "onenote_parser" PATHSEP "tests" PATHSEP "samples" PATHSEP
+                              "New Section 1.one";
+    FILE *sample_file;
+    long sample_size;
+    unsigned char *sample_data;
+    struct large_file_inspection_pread_state state;
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    cl_fmap_t *map;
+    cl_error_t ret;
+
+    if (sizeof(size_t) < sizeof(uint64_t))
+        return;
+
+    sample_file = fopen(sample_path, "rb");
+    ck_assert_ptr_nonnull(sample_file);
+    ck_assert_int_eq(fseek(sample_file, 0, SEEK_END), 0);
+    sample_size = ftell(sample_file);
+    ck_assert_int_gt(sample_size, 0);
+    ck_assert_int_eq(fseek(sample_file, 0, SEEK_SET), 0);
+    sample_data = malloc((size_t)sample_size);
+    ck_assert_ptr_nonnull(sample_data);
+    ck_assert_uint_eq(fread(sample_data, 1, (size_t)sample_size, sample_file),
+                      (size_t)sample_size);
+    ck_assert_int_eq(fclose(sample_file), 0);
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+
+    memset(&state, 0, sizeof(state));
+    state.prefix        = sample_data;
+    state.prefix_length = (size_t)sample_size;
+    state.length        = (size_t)CLI_MAX_LARGE_FILESIZE;
+    map                  = cl_fmap_open_handle(&state, 0, state.length,
+                                                large_file_inspection_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cl_fmap_set_name(map, sample_path), CL_SUCCESS);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ONENOTE | CL_SCAN_PARSE_ARCHIVE | CL_SCAN_PARSE_PE;
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                = engine;
+    ctx.dconf                 = engine->dconf;
+    ctx.options               = &options;
+    ctx.fmap                  = map;
+    ctx.this_layer_tmpdir     = tmpdir;
+    ctx.recursion_stack       = &layer;
+    ctx.recursion_stack_size  = 1;
+    layer.fmap                = map;
+    layer.type                = CL_TYPE_ONENOTE;
+    layer.size                = state.length;
+    layer.tmpdir              = tmpdir;
+
+    ret = scan_onenote(&ctx);
+
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    free(sample_data);
+}
+END_TEST
+
+START_TEST(test_rust_onenote_reader_streams_corpus_attachment_above_former_cap)
+{
+    const char *sample_path = OBJDIR PATHSEP "input" PATHSEP "clamav_hdb_scanfiles" PATHSEP
+                              "clam.exe.webapp-export.one";
+    FILE *sample_file;
+    long sample_size;
+    unsigned char *sample_data;
+    struct large_file_inspection_pread_state state;
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    cl_fmap_t *map;
+    cl_error_t ret;
+
+    if (sizeof(size_t) < sizeof(uint64_t))
+        return;
+
+    sample_file = fopen(sample_path, "rb");
+    ck_assert_ptr_nonnull(sample_file);
+    ck_assert_int_eq(fseek(sample_file, 0, SEEK_END), 0);
+    sample_size = ftell(sample_file);
+    ck_assert_int_gt(sample_size, 0);
+    ck_assert_int_eq(fseek(sample_file, 0, SEEK_SET), 0);
+    sample_data = malloc((size_t)sample_size);
+    ck_assert_ptr_nonnull(sample_data);
+    ck_assert_uint_eq(fread(sample_data, 1, (size_t)sample_size, sample_file),
+                      (size_t)sample_size);
+    ck_assert_int_eq(fclose(sample_file), 0);
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cli_initroots(engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         engine->root[0], "OneNote.Reader.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+
+    memset(&state, 0, sizeof(state));
+    state.prefix        = sample_data;
+    state.prefix_length = (size_t)sample_size;
+    state.length        = (size_t)CLI_MAX_ALLOCATION + 1U;
+    map                  = cl_fmap_open_handle(&state, 0, state.length,
+                                                large_file_inspection_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cl_fmap_set_name(map, sample_path), CL_SUCCESS);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ONENOTE | CL_SCAN_PARSE_ARCHIVE | CL_SCAN_PARSE_PE;
+    memset(&layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                = engine;
+    ctx.dconf                 = engine->dconf;
+    ctx.options               = &options;
+    ctx.fmap                  = map;
+    ctx.this_layer_tmpdir     = tmpdir;
+    ctx.recursion_stack       = layers;
+    ctx.recursion_stack_size  = sizeof(layers) / sizeof(layers[0]);
+    layers[0].fmap            = map;
+    layers[0].type            = CL_TYPE_ONENOTE;
+    layers[0].size            = state.length;
+    layers[0].tmpdir          = tmpdir;
+
+    /* The logical file is above the former whole-input cap while the callback
+     * exposes the real corpus bytes through bounded reads. A positive result
+     * must therefore come from the reader-backed attachment handoff, not from
+     * raw matching the OneNote container. */
+    ret = scan_onenote(&ctx);
+
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    ck_assert_str_eq(cli_get_last_virus(&ctx), "OneNote.Reader.MZ.UNOFFICIAL");
+    /* The parser-owned object-data spool and the nested attachment spool
+     * must both release their temporary reservations before the scan returns.
+     * A successful nested detection must not leave the shared ledger charged.
+     */
+    ck_assert_uint_eq(ctx.temporary_bytes, 0U);
+    ck_assert_uint_gt(ctx.temporary_peak, 0U);
+
+    free_test_layer_evidence(layers, sizeof(layers) / sizeof(layers[0]));
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    free(sample_data);
+}
+END_TEST
+#endif
 
 START_TEST(test_apm_truncated_driver_map_is_format_error)
 {
@@ -35557,6 +37199,63 @@ START_TEST(test_hwpole2_nested_scan_requires_engine_and_options)
     ck_assert(!map->dont_cache_flag);
 
     cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_hwpole2_empty_payload_counts_toward_maxfiles)
+{
+    static const uint8_t data[sizeof(uint32_t)] = {0};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    options.parse       = CL_SCAN_PARSE_OLE2;
+    layer.type          = CL_TYPE_HWPOLE2;
+    layer.size          = map->len;
+    layer.fmap          = map;
+    ctx.engine          = scan_engine;
+    ctx.dconf           = scan_engine->dconf;
+    ctx.options         = &options;
+    ctx.fmap            = map;
+    ctx.recursion_stack = &layer;
+    ctx.recursion_stack_size = 1;
+    ctx.scannedfiles    = 1; /* the enclosing wrapper is admitted */
+    scan_engine->maxfiles = 1;
+
+    ret = cli_scanhwpole2(&ctx);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxFiles");
+    ck_assert(map->dont_cache_flag);
+
+    scan_engine->maxfiles           = 2;
+    ctx.scannedfiles                = 1;
+    ctx.scan_incomplete             = false;
+    ctx.scan_incomplete_reason      = NULL;
+    ctx.limit_exceeded              = false;
+    ctx.limit_exceeded_result       = CL_SUCCESS;
+    map->dont_cache_flag            = false;
+    ret = cli_scanhwpole2(&ctx);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    ck_assert_uint_eq(ctx.scannedfiles, 2);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
 }
 END_TEST
 
@@ -37370,6 +39069,96 @@ START_TEST(test_7z_truncated_header_is_fail_visible)
 }
 END_TEST
 
+static size_t sevenzip_test_empty_members_archive(uint8_t *data, size_t capacity)
+{
+    const size_t next_header_size = 11U;
+
+    ck_assert_ptr_nonnull(data);
+    ck_assert_uint_ge(capacity, 40U);
+    memset(data, 0, capacity);
+
+    memcpy(data, "7z\xbc\xaf'\x1c", 6);
+    data[6] = 0;
+    data[7] = 4;
+    zip_stream_write_u64(data + 12, 0U);
+    zip_stream_write_u64(data + 20, next_header_size);
+
+    /* Header / FilesInfo: two files, both represented by EmptyStream. */
+    data[32] = 0x01;
+    data[33] = 0x05;
+    data[34] = 0x02;
+    data[35] = 0x0e;
+    data[36] = 0x01;
+    data[37] = 0xc0;
+    data[38] = 0x0f;
+    data[39] = 0x01;
+    data[40] = 0xc0;
+    data[41] = 0x00;
+    data[42] = 0x00;
+
+    zip_stream_write_u32(data + 28, (uint32_t)crc32(0L, data + 32, next_header_size));
+    zip_stream_write_u32(data + 8, (uint32_t)crc32(0L, data + 12, 20U));
+
+    return 43U;
+}
+
+static cl_error_t scan_7z_empty_members(const uint8_t *data, size_t data_size,
+                                        uint32_t maxfiles, bool *dont_cache)
+{
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    scan_engine->maxfiles = maxfiles;
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, data_size);
+    ck_assert_ptr_nonnull(map);
+    {
+        cli_ctx header_ctx = {0};
+        header_ctx.fmap = map;
+        ck_assert_int_eq(cli_7z_header_check(&header_ctx, 0), CL_SUCCESS);
+    }
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_7Z", NULL);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    *dont_cache = map->dont_cache_flag;
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    return ret;
+}
+
+START_TEST(test_7z_empty_members_count_toward_maxfiles)
+{
+    uint8_t data[43];
+    bool dont_cache;
+
+    sevenzip_test_empty_members_archive(data, sizeof(data));
+
+    /* The root consumes one MaxFiles slot. Two empty logical members must
+     * therefore exceed MaxFiles=2, while MaxFiles=3 permits both. */
+    ck_assert_int_eq(scan_7z_empty_members(data, sizeof(data), 2, &dont_cache), CL_EMAXFILES);
+    ck_assert(dont_cache);
+    ck_assert_int_eq(scan_7z_empty_members(data, sizeof(data), 3, &dont_cache), CL_SUCCESS);
+    ck_assert(!dont_cache);
+}
+END_TEST
+
 START_TEST(test_7z_archive_property_truncation_is_fail_visible)
 {
     uint8_t data[38] = {0};
@@ -38945,6 +40734,467 @@ static cl_error_t egg_test_capture(void *opaque, const void *data, size_t length
     return CL_SUCCESS;
 }
 
+static size_t egg_test_solid_archive(uint8_t *archive, size_t capacity,
+                                     const uint8_t *first, size_t first_length,
+                                     const uint8_t *second, size_t second_length,
+                                     const uint8_t *compressed, size_t compressed_length,
+                                     uint8_t algorithm)
+{
+    static const uint8_t first_name[]  = "first.txt";
+    static const uint8_t second_name[] = "second.bin";
+    uint8_t stream[128];
+    size_t offset = 0;
+    size_t stream_length;
+    size_t required;
+
+    if (archive == NULL || first == NULL || second == NULL || first_length > sizeof(stream) ||
+        second_length > sizeof(stream) - first_length || first_length > UINT32_MAX ||
+        second_length > UINT32_MAX || (algorithm != 0 && compressed == NULL))
+        return 0;
+
+    stream_length = first_length + second_length;
+    required = 14U + 7U + 4U + 16U + 4U + 1U + 2U + (sizeof(first_name) - 1U) + 4U +
+               16U + 4U + 1U + 2U + (sizeof(second_name) - 1U) + 4U + 22U +
+               ((algorithm == 0) ? stream_length : compressed_length) + 4U + 4U;
+    if (required > capacity || stream_length > UINT32_MAX ||
+        (algorithm == 0 ? stream_length : compressed_length) > UINT32_MAX)
+        return 0;
+
+    memcpy(stream, first, first_length);
+    memcpy(stream + first_length, second, second_length);
+    memset(archive, 0, capacity);
+
+    zip_stream_write_u32(archive + offset, 0x41474745U); /* EGG_HEADER_MAGIC */
+    offset += 4;
+    zip_stream_write_u16(archive + offset, 0x0100U);
+    offset += 2;
+    zip_stream_write_u32(archive + offset, 1U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x24E5A060U); /* SOLID_COMPRESSION_MAGIC */
+    offset += 4;
+    archive[offset++] = 0;
+    zip_stream_write_u16(archive + offset, 0U);
+    offset += 2;
+    zip_stream_write_u32(archive + offset, 0x08E28222U); /* archive EOFARC */
+    offset += 4;
+
+    zip_stream_write_u32(archive + offset, 0x0A8590E3U); /* FILE_HEADER_MAGIC */
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 1U);
+    offset += 4;
+    zip_stream_write_u64(archive + offset, first_length);
+    offset += 8;
+    zip_stream_write_u32(archive + offset, 0x0A8591ACU); /* FILENAME_HEADER_MAGIC */
+    offset += 4;
+    archive[offset++] = 0;
+    zip_stream_write_u16(archive + offset, (uint16_t)(sizeof(first_name) - 1U));
+    offset += 2;
+    memcpy(archive + offset, first_name, sizeof(first_name) - 1U);
+    offset += sizeof(first_name) - 1U;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+
+    zip_stream_write_u32(archive + offset, 0x0A8590E3U); /* FILE_HEADER_MAGIC */
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 2U);
+    offset += 4;
+    zip_stream_write_u64(archive + offset, second_length);
+    offset += 8;
+    zip_stream_write_u32(archive + offset, 0x0A8591ACU); /* FILENAME_HEADER_MAGIC */
+    offset += 4;
+    archive[offset++] = 0;
+    zip_stream_write_u16(archive + offset, (uint16_t)(sizeof(second_name) - 1U));
+    offset += 2;
+    memcpy(archive + offset, second_name, sizeof(second_name) - 1U);
+    offset += sizeof(second_name) - 1U;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+
+    zip_stream_write_u32(archive + offset, 0x02B50C13U); /* BLOCK_HEADER_MAGIC */
+    offset += 4;
+    archive[offset++] = algorithm;
+    archive[offset++] = 0;
+    zip_stream_write_u32(archive + offset, (uint32_t)stream_length);
+    offset += 4;
+    zip_stream_write_u32(archive + offset,
+                         (uint32_t)((algorithm == 0) ? stream_length : compressed_length));
+    offset += 4;
+    zip_stream_write_u32(archive + offset,
+                         (uint32_t)crc32(0L, stream, (uInt)stream_length));
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+    if (algorithm == 0) {
+        memcpy(archive + offset, stream, stream_length);
+        offset += stream_length;
+    } else {
+        memcpy(archive + offset, compressed, compressed_length);
+        offset += compressed_length;
+    }
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+
+    return offset;
+}
+
+static size_t egg_test_solid_two_block_archive(
+    uint8_t *archive, size_t capacity, const uint8_t *first, size_t first_length,
+    const uint8_t *second, size_t second_length, const uint8_t *first_compressed,
+    size_t first_compressed_length, const uint8_t *second_compressed,
+    size_t second_compressed_length, uint8_t algorithm)
+{
+    static const uint8_t first_name[]  = "first.txt";
+    static const uint8_t second_name[] = "second.bin";
+    size_t offset = 0;
+    size_t required;
+
+    if (archive == NULL || first == NULL || second == NULL || first_compressed == NULL ||
+        second_compressed == NULL || first_length > UINT32_MAX || second_length > UINT32_MAX ||
+        first_compressed_length > UINT32_MAX || second_compressed_length > UINT32_MAX)
+        return 0;
+
+    required = 14U + 7U + 4U + 16U + 4U + 1U + 2U + (sizeof(first_name) - 1U) + 4U +
+               16U + 4U + 1U + 2U + (sizeof(second_name) - 1U) + 4U +
+               (22U + first_compressed_length) + (26U + second_compressed_length);
+    if (required > capacity)
+        return 0;
+
+    memset(archive, 0, capacity);
+    zip_stream_write_u32(archive + offset, 0x41474745U); /* EGG_HEADER_MAGIC */
+    offset += 4;
+    zip_stream_write_u16(archive + offset, 0x0100U);
+    offset += 2;
+    zip_stream_write_u32(archive + offset, 1U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x24E5A060U); /* SOLID_COMPRESSION_MAGIC */
+    offset += 4;
+    archive[offset++] = 0;
+    zip_stream_write_u16(archive + offset, 0U);
+    offset += 2;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+
+    zip_stream_write_u32(archive + offset, 0x0A8590E3U); /* FILE_HEADER_MAGIC */
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 1U);
+    offset += 4;
+    zip_stream_write_u64(archive + offset, first_length);
+    offset += 8;
+    zip_stream_write_u32(archive + offset, 0x0A8591ACU); /* FILENAME_HEADER_MAGIC */
+    offset += 4;
+    archive[offset++] = 0;
+    zip_stream_write_u16(archive + offset, (uint16_t)(sizeof(first_name) - 1U));
+    offset += 2;
+    memcpy(archive + offset, first_name, sizeof(first_name) - 1U);
+    offset += sizeof(first_name) - 1U;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+
+    zip_stream_write_u32(archive + offset, 0x0A8590E3U); /* FILE_HEADER_MAGIC */
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 2U);
+    offset += 4;
+    zip_stream_write_u64(archive + offset, second_length);
+    offset += 8;
+    zip_stream_write_u32(archive + offset, 0x0A8591ACU); /* FILENAME_HEADER_MAGIC */
+    offset += 4;
+    archive[offset++] = 0;
+    zip_stream_write_u16(archive + offset, (uint16_t)(sizeof(second_name) - 1U));
+    offset += 2;
+    memcpy(archive + offset, second_name, sizeof(second_name) - 1U);
+    offset += sizeof(second_name) - 1U;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+
+    zip_stream_write_u32(archive + offset, 0x02B50C13U); /* BLOCK_HEADER_MAGIC */
+    offset += 4;
+    archive[offset++] = algorithm;
+    archive[offset++] = 0;
+    zip_stream_write_u32(archive + offset, (uint32_t)first_length);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, (uint32_t)first_compressed_length);
+    offset += 4;
+    zip_stream_write_u32(archive + offset,
+                         (uint32_t)crc32(0L, first, (uInt)first_length));
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+    memcpy(archive + offset, first_compressed, first_compressed_length);
+    offset += first_compressed_length;
+
+    zip_stream_write_u32(archive + offset, 0x02B50C13U); /* BLOCK_HEADER_MAGIC */
+    offset += 4;
+    archive[offset++] = algorithm;
+    archive[offset++] = 0;
+    zip_stream_write_u32(archive + offset, (uint32_t)second_length);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, (uint32_t)second_compressed_length);
+    offset += 4;
+    zip_stream_write_u32(archive + offset,
+                         (uint32_t)crc32(0L, second, (uInt)second_length));
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+    memcpy(archive + offset, second_compressed, second_compressed_length);
+    offset += second_compressed_length;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+
+    return offset;
+}
+
+START_TEST(test_egg_solid_stored_members_are_streamed)
+{
+    static const uint8_t first[]  = "solid-first";
+    static const uint8_t second[] = "MZP-late-child";
+    uint8_t archive[512];
+    uint8_t decoded[sizeof(second) - 1U];
+    egg_test_output output;
+    fmap_t *map;
+    void *handle = NULL;
+    char **comments = NULL;
+    uint32_t ncomments = 0;
+    const char *filename = NULL;
+    uint64_t output_length = 0;
+    size_t archive_length;
+
+    archive_length = egg_test_solid_archive(archive, sizeof(archive), first,
+                                            sizeof(first) - 1U, second,
+                                            sizeof(second) - 1U, NULL, 0, 0);
+    ck_assert_uint_gt(archive_length, 0U);
+
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_SUCCESS);
+
+    memset(&output, 0, sizeof(output));
+    output.buffer   = decoded;
+    output.capacity = sizeof(decoded);
+    ck_assert_int_eq(cli_egg_extract_file_stream(handle, egg_test_capture, &output,
+                                                 &filename, &output_length), CL_SUCCESS);
+    ck_assert_str_eq(filename, "first.txt");
+    ck_assert_uint_eq(output_length, sizeof(first) - 1U);
+    ck_assert_uint_eq(output.length, sizeof(first) - 1U);
+    ck_assert_mem_eq(output.buffer, first, sizeof(first) - 1U);
+    free((void *)filename);
+    filename = NULL;
+
+    memset(&output, 0, sizeof(output));
+    output.buffer   = decoded;
+    output.capacity = sizeof(decoded);
+    ck_assert_int_eq(cli_egg_extract_file_stream(handle, egg_test_capture, &output,
+                                                 &filename, &output_length), CL_SUCCESS);
+    ck_assert_str_eq(filename, "second.bin");
+    ck_assert_uint_eq(output_length, sizeof(second) - 1U);
+    ck_assert_uint_eq(output.length, sizeof(second) - 1U);
+    ck_assert_mem_eq(output.buffer, second, sizeof(second) - 1U);
+    free((void *)filename);
+
+    cli_egg_close(handle);
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_egg_solid_bzip2_members_are_streamed)
+{
+    static const uint8_t first[]  = "bzip-first";
+    static const uint8_t second[] = "MZP-bzip-late";
+    uint8_t stream[sizeof(first) + sizeof(second) - 2U];
+    uint8_t archive[1024];
+    uint8_t decoded[sizeof(second) - 1U];
+    egg_test_output output;
+    fmap_t *map;
+    void *handle = NULL;
+    char **comments = NULL;
+    uint32_t ncomments = 0;
+    const uint8_t *compressed;
+    const char *filename = NULL;
+    uint64_t output_length = 0;
+    size_t compressed_length;
+    size_t archive_length;
+
+    memcpy(stream, first, sizeof(first) - 1U);
+    memcpy(stream + sizeof(first) - 1U, second, sizeof(second) - 1U);
+    compressed = zip_stream_bzip2(stream, sizeof(stream), &compressed_length);
+    ck_assert_ptr_nonnull(compressed);
+    archive_length = egg_test_solid_archive(archive, sizeof(archive), first,
+                                            sizeof(first) - 1U, second,
+                                            sizeof(second) - 1U, compressed,
+                                            compressed_length, 2);
+    ck_assert_uint_gt(archive_length, 0U);
+    free((void *)compressed);
+
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_SUCCESS);
+
+    ck_assert_int_eq(cli_egg_skip_file(handle), CL_SUCCESS);
+    memset(&output, 0, sizeof(output));
+    output.buffer   = decoded;
+    output.capacity = sizeof(decoded);
+    ck_assert_int_eq(cli_egg_extract_file_stream(handle, egg_test_capture, &output,
+                                                 &filename, &output_length), CL_SUCCESS);
+    ck_assert_str_eq(filename, "second.bin");
+    ck_assert_uint_eq(output_length, sizeof(second) - 1U);
+    ck_assert_uint_eq(output.length, sizeof(second) - 1U);
+    ck_assert_mem_eq(output.buffer, second, sizeof(second) - 1U);
+    free((void *)filename);
+
+    cli_egg_close(handle);
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_egg_solid_deflate_members_are_streamed)
+{
+    static const uint8_t first[]  = "deflate-first";
+    static const uint8_t second[] = "MZP-deflate-late";
+    uint8_t stream[sizeof(first) + sizeof(second) - 2U];
+    uint8_t archive[1024];
+    uint8_t compressed[256];
+    uint8_t decoded[sizeof(second) - 1U];
+    egg_test_output output;
+    fmap_t *map;
+    void *handle = NULL;
+    char **comments = NULL;
+    uint32_t ncomments = 0;
+    const char *filename = NULL;
+    uint64_t output_length = 0;
+    z_stream compressor;
+    uLong first_compressed_length;
+    size_t compressed_length;
+    size_t second_compressed_length;
+    size_t archive_length;
+    int zret;
+
+    memcpy(stream, first, sizeof(first) - 1U);
+    memcpy(stream + sizeof(first) - 1U, second, sizeof(second) - 1U);
+    memset(&compressor, 0, sizeof(compressor));
+    zret = deflateInit2(&compressor, Z_BEST_COMPRESSION, Z_DEFLATED,
+                        -MAX_WBITS, 8, Z_DEFAULT_STRATEGY);
+    ck_assert_int_eq(zret, Z_OK);
+    compressor.next_in   = (Bytef *)first;
+    compressor.avail_in  = (uInt)(sizeof(first) - 1U);
+    compressor.next_out  = compressed;
+    compressor.avail_out = (uInt)sizeof(compressed);
+    zret                  = deflate(&compressor, Z_SYNC_FLUSH);
+    ck_assert_int_eq(zret, Z_OK);
+    first_compressed_length = compressor.total_out;
+    compressor.next_in   = (Bytef *)second;
+    compressor.avail_in  = (uInt)(sizeof(second) - 1U);
+    compressor.next_out  = compressed + first_compressed_length;
+    compressor.avail_out = (uInt)(sizeof(compressed) - first_compressed_length);
+    zret                  = deflate(&compressor, Z_FINISH);
+    ck_assert_int_eq(zret, Z_STREAM_END);
+    compressed_length        = (size_t)compressor.total_out;
+    second_compressed_length = compressed_length - (size_t)first_compressed_length;
+    ck_assert_int_eq(deflateEnd(&compressor), Z_OK);
+
+    archive_length = egg_test_solid_two_block_archive(
+        archive, sizeof(archive), first, sizeof(first) - 1U, second,
+        sizeof(second) - 1U, compressed, (size_t)first_compressed_length,
+        compressed + first_compressed_length, second_compressed_length, 1);
+    ck_assert_uint_gt(archive_length, 0U);
+
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_SUCCESS);
+
+    memset(&output, 0, sizeof(output));
+    output.buffer   = decoded;
+    output.capacity = sizeof(decoded);
+    ck_assert_int_eq(cli_egg_extract_file_stream(handle, egg_test_capture, &output,
+                                                 &filename, &output_length), CL_SUCCESS);
+    ck_assert_str_eq(filename, "first.txt");
+    ck_assert_uint_eq(output_length, sizeof(first) - 1U);
+    ck_assert_uint_eq(output.length, sizeof(first) - 1U);
+    ck_assert_mem_eq(output.buffer, first, sizeof(first) - 1U);
+    free((void *)filename);
+    filename = NULL;
+
+    memset(&output, 0, sizeof(output));
+    output.buffer   = decoded;
+    output.capacity = sizeof(decoded);
+    ck_assert_int_eq(cli_egg_extract_file_stream(handle, egg_test_capture, &output,
+                                                 &filename, &output_length), CL_SUCCESS);
+    ck_assert_str_eq(filename, "second.bin");
+    ck_assert_uint_eq(output_length, sizeof(second) - 1U);
+    ck_assert_uint_eq(output.length, sizeof(second) - 1U);
+    ck_assert_mem_eq(output.buffer, second, sizeof(second) - 1U);
+    free((void *)filename);
+
+    cli_egg_close(handle);
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_egg_solid_lzma_members_are_streamed)
+{
+    static const uint8_t first[]  = "lzma-first";
+    static const uint8_t second[] = "MZP-lzma-late";
+    static const uint8_t compressed[] = {
+        0x5d, 0x00, 0x00, 0x01, 0x00, 0x17, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x36, 0x1e, 0x89, 0xdd, 0x7d, 0xcc,
+        0x46, 0x08, 0xf8, 0x32, 0x51, 0x31, 0x41, 0x1a, 0x27, 0xe8,
+        0x85, 0x39, 0xb2, 0xfa, 0x9d, 0x5c, 0x0b, 0xaf, 0xb0, 0xff,
+        0xf1, 0x4e, 0x40, 0x00};
+    enum { FIRST_COMPRESSED_LENGTH = 28U };
+    uint8_t archive[1024];
+    uint8_t decoded[sizeof(second) - 1U];
+    egg_test_output output;
+    fmap_t *map;
+    void *handle = NULL;
+    char **comments = NULL;
+    uint32_t ncomments = 0;
+    const char *filename = NULL;
+    uint64_t output_length = 0;
+    size_t archive_length;
+
+    archive_length = egg_test_solid_two_block_archive(
+        archive, sizeof(archive), first, sizeof(first) - 1U, second,
+        sizeof(second) - 1U, compressed, FIRST_COMPRESSED_LENGTH,
+        compressed + FIRST_COMPRESSED_LENGTH,
+        sizeof(compressed) - FIRST_COMPRESSED_LENGTH, 4);
+    ck_assert_uint_gt(archive_length, 0U);
+
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_SUCCESS);
+
+    memset(&output, 0, sizeof(output));
+    output.buffer   = decoded;
+    output.capacity = sizeof(first) - 1U;
+    ck_assert_int_eq(cli_egg_extract_file_stream(handle, egg_test_capture, &output,
+                                                 &filename, &output_length), CL_SUCCESS);
+    ck_assert_str_eq(filename, "first.txt");
+    ck_assert_uint_eq(output_length, sizeof(first) - 1U);
+    ck_assert_uint_eq(output.length, sizeof(first) - 1U);
+    ck_assert_mem_eq(output.buffer, first, sizeof(first) - 1U);
+    free((void *)filename);
+    filename = NULL;
+
+    memset(&output, 0, sizeof(output));
+    output.buffer   = decoded;
+    output.capacity = sizeof(second) - 1U;
+    ck_assert_int_eq(cli_egg_extract_file_stream(handle, egg_test_capture, &output,
+                                                 &filename, &output_length), CL_SUCCESS);
+    ck_assert_str_eq(filename, "second.bin");
+    ck_assert_uint_eq(output_length, sizeof(second) - 1U);
+    ck_assert_uint_eq(output.length, sizeof(second) - 1U);
+    ck_assert_mem_eq(output.buffer, second, sizeof(second) - 1U);
+    free((void *)filename);
+
+    cli_egg_close(handle);
+    cl_fmap_close(map);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 static size_t egg_test_single_block_archive(uint8_t *archive, size_t capacity,
                                             const uint8_t *compressed,
@@ -39190,6 +41440,7 @@ START_TEST(test_egg_lzma_stream_extracts_bounded_member)
     cli_egg_close(handle);
     cl_fmap_close(map);
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
     memset(&output, 0, sizeof(output));
     output.buffer   = decoded;
     output.capacity = sizeof(decoded);
@@ -39212,6 +41463,7 @@ START_TEST(test_egg_lzma_stream_extracts_bounded_member)
     ck_assert_int_eq(clamav_test_lzma_shutdown_calls, 0);
     cli_egg_close(handle);
     cl_fmap_close(map);
+#endif
 
     map = cl_fmap_open_memory(archive, offset);
     ck_assert_ptr_nonnull(map);
@@ -42575,6 +44827,95 @@ START_TEST(test_tnef_zero_length_attribute_consumes_checksum)
     ck_assert(!map->dont_cache_flag);
 
     cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_tnef_empty_attachment_counts_toward_maxfiles)
+{
+    static const uint8_t input[] = {
+        0x78, 0x9f, 0x3e, 0x22, /* TNEF signature */
+        0x00, 0x00,             /* key */
+        0x02,                   /* attachment level */
+        0x0f, 0x80, 0x00, 0x00, /* attATTACHDATA */
+        0x00, 0x00, 0x00, 0x00, /* zero payload length */
+        0x00, 0x00,             /* attribute checksum */
+        0x00                    /* exact end of attribute list */
+    };
+    struct cl_engine *scan_engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    scan_engine->maxfiles = 1;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine             = scan_engine;
+    ctx.fmap               = cl_fmap_open_memory(input, sizeof(input));
+    ctx.this_layer_tmpdir = tmpdir;
+    ctx.scannedfiles       = 1; /* the enclosing TNEF object is admitted */
+    ck_assert_ptr_nonnull(ctx.fmap);
+
+    ret = cli_tnef(tmpdir, &ctx);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Heuristics.Limits.Exceeded.MaxFiles");
+    ck_assert(ctx.fmap->dont_cache_flag);
+    cl_fmap_close(ctx.fmap);
+
+    scan_engine->maxfiles = 2;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine             = scan_engine;
+    ctx.fmap               = cl_fmap_open_memory(input, sizeof(input));
+    ctx.this_layer_tmpdir = tmpdir;
+    ctx.scannedfiles       = 1;
+    ck_assert_ptr_nonnull(ctx.fmap);
+
+    ret = cli_tnef(tmpdir, &ctx);
+    ck_assert_int_eq(ret, CL_CLEAN);
+    ck_assert_uint_eq(ctx.scannedfiles, 2);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!ctx.fmap->dont_cache_flag);
+    cl_fmap_close(ctx.fmap);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_tnef_empty_attachment_title_is_fail_visible)
+{
+    static const uint8_t input[] = {
+        0x78, 0x9f, 0x3e, 0x22, /* TNEF signature */
+        0x00, 0x00,             /* key */
+        0x02,                   /* attachment level */
+        0x10, 0x80, 0x00, 0x00, /* attATTACHTITLE */
+        0x00, 0x00, 0x00, 0x00, /* zero title length */
+        0x00, 0x00              /* attribute checksum */
+    };
+    struct cl_engine *scan_engine;
+    cli_ctx ctx;
+    cl_error_t ret;
+
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine             = scan_engine;
+    ctx.fmap               = cl_fmap_open_memory(input, sizeof(input));
+    ctx.this_layer_tmpdir = tmpdir;
+    ck_assert_ptr_nonnull(ctx.fmap);
+
+    ret = cli_tnef(tmpdir, &ctx);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "TNEF attachment title is empty");
+    ck_assert(ctx.fmap->dont_cache_flag);
+
+    cl_fmap_close(ctx.fmap);
+    cl_engine_free(scan_engine);
 }
 END_TEST
 
@@ -48551,6 +50892,183 @@ START_TEST(test_ishield_truncated_metadata_is_fail_visible)
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_ishield_empty_members_count_toward_maxfiles)
+{
+    static const uint8_t archive[] =
+        "empty1\0path\0version\0"
+        "0\0"
+        "empty2\0path\0version\0"
+        "0\0";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+
+    engine.maxfiles = 2;
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&layer, 0, sizeof(layer));
+    map = cl_fmap_open_memory(archive, sizeof(archive) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.scannedfiles         = 1; /* the root object has already been admitted */
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+    layer.type               = CL_TYPE_ISHIELD_MSI;
+    layer.size               = map->len;
+    ret                      = cli_scanishield(&ctx, 0, map->len);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    engine.maxfiles = 3;
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&layer, 0, sizeof(layer));
+    map = cl_fmap_open_memory(archive, sizeof(archive) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.scannedfiles         = 1;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+    layer.type               = CL_TYPE_ISHIELD_MSI;
+    layer.size               = map->len;
+    ret                      = cli_scanishield(&ctx, 0, map->len);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_ishield_empty_cab_members_count_toward_maxfiles)
+{
+    enum {
+        ISHIELD_TEST_HEADER_SIZE       = 0x300,
+        ISHIELD_TEST_DATA_OFFSET       = 0x20,
+        ISHIELD_TEST_DIRS_OFFSET       = 0x100,
+        ISHIELD_TEST_DIR_SIZE          = 0xc0,
+        ISHIELD_TEST_FILE_TABLE_OFFSET = 0x1e0
+    };
+    uint8_t data[2048];
+    uint8_t header[ISHIELD_TEST_HEADER_SIZE];
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    size_t used = 0;
+    unsigned int i;
+
+    memset(data, 0, sizeof(data));
+    memset(header, 0, sizeof(header));
+    zip_stream_write_u32(header, 0x28635349U);
+    zip_stream_write_u32(header + 12, ISHIELD_TEST_DATA_OFFSET);
+    zip_stream_write_u32(header + ISHIELD_TEST_DATA_OFFSET + 12, ISHIELD_TEST_DIRS_OFFSET);
+    zip_stream_write_u32(header + ISHIELD_TEST_DATA_OFFSET + 40, 2U);
+    zip_stream_write_u32(header + ISHIELD_TEST_DATA_OFFSET + 44, ISHIELD_TEST_DIR_SIZE);
+
+    for (i = 0; i < 2; i++) {
+        uint8_t *file = header + ISHIELD_TEST_FILE_TABLE_OFFSET + i * 87U;
+
+        zip_stream_write_u16(file, 4U);
+        ishield_test_write_u64(file + 2, 0U);
+        ishield_test_write_u64(file + 10, 0U);
+        ishield_test_write_u64(file + 18, 0U);
+        zip_stream_write_u32(file + 58, 8U);
+        zip_stream_write_u16(file + 62, 0U);
+        zip_stream_write_u16(file + 85, 1U);
+    }
+
+    memcpy(data + used, "data1.hdr", sizeof("data1.hdr"));
+    used += sizeof("data1.hdr");
+    memcpy(data + used, "", 1);
+    used += 1;
+    memcpy(data + used, "", 1);
+    used += 1;
+    memcpy(data + used, "768", sizeof("768"));
+    used += sizeof("768");
+    memcpy(data + used, header, sizeof(header));
+    used += sizeof(header);
+
+    memcpy(data + used, "data1.cab", sizeof("data1.cab"));
+    used += sizeof("data1.cab");
+    memcpy(data + used, "", 1);
+    used += 1;
+    memcpy(data + used, "", 1);
+    used += 1;
+    memcpy(data + used, "0", sizeof("0"));
+    used += sizeof("0");
+    /* The indexed CAB backing range may be empty; the header still has two
+     * logical members that must be admitted independently. */
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine->maxfiles = 2;
+    memset(&ctx, 0, sizeof(ctx));
+    memset(layers, 0, sizeof(layers));
+    map = cl_fmap_open_memory(data, used);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.scannedfiles         = 1; /* the root object has already been admitted */
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].fmap           = map;
+    layers[0].type           = CL_TYPE_ISHIELD_MSI;
+    layers[0].size           = map->len;
+    ret                      = cli_scanishield(&ctx, 0, map->len);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    scan_engine->maxfiles = 5;
+    memset(&ctx, 0, sizeof(ctx));
+    memset(layers, 0, sizeof(layers));
+    map = cl_fmap_open_memory(data, used);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.scannedfiles         = 1;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].fmap           = map;
+    layers[0].type           = CL_TYPE_ISHIELD_MSI;
+    layers[0].size           = map->len;
+    ret                      = cli_scanishield(&ctx, 0, map->len);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
 }
 END_TEST
 
@@ -58161,6 +60679,41 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     }
     cl_fmap_close(map);
 
+    /* A valid anchored UDF tree can contain a regular file with no
+     * allocation descriptors and no information bytes. It is still a
+     * logical child and must consume a MaxFiles slot. */
+    {
+        size_t child_fed_offset = base + (20 * VOLUME_DESCRIPTOR_SIZE);
+
+        test_udf_put_le64(data + child_fed_offset + offsetof(FileEntryDescriptor, infoLength), 0);
+        test_udf_put_le32(data + child_fed_offset + offsetof(FileEntryDescriptor, allocationDescLen), 0);
+    }
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    scan_engine->maxfiles = 1;
+    test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+    ctx.scannedfiles = 1; /* the enclosing volume/root is admitted */
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxFiles");
+    ck_assert(map->dont_cache_flag);
+
+    scan_engine->maxfiles           = 2;
+    ctx.scannedfiles                = 1;
+    ctx.scan_incomplete             = false;
+    ctx.scan_incomplete_reason      = NULL;
+    ctx.limit_exceeded              = false;
+    ctx.limit_exceeded_result       = CL_SUCCESS;
+    map->dont_cache_flag            = false;
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    ck_assert_uint_eq(ctx.scannedfiles, 2);
+    cl_fmap_close(map);
+
     cl_engine_free(scan_engine);
     free(data);
 }
@@ -58853,6 +61406,131 @@ static void test_hfsplus_catalog_file_leaf(uint8_t *data, size_t offset)
     test_hfsplus_put_be32(data + file_offset + offsetof(hfsPlusCatalogFile, fileID), hfsFirstUserCatalogNodeID);
     test_hfsplus_put_be16(data + file_offset + offsetof(hfsPlusCatalogFile, permissions) + offsetof(hfsPlusBSDInfo, fileMode), HFS_MODE_FILE);
     test_hfsplus_put_be16(data + offset + 4096 - 2, (uint16_t)(record_offset - offset));
+}
+
+START_TEST(test_hfsplus_empty_catalog_file_counts_toward_maxfiles)
+{
+    uint8_t data[1024 + (40 * 512)];
+    uint8_t *volume;
+    uint8_t *fork;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(data, 0, sizeof(data));
+    volume = data + 1024;
+    test_hfsplus_put_be16(volume + offsetof(hfsPlusVolumeHeader, signature), 0x482b);
+    test_hfsplus_put_be16(volume + offsetof(hfsPlusVolumeHeader, version), 4);
+    test_hfsplus_put_be32(volume + offsetof(hfsPlusVolumeHeader, blockSize), 512);
+    test_hfsplus_put_be32(volume + offsetof(hfsPlusVolumeHeader, totalBlocks), 40);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, extentsFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 512);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 1);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 4);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, catalogFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 8192);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 16);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 8);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 16);
+
+    test_hfsplus_tree_header(data, 4 * 512, 512, 10);
+    test_hfsplus_tree_header(data, 8 * 512, 4096, 6);
+    test_hfsplus_put_be32(data + (8 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, firstLeafNode), 1);
+    test_hfsplus_put_be32(data + (8 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, lastLeafNode), 1);
+    test_hfsplus_put_be32(data + (8 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, leafRecords), 1);
+    test_hfsplus_put_be32(data + (8 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, totalNodes), 2);
+    test_hfsplus_catalog_file_leaf(data, 16 * 512);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.this_layer_tmpdir = tmpdir;
+    ctx.scannedfiles      = 1; /* the enclosing volume/root is admitted */
+    engine.maxfiles       = 1;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_scanhfsplus(&ctx);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxFiles");
+    ck_assert(map->dont_cache_flag);
+
+    engine.maxfiles           = 2;
+    ctx.scannedfiles          = 1;
+    ctx.scan_incomplete       = false;
+    ctx.scan_incomplete_reason = NULL;
+    ctx.limit_exceeded        = false;
+    ctx.limit_exceeded_result = CL_SUCCESS;
+    map->dont_cache_flag      = false;
+
+    ret = cli_scanhfsplus(&ctx);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+static void test_hfsplus_extent_overflow_leaf(uint8_t *data, size_t offset)
+{
+    const uint16_t first_record_offset  = sizeof(hfsNodeDescriptor);
+    const uint16_t second_record_offset = 100;
+    const uint16_t third_record_offset  = 200;
+    const uint32_t catalog_file_id     = hfsCatalogFileID;
+    const uint32_t user_file_id        = hfsFirstUserCatalogNodeID;
+    uint8_t *record;
+    uint8_t extent;
+
+    memset(data + offset, 0, 512);
+    data[offset + offsetof(hfsNodeDescriptor, kind)]   = HFS_NODEKIND_LEAF;
+    data[offset + offsetof(hfsNodeDescriptor, height)] = 1;
+    test_hfsplus_put_be16(data + offset + offsetof(hfsNodeDescriptor, numRecords), 3);
+
+    record = data + offset + first_record_offset;
+    test_hfsplus_put_be16(record + offsetof(hfsPlusExtentKey, keyLength),
+                          sizeof(hfsPlusExtentKey) - sizeof(uint16_t));
+    record[offsetof(hfsPlusExtentKey, forkType)] = HFSPLUS_FORKTYPE_DATA;
+    test_hfsplus_put_be32(record + offsetof(hfsPlusExtentKey, fileID), catalog_file_id);
+    test_hfsplus_put_be32(record + offsetof(hfsPlusExtentKey, startBlock), 8);
+    for (extent = 0; extent < 8; extent++) {
+        size_t extent_offset = sizeof(hfsPlusExtentKey) + extent * sizeof(hfsPlusExtentDescriptor);
+        test_hfsplus_put_be32(record + extent_offset + offsetof(hfsPlusExtentDescriptor, startBlock),
+                              20U + extent);
+        test_hfsplus_put_be32(record + extent_offset + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+    }
+
+    record = data + offset + second_record_offset;
+    test_hfsplus_put_be16(record + offsetof(hfsPlusExtentKey, keyLength),
+                          sizeof(hfsPlusExtentKey) - sizeof(uint16_t));
+    record[offsetof(hfsPlusExtentKey, forkType)] = HFSPLUS_FORKTYPE_DATA;
+    test_hfsplus_put_be32(record + offsetof(hfsPlusExtentKey, fileID), user_file_id);
+    test_hfsplus_put_be32(record + offsetof(hfsPlusExtentKey, startBlock), 8);
+    test_hfsplus_put_be32(record + sizeof(hfsPlusExtentKey) + offsetof(hfsPlusExtentDescriptor, startBlock), 40);
+    test_hfsplus_put_be32(record + sizeof(hfsPlusExtentKey) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+
+    record = data + offset + third_record_offset;
+    test_hfsplus_put_be16(record + offsetof(hfsPlusExtentKey, keyLength),
+                          sizeof(hfsPlusExtentKey) - sizeof(uint16_t));
+    record[offsetof(hfsPlusExtentKey, forkType)] = HFSPLUS_FORKTYPE_RSRC;
+    test_hfsplus_put_be32(record + offsetof(hfsPlusExtentKey, fileID), user_file_id);
+    test_hfsplus_put_be32(record + offsetof(hfsPlusExtentKey, startBlock), 8);
+    test_hfsplus_put_be32(record + sizeof(hfsPlusExtentKey) + offsetof(hfsPlusExtentDescriptor, startBlock), 41);
+    test_hfsplus_put_be32(record + sizeof(hfsPlusExtentKey) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+
+    test_hfsplus_put_be16(data + offset + 512 - 2, first_record_offset);
+    test_hfsplus_put_be16(data + offset + 512 - 4, second_record_offset);
+    test_hfsplus_put_be16(data + offset + 512 - 6, third_record_offset);
 }
 
 static void test_hfsplus_invalid_leaf(uint8_t *data, size_t offset)
@@ -59933,6 +62611,130 @@ START_TEST(test_hfsplus_fork_read_failure_is_fail_visible)
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_hfsplus_extent_overflow_records_are_followed)
+{
+    uint8_t data[1024 + (50 * 512)];
+    uint8_t *volume;
+    uint8_t *fork;
+    uint8_t *file;
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    uint8_t extent;
+
+    memset(data, 0, sizeof(data));
+    volume = data + 1024;
+    test_hfsplus_put_be16(volume + offsetof(hfsPlusVolumeHeader, signature), 0x482b);
+    test_hfsplus_put_be16(volume + offsetof(hfsPlusVolumeHeader, version), 4);
+    test_hfsplus_put_be32(volume + offsetof(hfsPlusVolumeHeader, blockSize), 512);
+    test_hfsplus_put_be32(volume + offsetof(hfsPlusVolumeHeader, totalBlocks), 50);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, extentsFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 1024);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 2);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 4);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 2);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, catalogFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 8192);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 16);
+    for (extent = 0; extent < 8; extent++) {
+        size_t extent_offset = offsetof(hfsPlusForkData, extents) + extent * sizeof(hfsPlusExtentDescriptor);
+        test_hfsplus_put_be32(fork + extent_offset + offsetof(hfsPlusExtentDescriptor, startBlock), 8U + extent);
+        test_hfsplus_put_be32(fork + extent_offset + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+    }
+
+    test_hfsplus_tree_header(data, 4 * 512, 512, 10);
+    test_hfsplus_put_be32(data + (4 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, firstLeafNode), 1);
+    test_hfsplus_put_be32(data + (4 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, lastLeafNode), 1);
+    test_hfsplus_put_be32(data + (4 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, leafRecords), 3);
+    test_hfsplus_put_be32(data + (4 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, totalNodes), 2);
+    test_hfsplus_extent_overflow_leaf(data, 5 * 512);
+
+    test_hfsplus_tree_header(data, 8 * 512, 4096, 6);
+    test_hfsplus_put_be32(data + (8 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, firstLeafNode), 1);
+    test_hfsplus_put_be32(data + (8 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, lastLeafNode), 1);
+    test_hfsplus_put_be32(data + (8 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, leafRecords), 1);
+    test_hfsplus_put_be32(data + (8 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, totalNodes), 2);
+    test_hfsplus_catalog_file_leaf(data, 20 * 512);
+    file = data + (20 * 512) + sizeof(hfsNodeDescriptor) + 6 + 2;
+    fork = file + offsetof(hfsPlusCatalogFile, dataFork);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 9 * 512);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 9);
+    for (extent = 0; extent < 8; extent++) {
+        size_t extent_offset = offsetof(hfsPlusForkData, extents) + extent * sizeof(hfsPlusExtentDescriptor);
+        test_hfsplus_put_be32(fork + extent_offset + offsetof(hfsPlusExtentDescriptor, startBlock), 32U + extent);
+        test_hfsplus_put_be32(fork + extent_offset + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+    }
+    fork = file + offsetof(hfsPlusCatalogFile, resourceFork);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 9 * 512);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 9);
+    for (extent = 0; extent < 8; extent++) {
+        size_t extent_offset = offsetof(hfsPlusForkData, extents) + extent * sizeof(hfsPlusExtentDescriptor);
+        test_hfsplus_put_be32(fork + extent_offset + offsetof(hfsPlusExtentDescriptor, startBlock), 42U + extent);
+        test_hfsplus_put_be32(fork + extent_offset + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+    }
+    memcpy(data + (40 * 512), "MZP", 3);
+
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(scan_engine->root[0], "HFS.Overflow.Member", "4d5a50", 0, 0, 0,
+                                                   "4096", NULL, 0), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = scan_engine;
+    ctx.fmap              = map;
+    ctx.options           = &options;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_PART_HFSPLUS", NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "HFS.Overflow.Member.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    map = NULL;
+
+    /* A matching record must not let a malformed tail escape validation. */
+    test_hfsplus_put_be32(data + (5 * 512) + offsetof(hfsNodeDescriptor, fLink), 1);
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = scan_engine;
+    ctx.fmap              = map;
+    ctx.options           = &options;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_scanhfsplus(&ctx);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "HFS+ ExtentOverflow leaf chain exceeds its declared last leaf");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
 }
 END_TEST
 
@@ -63311,6 +66113,16 @@ static cl_error_t msxml_attribute_limit_scan_cb(int fd, const char *filepath, cl
     return CL_SUCCESS;
 }
 
+static cl_error_t msxml_empty_callback_scan_cb(int fd, const char *filepath, cli_ctx *ctx, int num_attribs,
+                                               struct attrib_entry *attribs, void *cbdata)
+{
+    UNUSEDPARAM(num_attribs);
+    UNUSEDPARAM(attribs);
+    UNUSEDPARAM(cbdata);
+
+    return cli_magic_scan_desc_type_reserved(fd, filepath, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+}
+
 START_TEST(test_msxml_attribute_limit_is_fail_visible)
 {
     static const uint8_t document[] =
@@ -64431,7 +67243,14 @@ START_TEST(test_pe_import_hash_update_failure_is_fail_visible)
 END_TEST
 #endif
 
-static const TTest *test_image_fuzzy_hash_streams_encoded_source_under_contiguous_limit; static const TTest *test_ai_model_tflite_vtable_distance_is_fail_visible;
+static const TTest *test_image_fuzzy_hash_streams_encoded_source_under_contiguous_limit;
+static const TTest *test_ai_model_tflite_vtable_distance_is_fail_visible;
+/* These TFLite tests are defined below test_cl_suite(), so declare the
+ * Check test objects before the suite registers them. */
+static const TTest *test_ai_model_tflite_buffer_data_range_is_fail_visible;
+static const TTest *test_ai_model_tflite_tensor_and_operator_semantics_are_supported;
+static const TTest *test_ai_model_tflite_tensor_type_is_fail_visible;
+static const TTest *test_ai_model_tflite_tensor_and_operator_references_are_fail_visible;
 
 static Suite *test_cl_suite(void)
 {
@@ -64463,7 +67282,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_screnc = tcase_create("screnc");
     TCase *tc_script = tcase_create("script");
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
-    TCase *tc_largefile;
+    TCase *tc_largefile = NULL;
 #endif
     TCase *tc_cl_scan  = tcase_create("cl_scan_api");
     TCase *tc_fmap_api = tcase_create("fmap_api");
@@ -64665,13 +67484,17 @@ static Suite *test_cl_suite(void)
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cryptff, test_cryptff_staging_failures_are_fail_visible);
 #endif
+#ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cryptff, test_cryptff_temporary_quota_is_fail_visible);
 #ifndef _WIN32
     tcase_add_test(tc_cryptff, test_cryptff_time_limit_is_fail_visible);
 #endif
+#endif
     suite_add_tcase(s, tc_cryptff_api);
     tcase_add_checked_fixture(tc_cryptff_api, cl_setup, cl_teardown);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cryptff_api, test_cryptff_public_api_read_failure_is_fail_visible);
+#endif
     suite_add_tcase(s, tc_elf_map);
     tcase_add_checked_fixture(tc_elf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_elf_map, test_elf_missing_map_is_fail_visible);
@@ -64722,6 +67545,8 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_tnef, cl_setup, cl_teardown);
     tcase_add_test(tc_tnef, test_tnef_exact_eof_ends_attribute_list);
     tcase_add_test(tc_tnef, test_tnef_zero_length_attribute_consumes_checksum);
+    tcase_add_test(tc_tnef, test_tnef_empty_attachment_counts_toward_maxfiles);
+    tcase_add_test(tc_tnef, test_tnef_empty_attachment_title_is_fail_visible);
     tcase_add_test(tc_tnef, test_tnef_nonzero_attribute_requires_checksum);
     tcase_add_test(tc_tnef, test_tnef_nonzero_checksum_read_failure_is_fail_visible);
     tcase_add_test(tc_tnef, test_tnef_message_attribute_range_is_fail_visible);
@@ -64876,6 +67701,7 @@ static Suite *test_cl_suite(void)
 #ifndef _WIN32
     tcase_add_test(tc_html, test_html_normalize_cap_is_fail_visible);
     tcase_add_test(tc_html, test_html_normalized_view_uses_matcher_work_budget);
+    tcase_add_test(tc_html, test_html_css_empty_image_counts_toward_maxfiles);
     tcase_add_test(tc_html, test_script_normalized_view_uses_matcher_work_budget);
     tcase_add_test(tc_html, test_html_notags_cap_is_fail_visible);
     tcase_add_test(tc_html, test_html_notags_cap_uses_generated_size);
@@ -64996,6 +67822,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_xar_subdoc);
     tcase_add_checked_fixture(tc_xar_subdoc, cl_setup, cl_teardown);
     tcase_add_test(tc_xar_subdoc, test_xar_subdocument_serializes_inner_close);
+    tcase_add_test(tc_xar_subdoc, test_xar_empty_subdocuments_count_toward_maxfiles);
     suite_add_tcase(s, tc_riff);
     tcase_add_checked_fixture(tc_riff, cl_setup, cl_teardown);
     tcase_add_test(tc_riff, test_riff_header_read_failure_is_fail_visible);
@@ -65051,6 +67878,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_egg_map, test_egg_extra_field_admission_is_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_metadata_index_respects_contiguous_limit);
     tcase_add_test(tc_egg_map, test_egg_oversized_skippable_extra_fields_are_bounded);
+    tcase_add_test(tc_egg_map, test_egg_solid_stored_members_are_streamed);
+    tcase_add_test(tc_egg_map, test_egg_solid_bzip2_members_are_streamed);
+    tcase_add_test(tc_egg_map, test_egg_solid_deflate_members_are_streamed);
+    tcase_add_test(tc_egg_map, test_egg_solid_lzma_members_are_streamed);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_egg_map, test_egg_stream_decoder_finalization_failure_is_fail_visible);
 #endif
@@ -65091,14 +67922,17 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hfs_map, test_hfsplus_attribute_tree_failure_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_attribute_name_boundary_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_catalog_size_accounting_is_fail_visible);
+    tcase_add_test(tc_hfs_map, test_hfsplus_empty_catalog_file_counts_toward_maxfiles);
     tcase_add_test(tc_hfs_map, test_hfsplus_truncated_header_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_time_limit_is_fail_visible);
     suite_add_tcase(s, tc_hfs_fork);
     tcase_add_checked_fixture(tc_hfs_fork, cl_setup, cl_teardown);
     tcase_add_test(tc_hfs_fork, test_hfsplus_fork_read_failure_is_fail_visible);
+    tcase_add_test(tc_hfs_fork, test_hfsplus_extent_overflow_records_are_followed);
     suite_add_tcase(s, tc_sis_member);
     tcase_add_checked_fixture(tc_sis_member, cl_setup, cl_teardown);
     tcase_add_test(tc_sis_member, test_sis_compressed_member_streams_to_nested_scan);
+    tcase_add_test(tc_sis_member, test_sis_empty_language_members_count_toward_maxfiles);
     suite_add_tcase(s, tc_sis);
     tcase_add_checked_fixture(tc_sis, cl_setup, cl_teardown);
     tcase_add_test(tc_sis, test_sis_corpus_detects_embedded_mz);
@@ -65140,6 +67974,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_cpio);
     tcase_add_checked_fixture(tc_cpio, cl_setup, cl_teardown);
     tcase_add_test(tc_cpio, test_cpio_corpus_detects_embedded_mz);
+    tcase_add_test(tc_cpio, test_cpio_empty_members_count_toward_maxfiles);
     tcase_add_test(tc_cpio, test_cpio_sticky_incomplete_result_is_fail_visible);
     suite_add_tcase(s, tc_cpio_crc);
     tcase_add_checked_fixture(tc_cpio_crc, cl_setup, cl_teardown);
@@ -65231,6 +68066,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwpole2_map, test_hwpole2_null_context_is_fail_visible);
     tcase_add_test(tc_hwpole2_map, test_hwpole2_missing_map_is_fail_visible);
     tcase_add_test(tc_hwpole2_map, test_hwpole2_nested_scan_requires_engine_and_options);
+    tcase_add_test(tc_hwpole2_map, test_hwpole2_empty_payload_counts_toward_maxfiles);
     tcase_add_test(tc_hwpole2_map, test_hwpole2_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_hwpole2_map, test_hwpole2_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_partition_map);
@@ -65263,6 +68099,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mbr, test_mbr_type_confirmation_read_failure_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_partition_limit_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_zero_length_partition_is_fail_visible);
+    tcase_add_test(tc_mbr, test_mbr_zero_start_partition_is_fail_visible);
+    tcase_add_test(tc_mbr, test_mbr_ebr_zero_start_partition_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_ebr_outside_extent_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_missing_map_entry_points_are_fail_visible);
@@ -65350,6 +68188,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_autoit_map, test_autoit_missing_map_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_header_missing_context_or_map_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_ea06_missing_member_is_fail_visible);
+    tcase_add_test(tc_autoit_map, test_autoit_empty_members_count_toward_maxfiles);
     tcase_add_test(tc_autoit_map, test_autoit_missing_options_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_time_limit_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_sticky_incomplete_result_is_fail_visible);
@@ -65364,6 +68203,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_7z);
     tcase_add_checked_fixture(tc_7z, cl_setup, cl_teardown);
     tcase_add_test(tc_7z, test_7z_truncated_header_is_fail_visible);
+    tcase_add_test(tc_7z, test_7z_empty_members_count_toward_maxfiles);
     tcase_add_test(tc_7z, test_7z_archive_property_truncation_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_coder_property_extent_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_files_info_property_boundary_is_fail_visible);
@@ -65422,6 +68262,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ishield_map, test_ishield_null_context_confirmed_entries_are_fail_visible);
     tcase_add_test(tc_ishield_map, test_ishield_missing_map_confirmed_entries_are_fail_visible);
     tcase_add_test(tc_ishield_map, test_ishield_missing_options_confirmed_entries_are_fail_visible);
+    tcase_add_test(tc_ishield_map, test_ishield_empty_members_count_toward_maxfiles);
+    tcase_add_test(tc_ishield_map, test_ishield_empty_cab_members_count_toward_maxfiles);
     tcase_add_test(tc_ishield_map, test_ishield_sticky_incomplete_result_is_fail_visible);
     suite_add_tcase(s, tc_hwpml_map);
     tcase_add_checked_fixture(tc_hwpml_map, cl_setup, cl_teardown);
@@ -65451,6 +68293,10 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_msxml, test_msxml_attribute_limit_is_fail_visible);
     tcase_add_test(tc_msxml, test_msxml_stream_time_limit_is_fail_visible);
+    tcase_add_test(tc_msxml, test_msxml_empty_base64_counts_toward_maxfiles);
+    tcase_add_test(tc_msxml, test_msxml_empty_callback_counts_toward_maxfiles);
+    tcase_add_test(tc_msxml, test_msxml_self_closing_base64_counts_toward_maxfiles);
+    tcase_add_test(tc_msxml, test_msxml_self_closing_callback_counts_toward_maxfiles);
     suite_add_tcase(s, tc_rust_map);
     tcase_add_checked_fixture(tc_rust_map, cl_setup, cl_teardown);
     tcase_add_test(tc_rust_map, test_rust_parser_admission_boundaries_are_fail_visible);
@@ -65469,6 +68315,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_rust_lha, test_rust_lha_corpus_detects_nested_png);
     suite_add_tcase(s, tc_rust_alz);
     tcase_add_checked_fixture(tc_rust_alz, cl_setup, cl_teardown);
+    tcase_add_test(tc_rust_alz, test_rust_alz_empty_members_count_toward_maxfiles);
     tcase_add_test(tc_rust_alz, test_rust_alz_bad_crc_is_fail_visible);
     tcase_add_test(tc_rust_alz, test_rust_alz_corpus_detects_nested_members);
     suite_add_tcase(s, tc_onenote);
@@ -65477,8 +68324,13 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_onenote, test_onenote_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_rust_onenote);
     tcase_add_checked_fixture(tc_rust_onenote, cl_setup, cl_teardown);
+    tcase_add_test(tc_rust_onenote, test_rust_onenote_empty_attachments_count_toward_maxfiles);
     tcase_add_test(tc_rust_onenote, test_rust_onenote_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_rust_onenote, test_rust_onenote_truncated_prefix_is_parse_error);
+#if defined(ANONYMOUS_MAP) && !defined(_WIN32)
+    tcase_add_test(tc_rust_onenote, test_rust_onenote_reader_crosses_former_whole_input_cap);
+    tcase_add_test(tc_rust_onenote, test_rust_onenote_reader_streams_corpus_attachment_above_former_cap);
+#endif
     suite_add_tcase(s, tc_msxml_map);
     tcase_add_test(tc_msxml_map, test_msxml_missing_map_is_fail_visible);
     tcase_add_test(tc_msxml_map, test_msxml_missing_engine_is_fail_visible);
@@ -65488,6 +68340,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_msxml_corpus, test_msxml_corpus_detects_embedded_marker);
     suite_add_tcase(s, tc_zip);
     tcase_add_checked_fixture(tc_zip, cl_setup, cl_teardown);
+    tcase_add_test(tc_zip, test_zip_empty_members_count_toward_maxfiles);
     tcase_add_test(tc_zip, test_zip_unsupported_flags_and_method_are_fail_visible);
     tcase_add_test(tc_zip, test_zip_sticky_incomplete_result_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
@@ -65653,6 +68506,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_nulsft);
     tcase_add_checked_fixture(tc_nulsft, cl_setup, cl_teardown);
     tcase_add_test(tc_nulsft, test_nsis_header_range_classes_are_fail_visible);
+    tcase_add_test(tc_nulsft, test_nsis_empty_members_count_toward_maxfiles);
     tcase_add_test(tc_nulsft, test_nsis_missing_map_entry_points_are_fail_visible);
     tcase_add_test(tc_nulsft, test_nsis_missing_engine_is_fail_visible);
     tcase_add_test(tc_nulsft, test_nsis_missing_options_is_fail_visible);
@@ -65912,6 +68766,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_fileblob_cleanup_without_engine_is_fail_visible);
     tcase_add_test(tc_cl, test_fileblob_add_data_without_engine_is_fail_visible);
     tcase_add_test(tc_cl, test_mime_body_byte_span_preserves_embedded_nul);
+    tcase_add_test(tc_cl, test_mime_empty_attachment_is_exported_for_scan);
     tcase_add_test(tc_cl, test_parser_gate_limits_reject_above_32g);
     tcase_add_test(tc_cl, test_engine_set_num_rejects_narrowing_and_negative_values);
     tcase_add_test(tc_cl, test_maxrecursion_exact_and_crossing_are_fail_visible);
@@ -66009,12 +68864,22 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_python_compiled_parser_rejects_flagged_marshal_reference);
     tcase_add_test(tc_cl, test_python_compiled_parser_accepts_marshal_reference_from_dict_key);
     tcase_add_test(tc_cl, test_python_compiled_parser_accepts_marshal_string_reference);
+    tcase_add_test(tc_cl, test_python_compiled_parser_rejects_string_reference_without_interned_string);
+    tcase_add_test(tc_cl, test_python_compiled_parser_rejects_flagged_string_reference);
+    tcase_add_test(tc_cl, test_python_compiled_parser_rejects_reference_to_nonreferencable_object);
     tcase_add_test(tc_cl, test_python_compiled_parser_accepts_modern_code_object);
     tcase_add_test(tc_cl, test_python_compiled_parser_still_runs_raw_matching);
     tcase_add_test(tc_cl, test_ai_model_parser_rejects_incomplete_model);
     tcase_add_test(tc_cl, test_ai_model_parser_preserves_fmap_read_failure);
     tcase_add_test(tc_cl, test_python_compiled_parser_preserves_fmap_read_failure);
     tcase_add_test(tc_cl, test_ai_model_onnx_accepts_node_metadata_properties);
+    tcase_add_test(tc_cl, test_ai_model_onnx_accepts_named_typed_attribute);
+    tcase_add_test(tc_cl, test_ai_model_onnx_rejects_unnamed_attribute);
+    tcase_add_test(tc_cl, test_ai_model_onnx_rejects_invalid_attribute_type);
+    tcase_add_test(tc_cl, test_ai_model_onnx_accepts_latest_tensor_data_type);
+    tcase_add_test(tc_cl, test_ai_model_onnx_rejects_invalid_tensor_data_type);
+    tcase_add_test(tc_cl, test_ai_model_onnx_rejects_invalid_tensor_data_location);
+    tcase_add_test(tc_cl, test_ai_model_onnx_rejects_missing_tensor_data_type);
     tcase_add_test(tc_cl, test_sis_truncated_compressed_member_is_fail_visible);
     tcase_add_test(tc_cl, test_sis9x_cursor_out_of_range_is_parse_error);
     tcase_add_test(tc_cl, test_sis9x_short_nested_field_is_fail_visible);
@@ -66226,12 +69091,22 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_required_unsupported, test_python_compiled_parser_rejects_flagged_marshal_reference);
     tcase_add_test(tc_required_unsupported, test_python_compiled_parser_accepts_marshal_reference_from_dict_key);
     tcase_add_test(tc_required_unsupported, test_python_compiled_parser_accepts_marshal_string_reference);
+    tcase_add_test(tc_required_unsupported, test_python_compiled_parser_rejects_string_reference_without_interned_string);
+    tcase_add_test(tc_required_unsupported, test_python_compiled_parser_rejects_flagged_string_reference);
+    tcase_add_test(tc_required_unsupported, test_python_compiled_parser_rejects_reference_to_nonreferencable_object);
     tcase_add_test(tc_required_unsupported, test_python_compiled_parser_accepts_modern_code_object);
     tcase_add_test(tc_required_unsupported, test_python_compiled_parser_still_runs_raw_matching);
     tcase_add_test(tc_required_unsupported, test_ai_model_parser_rejects_incomplete_model);
     tcase_add_test(tc_required_unsupported, test_ai_model_parser_preserves_fmap_read_failure);
     tcase_add_test(tc_required_unsupported, test_python_compiled_parser_preserves_fmap_read_failure);
     tcase_add_test(tc_required_unsupported, test_ai_model_onnx_accepts_node_metadata_properties);
+    tcase_add_test(tc_required_unsupported, test_ai_model_onnx_accepts_named_typed_attribute);
+    tcase_add_test(tc_required_unsupported, test_ai_model_onnx_rejects_unnamed_attribute);
+    tcase_add_test(tc_required_unsupported, test_ai_model_onnx_rejects_invalid_attribute_type);
+    tcase_add_test(tc_required_unsupported, test_ai_model_onnx_accepts_latest_tensor_data_type);
+    tcase_add_test(tc_required_unsupported, test_ai_model_onnx_rejects_invalid_tensor_data_type);
+    tcase_add_test(tc_required_unsupported, test_ai_model_onnx_rejects_invalid_tensor_data_location);
+    tcase_add_test(tc_required_unsupported, test_ai_model_onnx_rejects_missing_tensor_data_type);
     tcase_add_test(tc_required_unsupported, test_ai_model_tflite_root_is_structurally_supported);
     tcase_add_test(tc_required_unsupported, test_ai_model_tflite_metadata_buffer_is_structurally_supported);
     tcase_add_test(tc_required_unsupported, test_ai_model_tflite_metadata_buffer_index_is_fail_visible);
@@ -66257,6 +69132,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_required_unsupported, test_ai_model_gguf_overlapping_tensor_offsets_are_fail_visible);
     tcase_add_test(tc_required_unsupported, test_ai_model_gguf_tensor_rank_above_limit_is_fail_visible);
     tcase_add_test(tc_required_unsupported, test_ai_model_gguf_empty_metadata_key_is_fail_visible);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_empty_metadata_array_type_is_fail_visible);
     tcase_add_test(tc_required_unsupported, test_ai_model_gguf_tensor_name_limit_is_fail_visible);
     tcase_add_test(tc_required_unsupported, test_ai_model_gguf_q4_0_tensor_is_structurally_supported);
     tcase_add_test(tc_required_unsupported, test_ai_model_gguf_q4_0_shape_misalignment_is_fail_visible);
@@ -66575,6 +69451,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pdf, test_pdf_truncated_object_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_decode_error_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_empty_flate_stream_is_fail_visible);
+    tcase_add_test(tc_pdf, test_pdf_empty_extracted_object_counts_toward_maxfiles);
+    tcase_add_test(tc_pdf, test_pdf_empty_stream_counts_toward_maxfiles);
     tcase_add_test(tc_pdf, test_pdf_unsupported_filter_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_unsupported_encryption_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_crypt_filter_dictionary_is_exact_and_fail_visible);
@@ -66613,9 +69491,11 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_zip_output_close_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_resource_limit_helpers_reject_missing_engine);
     tcase_add_test(tc_cl, test_cryptff_staging_failures_are_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_cryptff_temporary_quota_is_fail_visible);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_cryptff_time_limit_is_fail_visible);
+#endif
 #endif
     tcase_add_test(tc_cl, test_gzip_staging_failures_are_fail_visible);
 #endif
@@ -66732,13 +69612,32 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_metadata_json, test_metadata_json_output_failures_are_fail_visible);
 #endif
 
+    /* The cl_api and cl_scan_api cases include 64-MiB-plus streaming
+     * fixtures.  The Check library's short default timeout is too small on a
+     * loaded runner even when the bounded scan completes successfully.  Keep
+     * T as an explicit override, but give the API groups truthful default
+     * budgets. The opt-in exact-32-GiB case exercises three full scans and
+     * therefore receives the larger qualification budget below. */
+    tcase_set_timeout(tc_cl, 60);
+    tcase_set_timeout(tc_cl_scan, 60);
+    tcase_set_timeout(tc_mhtml, 60);
+#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+    if (tc_largefile != NULL)
+        tcase_set_timeout(tc_largefile, 900);
+#endif
     user_timeout = getenv("T");
     if (user_timeout) {
         int timeout = atoi(user_timeout);
+        tcase_set_timeout(tc_cl, timeout);
         tcase_set_timeout(tc_cl_scan, timeout);
+        tcase_set_timeout(tc_mhtml, timeout);
+#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+        if (tc_largefile != NULL)
+            tcase_set_timeout(tc_largefile, timeout);
+#endif
         printf("Using test case timeout of %d seconds set by user\n", timeout);
     } else {
-        printf("Using default test timeout; alter by setting 'T' env var (in seconds)\n");
+        printf("Using default test timeout of 60 seconds for standard cases and 900 seconds for large-file qualification; alter by setting 'T' env var (in seconds)\n");
     }
     return s;
 }
@@ -68154,7 +71053,7 @@ END_TEST
 
 START_TEST(test_ai_model_tflite_tensor_and_operator_references_are_fail_visible)
 {
-    static const size_t mutation_offsets[] = {808, 812, 904, 924, 932, 412};
+    static const size_t mutation_offsets[] = {808, 812, 904, 924, 932, 416};
     static const uint32_t mutation_values[] = {UINT32_MAX, 1, 1, 1, 1, UINT32_MAX};
     uint8_t data[940];
     struct cl_scan_options options;

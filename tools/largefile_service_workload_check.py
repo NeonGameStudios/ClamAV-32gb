@@ -295,7 +295,9 @@ def input_evidence(out: Path) -> dict:
     for phase in ("before", "after"):
         path = out / f"provenance/service-inputs-{phase}.json"
         with path.open(encoding="utf-8") as stream:
-            record = json.load(stream)
+            record = acceptance_cases.load_json(
+                stream.read(), f"service input {phase} evidence"
+            )
         if not isinstance(record, dict) or record.get("version") != 1 or \
                 not isinstance(record.get("inputs"), dict) or set(record["inputs"]) != ROLES:
             fail(f"service input {phase} evidence has an invalid schema")
@@ -309,7 +311,8 @@ def load_report(path: Path, label: str) -> dict:
     if not path.is_file() or path.stat().st_size == 0:
         fail(f"{label} has no structured report")
     with path.open(encoding="utf-8") as stream:
-        rows = [json.loads(line) for line in stream if line.strip()]
+        rows = [acceptance_cases.load_json_object(line, label)
+                for line in stream if line.strip()]
     if len(rows) != 1 or not isinstance(rows[0], dict):
         fail(f"{label} structured report is not exactly one JSON object")
     return rows[0]

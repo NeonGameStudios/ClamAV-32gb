@@ -10,7 +10,7 @@ not promote a capability to release-qualified.
 
 Canonical checkout and branch:
 
-- `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- `<repository-root>`
 - `largefile-roadmap-qualification`
 - intentionally dirty working tree preserved; no reset, clean, commit, or push
 

@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <limits.h>
 
 #include <json.h>
 
@@ -223,6 +224,7 @@ typedef struct cli_ctx_tag {
     uint64_t skipped_operations;        /* Number of required parser/matcher paths that were skipped. */
     const char *scan_incomplete_reason; /* First reason a required path was skipped. */
     cl_error_t limit_exceeded_result;   /* First configured-limit result, retained if an AlertExceedsMax callback filters its indicator. */
+    bool largefile_pcre_subject_released; /* Full-subject PCRE release observed for this root scan. */
     cl_scan_report_t *report;           /* Optional structured report owned by the public *_ex2 caller. */
     uint64_t monotonic_time_limit_ns;   /* Monotonic deadline for configured scan-time limits. */
     bool monotonic_time_limit_set;      /* True when the monotonic deadline is authoritative. */
@@ -946,9 +948,9 @@ void cli_logg_unsetup(void);
 #endif
 
 #ifdef __GNUC__
-inline void cli_dbgmsg(const char *str, ...) __attribute__((format(printf, 1, 2)));
+void cli_dbgmsg(const char *str, ...) __attribute__((format(printf, 1, 2)));
 #else
-inline void cli_dbgmsg(const char *str, ...);
+void cli_dbgmsg(const char *str, ...);
 #endif
 
 #ifdef __GNUC__
@@ -979,7 +981,11 @@ static inline int cli_getpagesize(void)
 #if HAVE_SYSCONF_SC_PAGESIZE
 static inline int cli_getpagesize(void)
 {
-    return sysconf(_SC_PAGESIZE);
+    long page_size = sysconf(_SC_PAGESIZE);
+
+    if (page_size <= 0 || page_size > INT_MAX)
+        return 4096;
+    return (int)page_size;
 }
 #define HAVE_CLI_GETPAGESIZE 1
 #else
@@ -1246,7 +1252,10 @@ cl_error_t cli_checktimelimit(cli_ctx *ctx);
  * Mark the current scan incomplete because a required inspection path could
  * not safely process the input. The final public result must not be clean.
  */
+#ifndef CLI_MARK_SCAN_INCOMPLETE_DECLARED
+#define CLI_MARK_SCAN_INCOMPLETE_DECLARED
 void cli_mark_scan_incomplete(cli_ctx *ctx, const char *reason);
+#endif
 void cli_mark_scan_incomplete_specific(cli_ctx *ctx, const char *reason);
 
 /* symlink behaviour */

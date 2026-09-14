@@ -25,7 +25,7 @@ use std::{
     ffi::{c_char, c_void, CStr, CString},
     io::{self, Read},
     panic,
-    path::Path,
+    path::{Path, PathBuf},
     ptr::null_mut,
     rc::Rc,
 };
@@ -93,6 +93,26 @@ fn rust_reader_status(err: &io::Error, fallback: cl_error_t) -> cl_error_t {
         cl_error_t_CL_EREAD
     } else {
         fallback
+    }
+}
+
+struct OneNoteParserSpoolBudget {
+    ctx: *mut cli_ctx,
+}
+
+impl onenote_parser::BlobSpoolBudget for OneNoteParserSpoolBudget {
+    fn reserve(&self, bytes: u64) -> bool {
+        if self.ctx.is_null() {
+            return false;
+        }
+        let status = unsafe { sys::cli_scan_reserve_temporary(self.ctx, bytes) };
+        status == cl_error_t_CL_SUCCESS
+    }
+
+    fn release(&self, bytes: u64) {
+        if !self.ctx.is_null() {
+            unsafe { sys::cli_scan_release_temporary(self.ctx, bytes) };
+        }
     }
 }
 
@@ -194,11 +214,11 @@ pub(crate) unsafe fn scan_reader_via_temp_spool<R: Read>(
         }
     }
 
-    let status = if spool.written == 0 {
-        cl_error_t_CL_SUCCESS
-    } else {
-        unsafe { spool.scan(None) }
-    };
+    /* An empty reader result is still a logical extracted child. Route it
+     * through descriptor admission so inclusive MaxFiles accounting,
+     * cache-taint propagation, and the owning layer's sticky status remain
+     * visible just as they are for a non-empty child. */
+    let status = unsafe { spool.scan(None) };
     if status != cl_error_t_CL_SUCCESS {
         debug!("{parser} temporary-spool child scan returned error: {status}");
     }
@@ -596,11 +616,10 @@ impl ExtractSink for AlzScanSink {
         };
         let name = self.name.take();
         self.last_size = spool.written;
-        let ret = if spool.written == 0 {
-            cl_error_t_CL_SUCCESS
-        } else {
-            unsafe { spool.scan(name.as_deref()) }
-        };
+        /* Empty ALZ members are still logical children. Let the descriptor
+         * ingress charge the zero-byte nested scan to MaxFiles instead of
+         * silently bypassing the inclusive root/child accounting. */
+        let ret = unsafe { spool.scan(name.as_deref()) };
         let ret = unsafe { spool.finish_cleanup(ret, "ALZ") };
         if ret != cl_error_t_CL_SUCCESS {
             self.scan_result = ret;
@@ -687,11 +706,10 @@ impl onenote::LegacyAttachmentSink for OneNoteScanSink {
                 "attachment spool was not started",
             ));
         };
-        let ret = if spool.written == 0 {
-            cl_error_t_CL_SUCCESS
-        } else {
-            unsafe { spool.scan(None) }
-        };
+        /* Legacy OneNote attachments are logical children even when empty;
+         * send the zero-byte spool through descriptor admission so MaxFiles
+         * accounting and sticky completion status remain visible. */
+        let ret = unsafe { spool.scan(None) };
         let ret = unsafe { spool.finish_cleanup(ret, "OneNote") };
         if ret != cl_error_t_CL_SUCCESS {
             self.scan_result = ret;
@@ -766,56 +784,87 @@ unsafe fn scan_onenote_inner(ctx: *mut cli_ctx) -> cl_error_t {
     let mut scan_result = cl_error_t_CL_SUCCESS;
     let modern_reader = FMapReader::new_with_context(&fmap, ctx);
 
-    let parse_result = OneNote::scan_reader(modern_reader, Path::new(fmap.name()), |name, data| {
-        debug!(
-            "Extracted {}-byte attachment with name: {:?}",
-            data.len(),
-            name
-        );
+    let spool_directory = if (*ctx).this_layer_tmpdir.is_null() {
+        None
+    } else {
+        Some(PathBuf::from(
+            CStr::from_ptr((*ctx).this_layer_tmpdir)
+                .to_string_lossy()
+                .into_owned(),
+        ))
+    };
+    let parse_result = OneNote::scan_reader_streaming_with_budget(
+        modern_reader,
+        Path::new(fmap.name()),
+        spool_directory.as_deref(),
+        Some(Box::new(OneNoteParserSpoolBudget { ctx })),
+        |name, reader| {
+            debug!(
+                "Extracting streamed OneNote attachment with name: {:?}",
+                name
+            );
 
-        let expected_size = match u64::try_from(data.len()) {
-            Ok(size) => size,
-            Err(_) => {
+            let deadline_status = check_scan_time_limit(ctx);
+            if deadline_status != cl_error_t_CL_SUCCESS {
                 scan_result = parser_failure(
                     ctx,
                     "OneNote",
-                    cl_error_t_CL_ERESOURCE,
-                    "attachment size does not fit the 64-bit accounting domain",
+                    deadline_status,
+                    "attachment output reached the configured time limit",
                 );
                 return false;
             }
-        };
-        let deadline_status = check_scan_time_limit(ctx);
-        if deadline_status != cl_error_t_CL_SUCCESS {
-            scan_result = parser_failure(
-                ctx,
-                "OneNote",
-                deadline_status,
-                "attachment output reached the configured time limit",
-            );
-            return false;
-        }
-        let mut attachment_spool = match TempSpool::new(ctx, expected_size) {
-            Ok(spool) => spool,
-            Err(status) => {
-                scan_result = parser_failure(ctx, "OneNote", status, "attachment temporary spool reservation failed");
+            let mut attachment_spool = match TempSpool::new(ctx, 0) {
+                Ok(spool) => spool,
+                Err(status) => {
+                    scan_result = parser_failure(
+                        ctx,
+                        "OneNote",
+                        status,
+                        "attachment temporary spool reservation failed",
+                    );
+                    return false;
+                }
+            };
+
+            let mut buffer = [0u8; TempSpool::WRITE_CHUNK];
+            loop {
+                let read = match reader.read(&mut buffer) {
+                    Ok(read) => read,
+                    Err(error) => {
+                        scan_result = parser_failure(
+                            ctx,
+                            "OneNote",
+                            rust_reader_status(&error, cl_error_t_CL_EREAD),
+                            error,
+                        );
+                        return false;
+                    }
+                };
+                if read == 0 {
+                    break;
+                }
+                if let Err(status) = attachment_spool.write_all(&buffer[..read]) {
+                    scan_result = parser_failure(
+                        ctx,
+                        "OneNote",
+                        status,
+                        "attachment temporary spool write failed",
+                    );
+                    return false;
+                }
+            }
+
+            let ret = attachment_spool.scan(name);
+            let ret = attachment_spool.finish_cleanup(ret, "OneNote");
+            if ret != cl_error_t_CL_SUCCESS {
+                scan_result = ret;
                 return false;
             }
-        };
-        if let Err(status) = attachment_spool.write_all(data) {
-            scan_result = parser_failure(ctx, "OneNote", status, "attachment temporary spool write failed");
-            return false;
-        }
 
-        let ret = attachment_spool.scan(name);
-        let ret = attachment_spool.finish_cleanup(ret, "OneNote");
-        if ret != cl_error_t_CL_SUCCESS {
-            scan_result = ret;
-            return false;
-        }
-
-        true
-    });
+            true
+        },
+    );
 
     if scan_result != cl_error_t_CL_SUCCESS {
         return scan_result;

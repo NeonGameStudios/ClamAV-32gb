@@ -1,12 +1,34 @@
 use crate::errors::{ErrorKind, Result};
 use crate::fsshttpb::data::exguid::ExGuid;
+use crate::fsshttpb::data_element::object_data_blob::ObjectDataBlob;
 use crate::fsshttpb::data_element::object_group::ObjectGroupData;
 use crate::fsshttpb::packaging::OneStorePackaging;
 use crate::onestore::mapping_table::MappingTable;
 use crate::onestore::object_space::GroupData;
 use crate::onestore::types::jcid::JcId;
 use crate::onestore::types::object_prop_set::ObjectPropSet;
-use crate::reader::{reserve_collection, Reader};
+use crate::reader::reserve_collection;
+
+fn validate_reference_stream_lengths(
+    object_count: usize,
+    object_reference_count: usize,
+    context_count: usize,
+    context_reference_count: usize,
+    object_space_count: usize,
+    object_space_reference_count: usize,
+) -> Result<()> {
+    if object_count != object_reference_count
+        || context_count != context_reference_count
+        || object_space_count != object_space_reference_count
+    {
+        return Err(ErrorKind::MalformedOneStoreData(
+            "object/reference stream array sizes do not match".into(),
+        )
+        .into());
+    }
+
+    Ok(())
+}
 
 /// A OneNote data object.
 ///
@@ -20,7 +42,7 @@ pub(crate) struct Object<'a> {
 
     pub(crate) jc_id: JcId,
     pub(crate) props: ObjectPropSet,
-    pub(crate) file_data: Option<&'a [u8]>,
+    pub(crate) file_data: Option<&'a ObjectDataBlob>,
     pub(crate) mapping: MappingTable,
 }
 
@@ -44,8 +66,8 @@ impl<'a> Object<'a> {
         &self.props
     }
 
-    pub(crate) fn file_data(&self) -> Option<&[u8]> {
-        self.file_data.as_deref()
+    pub(crate) fn file_data(&self) -> Option<&ObjectDataBlob> {
+        self.file_data
     }
 
     pub(crate) fn mapping(&self) -> &MappingTable {
@@ -77,7 +99,8 @@ impl<'a> Object<'a> {
             .into());
         };
 
-        let jc_id = JcId::parse(&mut Reader::new(metadata.as_slice()))?;
+        let mut metadata_reader = metadata.open_reader_with_spool_options()?;
+        let jc_id = JcId::parse(&mut metadata_reader)?;
 
         // Parse data
 
@@ -91,7 +114,8 @@ impl<'a> Object<'a> {
                 .into());
             };
 
-        let props = ObjectPropSet::parse(&mut Reader::new(data.as_slice()))?;
+        let mut data_reader = data.open_reader_with_spool_options()?;
+        let props = ObjectPropSet::parse(&mut data_reader)?;
 
         // Parse file data
 
@@ -116,19 +140,14 @@ impl<'a> Object<'a> {
             }
         }
 
-        if props.object_ids().len() < object_refs.len() {
-            return Err(ErrorKind::MalformedOneStoreData(
-                "object ref array sizes do not match".into(),
-            )
-            .into());
-        }
-
-        if props.context_ids().len() + props.object_space_ids().len() != referenced_cells.len() {
-            return Err(ErrorKind::MalformedOneStoreData(
-                "object space/context array sizes do not match".into(),
-            )
-            .into());
-        }
+        validate_reference_stream_lengths(
+            props.object_ids().len(),
+            object_refs.len(),
+            props.context_ids().len(),
+            context_refs.len(),
+            props.object_space_ids().len(),
+            object_space_refs.len(),
+        )?;
 
         let mapping_objects = props
             .object_ids()
@@ -175,5 +194,32 @@ impl<'a> Object<'a> {
                 }
             })
             .transpose()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_reference_stream_lengths;
+
+    #[test]
+    fn reference_stream_lengths_accept_matching_kinds() {
+        assert!(validate_reference_stream_lengths(1, 1, 2, 2, 3, 3).is_ok());
+    }
+
+    #[test]
+    fn reference_stream_lengths_reject_swapped_kinds() {
+        // A total-count check alone would accept this malformed mapping and
+        // zip each compact-ID stream with the wrong kind of CellId.
+        assert!(validate_reference_stream_lengths(1, 1, 2, 3, 3, 2).is_err());
+    }
+
+    #[test]
+    fn reference_stream_lengths_reject_a_short_kind() {
+        assert!(validate_reference_stream_lengths(1, 1, 0, 0, 1, 0).is_err());
+    }
+
+    #[test]
+    fn reference_stream_lengths_reject_surplus_object_ids() {
+        assert!(validate_reference_stream_lengths(2, 1, 0, 0, 0, 0).is_err());
     }
 }

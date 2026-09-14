@@ -452,7 +452,7 @@ cl_error_t cli_json_delowner(json_object *owner, const char *key, int idx)
     } else if (objty == json_type_array) {
         json_object *empty;
 
-        if (NULL == json_object_array_get_idx(owner, idx)) {
+        if (idx < 0 || NULL == json_object_array_get_idx(owner, (size_t)idx)) {
             cli_dbgmsg("json: owner array does not have content at idx %d\n", idx);
             return CL_EARG;
         }
@@ -462,7 +462,7 @@ cl_error_t cli_json_delowner(json_object *owner, const char *key, int idx)
         if (NULL == empty)
             return CL_EMEM;
 
-        if (0 != json_object_array_put_idx(owner, idx, empty)) {
+        if (0 != json_object_array_put_idx(owner, (size_t)idx, empty)) {
             /* this shouldn't be possible */
             cli_dbgmsg("json: cannot delete idx %d of owner array\n", idx);
             return CL_BREAK;

@@ -6,7 +6,7 @@ Scope: retain current-source ARM64 development records for the six direct
 structured clamd report protocols. This is not certified service or release
 qualification.
 
-The capture ran from `/Volumes/512gbNVME/github-external/ClamAV-32gb` using
+The capture ran from `<repository-root>` using
 the rebuilt `/private/tmp/clamav-largefile-static-build/clamd/clamd` inside a
 disposable `clamav-largefile-local-toolchain2:latest` container. The container
 installed only its missing `libjson-c5` runtime; no host or repository software

@@ -859,7 +859,7 @@ int cli_ac_chklsig(const char *expr, const char *end, uint32_t *lsigcnt, unsigne
 {
     size_t i, len = end - expr, pth = 0, opoff = 0, op1off = 0, val;
     size_t blkend = 0, modoff = 0;
-    unsigned int id, modval1, modval2 = 0, lcnt = 0, rcnt = 0, tcnt;
+    unsigned int id, modval1 = 0, modval2 = 0, lcnt = 0, rcnt = 0, tcnt;
     uint64_t lids = 0, rids = 0, tids;
     int ret, lval, rval;
     char op = 0, op1 = 0, mod = 0, blkmod = 0;
@@ -1691,7 +1691,7 @@ cl_error_t cli_ac_caloff(const struct cli_matcher *root, struct cli_ac_data *dat
         } else if (CL_SUCCESS != (ret = cli_caloff(NULL, info, root->type, patt->offdata, &data->offset[patt->offset_min], &data->offset[patt->offset_max]))) {
             cli_errmsg("cli_ac_caloff: Can't calculate relative offset in signature for %s\n", patt->virname);
             return ret;
-        } else if ((data->offset[patt->offset_min] != CLI_OFF_NONE64) && (data->offset[patt->offset_min] + patt->length[1] > info->fsize)) {
+        } else if ((data->offset[patt->offset_min] != CLI_OFF_NONE64) && (data->offset[patt->offset_min] + patt->length[1] > (uint64_t)info->fsize)) {
             data->offset[patt->offset_min] = CLI_OFF_NONE64;
         }
     }
@@ -2223,7 +2223,7 @@ cl_error_t cli_ac_scanbuff(
                                 if (pt->type) {
 
                                     if (pt->type == CL_TYPE_IGNORED && (mode & AC_SCAN_FT) && !(mode & AC_SCAN_VIR) && (!pt->rtype || ftype == pt->rtype))
-                                        return CL_TYPE_IGNORED;
+                                        return (cl_error_t)CL_TYPE_IGNORED;
 
                                     if ((pt->type > type || pt->type >= CL_TYPE_SFX || pt->type == CL_TYPE_MSEXE) &&
                                         (pt->rtype == CL_TYPE_ANY || ftype == pt->rtype)) {
@@ -2352,7 +2352,7 @@ cl_error_t cli_ac_scanbuff(
                         } else { /* old type signature */
                             if (pt->type) {
                                 if (pt->type == CL_TYPE_IGNORED && (mode & AC_SCAN_FT) && !(mode & AC_SCAN_VIR) && (pt->rtype == CL_TYPE_ANY || ftype == pt->rtype))
-                                    return CL_TYPE_IGNORED;
+                                    return (cl_error_t)CL_TYPE_IGNORED;
 
                                 if ((pt->type > type || pt->type >= CL_TYPE_SFX || pt->type == CL_TYPE_MSEXE) &&
                                     (pt->rtype == CL_TYPE_ANY || ftype == pt->rtype)) {

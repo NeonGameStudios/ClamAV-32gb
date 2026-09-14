@@ -129,7 +129,10 @@ static int onas_ddd_init_ht(uint32_t ht_size)
 static int onas_ddd_init_wdlt(uint64_t nwatches)
 {
 
-    if (nwatches <= 0) return CL_EARG;
+    /* wdlt_len is a uint32_t and the table is provisioned at twice the
+     * kernel limit.  Reject a hostile or malformed limit before the shift and
+     * allocation can wrap or truncate that bound. */
+    if (nwatches == 0 || nwatches > UINT32_MAX / 2) return CL_EARG;
 
     wdlt = (char **)calloc(nwatches << 1, sizeof(char *));
     if (!wdlt) return CL_EMEM;
@@ -244,6 +247,11 @@ static int onas_ddd_watch_hierarchy(const char *pathname, size_t len, int fd, ui
 
     if (!pathname || fd < 0 || !type) return CL_ENULLARG;
 
+    if (len == 0) {
+        logg(LOGG_ERROR, "ClamInotif: refusing to watch an empty pathname\n");
+        return CL_EARG;
+    }
+
     if (type == (ONAS_IN | ONAS_FAN)) return CL_EARG;
 
     struct onas_hnode *hnode  = NULL;
@@ -352,6 +360,11 @@ static int onas_ddd_unwatch_hierarchy(const char *pathname, size_t len, int fd, 
 
     if (!pathname || fd < 0 || !type) return CL_ENULLARG;
 
+    if (len == 0) {
+        logg(LOGG_ERROR, "ClamInotif: refusing to unwatch an empty pathname\n");
+        return CL_EARG;
+    }
+
     if (type == (ONAS_IN | ONAS_FAN)) return CL_EARG;
 
     struct onas_hnode *hnode  = NULL;
@@ -364,6 +377,11 @@ static int onas_ddd_unwatch_hierarchy(const char *pathname, size_t len, int fd, 
 
     if (type & ONAS_IN) {
         wd = hnode->wd;
+
+        if (wd < 0 || (uint32_t)wd >= wdlt_len) {
+            logg(LOGG_ERROR, "ClamInotif: refusing to clear an invalid inotify watch descriptor (%d)\n", wd);
+            return CL_EARG;
+        }
 
         if (inotify_rm_watch(fd, wd) < 0 && errno != ENOENT) return CL_EARG;
 
@@ -748,21 +766,42 @@ void *onas_ddd_th(void *arg)
             pthread_testcancel();
             /* Handle events. */
             int wd;
-            char *p           = buf;
             const char *path  = NULL;
             const char *child = NULL;
-            for (; p < buf + bread; p += sizeof(struct inotify_event) + event->len) {
+            size_t offset     = 0;
+            size_t batch_size = (size_t)bread;
+            while (offset < batch_size) {
+                size_t remaining = batch_size - offset;
 
-                event = (const struct inotify_event *)p;
+                /* A short header or an advertised name that extends beyond
+                 * this read is not a valid event.  Do not dereference the
+                 * name or advance by an unchecked length.  The kernel should
+                 * never produce this shape, but treating it as a malformed
+                 * batch keeps the on-access thread fail-visible if its input
+                 * boundary is ever violated. */
+                if (remaining < sizeof(struct inotify_event)) {
+                    logg(LOGG_ERROR, "ClamInotif: truncated inotify event header; discarding the remainder of the batch\n");
+                    break;
+                }
+
+                event = (const struct inotify_event *)(buf + offset);
+                if ((size_t)event->len > remaining - sizeof(struct inotify_event)) {
+                    logg(LOGG_ERROR, "ClamInotif: truncated inotify event name; discarding the remainder of the batch\n");
+                    break;
+                }
+
+                size_t event_size = sizeof(struct inotify_event) + (size_t)event->len;
+                int has_name      = event->len > 0 && memchr(event->name, '\0', event->len) != NULL;
                 wd    = event->wd;
                 if (wd >= 0 && (uint32_t)wd < wdlt_len)
                     path = wdlt[wd];
                 else
                     path = NULL;
-                child = event->name;
+                child = has_name ? event->name : NULL;
 
                 if (path == NULL) {
                     logg(LOGG_DEBUG, "ClamInotif: watch descriptor (wd:%d) not found in lookup table ... skipping\n", wd);
+                    offset += event_size;
                     continue;
                 }
 
@@ -773,6 +812,11 @@ void *onas_ddd_th(void *arg)
                 } else if (event->mask & IN_IGNORED) {
                     // Ignore for debugging purposes
                 } else {
+                    if (!has_name) {
+                        logg(LOGG_ERROR, "ClamInotif: inotify event has no valid NUL-terminated name; skipping\n");
+                        offset += event_size;
+                        continue;
+                    }
                     len              = strlen(path);
                     size_t size      = strlen(child) + len + 2;
                     char *child_path = (char *)malloc(size);
@@ -806,6 +850,8 @@ void *onas_ddd_th(void *arg)
                     free(child_path);
                     child_path = NULL;
                 }
+
+                offset += event_size;
             }
         }
     }

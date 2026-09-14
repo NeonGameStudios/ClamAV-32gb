@@ -52,7 +52,18 @@ void makeMaps_d ( DState* s )
 #define RETURN(rrr)                               \
    { retVal = rrr; goto save_state_and_return; };
 
+#if defined(__GNUC__) || defined(__clang__)
+#define BZ_FALLTHROUGH __attribute__((fallthrough))
+#else
+#define BZ_FALLTHROUGH
+#endif
+
+/* The decoder is a resumable switch-based state machine.  GET_BITS() and
+ * GET_MTF_VAL() deliberately fall through into the state saved by the macro;
+ * annotate that transition so -Wimplicit-fallthrough can still protect the
+ * rest of this legacy decoder. */
 #define GET_BITS(lll,vvv,nnn)                     \
+   BZ_FALLTHROUGH;                                \
    case lll: s->state = lll;                      \
    while (True) {                                 \
       if (s->bsLive >= nnn) {                     \

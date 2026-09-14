@@ -109,3 +109,33 @@ pub(crate) fn parse_content_at_depth(
 
     Ok(content)
 }
+
+pub(crate) fn scan_content<F>(
+    content_id: ExGuid,
+    space: &ObjectSpace,
+    depth: usize,
+    callback: &mut F,
+) -> Result<bool>
+where
+    F: FnMut(Option<&str>, &mut dyn std::io::Read) -> bool,
+{
+    Reader::check_recursion_depth(depth)?;
+    let object = space
+        .get_object(content_id)
+        .ok_or_else(|| ErrorKind::MalformedOneNoteData("content object is missing".into()))?;
+    let id = PropertySetId::from_jcid(object.id()).ok_or_else(|| {
+        ErrorKind::MalformedOneNoteData(
+            format!("invalid content type: 0x{:X}", object.id().0).into(),
+        )
+    })?;
+
+    match id {
+        PropertySetId::EmbeddedFileNode => {
+            super::embedded_file::scan_embedded_file(content_id, space, callback)
+        }
+        PropertySetId::TableNode => {
+            super::table::scan_table_at_depth(content_id, space, depth + 1, callback)
+        }
+        _ => Ok(true),
+    }
+}

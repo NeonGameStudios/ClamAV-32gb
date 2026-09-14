@@ -90,6 +90,9 @@ static int checkaccess(const char *path, const char *username, int mode)
     int ret = 0, status;
 
     if (!geteuid()) {
+        if (username == NULL) {
+            return -1;
+        }
         if ((user = getpwnam(username)) == NULL) {
             return -1;
         }

@@ -160,7 +160,10 @@ cl_error_t onas_setup_fanotif(struct onas_context **ctx)
 
     if ((pt = optget((*ctx)->clamdopts, "OnAccessMountPath"))->enabled) {
         while (pt) {
-            if (fanotify_mark(onas_fan_fd, FAN_MARK_ADD | FAN_MARK_MOUNT, (*ctx)->fan_mask, (*ctx)->fan_fd, pt->strarg) != 0) {
+            /* dirfd is a pathname-resolution descriptor, not the fanotify
+             * event descriptor.  Absolute paths still require AT_FDCWD on
+             * kernels that validate this argument. */
+            if (fanotify_mark(onas_fan_fd, FAN_MARK_ADD | FAN_MARK_MOUNT, (*ctx)->fan_mask, AT_FDCWD, pt->strarg) != 0) {
                 logg(LOGG_ERROR, "ClamFanotif: can't include mountpoint '%s': %s\n", pt->strarg, strerror(errno));
                 return CL_EARG;
             } else {
@@ -182,7 +185,7 @@ cl_error_t onas_setup_fanotif(struct onas_context **ctx)
                     continue;
                 }
 
-                if (fanotify_mark(onas_fan_fd, FAN_MARK_ADD, (*ctx)->fan_mask, (*ctx)->fan_fd, pt->strarg) != 0) {
+                if (fanotify_mark(onas_fan_fd, FAN_MARK_ADD, (*ctx)->fan_mask, AT_FDCWD, pt->strarg) != 0) {
                     logg(LOGG_ERROR, "ClamFanotif: can't include path '%s': %s\n", pt->strarg, strerror(errno));
                     return CL_EARG;
                 } else {
@@ -217,7 +220,8 @@ int onas_fan_eloop(struct onas_context **ctx)
     struct fanotify_event_metadata *fmd;
     char proc_fd_fname[1024];
     char fname[1024];
-    int len, check;
+    ssize_t len;
+    int check;
 
     logg(LOGG_DEBUG, "ClamFanotif: starting fanotify event loop with process id (%d) ... \n", getpid());
     ret = onas_wait_for_fanotify((*ctx)->fan_fd);
@@ -272,7 +276,7 @@ int onas_fan_eloop(struct onas_context **ctx)
             if (fmd->fd >= 0) {
                 sprintf(proc_fd_fname, "/proc/self/fd/%d", fmd->fd);
                 errno = 0;
-                len   = readlink(proc_fd_fname, fname, sizeof(fname) - 1);
+                len   = readlink(proc_fd_fname, fname, sizeof(fname));
                 if (len == -1) {
                     int readlink_errno = errno;
 
@@ -285,6 +289,13 @@ int onas_fan_eloop(struct onas_context **ctx)
                     } else {
                         return 2;
                     }
+                }
+                if (len >= (ssize_t)sizeof(fname)) {
+                    if (onas_release_failed_event((*ctx)->fan_fd, fmd) != 0)
+                        return 2;
+                    logg(LOGG_ERROR, "ClamFanotif: pathname for event fd %d exceeds the supported length; refusing the event\n", fmd->fd);
+                    fmd = FAN_EVENT_NEXT(fmd, bread);
+                    continue;
                 }
                 fname[len] = '\0';
 

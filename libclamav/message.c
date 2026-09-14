@@ -1583,9 +1583,6 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
         return NULL;
     }
 
-    if (messageGetBody(m) == NULL)
-        return NULL;
-
     ret = (*create)();
 
     if (ret == NULL) {
@@ -1598,6 +1595,28 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
      * this, plain message bodies bypass the authoritative fileblob scan. */
     if (setCTX && m->ctx)
         (*setCTX)(ret, m->ctx);
+
+    /* A recognized MIME attachment may have no body lines at all. Preserve
+     * it as an empty export so the owning scan path can apply logical-child
+     * MaxFiles admission and cache taint instead of silently dropping it. */
+    if (messageGetBody(m) == NULL) {
+        cli_dbgmsg("messageExport: exporting empty logical attachment for scan admission\n");
+        filename = messageGetFilename(m);
+        (*setFilename)(ret, dir, (filename && *filename) ? filename : "attachment");
+
+        if (getStatus && getStatus(ret) != CL_SUCCESS) {
+            messageRecordFileblobFailure(m, (const fileblob *)ret,
+                                         "MIME decoded message output could not be created");
+            if (filename)
+                free(filename);
+            (*destroy)(ret);
+            return NULL;
+        }
+
+        if (filename)
+            free(filename);
+        return ret;
+    }
 
     cli_dbgmsg("messageExport: numberOfEncTypes == %d\n", m->numberOfEncTypes);
 

@@ -7,7 +7,7 @@ Exact capability kind:id list: the six development `clamscan` cases for
 
 Starting commit and working-tree/source manifest identity:
 
-- canonical source: `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- canonical source: `<repository-root>`
 - branch: `largefile-roadmap-qualification`
 - working tree was intentionally dirty and preserved
 - the capture generated source-manifest SHA-256

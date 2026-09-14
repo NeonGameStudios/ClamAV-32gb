@@ -180,17 +180,19 @@ get_unicode_name(const char *name, int size, int big_endian)
     ret       = newname;
 
     for (i = 0; i < size; i += increment) {
-        if ((!(name[i] & 0x80)) && isprint(name[i])) {
-            *ret++ = tolower(name[i]);
+        const unsigned char byte = (unsigned char)name[i];
+
+        if ((!(byte & 0x80)) && isprint(byte)) {
+            *ret++ = (char)tolower(byte);
         } else {
-            if ((name[i] < 10) && (name[i] >= 0)) {
+            if (byte < 10) {
                 *ret++ = '_';
-                *ret++ = (char)(name[i] + '0');
+                *ret++ = (char)(byte + '0');
             } else {
                 uint16_t x;
                 if ((i + 1) >= size)
                     break;
-                x = (uint16_t)((name[i] < 0 ? 0 : name[i] << 8) | name[i + 1]);
+                x = (uint16_t)(((uint16_t)byte << 8) | (unsigned char)name[i + 1]);
 
                 *ret++ = '_';
                 *ret++ = (char)('a' + ((x & 0xF)));

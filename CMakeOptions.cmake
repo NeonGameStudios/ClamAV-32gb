@@ -36,6 +36,14 @@ set(CLAMAV_TEST_TMP
     "" CACHE PATH
     "Root directory for unit-test temporary files; empty uses the unit-test build directory.")
 
+set(CLAMAV_LIBCLAMAV_TEST_TIMEOUT
+    "1200" CACHE STRING
+    "Maximum seconds for the aggregate libclamav test under sanitizer builds.")
+if(NOT CLAMAV_LIBCLAMAV_TEST_TIMEOUT MATCHES "^[1-9][0-9]*$")
+    message(FATAL_ERROR
+        "CLAMAV_LIBCLAMAV_TEST_TIMEOUT must be a positive integer")
+endif()
+
 option(ENABLE_LARGE_FILE_DEFAULTS
     "Use the gated 32 GiB/64 GiB large-file defaults. Requires Linux x86-64 qualification."
     OFF)

@@ -73,8 +73,8 @@ typedef
   CPpmd_Byte_Ref;
 
 #define PPMD_SetAllBitsIn256Bytes(p) \
-  { unsigned i; for (i = 0; i < 256 / sizeof(p[0]); i += 8) { \
-  p[i+7] = p[i+6] = p[i+5] = p[i+4] = p[i+3] = p[i+2] = p[i+1] = p[i+0] = ~(size_t)0; }}
+  { unsigned ppmd_i; for (ppmd_i = 0; ppmd_i < 256 / sizeof(p[0]); ppmd_i += 8) { \
+  p[ppmd_i+7] = p[ppmd_i+6] = p[ppmd_i+5] = p[ppmd_i+4] = p[ppmd_i+3] = p[ppmd_i+2] = p[ppmd_i+1] = p[ppmd_i+0] = ~(size_t)0; }}
 
 EXTERN_C_END
  

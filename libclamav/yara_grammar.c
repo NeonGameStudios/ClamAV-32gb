@@ -31,6 +31,10 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wunused-macros"
+#endif
+
 /* C LALR(1) parser skeleton written by Richard Stallman, by
    simplifying the original so-called "semantic" parser.  */
 
@@ -101,6 +105,15 @@
 #include "yara_exec.h"
 #endif
 
+#ifndef REAL_YARA
+#define REAL_YARA 0
+#endif
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-macros"
+#endif
+
 #define YYERROR_VERBOSE
 
 #define INTEGER_SET_ENUMERATION   1
@@ -141,9 +154,6 @@
 
 #define CHECK_TYPE(actual_type, expected_type, op) \
     CHECK_TYPE_WITH_CLEANUP(actual_type, expected_type, op, ) \
-
-
-#define MSG(op)  "wrong type \"string\" for \"" op "\" operator"
 
 
 #line 150 "yara_grammar.c"
@@ -1721,7 +1731,7 @@ yyreduce:
       {
         int result = yr_parser_reduce_rule_declaration(
             yyscanner,
-            (yyvsp[-8].integer),
+            (int)(yyvsp[-8].integer),
             (yyvsp[-6].c_string),
             (yyvsp[-5].c_string),
             (yyvsp[-2].string),
@@ -1959,7 +1969,7 @@ yyreduce:
             META_TYPE_INTEGER,
             (yyvsp[-2].c_string),
             NULL,
-            (yyvsp[0].integer));
+            (int32_t)(yyvsp[0].integer));
 
         yr_free((yyvsp[-2].c_string));
 
@@ -2019,7 +2029,7 @@ yyreduce:
       {
         (yyval.string) = yr_parser_reduce_string_declaration(
             yyscanner,
-            (yyvsp[0].integer),
+            (int)(yyvsp[0].integer),
             (yyvsp[-3].c_string),
             (yyvsp[-1].sized_string));
 
@@ -2044,7 +2054,7 @@ yyreduce:
       {
         (yyval.string) = yr_parser_reduce_string_declaration(
             yyscanner,
-            (yyvsp[0].integer) | STRING_GFLAGS_REGEXP,
+            (int)(yyvsp[0].integer) | STRING_GFLAGS_REGEXP,
             (yyvsp[-4].c_string),
             (yyvsp[-1].sized_string));
 
@@ -2162,7 +2172,7 @@ yyreduce:
               compiler->last_result = yr_parser_emit_with_arg_reloc(
                   yyscanner,
                   OP_OBJ_LOAD,
-                  PTR_TO_UINT64(id),
+                  (int64_t)PTR_TO_UINT64(id),
                   NULL);
 
             (yyval.object) = object;
@@ -2178,7 +2188,7 @@ yyreduce:
               compiler->last_result = yr_parser_emit_with_arg_reloc(
                   yyscanner,
                   OP_PUSH_RULE,
-                  PTR_TO_UINT64(rule),
+                  (int64_t)PTR_TO_UINT64(rule),
                   NULL);
             }
             else
@@ -2225,7 +2235,7 @@ yyreduce:
               compiler->last_result = yr_parser_emit_with_arg_reloc(
                   yyscanner,
                   OP_OBJ_FIELD,
-                  PTR_TO_UINT64(ident),
+                  (int64_t)PTR_TO_UINT64(ident),
                   NULL);
           }
           else
@@ -2290,7 +2300,7 @@ yyreduce:
 
           if (compiler->last_result == ERROR_SUCCESS)
           {
-            args_count = strlen((yyvsp[-1].c_string));
+            args_count = (int)strlen((yyvsp[-1].c_string));
 
             compiler->last_result = yr_parser_emit_with_arg(
                 yyscanner,
@@ -2387,7 +2397,7 @@ yyreduce:
   case 47:
 #line 824 "yara_grammar.y"
       {
-#ifdef REAL_YARA
+#if REAL_YARA
         SIZED_STRING* sized_string = (yyvsp[0].sized_string);
         RE* re;
         RE_ERROR error;
@@ -2418,7 +2428,7 @@ yyreduce:
           compiler->last_result = yr_parser_emit_with_arg_reloc(
               yyscanner,
               OP_PUSH,
-              PTR_TO_UINT64(re->root_node->forward_code),
+              (int64_t)PTR_TO_UINT64(re->root_node->forward_code),
               NULL);
 
         yr_re_destroy(re);
@@ -2671,7 +2681,7 @@ yyreduce:
           yr_parser_emit_with_arg_reloc(
               yyscanner,
               OP_JNUNDEF,
-              PTR_TO_UINT64(
+              (int64_t)PTR_TO_UINT64(
                   compiler->loop_address[compiler->loop_depth]),
               NULL);
         }
@@ -2694,7 +2704,7 @@ yyreduce:
           yr_parser_emit_with_arg_reloc(
               yyscanner,
               OP_JLE,
-              PTR_TO_UINT64(
+              (int64_t)PTR_TO_UINT64(
                 compiler->loop_address[compiler->loop_depth]),
               NULL);
 
@@ -2785,7 +2795,7 @@ yyreduce:
         yr_parser_emit_with_arg_reloc(
             yyscanner,
             OP_JNUNDEF,
-            PTR_TO_UINT64(
+            (int64_t)PTR_TO_UINT64(
                 compiler->loop_address[compiler->loop_depth]),
             NULL);
 
@@ -3304,7 +3314,7 @@ yyreduce:
           compiler->last_result = yr_parser_emit_with_arg_reloc(
               yyscanner,
               OP_PUSH,
-              PTR_TO_UINT64(string),
+              (int64_t)PTR_TO_UINT64(string),
               NULL);
 
         ERROR_IF(compiler->last_result != ERROR_SUCCESS);
@@ -3799,4 +3809,3 @@ yyreturn:
   return yyresult;
 }
 #line 1787 "yara_grammar.y"
-

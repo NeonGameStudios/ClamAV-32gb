@@ -2152,7 +2152,8 @@ HFS+ fork regression retains its valid fmap read callback across all
 subcases; its previous `map->need = NULL` assignment caused a test-only null
 callback crash before the final malformed-fork assertion. The current-source
 production-linked GCC harness passes `hfs_map` 20/20, `hfs_inline` 2/2, and
-`hfs_fork` 1/1. ExtentOverflow, full HFS+ corpus, certified Linux x86-64,
+`hfs_fork` 1/1. Complete HFS+ corpus including ExtentOverflow records,
+certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
@@ -2373,7 +2374,7 @@ link as sufficient proof of completion. Early termination, a link beyond the
 declared tail, or a count mismatch returns a sticky incomplete, non-cacheable
 result. The exact catalog regression passes in a
 production-linked GCC runner and in the matching GCC ASan/UBSan runner with
-leak detection. Full HFS+ corpus, ExtentOverflow support,
+leak detection. Full HFS+ corpus, including ExtentOverflow corpus coverage,
 production-CVD/service, certified Linux x86-64, materialized-large-file,
 Sonic1, resource, and final parser/release qualification remain required.
 
@@ -6457,7 +6458,7 @@ does not provide sanitizer, production-parser, or concurrency evidence.
   regression covers the main GZip path and source guards cover the fallback
   diagnostics. The disposable ARM64 harness reports 1,330 checks, 816
   fixture/environment failures, and 0 errors; all four local safety gates pass.
-  Sonic1 Docker access was freshly verified with `sonic1-camera-key`; the
+  Sonic1 Docker access was freshly verified with `<redacted-login-profile>`; the
   remote scanner and test-source hashes differ, so no remote rebuild
   qualification claim is made.
 
@@ -6470,7 +6471,7 @@ does not provide sanitizer, production-parser, or concurrency evidence.
   checks, 814 fixture/environment failures, and 0 errors, with no new test
   failure. All four local safety gates pass. Final local `pe.c` SHA-256 is
   `8a4e95a3bda2cbadc5f9c59398488fec6d97efa3fbd67ecc9e5bc62e9d901142`.
-  Sonic1 Docker access was freshly verified with `sonic1-camera-key`; the
+  Sonic1 Docker access was freshly verified with `<redacted-login-profile>`; the
   remote `pe.c` and test-source hashes differ from the current worktree, so no
   remote rebuild qualification claim is made.
 
@@ -6487,8 +6488,8 @@ does not provide sanitizer, production-parser, or concurrency evidence.
   `pdf.c=0b83e3f28ef841022e44bb3ffcfb24548725cd74b02a826b39e22d5abd019a31`,
   `pdfdecode.c=1a76ce43611701106798463297eb6f2f89bb2f2d3fd653383aed2e38831c9c31`,
   and `check_clamav.c=6195e40668bdc89090188742ba8c7848fc75bece789eab23d3b64c918c5312b9`.
-  Fresh host-list request `req_89b90bc39c2e4347b2168c00587901b5` returned
-  `sonic1`; Docker request `req_b55b48136be9427780d9b9e69da89a02` succeeded and
+  Fresh host-list request `<redacted-request-id>` returned
+  `sonic1`; Docker request `<redacted-request-id>` succeeded and
   showed all three existing ClamAV containers up. Remote `pdf.c`, `pdfdecode.c`,
   and test-source checksums differ from the local worktree, so no remote rebuild
   qualification claim is made.
@@ -6507,14 +6508,14 @@ does not provide sanitizer, production-parser, or concurrency evidence.
   `check_clamav.c=e8f5cb68b309d1850fbf8c55328b9759a3c0022e6e2d27f10299a5dccf906ca5`,
   and
   `largefile_source_guards.sh=88251750174660601dc8274827c763e9f24a78cdd90f80db72a0ebfd339e7d77`.
-  Fresh host-list request `req_1ad364b37c584f2381133fb4a7bfa233` returned
-  `sonic1`; Docker request `req_5985e388d1a547728829b72d04e146e5` using
-  `sonic1-camera-key` succeeded and showed the three existing ClamAV test
+  Fresh host-list request `<redacted-request-id>` returned
+  `sonic1`; Docker request `<redacted-request-id>` using
+  `<redacted-login-profile>` succeeded and showed the three existing ClamAV test
   containers up. Remote `scanners.c` and test-source checksums are
   `50f08543b6af7b782ebcd7e69124f30d43a3d0d36fd6970e4bb87597ac541a96` and
   `767d8b90b1324639b5aa86f78a0d32814e7706fdf14a04272360187026dc8352`
-  (`req_c266bd53abe741da829168dda804c868` and
-  `req_cf8f577d6f6f404396389ca88aa45a6e`), so no remote rebuild qualification
+  (`<redacted-request-id>` and
+  `<redacted-request-id>`), so no remote rebuild qualification
   claim is made for this local ARJ follow-up.
 
 - The OLE2 property-tree audit found oversized embedded files being skipped
@@ -6531,14 +6532,14 @@ does not provide sanitizer, production-parser, or concurrency evidence.
   `check_clamav.c=ca115aa4735576289ab31f6268a8752ae2170778e5ab5d85509e3b8a5292b274`,
   and
   `largefile_source_guards.sh=c4e4ec674acf8086fad445517b0ed97dae8436c7421ba4dd8866080cb7770029`.
-  Fresh host-list request `req_98c8b9951fd044468b081c29ab3d87e1` returned
-  `sonic1`; Docker request `req_801da2e90300458c8343d78b4e430dbf` using
-  `sonic1-camera-key` succeeded and showed the three existing ClamAV test
+  Fresh host-list request `<redacted-request-id>` returned
+  `sonic1`; Docker request `<redacted-request-id>` using
+  `<redacted-login-profile>` succeeded and showed the three existing ClamAV test
   containers up. Remote `ole2_extract.c` and test-source checksums are
   `314f8896f7112587330415dc0152c6dc6e111cb06b3460d5a4e3c88abf966504` and
   `767d8b90b1324639b5aa86f78a0d32814e7706fdf14a04272360187026dc8352`
-  (`req_5ac907a0e535491c812e7c635e042551` and
-  `req_93102cb71ff4450f85713062515b1eca`), so no remote rebuild qualification
+  (`<redacted-request-id>` and
+  `<redacted-request-id>`), so no remote rebuild qualification
   claim is made for this local OLE2 follow-up.
 
 - The PEspin limit audit found the expanded-section total being accumulated in
@@ -6557,9 +6558,9 @@ does not provide sanitizer, production-parser, or concurrency evidence.
   `check_clamav.c=f3f9415f23c5040b84afaef1fa2345a85e7572341a3fabe57a0060d3fe1d6237`,
   and
   `largefile_source_guards.sh=eaae5c0450df7d5059e2c5d5bdca6c485b970692f1c45a6d3276eb3fe7becd85`.
-  Final fresh host-list request `req_3a883c4974e24e8e93c6e97150e9b28d` returned
-  `sonic1`; Docker request `req_81faaf3650fb46cabe511252099a2182` using
-  `login_profile=sonic1-camera-key` succeeded with exit 0 and showed the three
+  Final fresh host-list request `<redacted-request-id>` returned
+  `sonic1`; Docker request `<redacted-request-id>` using
+  `login_profile=<redacted-login-profile>` succeeded with exit 0 and showed the three
   ClamAV test containers up.
   The encrypted PEspin fixture itself still reaches an earlier PE-format
   rejection in this checkout, so this evidence is deliberately helper-level;
@@ -6765,11 +6766,11 @@ aggregate output. This does not replace the required complete fixture,
 sanitizer, production-CVD, cold-cache, daemon/milter, and release-runner
 qualification gates.
 
-Fresh MCP-SSH verification with `sonic1-camera-key` used host-list request
-`req_2ec6db7f3d1442f29fb13caaae9e9fc8`, Docker status request
-`req_51e5181dcc8d493a865337373b4f983b`, inspect request
-`req_ede657cb810b44ba8f98540f64991433`, and source-hash request
-`req_48a1b5ad007348d1b2fd2b0b65767c95`. Docker was reachable; all three
+Fresh remote SSH verification with `<redacted-login-profile>` used host-list request
+`<redacted-request-id>`, Docker status request
+`<redacted-request-id>`, inspect request
+`<redacted-request-id>`, and source-hash request
+`<redacted-request-id>`. Docker was reachable; all three
 existing ClamAV test containers were up, and the primary container used
 `clamav-32gb:test-tools-742a8a4` with `/workspace/ClamAV` mounted read-only.
 The remote HWP/test/guard hashes differ from the current local patch, so no
@@ -6790,12 +6791,12 @@ large-file/release-control CTest subset passed 4/4. This closes the observed
 GIF boundary-normalization paths, not the broader production image/archive
 corpus qualification.
 
-Fresh MCP-SSH verification used `sonic1-camera-key`: host list
-`req_3891a53b4be04bb48a52983a28a9d728`, Docker status
-`req_2916efb44812499c8bba23d01d56e3af`, inspect
-`req_d8b5757de5b9493bbec6192556d38280`, image identity
-`req_824c25d8f52c44c180cf43403adc2971`, and source hashes
-`req_4d5f7ebb11264a25906e0864739c01c8`. All three existing containers were
+Fresh remote SSH verification used `<redacted-login-profile>`: host list
+`<redacted-request-id>`, Docker status
+`<redacted-request-id>`, inspect
+`<redacted-request-id>`, image identity
+`<redacted-request-id>`, and source hashes
+`<redacted-request-id>`. All three existing containers were
 up on `clamav-32gb:test-tools-742a8a4`, image digest
 `sha256:b90407897efdb47b8986a4ae7f259b5ee2c53ab1a497d6c10f5abc1256da1d8f`;
 the primary `/workspace/ClamAV` bind is read-only. Remote GIF/test/guard
@@ -6824,12 +6825,12 @@ Local hashes are `png.c=847ea343241241429388b5b242989d48d881eb2d48bc53fc7bb07e55
 and
 `largefile_source_guards.sh=53bca065b69fea84a34ef4572a85f43c801acbad25aba1fee80464b2fd5afbf4`.
 
-Fresh MCP-SSH verification used `sonic1-camera-key`: host list
-`req_a64c9e1e92074a32a784242258314923`, Docker status
-`req_ade8413ef3514607803ade1e4e51a620`, inspect
-`req_ee1ef808a7f249e183d24c3d0e5b153f`, image identity
-`req_cb12f6d811cd487396dc198406244fa9`, and container hashes
-`req_36b8dfb768334f439c933adb4187ef5d`. All three containers were up on
+Fresh remote SSH verification used `<redacted-login-profile>`: host list
+`<redacted-request-id>`, Docker status
+`<redacted-request-id>`, inspect
+`<redacted-request-id>`, image identity
+`<redacted-request-id>`, and container hashes
+`<redacted-request-id>`. All three containers were up on
 `clamav-32gb:test-tools-742a8a4`, image digest
 `sha256:b90407897efdb47b8986a4ae7f259b5ee2c53ab1a497d6c10f5abc1256da1d8f`;
 the primary `/workspace/ClamAV` bind is read-only. Remote PNG/test/guard
@@ -6860,12 +6861,12 @@ Local hashes are `pdf.c=e7a731bb472fe5dda94f208d82fee5f5d91e4a111f08790edc31ff60
 `check_clamav.c=50451a1805f689f546d45e853c89ce50e992cbfe0c18880b4ad67146b1207acc`,
 and `largefile_source_guards.sh=0aa1f42a3f52e4cd842d5f58def7ffe3b95e8bb1b79444b1af5864c0a81fd4ad`.
 
-Fresh MCP-SSH verification used `sonic1-camera-key`: host list
-`req_699bfdd0509d4bbd8fdfd635b6ab3794`, Docker status
-`req_fa690ea074a144be9c92a4ee20a35506`, inspect
-`req_5551d4e47af1434e98483e833ff80065`, image identity
-`req_81bda151c5284ac6845bfdc4f19419cd`, and container hashes
-`req_c9b2355d08a24997a960d3573107304f`. All three containers were up on
+Fresh remote SSH verification used `<redacted-login-profile>`: host list
+`<redacted-request-id>`, Docker status
+`<redacted-request-id>`, inspect
+`<redacted-request-id>`, image identity
+`<redacted-request-id>`, and container hashes
+`<redacted-request-id>`. All three containers were up on
 `clamav-32gb:test-tools-742a8a4`, the primary `/workspace/ClamAV` bind was
 read-only, and the image digest was
 `sha256:b90407897efdb47b8986a4ae7f259b5ee2c53ab1a497d6c10f5abc1256da1d8f`.
@@ -6918,12 +6919,12 @@ Local hashes are `pdf.c=e7a731bb472fe5dda94f208d82fee5f5d91e4a111f08790edc31ff60
 `check_bytecode.c=b0e9254e0dfc987ed3069d91d73dfab518fc069ebc05887ac77cfa071117a0f5`,
 and `largefile_source_guards.sh=f7e3b418020923be94b622a716c731f5d053e708fc4368a1c434909325f4acb0`.
 
-Fresh MCP-SSH verification used `sonic1-camera-key`: host list
-`req_3d029d63018b4790b7700971d09bc890`, Docker status
-`req_5c341b5a6a0b4140a412ff4faa853cbf`, inspect
-`req_1fa443f9d5934ddb9532d14f6c10acac`, image identity
-`req_a4cc36b931f74290b33b09fe9c7e7ce5`, and container hashes
-`req_e60bf09ef17942cf80d9b499d5e0a3ae`. All three containers were up on
+Fresh remote SSH verification used `<redacted-login-profile>`: host list
+`<redacted-request-id>`, Docker status
+`<redacted-request-id>`, inspect
+`<redacted-request-id>`, image identity
+`<redacted-request-id>`, and container hashes
+`<redacted-request-id>`. All three containers were up on
 `clamav-32gb:test-tools-742a8a4`, the primary `/workspace/ClamAV` bind was
 read-only, and the image digest was
 `sha256:b90407897efdb47b8986a4ae7f259b5ee2c53ab1a497d6c10f5abc1256da1d8f`.
@@ -6954,12 +6955,12 @@ Local hashes are `hwp.c=be3f3b5a9d09532cf872fab3ff4c4fd278c30eaa27c14dabee5fc224
 `check_bytecode.c=b0e9254e0dfc987ed3069d91d73dfab518fc069ebc05887ac77cfa071117a0f5`,
 and `largefile_source_guards.sh=4016ec50dd8a6907ec30cd65f423ebf2fa3e9e1bb20a5f7b97a46da4810d9d15`.
 
-Fresh MCP-SSH verification used `sonic1-camera-key`: host list
-`req_32f6b1d1395e4a32935d36053c8b0184`, Docker status
-`req_a17de6e58ad9491cb0f60a0c9e79a4bf`, inspect
-`req_04a57ef44632451ca9395d3feaa829a1`, image identity
-`req_8ea41451f46c4a4bb1ceba85f5467b33`, and container hashes
-`req_d4300ebb99084dfa9b4660450e71b879`. All three containers were up on
+Fresh remote SSH verification used `<redacted-login-profile>`: host list
+`<redacted-request-id>`, Docker status
+`<redacted-request-id>`, inspect
+`<redacted-request-id>`, image identity
+`<redacted-request-id>`, and container hashes
+`<redacted-request-id>`. All three containers were up on
 `clamav-32gb:test-tools-742a8a4`, the primary `/workspace/ClamAV` bind was
 read-only, and the image digest was
 `sha256:b90407897efdb47b8986a4ae7f259b5ee2c53ab1a497d6c10f5abc1256da1d8f`.
@@ -6987,10 +6988,10 @@ Local hashes are `hwp.c=59e781add619b9fce9340d1051bd997490ffb59922c61b07d013c648
 and
 `largefile_source_guards.sh=0e6bb413a7a0ff120da8791d76b7f81a94e303c6b80157e7333a499c59e260a2`.
 
-Fresh MCP-SSH verification used `sonic1-camera-key`: host-list request
-`req_0ef932c6522e4fce9be05f156ee33a7f`, Docker status request
-`req_40f0d5693b2c4c30bbc631e74a04ddd7`, and container-hash request
-`req_48eb6b0b814c46c08e2c91951a791672`. All three validation containers were
+Fresh remote SSH verification used `<redacted-login-profile>`: host-list request
+`<redacted-request-id>`, Docker status request
+`<redacted-request-id>`, and container-hash request
+`<redacted-request-id>`. All three validation containers were
 up on `clamav-32gb:test-tools-742a8a4`; the remote HWP3 and test hashes differ
 from the current local patch. Remote Docker liveness and source provenance are
 verified, but no remote rebuild or qualification claim is made.
@@ -7025,10 +7026,10 @@ Local hashes are `xar.c=221de20fb3524395e18dd68c941e05fc97bcbfa5cac8f51e1bae707d
 and
 `largefile_source_guards.sh=f71d081bee3e21644756df97c3a48eaff25b0238e53c5467540c3064738753b9`.
 
-Fresh MCP-SSH verification used `sonic1-camera-key`: host-list request
-`req_8ad4ce043c154c3cb2a07f07783a7fae`, Docker status request
-`req_e59c7388fb224f5f954a4ab126d9e426`, and container-hash request
-`req_b15eb96998f54f4481d50543edeed8fb`. All three validation containers were
+Fresh remote SSH verification used `<redacted-login-profile>`: host-list request
+`<redacted-request-id>`, Docker status request
+`<redacted-request-id>`, and container-hash request
+`<redacted-request-id>`. All three validation containers were
 up on `clamav-32gb:test-tools-742a8a4`; remote XAR, test, and guard hashes
 differ from the current local patch. Remote Docker liveness and source
 provenance are verified, but no remote rebuild or qualification claim is made.
@@ -7073,11 +7074,11 @@ closing the native ARM64 diagnostic boundary coverage, but this is not an
 x86-64 workflow artifact and does not close the 1/2/4-worker current-head,
 attestation, remote-rebuild, or production-corpus gates.
 
-The latest fresh MCP-SSH host-list request `req_cbaae94a1f5041078b510ebdf98dd7c9`
-and Docker status request `req_5fb18a2002384628bbb8cd74942c4114` using
-`sonic1-camera-key` both succeeded. Sonic1 again reported the three existing
+The latest fresh remote SSH host-list request `<redacted-request-id>`
+and Docker status request `<redacted-request-id>` using
+`<redacted-login-profile>` both succeeded. Sonic1 again reported the three existing
 ClamAV validation containers up on `clamav-32gb:test-tools-742a8a4`. A fresh
-source-hash request `req_5f3430c0746b43cc92fedf44af9f53de` returned remote
+source-hash request `<redacted-request-id>` returned remote
 `pdfdecode.c=a1a811fcc0d6d6a2373f8cb9e5065cb11a249bdc74d78dbee8fad6fa6078ff3f`,
 `check_clamav.c=8912af667dcdf0d8766b1507790f4c7813d552aead93bfbaafa0761be593ed20`,
 and `largefile_source_guards.sh=ae67ea5ac68a19efe1d7895b845e6d1073e91cf28eb3013f0d642486af670735`;
@@ -7142,7 +7143,7 @@ The broader aggregate had 1,315 checks, 782 known fixture/setup failures, and
 mean it is not a clean sanitizer-suite result. Evidence is preserved at
 `/private/tmp/clamav-32gb-tiff-followup`.
 
-Sonic1 Docker liveness was refreshed with `sonic1-camera-key`; all three
+Sonic1 Docker liveness was refreshed with `<redacted-login-profile>`; all three
 validation containers remain up, but remote TIFF, test, and guard hashes
 differ from this worktree. No remote rebuild qualification is claimed.
 
@@ -7168,7 +7169,7 @@ static test build. The run recorded 93 checks, 3 known fixture/environment
 failures, and 0 Check errors. Evidence is preserved at
 `/private/tmp/clamav-32gb-riiff-followup`.
 
-Sonic1 Docker liveness was refreshed with `sonic1-camera-key`; its current
+Sonic1 Docker liveness was refreshed with `<redacted-login-profile>`; its current
 source hashes differ from this worktree, so no remote rebuild qualification is
 claimed. The separate `ENABLE_UNRAR=OFF` runtime gate remains open.
 
@@ -7184,7 +7185,7 @@ Debug static test build. The run recorded 94 checks, 3 known
 fixture/environment failures, and 0 Check errors. Evidence is preserved at
 `/private/tmp/clamav-32gb-jpeg-followup.test.log`.
 
-Sonic1 Docker liveness was refreshed with `sonic1-camera-key`; its current
+Sonic1 Docker liveness was refreshed with `<redacted-login-profile>`; its current
 JPEG, test, and guard hashes differ from this worktree, so no remote rebuild
 qualification is claimed. The separate `ENABLE_UNRAR=OFF` runtime gate
 remains open.
@@ -7206,7 +7207,7 @@ failures, and 0 Check errors. Evidence is preserved at
 `/private/tmp/clamav-32gb-htmlnorm-followup.test.log` and
 `/private/tmp/clamav-32gb-htmlnorm-clapi.test.log`.
 
-Sonic1 Docker liveness was refreshed with `sonic1-camera-key`; all three
+Sonic1 Docker liveness was refreshed with `<redacted-login-profile>`; all three
 validation containers remain up on `clamav-32gb:test-tools-742a8a4`. The
 remote HTML-normalizer, scanner, test, and guard hashes differ from this
 worktree, so no remote rebuild or current-source qualification is claimed.
@@ -7236,10 +7237,10 @@ missing-fixture failures and 0 errors; the failures were the absent
 with SHA-256
 `93dda6273533d7ade59a4d9b331b29992357a10c4663d09db4feaccb55dc1731`.
 
-Fresh MCP-SSH verification used host-list request
-`req_fa90aaa8ac7347589d67bbfb894ecc9`, Docker status request
-`req_233203b5d3ae41388afc121c11a05257`, and source-hash request
-`req_0ad85b1d50fb4cbca6d05b7f1b998bfe`, all with `sonic1-camera-key`. The
+Fresh remote SSH verification used host-list request
+`<redacted-request-id>`, Docker status request
+`<redacted-request-id>`, and source-hash request
+`<redacted-request-id>`, all with `<redacted-login-profile>`. The
 three validation containers remain up for two days on
 `clamav-32gb:test-tools-742a8a4`. Remote bytecode and guard hashes differ
 from this worktree, so Docker liveness and provenance are verified without a
@@ -7257,7 +7258,7 @@ ARM64 Debug static build. The focused `cl_api` group recorded 95 checks, 3
 known fixture/environment failures, and 0 Check errors. Evidence is preserved
 at `/private/tmp/clamav-32gb-textnorm-followup.test.log`.
 
-Sonic1 Docker liveness was refreshed with `sonic1-camera-key`; all three
+Sonic1 Docker liveness was refreshed with `<redacted-login-profile>`; all three
 validation containers remain up on `clamav-32gb:test-tools-742a8a4`. The
 remote text-normalization, scanner, test, and guard hashes differ from this
 worktree, so no remote rebuild or current-source qualification is claimed.
@@ -7296,11 +7297,11 @@ The source guards, PoC fail-closed regression, runtime-evidence verifier, and
 workflow YAML parse all passed after the fix.
 
 The latest Sonic1 refresh used host-list request
-`req_43b0c96280ba417687edac23d02c4fb2` and Docker status request
-`req_fab5c844ca4d478bb7c427d44861caa6` with `sonic1-camera-key`. The same
+`<redacted-request-id>` and Docker status request
+`<redacted-request-id>` with `<redacted-login-profile>`. The same
 three validation containers remain up for two days on
 `clamav-32gb:test-tools-742a8a4`. A current source-provenance probe
-(`req_213e81e680444f1cbef0b582ec4a2f21`) found no `/workspace/ClamAV` on the
+(`<redacted-request-id>`) found no `/workspace/ClamAV` on the
 remote, so this refresh verifies Docker liveness only; it does not claim a
 current-source remote rebuild. Production CVD/corpus, clean sanitizer and
 multiworker evidence, full release/CI, attestation, and current-source remote
@@ -7311,26 +7312,26 @@ qualification remain open.
 The remote source is mounted inside the validation container at
 `/workspace/ClamAV`; the earlier direct host-level probe of that path was not a
 valid source check. The current container inspection used host-list request
-`req_24ba5fb6716b4c70afa45bddb205ba6c`, container/image inspection request
-`req_48f2f9445bfe4900873740a648e1bbb4`/`req_c86c7a506b16475ba8f3aad1cd8a5328`,
-and source-hash request `req_8d515360de244407b7514efd2316e05d`, all with
-`sonic1-camera-key`. The three containers are running on image digest
+`<redacted-request-id>`, container/image inspection request
+`<redacted-request-id>`/`<redacted-request-id>`,
+and source-hash request `<redacted-request-id>`, all with
+`<redacted-login-profile>`. The three containers are running on image digest
 `sha256:b90407897efdb47b8986a4ae7f259b5ee2c53ab1a497d6c10f5abc1256da1d8f`;
 the primary source bind is read-only and the remote checkout is clean at
 commit `5becea1236d466ee21f9bd5d3bcd0595ebc1460b`.
 
 The registered large-file/release-control CTest subset passed 4/4 in the
-release build (request `req_86a7789110c04e67bc51307f31ef70ee`) and 4/4 in the
-populated ASan/UBSan build (request `req_c6a0f8efee2b41cc8cdb3acfdc67109d`).
+release build (request `<redacted-request-id>`) and 4/4 in the
+populated ASan/UBSan build (request `<redacted-request-id>`).
 The release runtime evidence at `/work/evidence/runtime-5becea1-prod`
 records `host_preflight=pass`, `largefile_poc=pass`, cancellation pass,
 `policy_32g_plus_one=pass`, and 1/2/4-worker concurrency pass. Its build
-identity is preserved by request `req_bc5e52ea542b495eaadb673555d4758f`.
+identity is preserved by request `<redacted-request-id>`.
 The sanitizer runtime evidence at
 `/work/evidence/runtime-sanitizer-5becea1-prod` records the same gates plus
 `sanitizer=pass`, with build identity captured by request
-`req_fe901fb0eb6f46b6be64841ac1022736`; both evidence manifests were hashed in
-request `req_7496c6592ce8409fbcb8998f4c247829`.
+`<redacted-request-id>`; both evidence manifests were hashed in
+request `<redacted-request-id>`.
 
 This closes the remote baseline runtime/control evidence gap for commit
 `5becea1`, but not current-source qualification: remote hashes for the CMake,
@@ -7739,12 +7740,16 @@ the sparse regression exercises that boundary with a synthetic map at the
 4-GiB edge. Full universal-binary corpus, sanitizer, and supported-build
 Sonic1 qualification remain release gates.
 
-HFS+ fork records that exhaust their eight inline extents are another explicit
-unsupported boundary. The parser does not yet perform the required
-`ExtentOverflow` B-tree lookup, so it marks the containing layer incomplete and
-returns an unsupported result instead of scanning only the inline prefix. HFS+
-resource compression is implemented through the bounded temporary-fork path;
-its completion diagnostic is not an unsupported-feature indication.
+HFS+ fork records that exhaust their eight inline extents now resolve the
+required `ExtentOverflow` B-tree records. The resolver binds each record to the
+fork type, catalog file ID, and logical starting block, validates the leaf
+chain, record offsets, descriptor ranges, volume coordinates, and scan
+deadline, then reads the mapped physical blocks through the existing fmap
+path. The ExtentOverflow file itself is intentionally limited to its inline
+fork; recursive overflow is rejected as malformed rather than followed
+without a bound. HFS+ resource compression remains implemented through the
+bounded temporary-fork path; its completion diagnostic is not an unsupported-
+feature indication.
 
 XLM/BIFF8 `STRING` records carrying rich-text formatting runs or East-Asian
 phonetic extensions are also an explicit unsupported boundary. Their extension
@@ -8079,6 +8084,59 @@ quota-accounted intermediate spools; later milestones also add bounded object
 streams, encryption, and per-filter DecodeParms arrays. Unsupported or mixed
 filters remain recorded as `pdf-stream-over-1g`. Parser-family and large-PDF
 qualification remain open.
+
+## PDF native-width LZW filter chains — 2026-09-14
+
+The supported PDF filter-chain reader already processes LZW through fixed-size
+input windows and native-width source coordinates, but top-level admission was
+still rejecting every multi-filter chain containing LZW when the declared input
+length exceeded 4 GiB or the contiguous allocation ceiling. That stale guard is
+now removed for supported chains, so LZW can use the same bounded, transactional
+file-backed stage rotation as Flate, RunLength, ASCIIHex, and ASCII85. Unsupported
+or mixed chains still take the legacy path and retain its explicit 32-bit and
+allocation-boundary rejection.
+
+The current-source ARM64 production-linked `cl_api` regression passes 529/529
+under both Release and ASan/UBSan, including a valid ASCIIHex-to-LZW chain with a
+logical input length above 4 GiB and the preserved legacy-boundary rejection for
+an unsupported mixed chain. No sanitizer diagnostics were emitted. This is
+focused development evidence; materialized multi-gigabyte PDF streams,
+certified Linux x86-64, production CVD/service, resource, Sonic1, and final
+parser/release qualification remain open.
+
+## ENABLE_WERROR flag propagation — 2026-09-14
+
+The CMake warning-flag helper now preserves the flags already accumulated in the
+requested variable when a later call appends more flags. This makes
+`ENABLE_WERROR=ON` effective in the generated `WARNCFLAGS` and `WARNCXXFLAGS`
+instead of allowing the later `-Wall`/`-Wextra` calls to discard `-Werror`.
+
+An isolated ARM64 Release configuration reports `-Werror -Wall -Wextra
+-Wformat-security` in `WARNCFLAGS`. The focused `regex`, `lzma_sdk`, and `yara`
+targets now compile cleanly, as do the fileblob, AC/BM matcher, TFLite, and
+InstallShield source objects reached by the library build. The next global
+blocker is the legacy NSIS bzip2 state machine's intentional macro-driven
+fallthrough diagnostics; this slice therefore verifies option propagation and
+several warning-clean source families, but does not claim global warning-clean
+qualification or promote `ENABLE_WERROR`.
+
+## ENABLE_WERROR application build closure — 2026-09-14
+
+The follow-up warning cleanup completed the configured current-source Werror
+application build, including the legacy NSIS bzip2 state machine and the
+bundled regex, LZMA/XZ, YARA, matcher, TFLite, InstallShield, daemon, milter,
+and Rust-linked application paths. Release `cl_api` passes 529/529, and focused
+Release/ASAN/UBSAN parser suites pass; the current ASAN aggregate `cl_api`
+rerun did not return and is not counted as a pass. Certified Linux x86-64,
+production databases and service, full-size materialized inputs,
+resource/on-access, Sonic1, and final release qualification remain open. A
+separate maximal-warning exploration now passes `libclamav/str.c`,
+`strlcat.c`, `table.c`, `www.c`, `disasm.c`, and `filtering.c` before reaching
+the larger legacy warning set in `libclamav/matcher-ac.c`; it is not the
+supported Werror build gate.
+
+The revision-bound receipt is
+`docs/largefile-task-receipts/R03-werror-application-closure-2026-09-14.md`.
 
 ## ALZ bounded reader and member streaming — 2026-08-19
 
@@ -9127,7 +9185,7 @@ coverage; unsupported or incomplete results remain fail-visible.
 former materialization limit, and the source-guard suite requires the new
 dispatch policy. Local shell/source guards and whitespace checks pass. A
 compiled current-source Linux/Sonic1 result is still required because the
-current worktree transfer was not permitted by the MCP-SSH export policy.
+current worktree transfer was not permitted by the remote SSH export policy.
 
 ## Daemon admission capability enforcement — 2026-08-20
 
@@ -9138,7 +9196,7 @@ requirement also includes the configured `MaxContiguousSize`, ensuring that a
 retained 32 GiB contiguous matcher subject cannot be under-admitted when only
 the file and logical-scan limits are lowered. Local source guards, the
 capability manifest, and `git diff --check` pass. Compiled current-source
-Sonic1 verification remains open because MCP-SSH did not permit exporting the
+Sonic1 verification remains open because remote SSH did not permit exporting the
 current private worktree.
 
 The same admission gate rejects the large-file daemon envelope on non-Linux-
@@ -10770,7 +10828,7 @@ rather than a claimed local runtime result.
 
 ## Current-head Sonic1 liveness attempt — 2026-08-21
 
-The MCP-SSH host inventory and the declared `sonic1-camera-key` capabilities
+The remote SSH host inventory and the declared `<redacted-login-profile>` capabilities
 were available, but a bounded `uname -a` command timed out during SSH connect
 after the effective 20-second limit. The response reported
 `remote_started=false` and no remote command output. This is a host-liveness
@@ -11818,7 +11876,7 @@ supported-build Sonic1 qualification remain release gates.
 
 HFS+ tree-header, catalog, attribute-tree, extent, and node-coordinate
 validation failures now record parser-specific sticky-incomplete reasons
-before returning, including unsupported ExtentOverflow node lookup. Catalog
+before returning, including malformed or missing ExtentOverflow records. Catalog
 fork geometry failures are also fail-visible, and the null-context entry path
 now returns without dereferencing an invalid context. Static source guards
 pass; compiled malformed-volume and allocation fault injection, sanitizer,

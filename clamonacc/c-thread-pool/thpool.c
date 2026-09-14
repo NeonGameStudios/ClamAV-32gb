@@ -81,6 +81,7 @@ typedef struct thread{
 /* Threadpool */
 typedef struct thpool_{
 	thread**   threads;                  /* pointer to threads        */
+	int        num_threads;              /* workers created at init   */
 	volatile int num_threads_alive;      /* threads currently alive   */
 	volatile int num_threads_working;    /* threads currently working */
 	pthread_mutex_t  thcount_lock;       /* used for thread count etc */
@@ -99,6 +100,7 @@ static int  thread_init(thpool_* thpool_p, struct thread** thread_p, int id);
 static void* thread_do(struct thread* thread_p);
 static void  thread_hold(int sig_id);
 static void  thread_destroy(struct thread* thread_p);
+static void  threadpool_shutdown(thpool_* thpool_p, int thread_count);
 
 static int   jobqueue_init(jobqueue* jobqueue_p);
 static void  jobqueue_clear(jobqueue* jobqueue_p);
@@ -125,8 +127,17 @@ struct thpool_* thpool_init(int num_threads){
 	threads_on_hold   = 0;
 	threads_keepalive = 1;
 
-	if (num_threads < 0){
-		num_threads = 0;
+	/* A pool with no workers can accept jobs but can never execute them. The
+	 * on-access queue relies on every accepted event eventually reaching a
+	 * worker, so fail closed instead of returning a permanently stalled pool. */
+	if (num_threads <= 0){
+		err("thpool_init(): Number of threads must be positive\n");
+		return NULL;
+	}
+
+	if ((size_t)num_threads > (size_t)-1 / sizeof(struct thread *)) {
+		err("thpool_init(): Number of threads is too large\n");
+		return NULL;
 	}
 
 	/* Make new thread pool */
@@ -138,6 +149,7 @@ struct thpool_* thpool_init(int num_threads){
 	}
 	thpool_p->num_threads_alive   = 0;
 	thpool_p->num_threads_working = 0;
+	thpool_p->num_threads          = num_threads;
 
 	/* Initialise the job queue */
 	if (jobqueue_init(&thpool_p->jobqueue) == -1){
@@ -160,15 +172,33 @@ struct thpool_* thpool_init(int num_threads){
 
 	/* Thread init */
 	int n;
+	int created_threads = 0;
 	for (n=0; n<num_threads; n++){
-		thread_init(thpool_p, &thpool_p->threads[n], n);
+		if (thread_init(thpool_p, &thpool_p->threads[n], n) != 0) {
+			/* A partially created pool must not leave already-created workers
+			 * running against freed queue state, and initialization must never
+			 * wait forever for a worker that pthread_create() rejected. */
+			threadpool_shutdown(thpool_p, created_threads);
+			for (n = 0; n < created_threads; n++)
+				thread_destroy(thpool_p->threads[n]);
+			free(thpool_p->threads);
+			pthread_cond_destroy(&thpool_p->threads_all_idle);
+			pthread_mutex_destroy(&thpool_p->thcount_lock);
+			jobqueue_destroy(&thpool_p->jobqueue);
+			free(thpool_p);
+			return NULL;
+		}
+		created_threads++;
 #if THPOOL_DEBUG
 			printf("THPOOL_DEBUG: Created thread %d in pool \n", n);
 #endif
 	}
 
 	/* Wait for threads to initialize */
-	while (thpool_p->num_threads_alive != num_threads) {}
+	pthread_mutex_lock(&thpool_p->thcount_lock);
+	while (thpool_p->num_threads_alive != num_threads)
+		pthread_cond_wait(&thpool_p->threads_all_idle, &thpool_p->thcount_lock);
+	pthread_mutex_unlock(&thpool_p->thcount_lock);
 
 	return thpool_p;
 }
@@ -210,27 +240,14 @@ void thpool_destroy(thpool_* thpool_p){
 	/* No need to destroy if it's NULL */
 	if (thpool_p == NULL) return ;
 
-	volatile int threads_total = thpool_p->num_threads_alive;
+	int threads_total = thpool_p->num_threads;
 
-	/* End each thread 's infinite loop */
-	threads_keepalive = 0;
-
-	/* Give one second to kill idle threads */
-	double TIMEOUT = 1.0;
-	time_t start, end;
-	double tpassed = 0.0;
-	time (&start);
-	while (tpassed < TIMEOUT && thpool_p->num_threads_alive){
-		bsem_post_all(thpool_p->jobqueue.has_jobs);
-		time (&end);
-		tpassed = difftime(end,start);
-	}
-
-	/* Poll remaining threads */
-	while (thpool_p->num_threads_alive){
-		bsem_post_all(thpool_p->jobqueue.has_jobs);
-		sleep(1);
-	}
+	/* End each thread's infinite loop and join every worker before releasing
+	 * the queue or the pool object.  The old detached-thread path ignored
+	 * pthread_create() failures and could spin forever during initialization;
+	 * using one shutdown path makes both startup failure and normal teardown
+	 * lifetime-safe. */
+	threadpool_shutdown(thpool_p, threads_total);
 
 	/* Job queue cleanup */
 	jobqueue_destroy(&thpool_p->jobqueue);
@@ -240,6 +257,8 @@ void thpool_destroy(thpool_* thpool_p){
 		thread_destroy(thpool_p->threads[n]);
 	}
 	free(thpool_p->threads);
+	pthread_cond_destroy(&thpool_p->threads_all_idle);
+	pthread_mutex_destroy(&thpool_p->thcount_lock);
 	free(thpool_p);
 }
 
@@ -282,6 +301,7 @@ int thpool_num_threads_working(thpool_* thpool_p){
  * @return 0 on success, -1 otherwise.
  */
 static int thread_init (thpool_* thpool_p, struct thread** thread_p, int id){
+	int create_status;
 
 	*thread_p = (struct thread*)malloc(sizeof(struct thread));
 	if (*thread_p == NULL){
@@ -292,9 +312,34 @@ static int thread_init (thpool_* thpool_p, struct thread** thread_p, int id){
 	(*thread_p)->thpool_p = thpool_p;
 	(*thread_p)->id       = id;
 
-	pthread_create(&(*thread_p)->pthread, NULL, (void * (*)(void *)) thread_do, (*thread_p));
-	pthread_detach((*thread_p)->pthread);
+	create_status = pthread_create(&(*thread_p)->pthread, NULL,
+	                               (void * (*)(void *))thread_do, (*thread_p));
+	if (create_status != 0) {
+		err("thread_init(): Could not create thread\n");
+		free(*thread_p);
+		*thread_p = NULL;
+		return -1;
+	}
 	return 0;
+}
+
+/* Stop and join a known set of joinable workers.  A binary semaphore only
+ * wakes one waiter at a time, so keep posting until every worker has observed
+ * the shutdown flag. */
+static void threadpool_shutdown(thpool_* thpool_p, int thread_count)
+{
+	int n;
+
+	threads_keepalive = 0;
+	while (thpool_p->num_threads_alive) {
+		bsem_post_all(thpool_p->jobqueue.has_jobs);
+		usleep(1000);
+	}
+
+	for (n = 0; n < thread_count; n++) {
+		if (thpool_p->threads[n] != NULL)
+			pthread_join(thpool_p->threads[n]->pthread, NULL);
+	}
 }
 
 
@@ -346,6 +391,7 @@ static void* thread_do(struct thread* thread_p){
 	/* Mark thread as alive (initialized) */
 	pthread_mutex_lock(&thpool_p->thcount_lock);
 	thpool_p->num_threads_alive += 1;
+	pthread_cond_broadcast(&thpool_p->threads_all_idle);
 	pthread_mutex_unlock(&thpool_p->thcount_lock);
 
 	while(threads_keepalive){

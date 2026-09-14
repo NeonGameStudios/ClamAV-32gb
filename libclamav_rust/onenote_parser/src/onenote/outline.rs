@@ -382,3 +382,93 @@ pub(crate) fn parse_outline_element_at_depth(
 
     Ok(element)
 }
+
+pub(crate) fn scan_outline<F>(
+    outline_id: ExGuid,
+    space: &ObjectSpace,
+    callback: &mut F,
+) -> Result<bool>
+where
+    F: FnMut(Option<&str>, &mut dyn std::io::Read) -> bool,
+{
+    let outline_object = space
+        .get_object(outline_id)
+        .ok_or_else(|| ErrorKind::MalformedOneNoteData("outline node is missing".into()))?;
+    let data = outline_node::parse(outline_object)?;
+
+    for item_id in data.children {
+        if !scan_outline_item(item_id, space, 0, callback)? {
+            return Ok(false);
+        }
+    }
+
+    Ok(true)
+}
+
+fn scan_outline_item<F>(
+    item_id: ExGuid,
+    space: &ObjectSpace,
+    depth: usize,
+    callback: &mut F,
+) -> Result<bool>
+where
+    F: FnMut(Option<&str>, &mut dyn std::io::Read) -> bool,
+{
+    Reader::check_recursion_depth(depth)?;
+    let object = space
+        .get_object(item_id)
+        .ok_or_else(|| ErrorKind::MalformedOneNoteData("outline item is missing".into()))?;
+    let id = PropertySetId::from_jcid(object.id()).ok_or_else(|| {
+        ErrorKind::MalformedOneNoteData(
+            format!("invalid outline item type: 0x{:X}", object.id().0).into(),
+        )
+    })?;
+
+    match id {
+        PropertySetId::OutlineGroup => {
+            let data = outline_group::parse(object)?;
+            for child_id in data.children {
+                if !scan_outline_item(child_id, space, depth + 1, callback)? {
+                    return Ok(false);
+                }
+            }
+            Ok(true)
+        }
+        PropertySetId::OutlineElementNode => {
+            scan_outline_element(item_id, space, depth, callback)
+        }
+        _ => Err(ErrorKind::MalformedOneNoteData(
+            format!("invalid outline item type: 0x{:X}", object.id().0).into(),
+        )
+        .into()),
+    }
+}
+
+pub(crate) fn scan_outline_element<F>(
+    element_id: ExGuid,
+    space: &ObjectSpace,
+    depth: usize,
+    callback: &mut F,
+) -> Result<bool>
+where
+    F: FnMut(Option<&str>, &mut dyn std::io::Read) -> bool,
+{
+    Reader::check_recursion_depth(depth)?;
+    let object = space
+        .get_object(element_id)
+        .ok_or_else(|| ErrorKind::MalformedOneNoteData("outline element is missing".into()))?;
+    let data = outline_element_node::parse(object)?;
+
+    for content_id in data.contents {
+        if !super::content::scan_content(content_id, space, depth + 1, callback)? {
+            return Ok(false);
+        }
+    }
+    for child_id in data.children {
+        if !scan_outline_item(child_id, space, depth + 1, callback)? {
+            return Ok(false);
+        }
+    }
+
+    Ok(true)
+}

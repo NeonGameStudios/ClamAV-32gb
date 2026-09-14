@@ -2308,9 +2308,10 @@ cl_error_t cli_egg_peek_file_header(void* hArchive, cl_egg_metadata* file_metada
 
     if (handle->bSolid) {
         /*
-         * TODO: Add support for extracting files from solid archives.
-         *
-         * See the comments in cli_egg_extract_file() for more details.
+         * Solid archives share their compressed stream, so pack_size cannot
+         * be attributed to an individual file without replaying preceding
+         * blocks. The streaming extractor performs that replay when the
+         * member is actually scanned.
          */
         file_metadata->pack_size   = 0;
         file_metadata->unpack_size = le64_to_host(currFile->file->file_length);
@@ -2374,6 +2375,15 @@ typedef struct {
     uint32_t checksum;
 } egg_stream_output;
 
+typedef struct {
+    cli_egg_write_callback write;
+    void* opaque;
+    uint64_t target_start;
+    uint64_t target_end;
+    uint64_t stream_offset;
+    uint64_t written;
+} egg_solid_stream_output;
+
 static cl_error_t egg_stream_emit(egg_stream_output* output, const unsigned char* data, size_t length)
 {
     cl_error_t status;
@@ -2391,6 +2401,43 @@ static cl_error_t egg_stream_emit(egg_stream_output* output, const unsigned char
 
     output->checksum = (uint32_t)crc32(output->checksum, data, (uInt)length);
     output->written += (uint64_t)length;
+    return CL_SUCCESS;
+}
+
+static cl_error_t egg_solid_stream_write(void* opaque, const void* data, size_t length)
+{
+    egg_solid_stream_output* output = (egg_solid_stream_output*)opaque;
+    uint64_t chunk_start;
+    uint64_t chunk_end;
+    uint64_t overlap_start;
+    uint64_t overlap_end;
+    size_t data_offset;
+    size_t overlap_length;
+    cl_error_t status;
+
+    if (output == NULL || output->write == NULL || data == NULL || length == 0)
+        return CL_EARG;
+    if (output->stream_offset > UINT64_MAX - (uint64_t)length)
+        return CL_EFORMAT;
+
+    chunk_start = output->stream_offset;
+    chunk_end   = chunk_start + (uint64_t)length;
+    overlap_start = (chunk_start > output->target_start) ? chunk_start : output->target_start;
+    overlap_end   = (chunk_end < output->target_end) ? chunk_end : output->target_end;
+
+    if (overlap_start < overlap_end) {
+        data_offset    = (size_t)(overlap_start - chunk_start);
+        overlap_length = (size_t)(overlap_end - overlap_start);
+        if (output->written > UINT64_MAX - (uint64_t)overlap_length)
+            return CL_EFORMAT;
+
+        status = output->write(output->opaque, (const uint8_t*)data + data_offset, overlap_length);
+        if (status != CL_SUCCESS)
+            return status;
+        output->written += (uint64_t)overlap_length;
+    }
+
+    output->stream_offset = chunk_end;
     return CL_SUCCESS;
 }
 
@@ -2779,6 +2826,398 @@ static cl_error_t egg_stream_block(const egg_handle* handle, const egg_block* bl
     return egg_check_block_crc(handle, block, output->checksum);
 }
 
+static cl_error_t egg_stream_solid_deflate(const egg_handle* handle,
+                                           egg_solid_stream_output* solid_output,
+                                           uint64_t total_length,
+                                           uint64_t* output_length)
+{
+    unsigned char input[EGG_STREAM_CHUNK];
+    unsigned char decoded[EGG_STREAM_CHUNK];
+    z_stream stream;
+    uint64_t block_offset = 0;
+    uint64_t i;
+    int initialized = 0;
+    int stream_ended = 0;
+    cl_error_t status = CL_EUNPACK;
+
+    if (handle == NULL || solid_output == NULL || output_length == NULL ||
+        handle->nBlocks == 0 || handle->blocks == NULL)
+        return CL_EARG;
+
+    memset(&stream, 0, sizeof(stream));
+    if (inflateInit2(&stream, -15) != Z_OK)
+        return CL_EMEM;
+    initialized = 1;
+
+    for (i = 0; i < handle->nBlocks; i++) {
+        const egg_block* block = handle->blocks[i];
+        egg_stream_output block_output;
+        size_t input_offset = 0;
+        size_t input_length = 0;
+        int block_complete = 0;
+
+        if (block == NULL || block->blockHeader == NULL ||
+            block->compressionAlgorithm != BLOCK_HEADER_COMPRESS_ALGORITHM_DEFLATE ||
+            block->compressedSize == 0 || block->compressedDataOffset > handle->map->len ||
+            block->compressedSize > handle->map->len - block->compressedDataOffset ||
+            block_offset > UINT64_MAX - block->uncompressedSize ||
+            block_offset + block->uncompressedSize > total_length) {
+            status = CL_EFORMAT;
+            goto done;
+        }
+
+        memset(&block_output, 0, sizeof(block_output));
+        block_output.write    = egg_solid_stream_write;
+        block_output.opaque   = solid_output;
+        block_output.expected = block->uncompressedSize;
+        block_output.checksum = (uint32_t)crc32(0L, Z_NULL, 0);
+        solid_output->stream_offset = block_offset;
+
+        for (;;) {
+            uInt before_in;
+            uInt before_out;
+            size_t produced;
+            int zstat;
+
+            if (CL_SUCCESS != (status = egg_checktimelimit(handle)))
+                goto done;
+            if (stream.avail_in == 0 && input_offset < (size_t)block->compressedSize) {
+                status = egg_stream_read(handle, block, &input_offset, input, &input_length);
+                if (status != CL_SUCCESS)
+                    goto done;
+                stream.next_in  = input;
+                stream.avail_in = (uInt)input_length;
+            }
+
+            stream.next_out  = decoded;
+            stream.avail_out = (uInt)sizeof(decoded);
+            before_in        = stream.avail_in;
+            before_out       = stream.avail_out;
+            zstat             = inflate(&stream, Z_NO_FLUSH);
+            produced          = sizeof(decoded) - stream.avail_out;
+
+            status = egg_stream_emit(&block_output, decoded, produced);
+            if (status != CL_SUCCESS)
+                goto done;
+
+            if (zstat == Z_STREAM_END) {
+                if (i + 1U != handle->nBlocks || stream.avail_in != 0 ||
+                    input_offset < (size_t)block->compressedSize ||
+                    block_output.written != block_output.expected) {
+                    status = CL_EFORMAT;
+                    goto done;
+                }
+                stream_ended   = 1;
+                block_complete = 1;
+                break;
+            }
+
+            if (zstat != Z_OK && zstat != Z_BUF_ERROR) {
+                status = CL_EUNPACK;
+                goto done;
+            }
+
+            if (block_output.written == block_output.expected) {
+                /* A solid block may end before the raw DEFLATE stream does,
+                 * but its compressed extent must end at the same boundary.
+                 * Drain any zero-output flush bytes before accepting that
+                 * boundary; bytes that decode to another output byte make the
+                 * declared block size inconsistent. */
+                if (stream.avail_in != 0 || input_offset < (size_t)block->compressedSize)
+                    continue;
+                block_complete = 1;
+                break;
+            }
+
+            if (stream.avail_in == 0 && input_offset >= (size_t)block->compressedSize &&
+                before_in == stream.avail_in && before_out == stream.avail_out) {
+                status = CL_EUNPACK;
+                goto done;
+            }
+        }
+
+        if (!block_complete || block_output.written != block_output.expected) {
+            status = CL_EFORMAT;
+            goto done;
+        }
+        if (CL_SUCCESS != (status = egg_check_block_crc(handle, block, block_output.checksum)))
+            goto done;
+        block_offset += block_output.written;
+    }
+
+    if (!stream_ended || block_offset != total_length ||
+        solid_output->written != solid_output->target_end - solid_output->target_start) {
+        status = CL_EUNPACK;
+        goto done;
+    }
+
+    *output_length = solid_output->written;
+    status         = CL_SUCCESS;
+
+done:
+    if (initialized)
+        status = egg_finalize_deflate(handle, &stream, status);
+    return status;
+}
+
+static cl_error_t egg_stream_solid_lzma(const egg_handle* handle,
+                                        egg_solid_stream_output* solid_output,
+                                        uint64_t total_length,
+                                        uint64_t* output_length)
+{
+    unsigned char input[EGG_STREAM_CHUNK];
+    unsigned char decoded[EGG_STREAM_CHUNK];
+    struct CLI_LZMA stream;
+    uint64_t block_offset = 0;
+    uint64_t i;
+    int initialized = 0;
+    int stream_ended = 0;
+    cl_error_t status = CL_EUNPACK;
+
+    if (handle == NULL || solid_output == NULL || output_length == NULL ||
+        handle->nBlocks == 0 || handle->blocks == NULL)
+        return CL_EARG;
+
+    memset(&stream, 0, sizeof(stream));
+
+    for (i = 0; i < handle->nBlocks; i++) {
+        const egg_block* block = handle->blocks[i];
+        egg_stream_output block_output;
+        size_t input_offset = 0;
+        size_t input_length = 0;
+        int block_complete = 0;
+
+        if (block == NULL || block->blockHeader == NULL ||
+            block->compressionAlgorithm != BLOCK_HEADER_COMPRESS_ALGORITHM_LZMA ||
+            block->compressedSize == 0 || block->compressedDataOffset > handle->map->len ||
+            block->compressedSize > handle->map->len - block->compressedDataOffset ||
+            block_offset > UINT64_MAX - block->uncompressedSize ||
+            block_offset + block->uncompressedSize > total_length) {
+            status = CL_EFORMAT;
+            goto done;
+        }
+
+        memset(&block_output, 0, sizeof(block_output));
+        block_output.write    = egg_solid_stream_write;
+        block_output.opaque   = solid_output;
+        block_output.expected = block->uncompressedSize;
+        block_output.checksum = (uint32_t)crc32(0L, Z_NULL, 0);
+        solid_output->stream_offset = block_offset;
+
+        for (;;) {
+            SizeT before_in;
+            SizeT before_out;
+            size_t produced;
+            int lzmastat;
+
+            if (CL_SUCCESS != (status = egg_checktimelimit(handle)))
+                goto done;
+            if (stream.avail_in == 0 && input_offset < (size_t)block->compressedSize) {
+                status = egg_stream_read(handle, block, &input_offset, input, &input_length);
+                if (status != CL_SUCCESS)
+                    goto done;
+                stream.next_in  = input;
+                stream.avail_in = input_length;
+            }
+
+            if (!stream.freeme) {
+                lzmastat = cli_LzmaInit(&stream, 0);
+                if (lzmastat != LZMA_RESULT_OK) {
+                    status = CL_EUNPACK;
+                    goto done;
+                }
+                if (!stream.freeme) {
+                    if (stream.avail_in == 0 && input_offset >= (size_t)block->compressedSize) {
+                        status = CL_EUNPACK;
+                        goto done;
+                    }
+                    continue;
+                }
+
+                initialized = 1;
+                if (stream.usize != UINT64_MAX && stream.usize != total_length) {
+                    status = CL_EFORMAT;
+                    goto done;
+                }
+            }
+
+            stream.next_out  = decoded;
+            stream.avail_out = sizeof(decoded);
+            before_in        = stream.avail_in;
+            before_out       = stream.avail_out;
+            lzmastat          = cli_LzmaDecode(&stream);
+            produced          = sizeof(decoded) - stream.avail_out;
+
+            status = egg_stream_emit(&block_output, decoded, produced);
+            if (status != CL_SUCCESS)
+                goto done;
+
+            if (lzmastat == LZMA_STREAM_END) {
+                if (i + 1U != handle->nBlocks || stream.avail_in != 0 ||
+                    input_offset < (size_t)block->compressedSize ||
+                    block_output.written != block_output.expected) {
+                    status = CL_EFORMAT;
+                    goto done;
+                }
+                stream_ended   = 1;
+                block_complete = 1;
+                break;
+            }
+
+            if (lzmastat != LZMA_RESULT_OK) {
+                status = CL_EUNPACK;
+                goto done;
+            }
+
+            if (block_output.written == block_output.expected) {
+                /* A solid LZMA block may end before the shared stream does.
+                 * Consume any remaining input before accepting the block
+                 * boundary; decoded bytes beyond the declared size are
+                 * rejected by egg_stream_emit(). */
+                if (stream.avail_in != 0 || input_offset < (size_t)block->compressedSize)
+                    continue;
+                block_complete = 1;
+                break;
+            }
+
+            if (stream.avail_in == 0 && input_offset >= (size_t)block->compressedSize &&
+                before_in == stream.avail_in && before_out == stream.avail_out) {
+                status = CL_EUNPACK;
+                goto done;
+            }
+        }
+
+        if (!block_complete || block_output.written != block_output.expected) {
+            status = CL_EFORMAT;
+            goto done;
+        }
+        if (CL_SUCCESS != (status = egg_check_block_crc(handle, block, block_output.checksum)))
+            goto done;
+        block_offset += block_output.written;
+    }
+
+    if (!stream_ended || block_offset != total_length ||
+        solid_output->written != solid_output->target_end - solid_output->target_start) {
+        status = CL_EUNPACK;
+        goto done;
+    }
+
+    *output_length = solid_output->written;
+    status         = CL_SUCCESS;
+
+done:
+    if (initialized)
+        cli_LzmaShutdown(&stream);
+    return status;
+}
+
+static cl_error_t egg_stream_solid(const egg_handle* handle, const egg_file* currFile,
+                                   cli_egg_write_callback write, void* opaque,
+                                   uint64_t* output_length)
+{
+    egg_solid_stream_output solid_output;
+    uint64_t target_start = 0;
+    uint64_t target_end;
+    uint64_t total_length = 0;
+    uint64_t block_offset = 0;
+    uint64_t file_length;
+    uint64_t i;
+    cl_error_t status;
+
+    if (handle == NULL || currFile == NULL || currFile->file == NULL || write == NULL ||
+        output_length == NULL || handle->fileExtractionIndex >= handle->nFiles)
+        return CL_EARG;
+
+    for (i = 0; i < handle->nFiles; i++) {
+        const egg_file* file = handle->files[i];
+        uint64_t length;
+
+        if (file == NULL || file->file == NULL)
+            return CL_EFORMAT;
+        length = le64_to_host(file->file->file_length);
+        if (total_length > UINT64_MAX - length)
+            return CL_EFORMAT;
+        if (i < handle->fileExtractionIndex) {
+            if (target_start > UINT64_MAX - length)
+                return CL_EFORMAT;
+            target_start += length;
+        }
+        total_length += length;
+    }
+
+    file_length = le64_to_host(currFile->file->file_length);
+    if (target_start > UINT64_MAX - file_length)
+        return CL_EFORMAT;
+    target_end = target_start + file_length;
+
+    if (handle->nBlocks != 0 && handle->blocks == NULL)
+        return CL_EFORMAT;
+    if (handle->nBlocks == 0) {
+        if (total_length != 0)
+            return CL_EFORMAT;
+        *output_length = 0;
+        return CL_SUCCESS;
+    }
+
+    memset(&solid_output, 0, sizeof(solid_output));
+    solid_output.write        = write;
+    solid_output.opaque       = opaque;
+    solid_output.target_start = target_start;
+    solid_output.target_end   = target_end;
+
+    if (handle->blocks[0] != NULL &&
+        handle->blocks[0]->compressionAlgorithm == BLOCK_HEADER_COMPRESS_ALGORITHM_DEFLATE)
+        return egg_stream_solid_deflate(handle, &solid_output, total_length, output_length);
+    if (handle->blocks[0] != NULL &&
+        handle->blocks[0]->compressionAlgorithm == BLOCK_HEADER_COMPRESS_ALGORITHM_LZMA)
+        return egg_stream_solid_lzma(handle, &solid_output, total_length, output_length);
+
+    for (i = 0; i < handle->nBlocks; i++) {
+        const egg_block* block = handle->blocks[i];
+        egg_stream_output block_output;
+
+        if (CL_SUCCESS != (status = egg_checktimelimit(handle)))
+            return status;
+        if (block == NULL || block->blockHeader == NULL || block->compressedSize == 0 ||
+            block->compressedDataOffset > handle->map->len ||
+            block->compressedSize > handle->map->len - block->compressedDataOffset)
+            return CL_EFORMAT;
+        if (block_offset > UINT64_MAX - block->uncompressedSize ||
+            block_offset + block->uncompressedSize > total_length)
+            return CL_EFORMAT;
+
+        /* STORE and BZIP2 blocks are independently framed. A solid stream
+         * that switches to a codec requiring persistent state, or to an
+         * unsupported codec, remains explicitly fail-visible. */
+        if (block->compressionAlgorithm != BLOCK_HEADER_COMPRESS_ALGORITHM_STORE &&
+            block->compressionAlgorithm != BLOCK_HEADER_COMPRESS_ALGORITHM_BZIP2) {
+            if (handle->ctx != NULL)
+                cli_mark_scan_incomplete(handle->ctx,
+                                         "solid EGG codec requires persistent decoder state");
+            return CL_EUNPACK;
+        }
+
+        memset(&block_output, 0, sizeof(block_output));
+        block_output.write    = egg_solid_stream_write;
+        block_output.opaque   = &solid_output;
+        block_output.expected = block->uncompressedSize;
+        solid_output.stream_offset = block_offset;
+
+        status = egg_stream_block(handle, block, &block_output);
+        if (status != CL_SUCCESS)
+            return status;
+        if (block_output.written != block->uncompressedSize)
+            return CL_EFORMAT;
+        block_offset += block_output.written;
+    }
+
+    if (block_offset != total_length || solid_output.written != file_length)
+        return CL_EFORMAT;
+
+    *output_length = solid_output.written;
+    return CL_SUCCESS;
+}
+
 cl_error_t cli_egg_extract_file_stream(void* hArchive, cli_egg_write_callback write,
                                        void* opaque, const char** filename,
                                        uint64_t* output_length)
@@ -2805,9 +3244,11 @@ cl_error_t cli_egg_extract_file_stream(void* hArchive, cli_egg_write_callback wr
         goto done;
 
     if (handle->bSolid) {
-        cli_warnmsg("cli_egg_extract_file_stream: solid EGG extraction is unsupported\n");
-        status = CL_EUNPACK;
-        goto done;
+        status = egg_stream_solid(handle, currFile, write, opaque, &extracted);
+        if (status != CL_SUCCESS)
+            goto done;
+        file_length = le64_to_host(currFile->file->file_length);
+        goto finalize;
     }
 
     file_length = le64_to_host(currFile->file->file_length);
@@ -2842,6 +3283,7 @@ cl_error_t cli_egg_extract_file_stream(void* hArchive, cli_egg_write_callback wr
         extracted += output.written;
     }
 
+finalize:
     if (extracted != file_length)
         goto done;
 

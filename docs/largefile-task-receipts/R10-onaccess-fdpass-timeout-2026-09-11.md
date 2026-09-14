@@ -5,9 +5,9 @@ Task ID / parent milestone: `R10` / `R00`.
 Scope: close the on-access local-socket FD-passing timeout gap without claiming
 certified service qualification.
 
-Canonical checkout: `/Volumes/512gbNVME/github-external/ClamAV-32gb`, branch
+Canonical checkout: `<repository-root>`, branch
 `largefile-roadmap-qualification`. The working tree was intentionally dirty
-and existing changes were preserved. No remote execution, MCP-SSH, usage
+and existing changes were preserved. No remote execution, remote SSH, usage
 reset, commit, push, or GitHub workflow action was used.
 
 Changes:

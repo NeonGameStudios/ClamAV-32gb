@@ -8,12 +8,12 @@ required by the roadmap.
 
 ## Source and build identity
 
-- Canonical checkout: `/Volumes/512gbNVME/github-external/ClamAV-32gb`.
+- Canonical checkout: `<repository-root>`.
 - Branch: `largefile-roadmap-qualification`.
 - Starting HEAD: `41cde8160286813f0f98e109c1450e40ff4117fb`.
 - Pre-receipt dirty-source manifest SHA-256:
   `08eecfb27528d462d893864c6d57afd30dbe71bc28bdcc19d208cb6aeb99d936`.
-- Disposable build tree: `/Volumes/512gbNVME/github-external/ClamAV/.codex-builds/rust-asan-amd64`.
+- Disposable build tree: `<related-checkout>/.codex-builds/rust-asan-amd64`.
 - Container: `rust:1.97-bookworm`, `linux/amd64` emulation, CMake
   `RelWithDebInfo`, static and shared libraries, examples, milter, and
   UnRAR enabled.

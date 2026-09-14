@@ -178,27 +178,105 @@ where
 {
     'page_series: for page_series in section.page_series().iter() {
         for page in page_series.pages().iter() {
+            if let Some(title) = page.title() {
+                for outline in title.contents() {
+                    if !scan_outline(outline, callback) {
+                        break 'page_series;
+                    }
+                }
+            }
             for page_content in page.contents().iter() {
+                if let Some(embedded_file) = page_content.embedded_file() {
+                    let name = if embedded_file.filename().is_empty() {
+                        None
+                    } else {
+                        Some(embedded_file.filename())
+                    };
+                    if !callback(name, embedded_file.data()) {
+                        break 'page_series;
+                    }
+                }
                 if let Some(page_outline) = page_content.outline() {
-                    for outline_item in page_outline.items().iter() {
-                        for &outline_element in outline_item.element().iter() {
-                            for content in outline_element.contents().iter() {
-                                if let Some(embedded_file) = content.embedded_file() {
-                                    let name = if embedded_file.filename().is_empty() {
-                                        None
-                                    } else {
-                                        Some(embedded_file.filename())
-                                    };
-                                    if !callback(name, embedded_file.data()) {
-                                        break 'page_series;
-                                    }
-                                }
-                            }
-                        }
+                    if !scan_outline(page_outline, callback) {
+                        break 'page_series;
                     }
                 }
             }
         }
+    }
+}
+
+fn scan_outline<F>(outline: &onenote_parser::contents::Outline, callback: &mut F) -> bool
+where
+    F: FnMut(Option<&str>, &[u8]) -> bool,
+{
+    outline
+        .items()
+        .iter()
+        .all(|item| scan_outline_item(item, callback))
+}
+
+fn scan_outline_item<F>(
+    item: &onenote_parser::contents::OutlineItem,
+    callback: &mut F,
+) -> bool
+where
+    F: FnMut(Option<&str>, &[u8]) -> bool,
+{
+    match item {
+        onenote_parser::contents::OutlineItem::Group(group) => group
+            .outlines()
+            .iter()
+            .all(|item| scan_outline_item(item, callback)),
+        onenote_parser::contents::OutlineItem::Element(element) => {
+            scan_outline_element(element, callback)
+        }
+    }
+}
+
+fn scan_outline_element<F>(
+    element: &onenote_parser::contents::OutlineElement,
+    callback: &mut F,
+) -> bool
+where
+    F: FnMut(Option<&str>, &[u8]) -> bool,
+{
+    for content in element.contents() {
+        if !scan_content(content, callback) {
+            return false;
+        }
+    }
+
+    element
+        .children()
+        .iter()
+        .all(|item| scan_outline_item(item, callback))
+}
+
+fn scan_content<F>(content: &onenote_parser::contents::Content, callback: &mut F) -> bool
+where
+    F: FnMut(Option<&str>, &[u8]) -> bool,
+{
+    match content {
+        onenote_parser::contents::Content::EmbeddedFile(embedded_file) => {
+            let name = if embedded_file.filename().is_empty() {
+                None
+            } else {
+                Some(embedded_file.filename())
+            };
+            callback(name, embedded_file.data())
+        }
+        onenote_parser::contents::Content::Table(table) => table
+            .contents()
+            .iter()
+            .all(|row| {
+                row.contents().iter().all(|cell| {
+                    cell.contents()
+                        .iter()
+                        .all(|element| scan_outline_element(element, callback))
+                })
+            }),
+        _ => true,
     }
 }
 
@@ -478,6 +556,51 @@ impl<'a> OneNote<'a> {
         result.map_err(|_| Error::OneNoteParserPanic)?
     }
 
+    /// Parse a OneNote document from a bounded sequential reader and expose
+    /// each embedded attachment as a bounded reader. This avoids converting a
+    /// large object-data blob into a second whole-member allocation before the
+    /// caller can spool and scan it.
+    pub fn scan_reader_streaming<R, F>(
+        reader: R,
+        filename: &Path,
+        callback: F,
+    ) -> Result<(), Error>
+    where
+        R: Read,
+        F: FnMut(Option<&str>, &mut dyn Read) -> bool,
+    {
+        Self::scan_reader_streaming_with_budget(reader, filename, None, None, callback)
+    }
+
+    /// Parse a bounded sequential reader while routing parser-owned blob
+    /// spools through the caller's temporary directory and budget.
+    pub fn scan_reader_streaming_with_budget<R, F>(
+        reader: R,
+        filename: &Path,
+        spool_directory: Option<&Path>,
+        budget: Option<Box<dyn onenote_parser::BlobSpoolBudget>>,
+        mut callback: F,
+    ) -> Result<(), Error>
+    where
+        R: Read,
+        F: FnMut(Option<&str>, &mut dyn Read) -> bool,
+    {
+        let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+            let mut parser = onenote_parser::Parser::new();
+            parser
+                .scan_section_reader_with_budget(
+                    reader,
+                    filename,
+                    spool_directory,
+                    budget,
+                    &mut callback,
+                )
+                .map_err(parser_error)
+        }));
+
+        result.map_err(|_| Error::OneNoteParserPanic)?
+    }
+
     /// Open a OneNote document given a slice bytes.
     pub fn from_bytes(data: &'a [u8], filename: &Path) -> Result<OneNote<'a>, Error> {
         debug!(
@@ -493,38 +616,22 @@ impl<'a> OneNote<'a> {
                 .parse_section_buffer(data, filename)
                 .map_err(parser_error)?;
 
-            // file appears to be OneStore 2.8 `.one` file.
-            section.page_series().iter().for_each(|page_series| {
-                page_series.pages().iter().for_each(|page| {
-                    page.contents().iter().for_each(|page_content| {
-                        if let Some(page_outline) = page_content.outline() {
-                            page_outline.items().iter().for_each(|outline_item| {
-                                outline_item.element().iter().for_each(|&outline_element| {
-                                    outline_element.contents().iter().for_each(|content| {
-                                        if let Some(embedded_file) = content.embedded_file() {
-                                            let data = embedded_file.data();
-                                            let name = embedded_file.filename();
-
-                                            // If name is empty, set to None.
-                                            let name = if name.is_empty() {
-                                                debug!("Found unnamed attached file of size {}-bytes", data.len());
-                                                None
-                                            } else {
-                                                debug!("Found attached file '{}' of size {}-bytes", name, data.len());
-                                                Some(name.to_string())
-                                            };
-
-                                            embedded_files.push(ExtractedFile {
-                                                name,
-                                                data: data.to_vec(),
-                                            });
-                                        }
-                                    });
-                                });
-                            });
-                        }
-                    });
+            // Keep the compatibility iterator on the same page-content
+            // walker as the scanner-facing API, including direct page-level
+            // embedded-file content.
+            scan_section(&section, &mut |name, data| {
+                let name = if let Some(name) = name {
+                    debug!("Found attached file '{}' of size {}-bytes", name, data.len());
+                    Some(name.to_string())
+                } else {
+                    debug!("Found unnamed attached file of size {}-bytes", data.len());
+                    None
+                };
+                embedded_files.push(ExtractedFile {
+                    name,
+                    data: data.to_vec(),
                 });
+                true
             });
 
             Ok(embedded_files)

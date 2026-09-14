@@ -142,7 +142,7 @@ static uint8_t *ww_adjusted_buffer_window(uint8_t *buf, size_t available, uint8_
 cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_exe_section *sects, uint16_t scount, uint32_t pe, int desc, cli_ctx *ctx)
 {
     uint8_t *structs, *compd, *ccur, *unpd, *ucur, bc;
-    uint32_t src, source_delta, srcend, szd, bt, bits;
+    uint32_t src, source_delta, srcend, szd, bt, bits, compressed_dwords;
     size_t source_offset;
     uint32_t ticks = 0;
     cl_error_t error = 0;
@@ -174,12 +174,13 @@ cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_ex
         }
         src = sects[scount].rva - source_delta; /* src delta / dst delta - not used / dwords / end of src */
         structs += 8;
-        if (cli_readint32(structs) > UINT32_MAX / 4U) {
+        compressed_dwords = (uint32_t)cli_readint32(structs);
+        if (compressed_dwords > UINT32_MAX / 4U) {
             cli_dbgmsg("WWPack: Compressed source size overflow\n");
             error = CL_EPARSE;
             break;
         }
-        szd = cli_readint32(structs) * 4;
+        szd = compressed_dwords * 4U;
         structs += 4;
         srcend = cli_readint32(structs);
         structs += 4;

@@ -740,7 +740,6 @@ static int ole2_summary_propset_json(summary_ctx_t *sctx, off_t offset)
     uint32_t numprops, limitprops;
     size_t propset_offset, psoff = sizeof(uint32_t) * 2;
     size_t table_len, property_offset, property_len, property_remaining;
-    uint32_t poffset;
     int ret;
     uint32_t i;
 

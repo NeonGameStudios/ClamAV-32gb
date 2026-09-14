@@ -204,14 +204,14 @@ static void *cpool_mon(_UNUSED_ void *v)
     return NULL;
 }
 
-void cpool_init(struct optstruct *opts)
+int cpool_init(struct optstruct *opts)
 {
     const struct optstruct *opt;
     int failed = 0;
 
     if (!(cp = calloc(sizeof(*cp), 1))) {
         logg(LOGG_ERROR, "Out of memory while initializing the connection pool");
-        return;
+        return 1;
     }
 
     cp->local_cpe = NULL;
@@ -220,7 +220,7 @@ void cpool_init(struct optstruct *opts)
         while (opt) {
             char *socktype = opt->strarg;
 
-            if (addslot()) return;
+            if (addslot()) return 1;
             if (!strncasecmp(socktype, "unix:", 5)) {
                 failed = cpool_addunix(socktype + 5);
             } else if (!strncasecmp(socktype, "tcp:", 4)) {
@@ -239,18 +239,24 @@ void cpool_init(struct optstruct *opts)
         }
         if (failed) {
             cpool_free();
-            return;
+            return 1;
         }
     }
 
     if (!cp->entries) {
         logg(LOGG_ERROR, "No ClamdSocket specified\n");
         cpool_free();
-        return;
+        return 1;
     }
     quitting = 0;
-    pthread_create(&probe_th, NULL, cpool_mon, NULL);
+    if (pthread_create(&probe_th, NULL, cpool_mon, NULL) != 0) {
+        logg(LOGG_ERROR, "Failed to start the connection-pool monitor thread\n");
+        quitting = 1;
+        cpool_free();
+        return 1;
+    }
     srand(time(NULL));
+    return 0;
 }
 
 void cpool_free(void)

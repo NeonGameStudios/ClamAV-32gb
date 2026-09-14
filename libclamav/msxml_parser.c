@@ -152,6 +152,49 @@ static cl_error_t msxml_record_json_status(cli_ctx *ctx, cl_error_t status, cons
     return status;
 }
 
+static cl_error_t msxml_scan_empty_child(struct msxml_ctx *mxctx, int num_attribs,
+                                         struct attrib_entry *attribs, bool callback_mode)
+{
+    cli_ctx *ctx;
+    char name[1024];
+    char *tempfile = name;
+    int fd;
+    cl_error_t ret;
+
+    if (!mxctx || !mxctx->ictx || !mxctx->ictx->ctx)
+        return CL_ENULLARG;
+
+    ctx = mxctx->ictx->ctx;
+    if (!ctx->engine)
+        return CL_ENULLARG;
+    if (callback_mode && !mxctx->scan_cb)
+        return CL_SUCCESS;
+
+    if ((ret = msxml_checktimelimit(ctx, "MSXML empty child handoff reached the configured time limit")) != CL_SUCCESS)
+        return ret;
+
+    ret = cli_gentempfd(ctx->this_layer_tmpdir, &tempfile, &fd);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "MSXML empty child temporary output could not be created");
+        return ret;
+    }
+
+    ret = msxml_checktimelimit(ctx, "MSXML empty child temporary output reached the configured time limit");
+    if (ret == CL_SUCCESS) {
+        if (callback_mode)
+            ret = mxctx->scan_cb(fd, tempfile, ctx, num_attribs, attribs, mxctx->scan_data);
+        else
+            ret = cli_magic_scan_desc_type_reserved(fd, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+    }
+
+    if (close(fd) != 0)
+        msxml_note_cleanup_failure(ctx, &ret, CL_EWRITE, "MSXML empty child temporary output could not be closed");
+    if (!ctx->engine->keeptmp && cli_unlink(tempfile) != 0)
+        msxml_note_cleanup_failure(ctx, &ret, CL_EUNLINK, "MSXML empty child temporary output could not be removed");
+    free(tempfile);
+    return ret;
+}
+
 static const struct key_entry *msxml_check_key(struct msxml_ictx *ictx, const xmlChar *key, size_t keylen)
 {
     unsigned i;
@@ -433,6 +476,21 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
             state = xmlTextReaderIsEmptyElement(reader);
             if (state == 1) {
                 cli_msxmlmsg("msxml_parse_element: SELF-CLOSING\n");
+
+                /* A recognized self-closing element has a logical empty
+                 * child even though no text node will be emitted. Preserve
+                 * the same callback/descriptor admission used by non-empty
+                 * elements so MaxFiles and cache taint cannot be bypassed. */
+                if ((keyinfo->type & MSXML_SCAN_CB) && mxctx->scan_cb) {
+                    ret = msxml_scan_empty_child(mxctx, num_attribs, attribs, true);
+                    if (ret != CL_SUCCESS)
+                        return ret;
+                }
+                if (keyinfo->type & MSXML_SCAN_B64) {
+                    ret = msxml_scan_empty_child(mxctx, num_attribs, attribs, false);
+                    if (ret != CL_SUCCESS)
+                        return ret;
+                }
 
                 state = xmlTextReaderNext(reader);
                 check_state(state);
@@ -1102,21 +1160,28 @@ static cl_error_t msxml_stream_finish_frame(struct msxml_stream_state *state, st
             return CL_EPARSE;
         }
 
-        if (frame->b64_saw_data) {
-            if (msxml_stream_checktimelimit(state, "MSXML streaming base64 nested-scan handoff reached the configured time limit") !=
-                CL_SUCCESS)
-                return state->ret;
-            if (state->mxctx->decoded_cb)
-                ret = state->mxctx->decoded_cb(frame->b64_fd, frame->b64_name, state->ctx, state->mxctx->scan_data);
-            else
-                ret = cli_magic_scan_desc_type_reserved(frame->b64_fd, frame->b64_name, state->ctx, CL_TYPE_ANY, NULL,
-                                                        LAYER_ATTRIBUTES_NONE);
-            if (ret != CL_SUCCESS)
-                return ret;
-        }
+        /* The temporary file is created when the recognized element starts,
+         * so an empty or whitespace-only Base64 value is still a logical
+         * extracted child. Route it through the callback/admission path just
+         * like a non-empty value; otherwise inclusive MaxFiles accounting
+         * and cache-taint propagation can be bypassed. */
+        if (msxml_stream_checktimelimit(state, "MSXML streaming base64 nested-scan handoff reached the configured time limit") !=
+            CL_SUCCESS)
+            return state->ret;
+        if (state->mxctx->decoded_cb)
+            ret = state->mxctx->decoded_cb(frame->b64_fd, frame->b64_name, state->ctx, state->mxctx->scan_data);
+        else
+            ret = cli_magic_scan_desc_type_reserved(frame->b64_fd, frame->b64_name, state->ctx, CL_TYPE_ANY, NULL,
+                                                    LAYER_ATTRIBUTES_NONE);
+        if (ret != CL_SUCCESS)
+            return ret;
     }
 
-    if (frame->cb_fd >= 0 && frame->cb_saw_data && state->mxctx->scan_cb) {
+    /* The callback spool is created when the recognized element starts, so
+     * an empty callback element is still a logical extracted child. Invoke
+     * the callback even when no character data was emitted; callback owners
+     * perform the shared descriptor admission and must see the empty child. */
+    if (frame->cb_fd >= 0 && state->mxctx->scan_cb) {
         if (msxml_stream_checktimelimit(state, "MSXML streaming callback nested-scan handoff reached the configured time limit") !=
             CL_SUCCESS)
             return state->ret;

@@ -69,6 +69,15 @@ limitations under the License.
 #include "yara_exec.h"
 #endif
 
+#ifndef REAL_YARA
+#define REAL_YARA 0
+#endif
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-macros"
+#endif
+
 #define YYERROR_VERBOSE
 
 #define INTEGER_SET_ENUMERATION   1
@@ -110,8 +119,6 @@ limitations under the License.
 #define CHECK_TYPE(actual_type, expected_type, op) \
     CHECK_TYPE_WITH_CLEANUP(actual_type, expected_type, op, ) \
 
-
-#define MSG(op)  "wrong type \"string\" for \"" op "\" operator"
 
 %}
 
@@ -255,7 +262,7 @@ rule
       {
         int result = yr_parser_reduce_rule_declaration(
             yyscanner,
-            $1,
+            (int)$1,
             $3,
             $4,
             $7,
@@ -461,7 +468,7 @@ meta_declaration
             META_TYPE_INTEGER,
             $1,
             NULL,
-            $3);
+            (int32_t)$3);
 
         yr_free($1);
 
@@ -507,7 +514,7 @@ string_declaration
       {
         $$ = yr_parser_reduce_string_declaration(
             yyscanner,
-            $4,
+            (int)$4,
             $1,
             $3);
 
@@ -524,7 +531,7 @@ string_declaration
       {
         $$ = yr_parser_reduce_string_declaration(
             yyscanner,
-            $5 | STRING_GFLAGS_REGEXP,
+            (int)$5 | STRING_GFLAGS_REGEXP,
             $1,
             $4);
 
@@ -616,7 +623,7 @@ identifier
               compiler->last_result = yr_parser_emit_with_arg_reloc(
                   yyscanner,
                   OP_OBJ_LOAD,
-                  PTR_TO_UINT64(id),
+                  (int64_t)PTR_TO_UINT64(id),
                   NULL);
 
             $$ = object;
@@ -632,7 +639,7 @@ identifier
               compiler->last_result = yr_parser_emit_with_arg_reloc(
                   yyscanner,
                   OP_PUSH_RULE,
-                  PTR_TO_UINT64(rule),
+                  (int64_t)PTR_TO_UINT64(rule),
                   NULL);
             }
             else
@@ -675,7 +682,7 @@ identifier
               compiler->last_result = yr_parser_emit_with_arg_reloc(
                   yyscanner,
                   OP_OBJ_FIELD,
-                  PTR_TO_UINT64(ident),
+                  (int64_t)PTR_TO_UINT64(ident),
                   NULL);
           }
           else
@@ -733,7 +740,7 @@ identifier
 
           if (compiler->last_result == ERROR_SUCCESS)
           {
-            args_count = strlen($3);
+            args_count = (int)strlen($3);
 
             compiler->last_result = yr_parser_emit_with_arg(
                 yyscanner,
@@ -822,7 +829,7 @@ arguments_list
 regexp
     : _REGEXP_
       {
-#ifdef REAL_YARA
+#if REAL_YARA
         SIZED_STRING* sized_string = $1;
         RE* re;
         RE_ERROR error;
@@ -853,7 +860,7 @@ regexp
           compiler->last_result = yr_parser_emit_with_arg_reloc(
               yyscanner,
               OP_PUSH,
-              PTR_TO_UINT64(re->root_node->forward_code),
+              (int64_t)PTR_TO_UINT64(re->root_node->forward_code),
               NULL);
 
         yr_re_destroy(re);
@@ -1069,7 +1076,7 @@ expression
           yr_parser_emit_with_arg_reloc(
               yyscanner,
               OP_JNUNDEF,
-              PTR_TO_UINT64(
+              (int64_t)PTR_TO_UINT64(
                   compiler->loop_address[compiler->loop_depth]),
               NULL);
         }
@@ -1092,7 +1099,7 @@ expression
           yr_parser_emit_with_arg_reloc(
               yyscanner,
               OP_JLE,
-              PTR_TO_UINT64(
+              (int64_t)PTR_TO_UINT64(
                 compiler->loop_address[compiler->loop_depth]),
               NULL);
 
@@ -1175,7 +1182,7 @@ expression
         yr_parser_emit_with_arg_reloc(
             yyscanner,
             OP_JNUNDEF,
-            PTR_TO_UINT64(
+            (int64_t)PTR_TO_UINT64(
                 compiler->loop_address[compiler->loop_depth]),
             NULL);
 
@@ -1588,7 +1595,7 @@ primary_expression
           compiler->last_result = yr_parser_emit_with_arg_reloc(
               yyscanner,
               OP_PUSH,
-              PTR_TO_UINT64(string),
+              (int64_t)PTR_TO_UINT64(string),
               NULL);
 
         ERROR_IF(compiler->last_result != ERROR_SUCCESS);

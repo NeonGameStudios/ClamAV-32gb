@@ -334,7 +334,7 @@ blobGetDataSize(const blob *b)
     assert(b->magic == BLOBCLASS);
 #endif
 
-    return b->len;
+    return b->len > 0 ? (size_t)b->len : 0;
 }
 
 void blobClose(blob *b)
@@ -361,7 +361,7 @@ void blobClose(blob *b)
                        (unsigned long)b->size);
             b->size = 0;
         } else {
-            unsigned char *ptr = cli_max_realloc(b->data, b->len);
+            unsigned char *ptr = cli_max_realloc(b->data, (size_t)b->len);
 
             if (ptr == NULL) {
                 return;
@@ -721,8 +721,8 @@ void fileblobPartialSet(fileblob *fb, const char *fullname, const char *arg)
         return;
     }
     blobSetFilename(&fb->b, fb->ctx ? fb->ctx->this_layer_tmpdir : NULL, fullname);
-    if (fb->b.data)
-        if (fileblobAddData(fb, fb->b.data, fb->b.len) == 0) {
+    if (fb->b.data) {
+        if (fileblobAddData(fb, fb->b.data, (size_t)fb->b.len) == 0) {
             free(fb->b.data);
             fb->b.data = NULL;
             fb->b.len = fb->b.size = 0;
@@ -732,6 +732,7 @@ void fileblobPartialSet(fileblob *fb, const char *fullname, const char *arg)
             fb->b.data = NULL;
             fb->b.len = fb->b.size = 0;
         }
+    }
     fb->fullname = cli_safer_strdup(fullname);
 }
 
@@ -773,8 +774,8 @@ void fileblobSetFilename(fileblob *fb, const char *dir, const char *filename)
         fileblobMarkIncompleteStatus(fb, CL_EOPEN, "fileblob temporary spool could not be opened");
         return;
     }
-    if (fb->b.data)
-        if (fileblobAddData(fb, fb->b.data, fb->b.len) == 0) {
+    if (fb->b.data) {
+        if (fileblobAddData(fb, fb->b.data, (size_t)fb->b.len) == 0) {
             free(fb->b.data);
             fb->b.data = NULL;
             fb->b.len = fb->b.size = 0;
@@ -784,6 +785,7 @@ void fileblobSetFilename(fileblob *fb, const char *dir, const char *filename)
             fb->b.data = NULL;
             fb->b.len = fb->b.size = 0;
         }
+    }
     fb->fullname = fullname;
 }
 
@@ -995,7 +997,8 @@ cl_error_t fileblobScan(fileblob *fb)
      * charged twice. */
     fileblobReleaseTemporary(fb);
 
-    rc = cli_matchmeta(fb->ctx, fb->b.name, sb.st_size, sb.st_size, 0, 0, 0);
+    rc = cli_matchmeta(fb->ctx, fb->b.name, (size_t)sb.st_size,
+                       (size_t)sb.st_size, 0, 0, 0);
     if (rc != CL_SUCCESS) {
         return rc;
     }

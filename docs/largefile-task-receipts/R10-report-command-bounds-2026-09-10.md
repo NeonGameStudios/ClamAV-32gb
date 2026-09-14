@@ -33,6 +33,6 @@ Commands and results:
 Limitations:
 
 - No coherent current-source C build, certified runner, full-size materialized
-  evidence, Docker/MCP-SSH execution, or R04 qualification record is claimed.
+  evidence, Docker/remote SSH execution, or R04 qualification record is claimed.
 
 State: `development-verified`; release readiness remains blocked.

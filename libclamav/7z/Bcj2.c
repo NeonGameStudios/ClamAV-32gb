@@ -25,7 +25,7 @@
 #define RC_READ_BYTE (*buffer++)
 #define RC_TEST { if (buffer == bufferLim) return SZ_ERROR_DATA; }
 #define RC_INIT2 code = 0; range = 0xFFFFFFFF; \
-  { int i; for (i = 0; i < 5; i++) { RC_TEST; code = (code << 8) | RC_READ_BYTE; }}
+  { int rc_i; for (rc_i = 0; rc_i < 5; rc_i++) { RC_TEST; code = (code << 8) | RC_READ_BYTE; }}
 
 #define NORMALIZE if (range < kTopValue) { RC_TEST; range <<= 8; code = (code << 8) | RC_READ_BYTE; }
 
@@ -70,7 +70,7 @@ int Bcj2_Decode(
       limit = outSize - outPos;
     while (limit != 0)
     {
-      Byte b = buf0[inPos];
+      b = buf0[inPos];
       outBuf[outPos++] = b;
       if (IsJ(prevByte, b))
         break;

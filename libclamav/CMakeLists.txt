@@ -594,6 +594,7 @@ if(ENABLE_STATIC_LIB)
             LibXml2::LibXml2
             JSONC::jsonc )
         if (ENABLE_UNRAR)
+            target_compile_definitions(clamav_static PRIVATE UNRAR_LINKED)
             target_link_libraries( clamav_static PUBLIC ClamAV::libunrar_iface_static)
         endif()
 

@@ -132,6 +132,14 @@ service_runtime_component_hashes_after=$out/provenance/service-runtime-component
 service_loaded_dependencies=$out/provenance/service-loaded-dependencies.txt
 service_build_identity=$out/provenance/service-build-identity.txt
 service_parallel_profile=$out/provenance/parallel-client-clamd.conf
+service_resource_samples=$out/provenance/service-resource-samples.tsv
+service_case_resource_sidecar=$out/provenance/acceptance-case-resources.tsv
+
+printf 'sequence\trss_kb\tpss_kb\tvas_kb\tswap_kb\tminor_faults\tmajor_faults\tread_bytes\twrite_bytes\tcancelled_write_bytes\tprocess_count\ttemporary_bytes\toom_events\toom_kill_events\toom_cgroup_digest\tsampled_pids\n' > \
+    "$service_resource_samples"
+printf 'kind\tid\tcase_id\tsource_manifest_sha256\tbuild_identity_sha256\tconfig_sha256\tplatform\tsample_source\tsample_count\trss_peak_kb\tpss_peak_kb\tvas_peak_kb\tswap_peak_kb\tminor_faults_peak\tmajor_faults_peak\tread_bytes_peak\twrite_bytes_peak\tcancelled_write_bytes_peak\ttemporary_peak_bytes\toom_events_peak\toom_kill_events_peak\toom_cgroup_count\toom_cgroup_digest\tpcre_rss_peak_kb\tpost_pcre_rss_peak_kb\n' > \
+    "$service_case_resource_sidecar"
+service_resource_sample_sequence=0
 
 if [ ! -s "$service_cmake_cache" ] || [ ! -s "$service_compile_commands" ]; then
     echo "service qualification requires CMakeCache.txt and compile_commands.json in $build_dir" >&2
@@ -723,10 +731,45 @@ socket=$out/clamd.socket
 pidfile=$out/clamd.pid
 service_pid=
 service_peak_rss_kb=0
+service_peak_rss_process_count=0
+service_peak_pss_kb=0
+service_peak_vas_kb=0
+service_peak_swap_kb=0
+service_peak_minor_faults=0
+service_peak_major_faults=0
+service_peak_read_bytes=0
+service_peak_write_bytes=0
+service_peak_cancelled_write_bytes=0
 service_peak_temp_bytes=0
 service_rss_samples=0
+service_peak_oom_events=0
+service_peak_oom_kill_events=0
+service_oom_samples=0
 service_temp_samples=0
 service_resource_measurement_failed=0
+service_resource_roots=
+service_rss_measurement=procfs-process-tree-vmrss
+service_memory_metrics=procfs-process-tree-status-smaps-rollup-stat-io
+service_oom_measurement=procfs-cgroup-v2-memory-events
+service_case_resource_active=no
+service_case_resource_kind=
+service_case_resource_id=
+service_case_resource_case_id=
+service_case_resource_sample_count=0
+service_case_resource_rss_peak_kb=0
+service_case_resource_pss_peak_kb=0
+service_case_resource_vas_peak_kb=0
+service_case_resource_swap_peak_kb=0
+service_case_resource_minor_faults_peak=0
+service_case_resource_major_faults_peak=0
+service_case_resource_read_bytes_peak=0
+service_case_resource_write_bytes_peak=0
+service_case_resource_cancelled_write_bytes_peak=0
+service_case_resource_temporary_peak_bytes=0
+service_case_resource_oom_events_peak=0
+service_case_resource_oom_kill_events_peak=0
+service_case_resource_oom_cgroup_count=0
+service_case_resource_oom_cgroup_digest=
 service_lifecycle=$out/provenance/service-lifecycle.tsv
 printf 'generation\tevent\tresult\n' > "$service_lifecycle"
 service_generation=0
@@ -758,20 +801,309 @@ if ! awk -v timeout_s="$service_timeout_s" -v scan_time_ms="$max_scan_time_ms" \
     exit 2
 fi
 
+service_oom_baseline_sample=$(python3 "$root/tools/largefile_procfs_tree_oom.py" "$$" 2>/dev/null || true)
+service_oom_baseline=$(printf '%s\n' "$service_oom_baseline_sample" |
+    awk -F '\t' 'NF == 4 && $1 ~ /^[0-9]+$/ { print $1; exit }')
+service_oom_kill_baseline=$(printf '%s\n' "$service_oom_baseline_sample" |
+    awk -F '\t' 'NF == 4 && $2 ~ /^[0-9]+$/ { print $2; exit }')
+service_oom_cgroup_count=$(printf '%s\n' "$service_oom_baseline_sample" |
+    awk -F '\t' 'NF == 4 && $3 ~ /^[0-9]+$/ { print $3; exit }')
+service_oom_cgroup_digest=$(printf '%s\n' "$service_oom_baseline_sample" |
+    awk -F '\t' 'NF == 4 && $4 ~ /^[0-9a-fA-F]{64}$/ { print $4; exit }')
+case "$service_oom_baseline:$service_oom_kill_baseline:$service_oom_cgroup_count" in
+    ''|*[!0-9:]*)
+        echo 'service qualification requires readable cgroup-v2 OOM counters' >&2
+        exit 2
+        ;;
+esac
+case "$service_oom_cgroup_digest" in
+    ''|*[!0-9a-fA-F]*)
+        echo 'service qualification received an invalid cgroup-v2 identity digest' >&2
+        exit 2
+        ;;
+esac
+if [ "${#service_oom_cgroup_digest}" -ne 64 ] || [ "$service_oom_cgroup_count" -lt 1 ]; then
+    echo 'service qualification received an incomplete cgroup-v2 identity' >&2
+    exit 2
+fi
+service_peak_oom_events=$service_oom_baseline
+service_peak_oom_kill_events=$service_oom_kill_baseline
+
+resource_root_add()
+{
+    resource_root_pid=$1
+    case " $service_resource_roots " in
+        *" $resource_root_pid "*) ;;
+        *) service_resource_roots="$service_resource_roots $resource_root_pid" ;;
+    esac
+}
+
+resource_root_remove()
+{
+    resource_root_pid=$1
+    retained_resource_roots=
+    for existing_resource_root in $service_resource_roots; do
+        if [ "$existing_resource_root" != "$resource_root_pid" ]; then
+            retained_resource_roots="$retained_resource_roots $existing_resource_root"
+        fi
+    done
+    service_resource_roots=$retained_resource_roots
+}
+
+service_case_resource_begin()
+{
+    if [ "$service_case_resource_active" = yes ]; then
+        echo 'service per-case resource capture is already active' >&2
+        return 1
+    fi
+    service_case_resource_kind=$1
+    service_case_resource_id=$2
+    service_case_resource_case_id=$3
+    service_case_resource_active=yes
+    service_case_resource_sample_count=0
+    service_case_resource_rss_peak_kb=0
+    service_case_resource_pss_peak_kb=0
+    service_case_resource_vas_peak_kb=0
+    service_case_resource_swap_peak_kb=0
+    service_case_resource_minor_faults_peak=0
+    service_case_resource_major_faults_peak=0
+    service_case_resource_read_bytes_peak=0
+    service_case_resource_write_bytes_peak=0
+    service_case_resource_cancelled_write_bytes_peak=0
+    service_case_resource_temporary_peak_bytes=0
+    service_case_resource_oom_events_peak=0
+    service_case_resource_oom_kill_events_peak=0
+    service_case_resource_oom_cgroup_count=0
+    service_case_resource_oom_cgroup_digest=
+}
+
+service_case_resource_begin_for_role()
+{
+    service_case_kind=$1
+    service_case_id=$2
+    service_case_role=$3
+    case "$service_case_role" in
+        production) service_case_completion=$oracle_production_completion ;;
+        edge) service_case_completion=$oracle_edge_completion ;;
+        *)
+            echo "unknown service resource role: $service_case_role" >&2
+            return 1
+            ;;
+    esac
+    case "$service_case_completion" in
+        COMPLETE) service_case_suffix=clean-edge ;;
+        DETECTION_TERMINATED) service_case_suffix=detection-edge ;;
+        LIMIT_INCOMPLETE) service_case_suffix=limit-edge ;;
+        *)
+            echo "service resource role has no acceptance case completion: $service_case_role:$service_case_completion" >&2
+            return 1
+            ;;
+    esac
+    service_case_resource_begin "$service_case_kind" "$service_case_id" \
+        "$service_case_kind:$service_case_id:$service_case_suffix"
+}
+
+service_case_resource_end()
+{
+    if [ "$service_case_resource_active" != yes ]; then
+        return 0
+    fi
+    if [ "$service_case_resource_sample_count" -lt 1 ] ||
+        [ -z "$service_case_resource_oom_cgroup_digest" ] ||
+        [ "$service_case_resource_oom_cgroup_count" -lt 1 ]; then
+        echo "service per-case resource capture has no complete sample: $service_case_resource_case_id" >&2
+        return 1
+    fi
+    if awk -F '\t' -v kind="$service_case_resource_kind" \
+        -v identifier="$service_case_resource_id" \
+        -v case_id="$service_case_resource_case_id" \
+        'NR > 1 && $1 == kind && $2 == identifier && $3 == case_id { found = 1 } END { exit found }' \
+        "$service_case_resource_sidecar"; then
+        :
+    else
+        echo "service per-case resource capture duplicated a case: $service_case_resource_case_id" >&2
+        return 1
+    fi
+    printf '%s\t%s\t%s\tpending\tpending\tpending\t%s-%s\tprocfs-process-tree\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t-\t-\n' \
+        "$service_case_resource_kind" "$service_case_resource_id" \
+        "$service_case_resource_case_id" "$(uname -s)" "$(uname -m)" \
+        "$service_case_resource_sample_count" \
+        "$service_case_resource_rss_peak_kb" "$service_case_resource_pss_peak_kb" \
+        "$service_case_resource_vas_peak_kb" "$service_case_resource_swap_peak_kb" \
+        "$service_case_resource_minor_faults_peak" "$service_case_resource_major_faults_peak" \
+        "$service_case_resource_read_bytes_peak" "$service_case_resource_write_bytes_peak" \
+        "$service_case_resource_cancelled_write_bytes_peak" \
+        "$service_case_resource_temporary_peak_bytes" \
+        "$service_case_resource_oom_events_peak" "$service_case_resource_oom_kill_events_peak" \
+        "$service_case_resource_oom_cgroup_count" "$service_case_resource_oom_cgroup_digest" \
+        >> "$service_case_resource_sidecar"
+    service_case_resource_active=no
+}
+
+finalize_service_case_resources()
+{
+    if [ "$service_case_resource_active" = yes ]; then
+        echo "service per-case resource capture was not closed: $service_case_resource_case_id" >&2
+        return 1
+    fi
+    python3 - "$service_case_resource_sidecar" "$service_build_identity" \
+        "$out/provenance/CMakeCache.txt" "$root/tools" \
+        "$service_source_manifest_sha256" <<'PY'
+from pathlib import Path
+import csv
+import os
+import sys
+
+sidecar, build_identity, config, tools = map(Path, sys.argv[1:5])
+source_hash = sys.argv[5]
+sys.path.insert(0, str(tools))
+import largefile_acceptance_resources as resources
+
+rows = resources.read_resources(sidecar)
+if not rows:
+    raise SystemExit("service per-case resource sidecar is empty")
+build_hash = resources.sha256(build_identity)
+config_hash = resources.sha256(config)
+if len(source_hash) != 64:
+    raise SystemExit("service source manifest hash is unavailable for per-case resources")
+for row in rows:
+    if any(row[field] != "pending" for field in resources.HASH_FIELDS):
+        raise SystemExit("service per-case resource sidecar has pre-filled identity hashes")
+    row["source_manifest_sha256"] = source_hash
+    row["build_identity_sha256"] = build_hash
+    row["config_sha256"] = config_hash
+staging = sidecar.with_name(f".{sidecar.name}.identity-staging")
+try:
+    with staging.open("w", newline="", encoding="utf-8") as stream:
+        writer = csv.DictWriter(
+            stream, fieldnames=resources.RESOURCE_HEADER,
+            delimiter="\t", lineterminator="\n",
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+    os.replace(staging, sidecar)
+finally:
+    if staging.exists():
+        staging.unlink()
+PY
+}
+
 measure_service_resources()
 {
-    if [ -n "${service_pid:-}" ]; then
-        if [ ! -r "/proc/$service_pid/status" ]; then
-            if kill -0 "$service_pid" 2>/dev/null; then
-                service_resource_measurement_failed=1
+    resource_sample_valid=no
+    oom_sample_valid=no
+    temp_sample_valid=no
+    rss=
+    pss=
+    vas=
+    swap=
+    minor_faults=
+    major_faults=
+    read_bytes=
+    write_bytes=
+    cancelled_write_bytes=
+    process_count=
+    oom_events=
+    oom_kill_events=
+    oom_cgroup_count=
+    oom_cgroup_digest=
+    sampled_pids=
+    if [ -n "$service_resource_roots" ]; then
+        resource_root_live=no
+        for resource_root_pid in $service_resource_roots; do
+            if [ -r "/proc/$resource_root_pid/status" ]; then
+                resource_root_live=yes
+                break
             fi
-        else
-            rss=$(sed -n 's/^VmRSS:[[:space:]]*\([0-9][0-9]*\) kB$/\1/p' "/proc/$service_pid/status" 2>/dev/null || true)
-            case "$rss" in
-                ''|*[!0-9]*) service_resource_measurement_failed=1 ;;
+        done
+        if [ "$resource_root_live" = yes ]; then
+            resource_sample=$(python3 "$root/tools/largefile_procfs_tree_metrics.py" \
+                $service_resource_roots 2>/dev/null || true)
+            rss=$(printf '%s\n' "$resource_sample" |
+                awk -F '\t' 'NF == 11 && $1 ~ /^[0-9]+$/ { print $1; exit }')
+            pss=$(printf '%s\n' "$resource_sample" |
+                awk -F '\t' 'NF == 11 && $2 ~ /^[0-9]+$/ { print $2; exit }')
+            vas=$(printf '%s\n' "$resource_sample" |
+                awk -F '\t' 'NF == 11 && $3 ~ /^[0-9]+$/ { print $3; exit }')
+            swap=$(printf '%s\n' "$resource_sample" |
+                awk -F '\t' 'NF == 11 && $4 ~ /^[0-9]+$/ { print $4; exit }')
+            minor_faults=$(printf '%s\n' "$resource_sample" |
+                awk -F '\t' 'NF == 11 && $5 ~ /^[0-9]+$/ { print $5; exit }')
+            major_faults=$(printf '%s\n' "$resource_sample" |
+                awk -F '\t' 'NF == 11 && $6 ~ /^[0-9]+$/ { print $6; exit }')
+            read_bytes=$(printf '%s\n' "$resource_sample" |
+                awk -F '\t' 'NF == 11 && $7 ~ /^[0-9]+$/ { print $7; exit }')
+            write_bytes=$(printf '%s\n' "$resource_sample" |
+                awk -F '\t' 'NF == 11 && $8 ~ /^[0-9]+$/ { print $8; exit }')
+            cancelled_write_bytes=$(printf '%s\n' "$resource_sample" |
+                awk -F '\t' 'NF == 11 && $9 ~ /^[0-9]+$/ { print $9; exit }')
+            process_count=$(printf '%s\n' "$resource_sample" |
+                awk -F '\t' 'NF == 11 && $10 ~ /^[0-9]+$/ { print $10; exit }')
+            sampled_pids=$(printf '%s\n' "$resource_sample" |
+                awk -F '\t' 'NF == 11 && $11 ~ /^[0-9][0-9,]*$/ { print $11; exit }')
+            case "$rss:$pss:$vas:$swap:$minor_faults:$major_faults:$read_bytes:$write_bytes:$cancelled_write_bytes:$process_count" in
+                ''|*[!0-9:]*) service_resource_measurement_failed=1 ;;
                 *)
-                    service_rss_samples=$((service_rss_samples + 1))
-                    if [ "$rss" -gt "$service_peak_rss_kb" ]; then service_peak_rss_kb=$rss; fi
+                    case "$sampled_pids" in
+                        ''|*[!0-9,]*) service_resource_measurement_failed=1 ;;
+                        *)
+                            sampled_pid_count=$(printf '%s\n' "$sampled_pids" | awk -F ',' '{ print NF }')
+                            if [ "$process_count" -lt 1 ] || [ "$sampled_pid_count" -ne "$process_count" ] ||
+                                [ "$pss" -gt "$rss" ] || [ "$vas" -lt "$rss" ]; then
+                                service_resource_measurement_failed=1
+                            else
+                                resource_sample_valid=yes
+                            fi
+                            ;;
+                    esac
+                    if [ "$resource_sample_valid" = yes ]; then
+                        if [ "$rss" -gt "$service_peak_rss_kb" ]; then
+                            service_peak_rss_kb=$rss
+                            service_peak_rss_process_count=$process_count
+                        elif [ "$rss" -eq "$service_peak_rss_kb" ] &&
+                            [ "$process_count" -gt "$service_peak_rss_process_count" ]; then
+                            service_peak_rss_process_count=$process_count
+                        fi
+                        if [ "$pss" -gt "$service_peak_pss_kb" ]; then service_peak_pss_kb=$pss; fi
+                        if [ "$vas" -gt "$service_peak_vas_kb" ]; then service_peak_vas_kb=$vas; fi
+                        if [ "$swap" -gt "$service_peak_swap_kb" ]; then service_peak_swap_kb=$swap; fi
+                        if [ "$minor_faults" -gt "$service_peak_minor_faults" ]; then service_peak_minor_faults=$minor_faults; fi
+                        if [ "$major_faults" -gt "$service_peak_major_faults" ]; then service_peak_major_faults=$major_faults; fi
+                        if [ "$read_bytes" -gt "$service_peak_read_bytes" ]; then service_peak_read_bytes=$read_bytes; fi
+                        if [ "$write_bytes" -gt "$service_peak_write_bytes" ]; then service_peak_write_bytes=$write_bytes; fi
+                        if [ "$cancelled_write_bytes" -gt "$service_peak_cancelled_write_bytes" ]; then service_peak_cancelled_write_bytes=$cancelled_write_bytes; fi
+                    fi
+                    ;;
+            esac
+            oom_sample=$(python3 "$root/tools/largefile_procfs_tree_oom.py" \
+                $service_resource_roots 2>/dev/null || true)
+            oom_events=$(printf '%s\n' "$oom_sample" |
+                awk -F '\t' 'NF == 4 && $1 ~ /^[0-9]+$/ { print $1; exit }')
+            oom_kill_events=$(printf '%s\n' "$oom_sample" |
+                awk -F '\t' 'NF == 4 && $2 ~ /^[0-9]+$/ { print $2; exit }')
+            oom_cgroup_count=$(printf '%s\n' "$oom_sample" |
+                awk -F '\t' 'NF == 4 && $3 ~ /^[0-9]+$/ { print $3; exit }')
+            oom_cgroup_digest=$(printf '%s\n' "$oom_sample" |
+                awk -F '\t' 'NF == 4 && $4 ~ /^[0-9a-fA-F]{64}$/ { print $4; exit }')
+            case "$oom_events:$oom_kill_events:$oom_cgroup_count" in
+                ''|*[!0-9:]*) service_resource_measurement_failed=1 ;;
+                *)
+                    case "$oom_cgroup_digest" in
+                        ''|*[!0-9a-fA-F]*) service_resource_measurement_failed=1 ;;
+                        *)
+                            if [ "${#oom_cgroup_digest}" -ne 64 ] ||
+                                [ "$oom_cgroup_count" -ne "$service_oom_cgroup_count" ] ||
+                                [ "$oom_cgroup_digest" != "$service_oom_cgroup_digest" ] ||
+                                [ "$oom_events" -lt "$service_oom_baseline" ] ||
+                                [ "$oom_kill_events" -lt "$service_oom_kill_baseline" ]; then
+                                service_resource_measurement_failed=1
+                            else
+                                oom_sample_valid=yes
+                                if [ "$oom_events" -gt "$service_peak_oom_events" ]; then service_peak_oom_events=$oom_events; fi
+                                if [ "$oom_kill_events" -gt "$service_peak_oom_kill_events" ]; then service_peak_oom_kill_events=$oom_kill_events; fi
+                            fi
+                            ;;
+                    esac
                     ;;
             esac
         fi
@@ -780,10 +1112,43 @@ measure_service_resources()
     case "$current_tmp_bytes" in
         ''|*[!0-9]*) service_resource_measurement_failed=1 ;;
         *)
+            temp_sample_valid=yes
             service_temp_samples=$((service_temp_samples + 1))
             if [ "$current_tmp_bytes" -gt "$service_peak_temp_bytes" ]; then service_peak_temp_bytes=$current_tmp_bytes; fi
             ;;
     esac
+    if [ "$resource_sample_valid" = yes ] && [ "$oom_sample_valid" = yes ] &&
+        [ "$temp_sample_valid" = yes ] && [ "$service_case_resource_active" = yes ]; then
+        service_case_resource_sample_count=$((service_case_resource_sample_count + 1))
+        if [ "$rss" -gt "$service_case_resource_rss_peak_kb" ]; then service_case_resource_rss_peak_kb=$rss; fi
+        if [ "$pss" -gt "$service_case_resource_pss_peak_kb" ]; then service_case_resource_pss_peak_kb=$pss; fi
+        if [ "$vas" -gt "$service_case_resource_vas_peak_kb" ]; then service_case_resource_vas_peak_kb=$vas; fi
+        if [ "$swap" -gt "$service_case_resource_swap_peak_kb" ]; then service_case_resource_swap_peak_kb=$swap; fi
+        if [ "$minor_faults" -gt "$service_case_resource_minor_faults_peak" ]; then service_case_resource_minor_faults_peak=$minor_faults; fi
+        if [ "$major_faults" -gt "$service_case_resource_major_faults_peak" ]; then service_case_resource_major_faults_peak=$major_faults; fi
+        if [ "$read_bytes" -gt "$service_case_resource_read_bytes_peak" ]; then service_case_resource_read_bytes_peak=$read_bytes; fi
+        if [ "$write_bytes" -gt "$service_case_resource_write_bytes_peak" ]; then service_case_resource_write_bytes_peak=$write_bytes; fi
+        if [ "$cancelled_write_bytes" -gt "$service_case_resource_cancelled_write_bytes_peak" ]; then service_case_resource_cancelled_write_bytes_peak=$cancelled_write_bytes; fi
+        if [ "$current_tmp_bytes" -gt "$service_case_resource_temporary_peak_bytes" ]; then service_case_resource_temporary_peak_bytes=$current_tmp_bytes; fi
+        case_oom_events_delta=$((oom_events - service_oom_baseline))
+        case_oom_kill_events_delta=$((oom_kill_events - service_oom_kill_baseline))
+        if [ "$case_oom_events_delta" -gt "$service_case_resource_oom_events_peak" ]; then service_case_resource_oom_events_peak=$case_oom_events_delta; fi
+        if [ "$case_oom_kill_events_delta" -gt "$service_case_resource_oom_kill_events_peak" ]; then service_case_resource_oom_kill_events_peak=$case_oom_kill_events_delta; fi
+        service_case_resource_oom_cgroup_count=$oom_cgroup_count
+        service_case_resource_oom_cgroup_digest=$oom_cgroup_digest
+    fi
+    if [ "$resource_sample_valid" = yes ] && [ "$oom_sample_valid" = yes ] &&
+        [ "$temp_sample_valid" = yes ]; then
+        service_resource_sample_sequence=$((service_resource_sample_sequence + 1))
+        service_rss_samples=$((service_rss_samples + 1))
+        service_oom_samples=$((service_oom_samples + 1))
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$service_resource_sample_sequence" "$rss" "$pss" "$vas" "$swap" \
+            "$minor_faults" "$major_faults" "$read_bytes" "$write_bytes" \
+            "$cancelled_write_bytes" "$process_count" "$current_tmp_bytes" \
+            "$oom_events" "$oom_kill_events" "$oom_cgroup_digest" \
+            "$sampled_pids" >> "$service_resource_samples"
+    fi
 }
 
 cleanup()
@@ -840,6 +1205,7 @@ stop_service()
     fi
     record_service_lifecycle pidfile_absent_after_stop "$pidfile_absent_after_stop"
 
+    resource_root_remove "$service_pid"
     service_pid=
     if [ "$ping_before_stop" != pass ] ||
         [ "$service_was_running" != yes ] ||
@@ -899,6 +1265,7 @@ start_service()
     write_config "$database" "$max_threads" "$max_queue" "$alert_exceeds_max"
     "$build_dir/clamd/clamd" --config-file="$config" > "$out/logs/clamd-$(basename "$database").log" 2>&1 &
     service_pid=$!
+    resource_root_add "$service_pid"
     i=0
     # --wait intentionally enters the normal client path after a successful
     # ping, which scans the current directory when no input was supplied.
@@ -1011,15 +1378,24 @@ run_service_scan()
     scan_log=$out/logs/$scan_label.log
     scan_report=$out/reports/$scan_label.jsonl
     scan_status=0
+    case "$scan_label" in
+        production_cvd_fildes)
+            service_case_resource_begin_for_role clamdscan fdpass production
+            ;;
+        *) ;;
+    esac
     "/usr/bin/time" -f '%e' -o "$out/logs/$scan_label.elapsed" \
         timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
         "$build_dir/clamdscan/clamdscan" --infected --no-summary --report-json="$scan_report" "$@" -c "$config" "$scan_file" > "$scan_log" 2>&1 &
     scan_pid=$!
+    resource_root_add "$scan_pid"
     while kill -0 "$scan_pid" 2>/dev/null; do
         measure_service_resources
         sleep 0.05
     done
     wait "$scan_pid" || scan_status=$?
+    resource_root_remove "$scan_pid"
+    service_case_resource_end
     case "$scan_status" in
         0|1|2) ;;
         *) echo "$scan_label failed with status $scan_status" >&2; return 1 ;;
@@ -1038,6 +1414,7 @@ run_service_stdin()
 {
     scan_label=edge-clamdscan-stdin
     oracle_load edge "$edge_file"
+    service_case_resource_begin_for_role clamdscan stream edge
     scan_log=$out/logs/$scan_label.log
     scan_report=$out/reports/$scan_label.jsonl
     scan_status=0
@@ -1049,11 +1426,14 @@ run_service_stdin()
                 "$scan_report" "$config"
     ) > "$scan_log" 2>&1 &
     scan_pid=$!
+    resource_root_add "$scan_pid"
     while kill -0 "$scan_pid" 2>/dev/null; do
         measure_service_resources
         sleep 0.05
     done
     wait "$scan_pid" || scan_status=$?
+    resource_root_remove "$scan_pid"
+    service_case_resource_end
     case "$scan_status" in
         0|1|2) ;;
         *) echo "$scan_label failed with status $scan_status" >&2; return 1 ;;
@@ -1071,16 +1451,28 @@ run_service_stdin()
 run_direct_production()
 {
     oracle_load production "$production_file"
+    service_case_resource_begin_for_role clamscan file production
     direct_status=0
     report="$out/reports/production-clamscan.jsonl"
-    "/usr/bin/time" -f '%e' -o "$out/logs/production-clamscan.elapsed" \
-        timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
-        "$build_dir/clamscan/clamscan" --database="$production_db" \
-        --max-filesize=32G --max-scansize=64G --max-matcher-work=256G \
-        --max-temporary-size=64G --max-contiguous-size=32G \
-        --pcre-max-filesize=32G --max-scantime="$max_scan_time_ms" \
-        --no-summary --debug --report-json="$report" "$production_file" \
-        > "$out/logs/production-clamscan.log" 2>&1 || direct_status=$?
+    (
+        "/usr/bin/time" -f '%e' -o "$out/logs/production-clamscan.elapsed" \
+            timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
+            "$build_dir/clamscan/clamscan" --database="$production_db" \
+            --max-filesize=32G --max-scansize=64G --max-matcher-work=256G \
+            --max-temporary-size=64G --max-contiguous-size=32G \
+            --pcre-max-filesize=32G --max-scantime="$max_scan_time_ms" \
+            --no-summary --debug --report-json="$report" "$production_file" \
+            > "$out/logs/production-clamscan.log" 2>&1 || exit $?
+    ) &
+    direct_pid=$!
+    resource_root_add "$direct_pid"
+    while kill -0 "$direct_pid" 2>/dev/null; do
+        measure_service_resources
+        sleep 0.05
+    done
+    wait "$direct_pid" || direct_status=$?
+    resource_root_remove "$direct_pid"
+    service_case_resource_end
     oracle_status=$direct_status
     if ! check_oracle_output production-clamscan "$out/logs/production-clamscan.log" "$report" yes yes cli "$production_file"; then
         return 1
@@ -1091,17 +1483,29 @@ run_direct_production()
 run_direct_stdin()
 {
     oracle_load edge "$edge_file"
+    service_case_resource_begin_for_role clamscan stdin edge
     stdin_status=0
     stdin_report="$out/reports/edge-clamscan-stdin.jsonl"
-    "/usr/bin/time" -f '%e' -o "$out/logs/edge-clamscan-stdin.elapsed" \
-        timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
-        "$build_dir/clamscan/clamscan" --database="$edge_db" \
-        --max-filesize=32G --max-scansize=64G --max-matcher-work=256G \
-        --max-temporary-size=64G --max-contiguous-size=32G \
-        --pcre-max-filesize=32G --max-scantime="$max_scan_time_ms" \
-        --tempdir="$out/tmp" --no-summary --debug \
-        --report-json="$stdin_report" - < "$edge_file" \
-        > "$out/logs/edge-clamscan-stdin.log" 2>&1 || stdin_status=$?
+    (
+        "/usr/bin/time" -f '%e' -o "$out/logs/edge-clamscan-stdin.elapsed" \
+            timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
+            "$build_dir/clamscan/clamscan" --database="$edge_db" \
+            --max-filesize=32G --max-scansize=64G --max-matcher-work=256G \
+            --max-temporary-size=64G --max-contiguous-size=32G \
+            --pcre-max-filesize=32G --max-scantime="$max_scan_time_ms" \
+            --tempdir="$out/tmp" --no-summary --debug \
+            --report-json="$stdin_report" - < "$edge_file" \
+            > "$out/logs/edge-clamscan-stdin.log" 2>&1 || exit $?
+    ) &
+    stdin_pid=$!
+    resource_root_add "$stdin_pid"
+    while kill -0 "$stdin_pid" 2>/dev/null; do
+        measure_service_resources
+        sleep 0.05
+    done
+    wait "$stdin_pid" || stdin_status=$?
+    resource_root_remove "$stdin_pid"
+    service_case_resource_end
     oracle_status=$stdin_status
     if ! check_oracle_output edge-clamscan-stdin \
         "$out/logs/edge-clamscan-stdin.log" "$stdin_report" yes yes cli "$edge_file"; then
@@ -1127,9 +1531,10 @@ run_serial_queue()
                 "$build_dir/clamdscan/clamdscan" --infected --no-summary \
                 --stream --report-json="$queue_report" -c "$config" "$materialized_file" \
                 > "$queue_log" 2>&1 || status=$?
-            printf '%s\n' "$status" > "$queue_status_file"
+        printf '%s\n' "$status" > "$queue_status_file"
         ) &
         queue_pids="$queue_pids $!"
+        resource_root_add "$!"
         # Give the first request a chance to enter the sole worker before the
         # second streaming client is submitted. The daemon log remains the
         # acceptance oracle, so a fast fixture cannot silently satisfy this
@@ -1156,6 +1561,7 @@ run_serial_queue()
     queue_status=0
     for queue_pid in $queue_pids; do
         wait "$queue_pid" || queue_status=1
+        resource_root_remove "$queue_pid"
     done
     if [ "$queue_status" -ne 0 ]; then
         echo 'serial clamd queue clients did not complete' >&2
@@ -1201,14 +1607,38 @@ run_direct_report()
     report_label=$1
     report_mode=$2
     oracle_load production "$production_file"
+    case "$report_mode" in
+        scan) report_case_id=SCANREPORT ;;
+        contscan) report_case_id=CONTSCANREPORT ;;
+        multiscan) report_case_id=MULTISCANREPORT ;;
+        allmatchscan) report_case_id=ALLMATCHSCANREPORT ;;
+        fildes) report_case_id=FILDESREPORT ;;
+        instream) report_case_id=INSTREAMREPORT ;;
+        *)
+            echo "unsupported report mode for per-case resource capture: $report_mode" >&2
+            return 1
+            ;;
+    esac
+    service_case_resource_begin_for_role clamd "$report_case_id" production
     report_log="$out/logs/production_cvd_${report_label}.log"
     report_path="$out/reports/production_cvd_${report_label}.jsonl"
     report_status=0
-    "/usr/bin/time" -f '%e' -o "$out/logs/production_cvd_${report_label}.elapsed" \
-        timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
-        python3 "$root/tools/largefile_clamd_report_protocol.py" \
-        "$socket" "$production_file" "$oracle_manifest" production "$report_mode" \
-        "$report_path" "$service_timeout_s" > "$report_log" 2>&1 || report_status=$?
+    (
+        "/usr/bin/time" -f '%e' -o "$out/logs/production_cvd_${report_label}.elapsed" \
+            timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
+            python3 "$root/tools/largefile_clamd_report_protocol.py" \
+            "$socket" "$production_file" "$oracle_manifest" production "$report_mode" \
+            "$report_path" "$service_timeout_s" > "$report_log" 2>&1 || exit $?
+    ) &
+    report_pid=$!
+    resource_root_add "$report_pid"
+    while kill -0 "$report_pid" 2>/dev/null; do
+        measure_service_resources
+        sleep 0.05
+    done
+    wait "$report_pid" || report_status=$?
+    resource_root_remove "$report_pid"
+    service_case_resource_end
     if [ "$report_status" -ne 0 ]; then
         cat "$report_log" >&2
         return 1
@@ -1384,6 +1814,7 @@ while [ "$client" -le 2 ]; do
         printf '%s\n' "$status" > "$multi_status_file"
     ) &
     multi_pids="$multi_pids $!"
+    resource_root_add "$!"
     client=$((client + 1))
 done
 multi_running=1
@@ -1403,6 +1834,7 @@ done
 multi_worker_status=0
 for multi_pid in $multi_pids; do
     wait "$multi_pid" || multi_worker_status=1
+    resource_root_remove "$multi_pid"
 done
 parallel_service_log="$out/logs/clamd-$(basename "$edge_db").log"
 if [ ! -r "$parallel_service_log" ]; then
@@ -1464,6 +1896,9 @@ stop_service
 printf 'service_lifecycle=provenance/service-lifecycle.tsv\n' >> "$service_build_identity"
 printf 'service_lifecycle_sha256=%s\n' \
     "$(sha256sum "$service_lifecycle" | awk '{ print $1 }')" >> "$service_build_identity"
+printf 'service_resource_samples=provenance/service-resource-samples.tsv\n' >> "$service_build_identity"
+printf 'service_resource_samples_sha256=%s\n' \
+    "$(sha256sum "$service_resource_samples" | awk '{ print $1 }')" >> "$service_build_identity"
 printf 'service_lifecycle=pass\n' >> "$out/service-summary.txt"
 
 for elapsed_file in "$out"/logs/*.elapsed; do
@@ -1475,6 +1910,26 @@ done
 printf 'latency_budget_s=%s\n' "$latency_budget_s" >> "$out/service-summary.txt"
 printf 'latency=pass\n' >> "$out/service-summary.txt"
 
+final_oom_sample=$(python3 "$root/tools/largefile_procfs_tree_oom.py" "$$" 2>/dev/null || true)
+final_oom_events=$(printf '%s\n' "$final_oom_sample" |
+    awk -F '\t' 'NF == 4 && $1 ~ /^[0-9]+$/ { print $1; exit }')
+final_oom_kill_events=$(printf '%s\n' "$final_oom_sample" |
+    awk -F '\t' 'NF == 4 && $2 ~ /^[0-9]+$/ { print $2; exit }')
+final_oom_cgroup_count=$(printf '%s\n' "$final_oom_sample" |
+    awk -F '\t' 'NF == 4 && $3 ~ /^[0-9]+$/ { print $3; exit }')
+final_oom_cgroup_digest=$(printf '%s\n' "$final_oom_sample" |
+    awk -F '\t' 'NF == 4 && $4 ~ /^[0-9a-fA-F]{64}$/ { print $4; exit }')
+if [ -z "$final_oom_events" ] || [ -z "$final_oom_kill_events" ] ||
+    [ -z "$final_oom_cgroup_count" ] || [ -z "$final_oom_cgroup_digest" ] ||
+    [ "$final_oom_cgroup_count" -ne "$service_oom_cgroup_count" ] ||
+    [ "$final_oom_cgroup_digest" != "$service_oom_cgroup_digest" ] ||
+    [ "$final_oom_events" -ne "$service_oom_baseline" ] ||
+    [ "$final_oom_kill_events" -ne "$service_oom_kill_baseline" ] ||
+    [ "$service_peak_oom_events" -ne "$service_oom_baseline" ] ||
+    [ "$service_peak_oom_kill_events" -ne "$service_oom_kill_baseline" ]; then
+    echo 'service cgroup-v2 OOM counters changed or could not be verified' >&2
+    exit 1
+fi
 if [ "$service_resource_measurement_failed" -ne 0 ]; then
     echo 'service resource measurement failed or produced malformed evidence' >&2
     exit 1
@@ -1491,8 +1946,37 @@ if [ "$service_peak_rss_kb" -gt "$rss_budget_kb" ]; then
     echo "clamd RSS exceeded budget: ${service_peak_rss_kb} > ${rss_budget_kb} KiB" >&2
     exit 1
 fi
+if [ "$service_peak_swap_kb" -ne 0 ]; then
+    echo "service process tree used swap: ${service_peak_swap_kb} KiB" >&2
+    exit 1
+fi
 printf 'service_rss_peak_kb=%s\n' "$service_peak_rss_kb" >> "$out/service-summary.txt"
+printf 'service_rss_peak_process_count=%s\n' "$service_peak_rss_process_count" >> "$out/service-summary.txt"
 printf 'service_rss_samples=%s\n' "$service_rss_samples" >> "$out/service-summary.txt"
+printf 'service_rss_measurement=%s\n' "$service_rss_measurement" >> "$out/service-summary.txt"
+printf 'service_rss_process_tree=pass\n' >> "$out/service-summary.txt"
+printf 'service_rss_sampler=tools/largefile_procfs_tree_rss.sh\n' >> "$out/service-summary.txt"
+printf 'service_memory_metrics=%s\n' "$service_memory_metrics" >> "$out/service-summary.txt"
+printf 'service_oom_measurement=%s\n' "$service_oom_measurement" >> "$out/service-summary.txt"
+printf 'service_oom_baseline=%s\n' "$service_oom_baseline" >> "$out/service-summary.txt"
+printf 'service_oom_kill_baseline=%s\n' "$service_oom_kill_baseline" >> "$out/service-summary.txt"
+printf 'service_oom_peak=%s\n' "$service_peak_oom_events" >> "$out/service-summary.txt"
+printf 'service_oom_kill_peak=%s\n' "$service_peak_oom_kill_events" >> "$out/service-summary.txt"
+printf 'service_oom_samples=%s\n' "$service_oom_samples" >> "$out/service-summary.txt"
+printf 'service_oom_cgroup_count=%s\n' "$service_oom_cgroup_count" >> "$out/service-summary.txt"
+printf 'service_oom_cgroup_digest=%s\n' "$service_oom_cgroup_digest" >> "$out/service-summary.txt"
+printf 'service_oom_events=pass\n' >> "$out/service-summary.txt"
+printf 'service_oom_kills=pass\n' >> "$out/service-summary.txt"
+printf 'service_pss_peak_kb=%s\n' "$service_peak_pss_kb" >> "$out/service-summary.txt"
+printf 'service_vas_peak_kb=%s\n' "$service_peak_vas_kb" >> "$out/service-summary.txt"
+printf 'service_swap_peak_kb=%s\n' "$service_peak_swap_kb" >> "$out/service-summary.txt"
+printf 'service_swap=pass\n' >> "$out/service-summary.txt"
+printf 'service_minor_faults_peak=%s\n' "$service_peak_minor_faults" >> "$out/service-summary.txt"
+printf 'service_major_faults_peak=%s\n' "$service_peak_major_faults" >> "$out/service-summary.txt"
+printf 'service_read_bytes_peak=%s\n' "$service_peak_read_bytes" >> "$out/service-summary.txt"
+printf 'service_write_bytes_peak=%s\n' "$service_peak_write_bytes" >> "$out/service-summary.txt"
+printf 'service_cancelled_write_bytes_peak=%s\n' "$service_peak_cancelled_write_bytes" >> "$out/service-summary.txt"
+printf 'service_resource_samples=provenance/service-resource-samples.tsv\n' >> "$out/service-summary.txt"
 printf 'service_temp_samples=%s\n' "$service_temp_samples" >> "$out/service-summary.txt"
 printf 'rss_budget_kb=%s\n' "$rss_budget_kb" >> "$out/service-summary.txt"
 printf 'pcre_rss_budget_kb=%s\n' "$pcre_rss_budget_kb" >> "$out/service-summary.txt"
@@ -1526,11 +2010,13 @@ milter_status=0
         python3 "$root/unit_tests/milter_protocol_test.py" > "$out/logs/milter-exact-edge.log" 2>&1 || exit $?
 ) &
 milter_pid=$!
+resource_root_add "$milter_pid"
 while kill -0 "$milter_pid" 2>/dev/null; do
     measure_service_resources
     sleep 0.05
 done
 wait "$milter_pid" || milter_status=$?
+resource_root_remove "$milter_pid"
 if [ "$milter_status" -ne 0 ]; then
     echo 'milter exact-edge integration gate failed' >&2
     exit 1
@@ -1566,6 +2052,12 @@ printf 'service_temp_budget_bytes=%s\n' "$temporary_budget_bytes" >> "$out/servi
 printf 'service_temp_budget=pass\n' >> "$out/service-summary.txt"
 printf 'max_scan_time_ms=%s\n' "$max_scan_time_ms" >> "$service_build_identity"
 printf 'service_timeout_s=%s\n' "$service_timeout_s" >> "$service_build_identity"
+printf 'service_memory_metrics=%s\n' "$service_memory_metrics" >> "$service_build_identity"
+printf 'service_oom_measurement=%s\n' "$service_oom_measurement" >> "$service_build_identity"
+printf 'service_oom_baseline=%s\n' "$service_oom_baseline" >> "$service_build_identity"
+printf 'service_oom_kill_baseline=%s\n' "$service_oom_kill_baseline" >> "$service_build_identity"
+printf 'service_oom_cgroup_count=%s\n' "$service_oom_cgroup_count" >> "$service_build_identity"
+printf 'service_oom_cgroup_digest=%s\n' "$service_oom_cgroup_digest" >> "$service_build_identity"
 printf 'max_scan_time_ms=%s\n' "$max_scan_time_ms" >> "$out/service-summary.txt"
 printf 'service_timeout_s=%s\n' "$service_timeout_s" >> "$out/service-summary.txt"
 record_service_binary_hashes "$service_binary_hashes_after"
@@ -1610,12 +2102,15 @@ printf 'service_runtime_components_unchanged=pass\n' >> "$out/service-summary.tx
 printf 'service_interpreters_unchanged=pass\n' >> "$out/service-summary.txt"
 printf 'service_build_identity=pass\n' >> "$out/service-summary.txt"
 printf 'service_qualification=pass\n' >> "$out/service-summary.txt"
+finalize_service_case_resources
+printf 'acceptance_resource_sidecar=provenance/acceptance-case-resources.tsv\n' >> "$out/service-summary.txt"
 # Convert only explicitly mapped, already-validated service workloads into
 # capability-bound R04 records. Unmapped cases remain absent and therefore
 # continue to block authoritative release readiness.
 python3 "$root/tools/largefile_acceptance_case_producer.py" "$out" \
     --manifest "$root/docs/largefile-capabilities.tsv" \
-    --map "$root/docs/largefile-capability-case-map.tsv"
+    --map "$root/docs/largefile-capability-case-map.tsv" \
+    --require-resource-sidecar
 printf 'qualification_oracle=provenance/qualification-oracle.tsv\n' >> "$out/oracle-binding.txt"
 printf 'qualification_oracle_sha256=%s\n' \
     "$(sha256sum "$service_oracle_copy" | awk '{ print $1 }')" >> "$out/oracle-binding.txt"

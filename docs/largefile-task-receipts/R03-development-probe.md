@@ -2,7 +2,7 @@
 
 Task ID / parent milestone: `R03` / `R00`
 
-Canonical source: `/Volumes/512gbNVME/github-external/ClamAV-32gb`, branch
+Canonical source: `<repository-root>`, branch
 `largefile-roadmap-qualification`. Existing dirty changes were preserved. No
 immutable qualification candidate was declared.
 

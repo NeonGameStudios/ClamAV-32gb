@@ -221,14 +221,55 @@ if ! command -v sha256sum >/dev/null 2>&1; then
     echo 'sha256sum is required to verify runtime evidence' >&2
     exit 2
 fi
-if ! command -v file >/dev/null 2>&1; then
-    echo 'file is required to verify the scanner artifact type' >&2
-    exit 2
-fi
 if ! command -v python3 >/dev/null 2>&1; then
     echo 'python3 is required to verify the selected ELF interpreter' >&2
     exit 2
 fi
+
+verify_x86_64_elf_type()
+{
+    artifact=$1
+    label=$2
+
+    if command -v file >/dev/null 2>&1; then
+        artifact_type=$(file -b "$artifact")
+        case "$artifact_type" in
+            ELF\ 64-bit\ LSB*x86-64*) return 0 ;;
+            *)
+                echo "copied $label scanner is not an executable x86-64 ELF: $artifact_type" >&2
+                return 1
+                ;;
+        esac
+    fi
+
+    # The release evidence checker is also run in minimal build containers
+    # that may not ship the file utility. Keep the same architecture/type
+    # rejection contract with a bounded ELF header check instead of making
+    # the evidence gate depend on an extra package.
+    if ! python3 - "$artifact" <<'PY'
+import struct
+import sys
+
+try:
+    with open(sys.argv[1], "rb") as stream:
+        header = stream.read(20)
+except OSError:
+    raise SystemExit(1)
+
+if len(header) < 20 or header[:4] != b"\x7fELF":
+    raise SystemExit(1)
+if header[4] != 2 or header[5] != 1:
+    raise SystemExit(1)
+if struct.unpack_from("<H", header, 16)[0] not in (2, 3):
+    raise SystemExit(1)
+if struct.unpack_from("<H", header, 18)[0] != 62:
+    raise SystemExit(1)
+PY
+    then
+        echo "copied $label scanner is not an executable x86-64 ELF" >&2
+        return 1
+    fi
+}
 
 verify_interpreter_record()
 {
@@ -645,14 +686,7 @@ grep -Fx 'scanner_path=artifacts/clamscan' "$metadata" >/dev/null 2>&1 || {
     exit 1
 }
 scanner_sha256=$(sha256sum "$scanner_copy" | awk '{ print $1 }')
-scanner_type=$(file -b "$scanner_copy")
-case "$scanner_type" in
-    ELF\ 64-bit\ LSB*x86-64*) ;;
-    *)
-        echo "copied release scanner is not an executable x86-64 ELF: $scanner_type" >&2
-        exit 1
-        ;;
-esac
+verify_x86_64_elf_type "$scanner_copy" release || exit 1
 if [ ! -x "$scanner_copy" ]; then
     echo 'copied release scanner is not executable' >&2
     exit 1
@@ -1107,14 +1141,7 @@ if [ "$require_sanitizer" = yes ]; then
         echo 'copied sanitizer scanner is missing' >&2
         exit 1
     fi
-    sanitizer_scanner_type=$(file -b "$sanitizer_scanner_copy")
-    case "$sanitizer_scanner_type" in
-        ELF\ 64-bit\ LSB*x86-64*) ;;
-        *)
-            echo "copied sanitizer scanner is not an executable x86-64 ELF: $sanitizer_scanner_type" >&2
-            exit 1
-            ;;
-    esac
+    verify_x86_64_elf_type "$sanitizer_scanner_copy" sanitizer || exit 1
     if [ ! -x "$sanitizer_scanner_copy" ]; then
         echo 'copied sanitizer scanner is not executable' >&2
         exit 1

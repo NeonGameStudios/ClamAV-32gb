@@ -39,7 +39,7 @@ Evidence:
 No capability was promoted. Current-source linked on-access execution,
 certified Linux x86-64, full-size service parity, sanitizer, privileged
 fanotify, production-CVD, R04 acceptance, and final release qualification
-remain open. No remote execution, MCP-SSH, usage reset, commit, push, or
+remain open. No remote execution, remote SSH, usage reset, commit, push, or
 GitHub workflow action was used.
 
 Follow-on current-source syntax verification (2026-09-11 UTC): the

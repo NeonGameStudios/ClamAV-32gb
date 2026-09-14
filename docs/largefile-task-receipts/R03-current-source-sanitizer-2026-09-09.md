@@ -10,7 +10,7 @@ qualification or a Rust sanitizer candidate.
 
 Build identity:
 
-- source: `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- source: `<repository-root>`
 - branch: `largefile-roadmap-qualification`
 - HEAD at capture: `41cde8160286813f0f98e109c1450e40ff4117fb`
 - source mounted read-only at `/src`

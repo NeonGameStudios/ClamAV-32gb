@@ -23,8 +23,9 @@ SRes Xz_ReadHeader(CXzStreamFlags *p, ISeqInStream *inStream)
 }
 
 #define READ_VARINT_AND_CHECK(buf, pos, size, res) \
-  { unsigned s = Xz_ReadVarInt(buf + pos, size - pos, res); \
-  if (s == 0) return SZ_ERROR_ARCHIVE; pos += s; }
+  do { unsigned s = Xz_ReadVarInt(buf + pos, size - pos, res); \
+  if (s == 0) return SZ_ERROR_ARCHIVE; \
+  pos += s; } while (0)
 
 SRes XzBlock_ReadHeader(CXzBlock *p, ISeqInStream *inStream, Bool *isIndex, UInt32 *headerSizeRes)
 {
@@ -76,7 +77,7 @@ SRes XzBlock_ReadFooter(CXzBlock *p, CXzStreamFlags f, ISeqInStream *inStream)
 
 static SRes Xz_ReadIndex2(CXzStream *p, const Byte *buf, size_t size, ISzAlloc *alloc)
 {
-  size_t i, numBlocks, crcStartPos, pos = 1;
+  size_t i, numBlocks, pos = 1;
   UInt32 crc;
 
   if (size < 5 || buf[0] != 0)
@@ -84,7 +85,7 @@ static SRes Xz_ReadIndex2(CXzStream *p, const Byte *buf, size_t size, ISzAlloc *
 
   size -= 4;
   crc = CrcCalc(buf, size);
-  if (crc != GetUi32(buf + size))
+  if (crc != (UInt32)GetUi32(buf + size))
     return SZ_ERROR_ARCHIVE;
 
   {
@@ -97,7 +98,6 @@ static SRes Xz_ReadIndex2(CXzStream *p, const Byte *buf, size_t size, ISzAlloc *
       return SZ_ERROR_MEM;
   }
   
-  crcStartPos = pos;
   Xz_Free(p, alloc);
   if (numBlocks != 0)
   {
@@ -171,7 +171,7 @@ static SRes Xz_ReadBackward(CXzStream *p, ILookInStream *stream, Int64 *startOff
       if (*startOffset < XZ_STREAM_FOOTER_SIZE || i > (1 << 16))
         return SZ_ERROR_NO_ARCHIVE;
       processedSize = (*startOffset > TEMP_BUF_SIZE) ? TEMP_BUF_SIZE : (size_t)*startOffset;
-      i += processedSize;
+      i += (Int64)processedSize;
       *startOffset = -(Int64)processedSize;
       RINOK(SeekFromCur(stream, startOffset));
       RINOK(LookInStream_Read2(stream, tempBuf, processedSize, SZ_ERROR_NO_ARCHIVE));
@@ -200,7 +200,7 @@ static SRes Xz_ReadBackward(CXzStream *p, ILookInStream *stream, Int64 *startOff
   if (!XzFlags_IsSupported(p->flags))
     return SZ_ERROR_UNSUPPORTED;
 
-  if (GetUi32(buf) != CrcCalc(buf + 4, 6))
+  if ((UInt32)GetUi32(buf) != CrcCalc(buf + 4, 6))
     return SZ_ERROR_ARCHIVE;
 
   indexSize = ((UInt64)GetUi32(buf + 4) + 1) << 2;
@@ -290,8 +290,10 @@ SRes Xzs_ReadBackward(CXzs *p, ILookInStream *stream, Int64 *startOffset, ICompr
     SRes res;
     Xz_Construct(&st);
     res = Xz_ReadBackward(&st, stream, startOffset, alloc);
-    st.startOffset = *startOffset;
     RINOK(res);
+    if (*startOffset < 0)
+      return SZ_ERROR_ARCHIVE;
+    st.startOffset = (UInt64)*startOffset;
     if (p->num == p->numAllocated)
     {
       size_t growth = p->num / 4 + 1;
@@ -312,7 +314,8 @@ SRes Xzs_ReadBackward(CXzs *p, ILookInStream *stream, Int64 *startOffset, ICompr
     if (*startOffset == 0)
       break;
     RINOK(stream->Seek(stream, startOffset, SZ_SEEK_SET));
-    if (progress && progress->Progress(progress, endOffset - *startOffset, (UInt64)(Int64)-1) != SZ_OK)
+    if (progress && progress->Progress(progress,
+        (UInt64)(endOffset - *startOffset), (UInt64)(Int64)-1) != SZ_OK)
       return SZ_ERROR_PROGRESS;
   }
   return SZ_OK;

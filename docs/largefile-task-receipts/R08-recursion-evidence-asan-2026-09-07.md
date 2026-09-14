@@ -13,7 +13,7 @@ any capability or replace the certified Linux x86-64 qualification run.
 
 ## Source and build identity
 
-- Canonical checkout: `/Volumes/512gbNVME/github-external/ClamAV-32gb`.
+- Canonical checkout: `<repository-root>`.
 - Branch: `largefile-roadmap-qualification`.
 - Base HEAD: `ff8905891b2b58a66c71859ab2c807cc4dee2dec`.
 - Both tested builds embedded the pre-receipt dirty-source manifest SHA-256

@@ -8,7 +8,7 @@ it does not create qualification evidence or promote a capability.
 
 Canonical checkout and branch:
 
-- `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- `<repository-root>`
 - `largefile-roadmap-qualification`
 - starting commit: `b4cde643fce085fa016338339830b2b28ff9a42a`
 - intentionally dirty working tree preserved; no reset, clean, commit, or push
@@ -39,7 +39,7 @@ parser and grammar entry point.
 
 The full-size certified Linux x86-64 runner remains unavailable, so no
 authoritative acceptance record was added. No software was installed, and no
-remote execution, MCP-SSH, usage reset, GitHub workflow action, commit, or
+remote execution, remote SSH, usage reset, GitHub workflow action, commit, or
 push was used.
 
 Release readiness remains blocked at 597 total, 0 qualified, 143 bounded, 440

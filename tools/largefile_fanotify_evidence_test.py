@@ -174,6 +174,13 @@ class FanotifyEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown name"):
             checker.validate(self.write(document), self.root)
 
+    def test_duplicate_json_keys_are_rejected(self):
+        path = self.root / "provenance/fanotify-permission-evidence.json"
+        path.write_text('{"proof_format_version":1,"proof_format_version":1}',
+                        encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "duplicate JSON key: proof_format_version"):
+            checker.validate(path, self.root)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -235,11 +235,12 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
     if ((dst == NULL) || (src == NULL) || (dsize == NULL) || (magic == NULL))
         return -1;
 
-    if ((size_t)*dsize > SIZE_MAX - 8192U)
+    output_capacity = (size_t)*dsize;
+    if (output_capacity > SIZE_MAX - 8192U)
         return -1;
     if (dend > *dsize)
         return -1;
-    output_capacity = (size_t)*dsize + 8192U;
+    output_capacity += 8192U;
 
     if (upx_checktimelimit(ctx, &ticks))
         return -1;

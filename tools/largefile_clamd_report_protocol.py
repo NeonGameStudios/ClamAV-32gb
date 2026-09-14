@@ -15,6 +15,7 @@ import struct
 import sys
 from pathlib import Path
 
+import largefile_acceptance_cases as acceptance_cases
 from largefile_service_workload_check import load_oracle as load_qualification_oracle, validate_outcome
 
 
@@ -59,11 +60,11 @@ def receive_report(sock):
     if frame_length > MAX_FRAME:
         fail(f"clamd report frame exceeds {MAX_FRAME} bytes")
     try:
-        report = json.loads(read_exact(sock, frame_length).decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        report = acceptance_cases.load_json_object(
+            read_exact(sock, frame_length).decode("utf-8"), "clamd report"
+        )
+    except (UnicodeDecodeError, ValueError) as error:
         fail(f"clamd returned invalid report JSON: {error}")
-    if not isinstance(report, dict):
-        fail("clamd report JSON is not an object")
     terminator = struct.unpack("!I", read_exact(sock, 4))[0]
     if terminator != 0:
         fail("clamd report did not end with a zero-length frame")

@@ -161,6 +161,10 @@ clamd	INSTREAMREPORT	clamd:INSTREAMREPORT:clean-edge,clamd:INSTREAMREPORT:detect
 clamd	response-write	clamd:response-write:clean-edge,clamd:response-write:detection-edge,clamd:response-write:limit-edge
 clamdscan	fdpass	clamdscan:fdpass:clean-edge,clamdscan:fdpass:detection-edge,clamdscan:fdpass:limit-edge
 clamdscan	stream	clamdscan:stream:clean-edge,clamdscan:stream:detection-edge,clamdscan:stream:limit-edge
+clamdscan	default	clamdscan:default:clean-edge,clamdscan:default:detection-edge,clamdscan:default:limit-edge
+clamdscan	multiscan	clamdscan:multiscan:clean-edge,clamdscan:multiscan:detection-edge,clamdscan:multiscan:limit-edge
+clamdscan	stream-multiscan	clamdscan:stream-multiscan:clean-edge,clamdscan:stream-multiscan:detection-edge,clamdscan:stream-multiscan:limit-edge
+clamdscan	fdpass-multiscan	clamdscan:fdpass-multiscan:clean-edge,clamdscan:fdpass-multiscan:detection-edge,clamdscan:fdpass-multiscan:limit-edge
 clamdscan	clamdscan-directory-walk-failure	clamdscan:clamdscan-directory-walk-failure:clean-edge,clamdscan:clamdscan-directory-walk-failure:detection-edge,clamdscan:clamdscan-directory-walk-failure:limit-edge
 clamdscan	clamdscan-idsession-termination-send	clamdscan:clamdscan-idsession-termination-send:clean-edge,clamdscan:clamdscan-idsession-termination-send:detection-edge,clamdscan:clamdscan-idsession-termination-send:limit-edge
 clamd	MULTISCAN	clamd:MULTISCAN:clean-edge,clamd:MULTISCAN:detection-edge,clamd:MULTISCAN:limit-edge
@@ -596,3 +600,6 @@ library	packlibs-backreference-admission	library:packlibs-backreference-admissio
 library	arj-huffman-table-root-admission	library:arj-huffman-table-root-admission:complete,library:arj-huffman-table-root-admission:late-detection,library:arj-huffman-table-root-admission:fault
 library	mime-argument-field-span-admission	library:mime-argument-field-span-admission:complete,library:mime-argument-field-span-admission:late-detection,library:mime-argument-field-span-admission:fault
 library	scan-deadline-check-failure	library:scan-deadline-check-failure:complete,library:scan-deadline-check-failure:late-detection,library:scan-deadline-check-failure:fault
+library	pdf-empty-extracted-object-maxfiles	library:pdf-empty-extracted-object-maxfiles:complete,library:pdf-empty-extracted-object-maxfiles:late-detection,library:pdf-empty-extracted-object-maxfiles:fault
+library	xar-empty-subdocument-maxfiles	library:xar-empty-subdocument-maxfiles:complete,library:xar-empty-subdocument-maxfiles:late-detection,library:xar-empty-subdocument-maxfiles:fault
+library	mime-empty-attachment-admission	library:mime-empty-attachment-admission:complete,library:mime-empty-attachment-admission:late-detection,library:mime-empty-attachment-admission:fault

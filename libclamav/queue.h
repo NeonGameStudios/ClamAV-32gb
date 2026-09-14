@@ -33,7 +33,7 @@
 #ifndef _SYS_QUEUE_CLAMAV_H_
 #define	_SYS_QUEUE_CLAMAV_H_
 
-#if HAVE_SYS_CDEFS_H
+#if defined(HAVE_SYS_CDEFS_H) && HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #endif
 

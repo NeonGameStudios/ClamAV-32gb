@@ -384,8 +384,44 @@ function(add_rust_test)
     # flags and add the configured C sanitizer runtime only for test links.
     set(RUST_TESTFLAGS "${RUSTFLAGS}")
     string(REGEX MATCH "-fsanitize=[^ ]+" RUST_C_SANITIZER_FLAG "${CMAKE_EXE_LINKER_FLAGS}")
+    set(RUST_TEST_ENVIRONMENT)
     if(RUST_C_SANITIZER_FLAG)
         string(APPEND RUST_TESTFLAGS " -C link-arg=${RUST_C_SANITIZER_FLAG}")
+
+        # Rust test executables load the C sanitizer runtimes after their
+        # other dependencies.  ASan aborts in that layout because it must be
+        # first in the initial library list.  Use Cargo's target runner to
+        # preload the compiler-selected runtimes for the test executable only;
+        # Cargo/rustc themselves must not inherit this environment while
+        # compiling the test binary.
+        if(UNIX)
+            string(FIND "${RUST_C_SANITIZER_FLAG}" "address" RUST_HAS_ASAN)
+            string(FIND "${RUST_C_SANITIZER_FLAG}" "undefined" RUST_HAS_UBSAN)
+            if(RUST_HAS_ASAN GREATER -1 AND RUST_HAS_UBSAN GREATER -1)
+                execute_process(
+                    COMMAND "${CMAKE_C_COMPILER}" -print-file-name=libasan.so
+                    OUTPUT_VARIABLE RUST_ASAN_RUNTIME
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+                    RESULT_VARIABLE RUST_ASAN_RUNTIME_RESULT)
+                execute_process(
+                    COMMAND "${CMAKE_C_COMPILER}" -print-file-name=libubsan.so
+                    OUTPUT_VARIABLE RUST_UBSAN_RUNTIME
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+                    RESULT_VARIABLE RUST_UBSAN_RUNTIME_RESULT)
+                if(NOT RUST_ASAN_RUNTIME_RESULT EQUAL 0 OR
+                   NOT RUST_UBSAN_RUNTIME_RESULT EQUAL 0 OR
+                   NOT EXISTS "${RUST_ASAN_RUNTIME}" OR
+                   NOT EXISTS "${RUST_UBSAN_RUNTIME}")
+                    message(FATAL_ERROR
+                        "C sanitizer runtimes are required to run Rust sanitizer tests")
+                endif()
+                string(TOUPPER "${RUST_COMPILER_TARGET}" RUST_TARGET_ENV_SUFFIX)
+                string(REPLACE "-" "_" RUST_TARGET_ENV_SUFFIX
+                    "${RUST_TARGET_ENV_SUFFIX}")
+                list(APPEND RUST_TEST_ENVIRONMENT
+                    "CARGO_TARGET_${RUST_TARGET_ENV_SUFFIX}_RUNNER=env LD_PRELOAD=${RUST_ASAN_RUNTIME}:${RUST_UBSAN_RUNTIME}")
+            endif()
+        endif()
     endif()
 
     if(ARGS_PRECOMPILE_TESTS)
@@ -402,7 +438,7 @@ function(add_rust_test)
 
     add_test(
         NAME ${ARGS_NAME}
-        COMMAND ${CMAKE_COMMAND} -E env "CARGO_CMD=test" "CARGO_TARGET_DIR=${ARGS_BINARY_DIRECTORY}" "RUSTFLAGS=${RUST_TESTFLAGS}" "RUSTC=${rustc_EXECUTABLE}" ${cargo_EXECUTABLE} ${MY_CARGO_ARGS} --color always
+        COMMAND ${CMAKE_COMMAND} -E env ${RUST_TEST_ENVIRONMENT} "CARGO_CMD=test" "CARGO_TARGET_DIR=${ARGS_BINARY_DIRECTORY}" "RUSTFLAGS=${RUST_TESTFLAGS}" "RUSTC=${rustc_EXECUTABLE}" ${cargo_EXECUTABLE} ${MY_CARGO_ARGS} --color always
         WORKING_DIRECTORY ${ARGS_SOURCE_DIRECTORY}
     )
 endfunction()

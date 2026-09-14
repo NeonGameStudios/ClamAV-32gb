@@ -5,7 +5,7 @@ Task ID / parent milestone: `R10` / `R00`
 Scope: warning-as-error syntax validation for the changed service and client
 ingress units after the milter send-deadline correction.
 
-Canonical checkout: `/Volumes/512gbNVME/github-external/ClamAV-32gb`, branch
+Canonical checkout: `<repository-root>`, branch
 `largefile-roadmap-qualification`; the working tree was intentionally dirty
 and preserved.
 

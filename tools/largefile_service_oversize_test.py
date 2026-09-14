@@ -269,6 +269,16 @@ class OversizeTests(unittest.TestCase):
             self.assertEqual(probe.main(["--combine", str(output), str(off), str(on)]), 0)
             probe.validate_evidence(json.loads(output.read_text()))
 
+    def test_cli_combine_rejects_duplicate_json_keys(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            off = root / "off.json"
+            on = root / "on.json"
+            off.write_text('{"schema": "x", "schema": "y"}\n', encoding="utf-8")
+            on.write_text(json.dumps(both_mode_evidence()["alert_on"]), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "duplicate JSON key: schema"):
+                probe.main(["--combine", str(root / "both.json"), str(off), str(on)])
+
     def test_cli_has_no_fixture_size_override(self):
         self.assertEqual(probe.main(["socket", "output", "tmp", "60", "1048577"]), 2)
 

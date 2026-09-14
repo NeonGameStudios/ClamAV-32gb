@@ -362,6 +362,17 @@ impl ParagraphStyling {
 const INK_SPACE_BLOB: u32 = 0x00020026;
 const INK_END_OF_LINE_BLOB: u32 = 0x00020027;
 
+fn validate_embedded_data_style_count(data_count: usize, style_count: usize) -> Result<()> {
+    if data_count > style_count {
+        return Err(ErrorKind::MalformedOneNoteFileData(
+            "embedded text-run data has no corresponding style entries".into(),
+        )
+        .into());
+    }
+
+    Ok(())
+}
+
 pub(crate) fn parse_rich_text(content_id: ExGuid, space: &ObjectSpace) -> Result<RichText> {
     let object = space
         .get_object(content_id)
@@ -391,6 +402,7 @@ pub(crate) fn parse_rich_text(content_id: ExGuid, space: &ObjectSpace) -> Result
     )?;
 
     // Parse the embedded objects
+    validate_embedded_data_style_count(text_run_data.len(), styles_data.len())?;
     let mut objects = Vec::new();
     reserve_collection(&mut objects, text_run_data.len().min(styles_data.len()))?;
     for (object_data, style_data) in text_run_data.into_iter().zip(&styles_data) {
@@ -480,6 +492,26 @@ pub(crate) fn parse_rich_text(content_id: ExGuid, space: &ObjectSpace) -> Result
     };
 
     Ok(text)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_embedded_data_style_count;
+
+    #[test]
+    fn embedded_data_count_may_be_smaller_for_text_only_runs() {
+        assert!(validate_embedded_data_style_count(0, 3).is_ok());
+    }
+
+    #[test]
+    fn embedded_data_count_must_have_style_entries() {
+        assert!(validate_embedded_data_style_count(2, 1).is_err());
+    }
+
+    #[test]
+    fn equal_embedded_data_and_style_counts_are_valid() {
+        assert!(validate_embedded_data_style_count(2, 2).is_ok());
+    }
 }
 
 fn parse_embedded_ink_data(

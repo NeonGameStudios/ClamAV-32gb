@@ -32,10 +32,12 @@ SRes SeqInStream_Read(ISeqInStream *stream, void *buf, size_t size)
 
 SRes SeqInStream_ReadByte(ISeqInStream *stream, Byte *buf)
 {
+  size_t processed;
+
   if (stream == NULL || stream->Read == NULL || buf == NULL)
     return SZ_ERROR_PARAM;
 
-  size_t processed = 1;
+  processed = 1;
   RINOK(stream->Read(stream, buf, &processed));
   if (processed > 1)
     return SZ_ERROR_FAIL;

@@ -516,11 +516,15 @@ static cl_error_t findres_rva_to_raw(uint32_t base_rva, uint32_t delta, fmap_t *
 
 static cl_error_t findres_advance(size_t base, uint32_t count, size_t *result)
 {
+    uint64_t wide_bytes;
     size_t bytes;
 
-    if (NULL == result || (size_t)count > SIZE_MAX / 8)
+    if (NULL == result)
         return CL_EFORMAT;
-    bytes = (size_t)count * 8;
+    wide_bytes = (uint64_t)count * 8;
+    if (wide_bytes > SIZE_MAX)
+        return CL_EFORMAT;
+    bytes = (size_t)wide_bytes;
     if (base > SIZE_MAX - bytes)
         return CL_EFORMAT;
 
@@ -3818,9 +3822,9 @@ int cli_scanpe(cli_ctx *ctx)
         {
             cl_error_t read_status;
 
-            code = pe_need_window(ctx, map, peinfo->sections[0].raw, peinfo->sections[0].rsz, &read_status,
-                                  "PE Polipos code section could not be read completely",
-                                  "PE Polipos code section is outside the input map");
+            code = (const uint8_t *)pe_need_window(ctx, map, peinfo->sections[0].raw, peinfo->sections[0].rsz, &read_status,
+                                                   "PE Polipos code section could not be read completely",
+                                                   "PE Polipos code section is outside the input map");
             if (code == NULL) {
                 cli_exe_info_destroy(peinfo);
                 return read_status;
@@ -3870,9 +3874,9 @@ int cli_scanpe(cli_ctx *ctx)
         for (i = 0; i < xsjs; i++) {
             cl_error_t read_status;
 
-            code = pe_need_window(ctx, map, jumps[i], 9, &read_status,
-                                  "PE Polipos jump target could not be read completely",
-                                  "PE Polipos jump target is outside the input map");
+            code = (const uint8_t *)pe_need_window(ctx, map, jumps[i], 9, &read_status,
+                                                   "PE Polipos jump target could not be read completely",
+                                                   "PE Polipos jump target is outside the input map");
             if (code == NULL) {
                 free(jumps);
                 cli_exe_info_destroy(peinfo);

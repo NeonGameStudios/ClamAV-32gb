@@ -69,6 +69,7 @@ impl Error {
         matches!(
             self.kind,
             ErrorKind::ResourceLimit { .. }
+                | ErrorKind::TemporaryLimit { .. }
                 | ErrorKind::CollectionLimit { .. }
                 | ErrorKind::AllocationFailed { .. }
                 | ErrorKind::RecursionLimit { .. }
@@ -97,6 +98,10 @@ pub enum ErrorKind {
     /// limit.
     #[error("Declared payload of {requested} bytes exceeds the materialization limit of {max} bytes")]
     ResourceLimit { requested: usize, max: usize },
+
+    /// Parser-owned temporary storage could not be reserved.
+    #[error("OneNote parser temporary storage reservation failed for {requested} bytes")]
+    TemporaryLimit { requested: u64 },
 
     /// A count-driven parser collection exceeds its bounded size limit.
     #[error("Declared collection of {requested} bytes exceeds the collection limit of {max} bytes")]

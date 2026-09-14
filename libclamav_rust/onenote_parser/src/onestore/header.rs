@@ -37,7 +37,8 @@ impl StoreHeader {
             .into());
         };
 
-        let prop_set = ObjectPropSet::parse(&mut Reader::new(object_data.as_slice()))?;
+        let mut reader = object_data.open_reader_with_spool_options()?;
+        let prop_set = ObjectPropSet::parse(&mut reader)?;
 
         let file_identity = prop_set
             .get(PropertyType::FileIdentityGuid)

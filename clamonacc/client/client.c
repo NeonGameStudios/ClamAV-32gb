@@ -694,7 +694,8 @@ int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uin
                                      &printok, err, ret_code)) >= 0) {
         *infected = scan_result;
     } else {
-        logg(LOGG_DEBUG, "ClamClient: connection could not be established ... return code %d\n", ret_code ? *ret_code : scan_result);
+        logg(LOGG_DEBUG, "ClamClient: connection could not be established ... return code %d\n",
+             ret_code ? (int)*ret_code : scan_result);
         errors = 1;
     }
 

@@ -33,7 +33,7 @@ Evidence:
 No capability was promoted. Current-source linked milter execution, certified
 Linux x86-64, full-size service parity, sanitizer, production-CVD, R04
 acceptance, and final release qualification remain open. No remote execution,
-MCP-SSH, usage reset, commit, push, or GitHub workflow action was used.
+remote SSH, usage reset, commit, push, or GitHub workflow action was used.
 
 The corrected checkout also passed the full host suite (147 passed, 2
 expected skips), the 597-binding source guard sweep, inventory freshness,

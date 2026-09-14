@@ -172,6 +172,67 @@ int clamd_largefile_worker_count_check(
     return 1;
 }
 
+int clamd_queue_limit_calculate(
+    uint64_t nofile_limit,
+    uint64_t max_recursion,
+    uint64_t max_threads,
+    uint64_t configured_queue,
+    uint64_t *max_queue_limit,
+    uint64_t *effective_queue)
+{
+    const uint64_t clamdfiles = 6;
+    uint64_t recursion_fds;
+    uint64_t required_fds;
+    uint64_t queue_limit;
+    uint64_t desired_queue;
+
+    if ((NULL == max_queue_limit) || (NULL == effective_queue) ||
+        (max_threads == 0) || (max_threads > (uint64_t)INT_MAX) ||
+        (configured_queue == 0) || (configured_queue > (uint64_t)INT_MAX))
+        return 0;
+
+    if (max_recursion > UINT64_MAX / max_threads)
+        return 0;
+    recursion_fds = max_recursion * max_threads;
+    if (recursion_fds > UINT64_MAX - clamdfiles)
+        return 0;
+    required_fds = recursion_fds + clamdfiles;
+
+    /* RLIM_INFINITY is represented as the maximum unsigned value on the
+     * supported Unix targets. A finite limit below the required descriptor
+     * floor still leaves the one-worker queue floor, matching the legacy
+     * clamd policy without allowing unsigned subtraction to wrap. */
+    if (nofile_limit <= required_fds) {
+        queue_limit = max_threads;
+    } else {
+        uint64_t available = nofile_limit - required_fds;
+
+        if (available > UINT64_MAX - max_threads)
+            queue_limit = UINT64_MAX;
+        else
+            queue_limit = available + max_threads;
+        if (queue_limit < max_threads)
+            queue_limit = max_threads;
+    }
+    if (queue_limit > (uint64_t)INT_MAX)
+        queue_limit = (uint64_t)INT_MAX;
+
+    *max_queue_limit = queue_limit;
+
+    if (configured_queue < max_threads)
+        configured_queue = max_threads;
+    if (configured_queue > queue_limit) {
+        configured_queue = queue_limit;
+    } else {
+        desired_queue = (max_threads > UINT64_MAX / 2) ? UINT64_MAX : max_threads * 2;
+        if (configured_queue < desired_queue && configured_queue < queue_limit)
+            configured_queue = (desired_queue < queue_limit) ? desired_queue : queue_limit;
+    }
+
+    *effective_queue = configured_queue;
+    return 1;
+}
+
 int clamd_largefile_temporary_filesystem_check(
     int query_succeeded,
     uint64_t filesystem_magic,

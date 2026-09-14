@@ -8,9 +8,9 @@ Scope: preserve the configured `OnAccessCurlTimeout` when curl socket
 readiness waits are interrupted by signals. This is a development-verified
 transport slice; it does not claim certified service qualification.
 
-Canonical checkout: `/Volumes/512gbNVME/github-external/ClamAV-32gb`, branch
+Canonical checkout: `<repository-root>`, branch
 `largefile-roadmap-qualification`. The working tree remains intentionally
-dirty and existing changes were preserved. No remote execution, MCP-SSH,
+dirty and existing changes were preserved. No remote execution, remote SSH,
 usage reset, installation, commit, push, or GitHub workflow action was used.
 
 Observed gap: `onas_socket_wait()` returned immediately on `EINTR`, causing

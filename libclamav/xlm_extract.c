@@ -4929,7 +4929,7 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
                  */
                 if (NULL == drawinggroup) {
                     /* Found beginning of a drawing group */
-                    status = xlm_append_drawing_group(&drawinggroup, &drawinggroup_len, data,
+                    status = xlm_append_drawing_group(&drawinggroup, &drawinggroup_len, (const unsigned char *)data,
                                                       (size_t)biff_header.length, ctx);
                     if (CL_SUCCESS != status)
                         goto done;
@@ -4937,7 +4937,7 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
 
                 } else {
                     /* already found the beginning of a drawing group, extract the remaining chunks */
-                    status = xlm_append_drawing_group(&drawinggroup, &drawinggroup_len, data,
+                    status = xlm_append_drawing_group(&drawinggroup, &drawinggroup_len, (const unsigned char *)data,
                                                       (size_t)biff_header.length, ctx);
                     if (CL_SUCCESS != status)
                         goto done;
@@ -4949,7 +4949,7 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
                 if ((OPC_MSODRAWINGGROUP == previous_biff8_opcode) &&
                     (NULL != drawinggroup)) {
                     /* already found the beginning of an image, extract the remaining chunks */
-                    status = xlm_append_drawing_group(&drawinggroup, &drawinggroup_len, data,
+                    status = xlm_append_drawing_group(&drawinggroup, &drawinggroup_len, (const unsigned char *)data,
                                                       (size_t)biff_header.length, ctx);
                     if (CL_SUCCESS != status)
                         goto done;

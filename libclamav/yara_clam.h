@@ -332,7 +332,7 @@ typedef struct _YR_META
 
 } YR_META;
 
-#if REAL_YARA
+#if defined(REAL_YARA) && REAL_YARA
 typedef struct _YR_STRING
 {
     int32_t g_flags;

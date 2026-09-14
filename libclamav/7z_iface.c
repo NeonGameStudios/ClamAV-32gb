@@ -925,8 +925,18 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                 continue;
             } else if (outSizeProcessed == 0) {
                 cli_dbgmsg("cli_unz: extracted empty file\n");
+                /* Empty 7-Zip files are still logical scan children. Route
+                 * them through descriptor admission so MaxFiles accounting,
+                 * cache invalidation, and empty-file detections match the
+                 * non-empty member path. */
+                found = cli_magic_scan_desc_type_reserved(fd, tmp_name, ctx, CL_TYPE_ANY, name,
+                                                          LAYER_ATTRIBUTES_NONE);
+                if (found != CL_SUCCESS && found != CL_VIRUS && found != CL_VERIFIED && found != CL_BREAK)
+                    cli_mark_scan_incomplete(ctx, "7-Zip extracted-file scan did not complete");
                 cli_7z_cleanup_temp(ctx, fd, tmp_name, &found, temporary_reserved);
                 free(tmp_name);
+                if (found != CL_SUCCESS)
+                    break;
             } else {
                 cli_dbgmsg("cli_7unz: Saving to %s\n", tmp_name);
                 found = cli_magic_scan_desc_type_reserved(fd, tmp_name, ctx, CL_TYPE_ANY, name,

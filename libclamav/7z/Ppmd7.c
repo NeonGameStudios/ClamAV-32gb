@@ -553,12 +553,12 @@ static void UpdateModel(CPpmd7 *p)
     sf = (UInt32)s0 + c->SummFreq;
     if (cf < 6 * sf)
     {
-      cf = 1 + (cf > sf) + (cf >= 4 * sf);
+      cf = 1u + (cf > sf) + (cf >= 4 * sf);
       c->SummFreq += 3;
     }
     else
     {
-      cf = 4 + (cf >= 9 * sf) + (cf >= 12 * sf) + (cf >= 15 * sf);
+      cf = 4u + (cf >= 9 * sf) + (cf >= 12 * sf) + (cf >= 15 * sf);
       c->SummFreq = (UInt16)(c->SummFreq + cf);
     }
     {
@@ -628,7 +628,7 @@ static void Rescale(CPpmd7 *p)
       return;
     }
     n0 = (numStats + 1) >> 1;
-    n1 = (p->MinContext->NumStats + 1) >> 1;
+    n1 = ((unsigned)p->MinContext->NumStats + 1u) >> 1;
     if (n0 != n1)
       p->MinContext->Stats = STATS_REF(ShrinkUnits(p, stats, n0, n1));
   }
@@ -688,7 +688,7 @@ void Ppmd7_Update1(CPpmd7 *p)
 void Ppmd7_Update1_0(CPpmd7 *p)
 {
   p->PrevSuccess = (2 * p->FoundState->Freq > p->MinContext->SummFreq);
-  p->RunLength += p->PrevSuccess;
+  p->RunLength += (Int32)p->PrevSuccess;
   p->MinContext->SummFreq += 4;
   if ((p->FoundState->Freq += 4) > MAX_FREQ)
     Rescale(p);

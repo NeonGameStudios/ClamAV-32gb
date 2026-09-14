@@ -44,5 +44,5 @@ undetected if the outer `SHA256SUMS` file was regenerated.
 No capability status was promoted. This is development verification only;
 certified Linux x86-64, sanitizer, full-size/materialized, production-CVD,
 privileged on-access, and final R04 qualification evidence remain required.
-No remote runner, MCP-SSH, software installation, usage reset, GitHub
+No remote runner, remote SSH, software installation, usage reset, GitHub
 workflow trigger, commit, or push was used.

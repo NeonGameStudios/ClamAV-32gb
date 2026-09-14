@@ -4,7 +4,7 @@ Task ID / parent milestone: `R03` / current-source Linux x86-64 qualification
 
 Canonical local source:
 
-- `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- `<repository-root>`
 - branch: `largefile-roadmap-qualification`
 - local source remains intentionally dirty; no reset, clean, commit, push, or
   GitHub workflow action was performed
@@ -12,7 +12,7 @@ Canonical local source:
 Remote identity:
 
 - host: `sonic1`
-- login profile: `sonic1-camera-key`
+- login profile: `<redacted-login-profile>`
 - kernel/architecture: `Linux sonic1 5.15.0-190-generic x86_64`
 - existing build image: `clamav-32gb:dev-current`
 - remote source root: `/tmp/clamav-32gb-runner-clean`
@@ -73,7 +73,7 @@ Disposition:
 
 - State: `blocked` for this remote current-source synchronization slice only.
 - The durable transfer request for the specific current private source payload
-  was rejected by MCP-SSH because payload-level authorization was not explicit
+  was rejected by remote SSH because payload-level authorization was not explicit
   enough. No workaround or indirect transfer was attempted.
 - Once explicitly authorized, upload the current `unit_tests/check_clamav.c`
   and `clamd/largefile_admission.{c,h}`, regenerate the remote graph, and rerun
@@ -205,7 +205,7 @@ Application report-path probe:
 
 Follow-on R03/R10 repaired-source Sonic1 service slice (2026-09-09 UTC):
 
-- Host/profile: `sonic1` / `sonic1-camera-key` (`amd64`, Linux), using the
+- Host/profile: `sonic1` / `<redacted-login-profile>` (`amd64`, Linux), using the
   retained `clamav-32gb:dev-current` image
   (`sha256:c0c10e2d6e6675c201dc657276543462de64896e53ae44cb9ba725a3a12d86df`).
 - An isolated source copy at

@@ -19,6 +19,9 @@ limitations under the License.
 
 #include <yara_hash.h>
 #include "yara_clam.h"
+#ifndef REAL_YARA
+#define REAL_YARA 0
+#endif
 #if REAL_YARA
 #include <yara/mem.h>
 #include <yara/error.h>
@@ -70,13 +73,16 @@ uint32_t byte_to_int32[]  =
 };
 
 
-uint32_t hash(
+static uint32_t hash(
     uint32_t seed,
-    uint8_t* buffer,
-    int len)
+    const uint8_t* buffer,
+    size_t len)
 {
-  int i;
+  size_t i;
   uint32_t result = seed;
+
+  if (len == 0)
+    return result;
 
   for (i = len - 1; i > 0; i--)
   {
@@ -97,7 +103,7 @@ int yr_hash_table_create(
   int i;
 
   new_table = yr_malloc(
-      sizeof(YR_HASH_TABLE) + size * sizeof(YR_HASH_TABLE_ENTRY*));
+      sizeof(YR_HASH_TABLE) + (size_t)size * sizeof(YR_HASH_TABLE_ENTRY*));
 
   if (new_table == NULL)
     return ERROR_INSUFICIENT_MEMORY;
@@ -154,12 +160,12 @@ void* yr_hash_table_lookup(
   YR_HASH_TABLE_ENTRY* entry;
   uint32_t bucket_index;
 
-  bucket_index = hash(0, (uint8_t*) key, strlen(key));
+  bucket_index = hash(0, (const uint8_t*)key, strlen(key));
 
   if (ns != NULL)
-    bucket_index = hash(bucket_index, (uint8_t*) ns, strlen(ns));
+    bucket_index = hash(bucket_index, (const uint8_t*)ns, strlen(ns));
 
-  bucket_index = bucket_index % table->size;
+  bucket_index %= (uint32_t)table->size;
 
   entry = table->buckets[bucket_index];
 
@@ -218,12 +224,12 @@ int yr_hash_table_add(
   }
 
   entry->value = value;
-  bucket_index = hash(0, (uint8_t*) key, strlen(key));
+  bucket_index = hash(0, (const uint8_t*)key, strlen(key));
 
   if (ns != NULL)
-    bucket_index = hash(bucket_index, (uint8_t*) ns, strlen(ns));
+    bucket_index = hash(bucket_index, (const uint8_t*)ns, strlen(ns));
 
-  bucket_index = bucket_index % table->size;
+  bucket_index %= (uint32_t)table->size;
 
   entry->next = table->buckets[bucket_index];
   table->buckets[bucket_index] = entry;

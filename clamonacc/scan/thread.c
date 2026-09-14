@@ -376,10 +376,17 @@ static cl_error_t onas_scan_thread_handle_file(struct onas_scan_event *event_dat
     cl_error_t ret_code = CL_SUCCESS;
     int fres            = 0;
     cl_error_t ret      = 0;
+    const char *event_kind = "on-access event";
 
     if (NULL == pathname || NULL == event_data) {
         return CL_ENULLARG;
     }
+
+#if defined(HAVE_SYS_FANOTIFY_H)
+    if (event_data->fmd != NULL && (event_data->fmd->mask & FAN_ALL_PERM_EVENTS)) {
+        event_kind = "permission event";
+    }
+#endif
 
     /* Keep the value passed to the scan/permission-response helper defined
      * even when the path disappears between the kernel event and stat().
@@ -394,13 +401,13 @@ static cl_error_t onas_scan_thread_handle_file(struct onas_scan_event *event_dat
          * permission event, the fanotify response below will deny access when
          * prevention is enabled; monitoring-only mode may log and continue. */
         event_data->bool_opts &= ((uint16_t)~ONAS_SCTH_B_SCAN);
-        logg(LOGG_DEBUG, "ClamWorker: unable to stat '%s'; treating the permission event as incomplete\n", pathname);
+        logg(LOGG_DEBUG, "ClamWorker: unable to stat '%s'; treating the %s as incomplete\n", pathname, event_kind);
     }
     if (fres == 0 && sb.st_size < 0) {
         err      = 1;
         ret_code = CL_ESTAT;
         event_data->bool_opts &= ((uint16_t)~ONAS_SCTH_B_SCAN);
-        logg(LOGG_DEBUG, "ClamWorker: invalid negative size for '%s'; treating the permission event as incomplete\n", pathname);
+        logg(LOGG_DEBUG, "ClamWorker: invalid negative size for '%s'; treating the %s as incomplete\n", pathname, event_kind);
     }
     if (event_data->sizelimit) {
         if (fres != 0 || (fres == 0 && sb.st_size >= 0 && (uint64_t)sb.st_size > event_data->sizelimit)) {
@@ -411,7 +418,7 @@ static cl_error_t onas_scan_thread_handle_file(struct onas_scan_event *event_dat
             if (fres == 0) {
                 err      = 1;
                 ret_code = CL_EMAXSIZE;
-                logg(LOGG_DEBUG, "ClamWorker: '%s' exceeds OnAccessMaxFileSize; treating the permission event as incomplete\n", pathname);
+                logg(LOGG_DEBUG, "ClamWorker: '%s' exceeds OnAccessMaxFileSize; treating the %s as incomplete\n", pathname, event_kind);
             }
         }
     }
@@ -495,8 +502,13 @@ void *onas_scan_worker(void *arg)
 
         logg(LOGG_DEBUG, "ClamWorker: performing scanning on file '%s'\n", event_data->pathname);
         cl_error_t file_ret = onas_scan_thread_handle_file(event_data, event_data->pathname);
-        if (CL_SUCCESS != file_ret) {
-            logg(LOGG_INFO, "ClamWorker: permission scan of '%s' was incomplete (status %d)\n", event_data->pathname, file_ret);
+        const char *scan_kind = (event_data->fmd != NULL && (event_data->fmd->mask & FAN_ALL_PERM_EVENTS))
+                                    ? "permission"
+                                    : "on-access";
+        if (CL_VIRUS == file_ret) {
+            logg(LOGG_INFO, "ClamWorker: %s scan detected malware in '%s'\n", scan_kind, event_data->pathname);
+        } else if (CL_SUCCESS != file_ret) {
+            logg(LOGG_INFO, "ClamWorker: %s scan of '%s' was incomplete (status %d)\n", scan_kind, event_data->pathname, file_ret);
         }
     } else {
         /* something went very wrong, so check if we have an open fd,

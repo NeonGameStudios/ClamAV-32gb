@@ -17,8 +17,8 @@ MY_CPU_LE_UNALIGN means that CPU is LITTLE ENDIAN and CPU supports unaligned mem
 If MY_CPU_LE_UNALIGN is not defined, we don't know about these properties of platform.
 */
 
-#define GetUi16(p) (cli_readint16(p))
-#define GetUi32(p) (cli_readint32(p))
+#define GetUi16(p) ((UInt16)cli_readint16(p))
+#define GetUi32(p) ((UInt32)cli_readint32(p))
 
 #define GetUi64(p) (GetUi32(p) | ((UInt64)GetUi32(((const Byte *)(p)) + 4) << 32))
 

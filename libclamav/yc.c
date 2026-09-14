@@ -303,6 +303,7 @@ int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_s
 {
     size_t ycsect;
     size_t sname_offset;
+    size_t section_count;
     size_t section_table_size;
     size_t pe_header_size;
     unsigned int i;
@@ -324,8 +325,9 @@ int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_s
         0x18 > (size_t)filesize - peoffset - pe_header_size)
         return yc_parse_failure(ctx, "yC PE optional-header window is outside the input buffer");
     sname_offset = peoffset + pe_header_size + 0x18;
-    if ((size_t)sectcount > SIZE_MAX / 0x28 ||
-        (section_table_size = (size_t)sectcount * 0x28) > (size_t)filesize - sname_offset)
+    section_count = (size_t)sectcount;
+    if (section_count > SIZE_MAX / 0x28 ||
+        (section_table_size = section_count * 0x28) > (size_t)filesize - sname_offset)
         return yc_parse_failure(ctx, "yC section-table window is outside the input buffer");
     sname = yc_buffer_window(fbuf, filesize, sname_offset, section_table_size);
     if (sname == NULL)

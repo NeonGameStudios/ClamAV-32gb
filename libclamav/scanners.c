@@ -593,6 +593,12 @@ static cl_error_t cli_ai_model_skip_gguf_value(cli_ctx *ctx, uint64_t *offset,
             status = cli_ai_model_get_u32(ctx, offset, &element_type);
             if (status != CL_SUCCESS)
                 return status;
+            /* Validate the element type even for an empty array. Without
+             * this check, an invalid type is only reached through the loop
+             * below and a zero-count array can make malformed metadata look
+             * structurally complete. */
+            if (element_type > 12)
+                return cli_ai_model_malformed(ctx, "GGUF metadata array element type is invalid");
             status = cli_ai_model_get_u64(ctx, offset, &count);
             if (status != CL_SUCCESS)
                 return status;
@@ -1006,7 +1012,7 @@ static cl_error_t cli_ai_model_tflite_scalar_u8(cli_ai_model_tflite_validator_t 
                                                  uint8_t *value,
                                                  bool *present)
 {
-    uint64_t field_offset;
+    uint64_t field_offset = 0;
     cl_error_t status;
 
     if (!validator || !table || !value || !present)
@@ -1031,7 +1037,7 @@ static cl_error_t cli_ai_model_tflite_scalar_u32(cli_ai_model_tflite_validator_t
                                                   uint32_t *value,
                                                   bool *present)
 {
-    uint64_t field_offset;
+    uint64_t field_offset = 0;
     cl_error_t status;
 
     if (!validator || !table || !value || !present)
@@ -1771,6 +1777,8 @@ static cl_error_t cli_ai_model_parse_tflite(cli_ctx *ctx)
  * allocating a model-sized buffer or interpreting model operators. */
 #define CLI_AI_MODEL_ONNX_MAX_FIELDS 1048576U
 #define CLI_AI_MODEL_ONNX_MAX_DEPTH 64U
+#define CLI_AI_MODEL_ONNX_MAX_TENSOR_DATA_TYPE 28U
+#define CLI_AI_MODEL_ONNX_MAX_ATTRIBUTE_TYPE 14U
 
 enum cli_ai_model_onnx_message_kind {
     CLI_AI_MODEL_ONNX_MODEL,
@@ -1974,6 +1982,8 @@ static cl_error_t cli_ai_model_onnx_message(cli_ai_model_onnx_validator_t *valid
     bool has_opset_import = false;
     bool has_graph = false;
     bool has_opset_version = false;
+    bool has_attribute_name = false;
+    bool has_tensor_data_type = false;
     cl_error_t status;
 
     if (!validator || start > end || end > validator->file_len)
@@ -2006,6 +2016,10 @@ static cl_error_t cli_ai_model_onnx_message(cli_ai_model_onnx_validator_t *valid
                 has_graph = true;
         } else if (kind == CLI_AI_MODEL_ONNX_OPERATOR_SET && field == 2 && wire == 0) {
             has_opset_version = true;
+        } else if (kind == CLI_AI_MODEL_ONNX_ATTRIBUTE && field == 1 && wire == 2) {
+            has_attribute_name = true;
+        } else if (kind == CLI_AI_MODEL_ONNX_TENSOR && field == 2 && wire == 0) {
+            has_tensor_data_type = true;
         }
 
         switch (wire) {
@@ -2013,6 +2027,14 @@ static cl_error_t cli_ai_model_onnx_message(cli_ai_model_onnx_validator_t *valid
                 status = cli_ai_model_onnx_varint(validator, &offset, end, &i);
                 if (status != CL_SUCCESS)
                     return status;
+                if (kind == CLI_AI_MODEL_ONNX_ATTRIBUTE && field == 20 &&
+                    i > CLI_AI_MODEL_ONNX_MAX_ATTRIBUTE_TYPE)
+                    return cli_ai_model_malformed(validator->ctx, "ONNX AttributeProto type is invalid");
+                if (kind == CLI_AI_MODEL_ONNX_TENSOR && field == 2 &&
+                    i > CLI_AI_MODEL_ONNX_MAX_TENSOR_DATA_TYPE)
+                    return cli_ai_model_malformed(validator->ctx, "ONNX TensorProto data type is invalid");
+                if (kind == CLI_AI_MODEL_ONNX_TENSOR && field == 14 && i > 1)
+                    return cli_ai_model_malformed(validator->ctx, "ONNX TensorProto data location is invalid");
                 break;
             case 1:
                 if (end - offset < sizeof(uint64_t))
@@ -2058,6 +2080,10 @@ static cl_error_t cli_ai_model_onnx_message(cli_ai_model_onnx_validator_t *valid
         return cli_ai_model_malformed(validator->ctx, "ONNX ModelProto is missing a required field");
     if (kind == CLI_AI_MODEL_ONNX_OPERATOR_SET && !has_opset_version)
         return cli_ai_model_malformed(validator->ctx, "ONNX OperatorSetIdProto is missing its version");
+    if (kind == CLI_AI_MODEL_ONNX_ATTRIBUTE && !has_attribute_name)
+        return cli_ai_model_malformed(validator->ctx, "ONNX AttributeProto is missing its name");
+    if (kind == CLI_AI_MODEL_ONNX_TENSOR && !has_tensor_data_type)
+        return cli_ai_model_malformed(validator->ctx, "ONNX TensorProto is missing its data type");
     return CL_SUCCESS;
 }
 
@@ -2316,6 +2342,7 @@ typedef struct cli_python_reader {
     uint64_t offset;
     uint64_t objects;
     uint64_t references;
+    uint64_t string_references;
 } cli_python_reader_t;
 
 typedef struct cli_python_code_layout {
@@ -2418,12 +2445,52 @@ static cl_error_t cli_python_skip_object(cli_python_reader_t *reader,
                                          unsigned int depth,
                                          const cli_python_code_layout_t *layout);
 
+static bool cli_python_type_can_reference(uint8_t type)
+{
+    switch (type & 0x7fU) {
+        case 'i':
+        case 'I':
+        case 'l':
+        case 'f':
+        case 'g':
+        case 'x':
+        case 'y':
+        case 's':
+        case 't':
+        case 'u':
+        case 'a':
+        case 'A':
+        case 'z':
+        case 'Z':
+        case '(':
+        case ')':
+        case '[':
+        case '{':
+        case '}':
+        case '<':
+        case '>':
+        case ':':
+        case 'c':
+            return true;
+        default:
+            return false;
+    }
+}
+
 static cl_error_t cli_python_account_object(cli_python_reader_t *reader, uint8_t type)
 {
+    uint8_t base_type;
+
     if (!reader || reader->objects >= CLI_PYTHON_MAX_OBJECTS)
         return CL_EPARSE;
     reader->objects++;
-    if (type & 0x80U) {
+    base_type = type & 0x7fU;
+    if (base_type == 't') {
+        if (reader->string_references >= CLI_PYTHON_MAX_OBJECTS)
+            return CL_EPARSE;
+        reader->string_references++;
+    }
+    if ((type & 0x80U) && cli_python_type_can_reference(type)) {
         if (reader->references >= CLI_PYTHON_MAX_OBJECTS)
             return CL_EPARSE;
         reader->references++;
@@ -2445,7 +2512,7 @@ static cl_error_t cli_python_skip_object_type(cli_python_reader_t *reader,
 
     if (depth > CLI_PYTHON_MAX_DEPTH)
         return CL_EPARSE;
-    if (type == 'r' && (encoded_type & 0x80U))
+    if ((type == 'r' || type == 'R') && (encoded_type & 0x80U))
         return CL_EPARSE;
 
     switch (type) {
@@ -2471,10 +2538,10 @@ static cl_error_t cli_python_skip_object_type(cli_python_reader_t *reader,
             status = cli_python_u32(reader, &reference);
             if (status != CL_SUCCESS)
                 return status;
-            /* TYPE_STRINGREF indexes the same bounded marshal reference
-             * table used by flagged objects. Do not accept a forward or
-             * otherwise out-of-range reference while skipping the object. */
-            return reference < reader->references ? CL_SUCCESS : CL_EPARSE;
+            /* Python 2's TYPE_STRINGREF indexes the separate table populated
+             * by TYPE_INTERNED, not Python 3's FLAG_REF object table. Do not
+             * accept a forward or otherwise out-of-range string reference. */
+            return reference < reader->string_references ? CL_SUCCESS : CL_EPARSE;
         }
 
         case 'i': /* 32-bit integer */
@@ -2636,6 +2703,7 @@ static cl_error_t cli_python_try_layout(cli_ctx *ctx,
     reader.offset   = header_size;
     reader.objects   = 0;
     reader.references = 0;
+    reader.string_references = 0;
 
     status = cli_python_u8(&reader, &type);
     if (status != CL_SUCCESS)
@@ -2658,7 +2726,7 @@ static cl_error_t cli_scan_python_compiled(cli_ctx *ctx)
         {4U, 8U, false}, /* Python 2 and earlier */
         {5U, 8U, false}, /* Python 3.0 through 3.7 */
         {6U, 8U, false}, /* Python 3.8 through 3.10 */
-        {5U, 8U, true},  /* Python 3.11 and newer */
+        {6U, 8U, true},  /* Python 3.11 and newer */
     };
     uint8_t magic[4];
     uint64_t file_len;
@@ -2673,7 +2741,7 @@ static cl_error_t cli_scan_python_compiled(cli_ctx *ctx)
         goto malformed;
 
     {
-        cli_python_reader_t reader = {ctx, file_len, 0, 0, 0};
+        cli_python_reader_t reader = {ctx, file_len, 0, 0, 0, 0};
         status = cli_python_read(&reader, magic, sizeof(magic));
     }
     if (status != CL_SUCCESS)
@@ -6392,9 +6460,11 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
             cli_mark_scan_incomplete(ctx, "HTML normalization did not complete");
         status = normalization_read_error ? CL_EREAD
                                      : ctx->scan_timed_out ? CL_ETIMEOUT
-                                     : ((ctx->limit_exceeded && ctx->limit_exceeded_result == CL_ERESOURCE)
-                                            ? CL_ERESOURCE
-                                            : CL_EPARSE);
+                                     : (ctx->limit_exceeded &&
+                                        ctx->limit_exceeded_result != CL_SUCCESS &&
+                                        ctx->limit_exceeded_result != CL_VERIFIED)
+                                            ? ctx->limit_exceeded_result
+                                            : CL_EPARSE;
         goto done;
     }
 
@@ -9716,6 +9786,9 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         goto early_ret;
     }
 
+    if (ctx->recursion_level == 0)
+        ctx->largefile_pcre_subject_released = false;
+
     status = cli_magic_scan_validate_options(ctx, "cli_magic_scan");
     if (status != CL_SUCCESS) {
         goto early_ret;
@@ -9981,6 +10054,8 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
     /*
      * Run the file type parsers that we normally use before the raw scan.
      */
+    cli_dbgmsg("largefile_pcre_phase: phase=deep-parse recursion_level=%u subject_released=%u\n",
+               ctx->recursion_level, ctx->largefile_pcre_subject_released ? 1U : 0U);
     perf_nested_start(ctx, PERFT_CONTAINER, PERFT_SCAN);
     switch (type) {
         case CL_TYPE_IGNORED:
@@ -10835,8 +10910,13 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
         goto done;
 
     if (sb.st_size == 0) {
+        /* A descriptor is still a logical child when it has no bytes. Charge
+         * the zero-byte child to MaxFiles before returning the no-match
+         * result, while retaining the owning layer's sticky status. */
         cli_dbgmsg("cli_magic_scan_desc_type: Empty data has no bytes to match\n");
-        status = cli_reconcile_clean_scan_status(ctx, CL_SUCCESS);
+        status = cli_updatelimits(ctx, 0);
+        if (status == CL_SUCCESS)
+            status = cli_reconcile_clean_scan_status(ctx, CL_SUCCESS);
         goto done;
     }
 
@@ -11002,8 +11082,14 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
         return ret;
 
     if (length == 0) {
+        /* A zero-byte nested range is still a logical child. Charge it
+         * through the shared admission path before returning the no-match
+         * result, just as descriptor-backed empty children are charged. */
         cli_dbgmsg("cli_magic_scan_nested_fmap_type: Empty data has no bytes to match\n");
-        return cli_reconcile_clean_scan_status(ctx, CL_SUCCESS);
+        ret = cli_updatelimits(ctx, 0);
+        if (ret == CL_SUCCESS)
+            ret = cli_reconcile_clean_scan_status(ctx, CL_SUCCESS);
+        return ret;
     }
 
     if (ctx->engine->engine_options & ENGINE_OPTIONS_FORCE_TO_DISK) {

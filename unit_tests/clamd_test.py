@@ -9,6 +9,7 @@ from pathlib import Path
 import platform
 import re
 import socket
+import struct
 import subprocess
 import shutil
 import sys
@@ -184,7 +185,7 @@ class TC(testcase.TestCase):
             )
         else:
             command = '{clamd} --config-file={clamd_config}'.format(
-                clamd=TC.clamd, clamd_config=TC.clamd_config
+                clamd=TC.clamd, clamd_config=clamd_config
             )
         self.log.info('Starting clamd: {}'.format(command))
         self.proc = subprocess.Popen(
@@ -336,6 +337,129 @@ class TC(testcase.TestCase):
 
         assert output.ec == 0  # success
         self.verify_output(output.out, expected=['PONG'])
+
+    @unittest.skipIf(operating_system == 'windows', 'ReadTimeout socket regression uses a Unix-domain socket.')
+    def test_clamd_read_timeout_zero_waits_for_stream_data(self):
+        """ReadTimeout=0 must not turn a partial INSTREAM into an immediate timeout."""
+        self.step_name('Testing clamd ReadTimeout=0 indefinite stream wait')
+
+        timeout_config = TC.path_tmp / 'clamd-read-timeout-zero.conf'
+        timeout_config.write_text(TC.clamd_config.read_text() + '\nReadTimeout 0\n')
+        try:
+            self.start_clamd(use_valgrind=False, clamd_config=timeout_config)
+
+            deadline = time.monotonic() + 10
+            while not Path(TC.clamd_socket).exists():
+                if self.proc.poll() is not None:
+                    self.fail('clamd exited before creating its socket')
+                if time.monotonic() >= deadline:
+                    self.fail('timed out waiting for clamd socket')
+                time.sleep(0.05)
+
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+                sock.settimeout(0.5)
+                sock.connect(TC.clamd_socket)
+                sock.sendall(b'zINSTREAM\0')
+                sock.sendall(struct.pack('!I', 1) + b'A')
+                time.sleep(2)
+
+                with self.assertRaises(socket.timeout):
+                    sock.recv(1024)
+
+                sock.sendall(struct.pack('!I', 0))
+                self.assertIn(b'stream: OK', sock.recv(1024))
+        finally:
+            try:
+                timeout_config.unlink()
+            except FileNotFoundError:
+                pass
+
+    @unittest.skipIf(operating_system == 'windows', 'ReadTimeout socket regression uses a Unix-domain socket.')
+    def test_clamd_read_timeout_zero_waits_for_stream_report_data(self):
+        """ReadTimeout=0 must also preserve the structured INSTREAMREPORT reply path."""
+        self.step_name('Testing clamd ReadTimeout=0 indefinite structured stream wait')
+
+        timeout_config = TC.path_tmp / 'clamd-read-timeout-zero-report.conf'
+        timeout_config.write_text(TC.clamd_config.read_text() + '\nReadTimeout 0\n')
+        try:
+            self.start_clamd(use_valgrind=False, clamd_config=timeout_config)
+
+            deadline = time.monotonic() + 10
+            while not Path(TC.clamd_socket).exists():
+                if self.proc.poll() is not None:
+                    self.fail('clamd exited before creating its socket')
+                if time.monotonic() >= deadline:
+                    self.fail('timed out waiting for clamd socket')
+                time.sleep(0.05)
+
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+                sock.settimeout(0.5)
+                sock.connect(TC.clamd_socket)
+                sock.sendall(b'zINSTREAMREPORT\0')
+                sock.sendall(struct.pack('!I', 1) + b'A')
+                time.sleep(2)
+
+                with self.assertRaises(socket.timeout):
+                    sock.recv(1024)
+
+                sock.sendall(struct.pack('!I', 0))
+                sock.settimeout(5)
+                frame_header = sock.recv(4)
+                self.assertEqual(len(frame_header), 4)
+                frame_length = struct.unpack('!I', frame_header)[0]
+                frame = bytearray()
+                while len(frame) < frame_length:
+                    chunk = sock.recv(frame_length - len(frame))
+                    self.assertTrue(chunk)
+                    frame.extend(chunk)
+                terminator = sock.recv(4)
+                self.assertEqual(terminator, struct.pack('!I', 0))
+                self.assertIn(b'"completion":"COMPLETE"', bytes(frame))
+        finally:
+            try:
+                timeout_config.unlink()
+            except FileNotFoundError:
+                pass
+
+    @unittest.skipIf(operating_system == 'windows', 'ReadTimeout socket regression uses a Unix-domain socket.')
+    def test_clamd_read_timeout_expires_at_deadline(self):
+        """A positive ReadTimeout must not wait for a second polling interval."""
+        self.step_name('Testing clamd positive ReadTimeout deadline boundary')
+
+        timeout_config = TC.path_tmp / 'clamd-read-timeout-deadline.conf'
+        timeout_config.write_text(TC.clamd_config.read_text() + '\nReadTimeout 1\n')
+        try:
+            self.start_clamd(use_valgrind=False, clamd_config=timeout_config)
+
+            deadline = time.monotonic() + 10
+            while not Path(TC.clamd_socket).exists():
+                if self.proc.poll() is not None:
+                    self.fail('clamd exited before creating its socket')
+                if time.monotonic() >= deadline:
+                    self.fail('timed out waiting for clamd socket')
+                time.sleep(0.01)
+
+            # Align the request just after a wall-clock second boundary. The
+            # daemon stores deadlines at time_t precision; with the old '<'
+            # comparison this reliably required one extra poll interval.
+            while (time.time() % 1.0) > 0.05:
+                time.sleep(0.005)
+
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+                sock.settimeout(4)
+                sock.connect(TC.clamd_socket)
+                started = time.monotonic()
+                sock.sendall(b'zINSTREAM\0' + struct.pack('!I', 1) + b'A')
+                response = sock.recv(1024)
+                elapsed = time.monotonic() - started
+
+            self.assertEqual(response, b'COMMAND READ TIMED OUT\n')
+            self.assertLess(elapsed, 2.25)
+        finally:
+            try:
+                timeout_config.unlink()
+            except FileNotFoundError:
+                pass
 
     def test_clamd_02_clamdscan_version(self):
         '''

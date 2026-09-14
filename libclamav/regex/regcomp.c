@@ -121,8 +121,8 @@ static char nuls[10];		/* place to point scanner in event of error */
 #define	SETERROR(e)	seterr(p, (e))
 #define	REQUIRE(co, e)	do { if (!(co)) SETERROR(e); } while (0)
 #define	EMIT(op, sopnd)	doemit(p, (sop)(op), (size_t)(sopnd))
-#define	INSERT(op, pos)	doinsert(p, (sop)(op), HERE()-(pos)+1, pos)
-#define	AHEAD(pos)		dofwd(p, pos, HERE()-(pos))
+#define	INSERT(op, pos)	doinsert(p, (sop)(op), (size_t)(HERE()-(pos)+1), pos)
+#define	AHEAD(pos)		dofwd(p, pos, (sop)(HERE()-(pos)))
 #define	ASTERN(sop, pos)	EMIT(sop, HERE()-pos)
 #define	HERE()		(p->slen)
 #define	THERE()		(p->slen - 1)
@@ -131,8 +131,6 @@ static char nuls[10];		/* place to point scanner in event of error */
 
 #ifndef NDEBUG
 static int never = 0;		/* for use in asserts; shuts lint up */
-#else
-#define	never	0		/* some <assert.h>s have bugs too */
 #endif
 
 /*
@@ -160,7 +158,7 @@ cli_regcomp_real(regex_t *preg, const char *pattern, int cflags)
 	if (cflags&REG_PEND) {
 		if (preg->re_endp < pattern)
 			return(REG_INVARG);
-		len = preg->re_endp - pattern;
+		len = (size_t)(preg->re_endp - pattern);
 	} else
 		len = strlen((char *)pattern);
 
@@ -184,13 +182,13 @@ cli_regcomp_real(regex_t *preg, const char *pattern, int cflags)
 		free((char *)g);
 		return(REG_ESPACE);
 	}
-	p->ssize = len/(size_t)2*(size_t)3 + (size_t)1;	/* ugh */
-	if (p->ssize < len) {
+	p->ssize = (sopno)(len/(size_t)2*(size_t)3 + (size_t)1);	/* ugh */
+	if ((size_t)p->ssize < len) {
 		free((char *)g);
 		return(REG_ESPACE);
 	}
 
-	p->strip = (sop *)cli_max_calloc(p->ssize, sizeof(sop));
+	p->strip = (sop *)cli_max_calloc((size_t)p->ssize, sizeof(sop));
 	p->slen = 0;
 	if (p->strip == NULL) {
 		free(g);
@@ -316,7 +314,7 @@ p_ere_exp(struct parse *p)
 	case '(':
 		REQUIRE(MORE(), REG_EPAREN);
 		p->g->nsub++;
-		subno = p->g->nsub;
+		subno = (sopno)p->g->nsub;
 		if (subno < NPAREN)
 			p->pbegin[subno] = HERE();
 		EMIT(OLPAREN, subno);
@@ -525,7 +523,7 @@ p_simp_re(struct parse *p,
 		break;
 	case BACKSL|'(':
 		p->g->nsub++;
-		subno = p->g->nsub;
+		subno = (sopno)p->g->nsub;
 		if (subno < NPAREN)
 			p->pbegin[subno] = HERE();
 		EMIT(OLPAREN, subno);
@@ -778,7 +776,7 @@ p_b_cclass(struct parse *p, cset *cs)
 
 	while (MORE() && isalpha((uch)PEEK()))
 		NEXT();
-	len = p->next - sp;
+	len = (size_t)(p->next - sp);
 	for (cp = cclasses; cp->name != NULL; cp++)
 		if (strncmp(cp->name, sp, len) == 0 && cp->name[len] == '\0')
 			break;
@@ -842,7 +840,7 @@ p_b_coll_elem(struct parse *p,
 		SETERROR(REG_EBRACK);
 		return(0);
 	}
-	len = p->next - sp;
+	len = (size_t)(p->next - sp);
 	for (cp = cnames; cp->name != NULL; cp++)
 		if (strncmp(cp->name, sp, len) == 0 && strlen(cp->name) == len)
 			return(cp->code);	/* known name */
@@ -865,7 +863,7 @@ othercase(int ch)
 	else if (islower(ch))
 		return ((uch)toupper(ch));
 	else			/* peculiar, but could happen */
-		return(ch);
+		return((char)ch);
 }
 
 /*
@@ -884,7 +882,7 @@ bothcases(struct parse *p, int ch)
 	assert(othercase(ch) != ch);	/* p_bracket() would recurse */
 	p->next = bracket;
 	p->end = bracket+2;
-	bracket[0] = ch;
+	bracket[0] = (char)ch;
 	bracket[1] = ']';
 	bracket[2] = '\0';
 	p_bracket(p);
@@ -1036,16 +1034,16 @@ allocset(struct parse *p)
 	size_t nc;
 	size_t nbytes;
 	cset *cs;
-	size_t css = (size_t)p->g->csetsize;
+	int css = p->g->csetsize;
 	int i;
 
 	if (no >= p->ncsalloc) {	/* need another column of space */
 		void *ptr;
 
 		p->ncsalloc += CHAR_BIT;
-		nc = p->ncsalloc;
+		nc = (size_t)p->ncsalloc;
 		assert(nc % CHAR_BIT == 0);
-		nbytes = nc / CHAR_BIT *css;
+		nbytes = nc / (size_t)CHAR_BIT * (size_t)css;
 
 		ptr = (cset *)cli_max_realloc((char*)p->g->sets, nc * sizeof(cset));
 		if (ptr == NULL)
@@ -1055,13 +1053,13 @@ allocset(struct parse *p)
 		ptr = (uch *)cli_max_realloc((char*)p->g->setbits, nbytes);
 		if (ptr == NULL)
 			goto nomem;
-		nbytes = (nc / CHAR_BIT) * css;
+		nbytes = (nc / (size_t)CHAR_BIT) * (size_t)css;
 		p->g->setbits = ptr;
 
 		for (i = 0; i < no; i++)
 			p->g->sets[i].ptr = p->g->setbits + css*(i/CHAR_BIT);
 
-		(void) memset((char *)p->g->setbits + (nbytes - css), 0, css);
+		(void) memset((char *)p->g->setbits + (nbytes - (size_t)css), 0, (size_t)css);
 	}
 	/* XXX should not happen */
 	if (p->g->sets == NULL || p->g->setbits == NULL)
@@ -1092,7 +1090,7 @@ freeset(struct parse *p, cset *cs)
 {
 	int i;
 	cset *top = &p->g->sets[p->g->ncsets];
-	size_t css = (size_t)p->g->csetsize;
+	int css = p->g->csetsize;
 
 	for (i = 0; i < css; i++)
 		CHsub(cs, i);
@@ -1116,7 +1114,7 @@ freezeset(struct parse *p, cset *cs)
 	int i;
 	cset *top = &p->g->sets[p->g->ncsets];
 	cset *cs2;
-	size_t css = (size_t)p->g->csetsize;
+	int css = p->g->csetsize;
 
 	/* look for an earlier one which is the same */
 	for (cs2 = &p->g->sets[0]; cs2 < top; cs2++)
@@ -1144,7 +1142,7 @@ static int			/* character; there is no "none" value */
 firstch(struct parse *p, cset *cs)
 {
 	int i;
-	size_t css = (size_t)p->g->csetsize;
+	int css = p->g->csetsize;
 
 	for (i = 0; i < css; i++)
 		if (CHIN(cs, i))
@@ -1160,7 +1158,7 @@ static int
 nch(struct parse *p, cset *cs)
 {
 	int i;
-	size_t css = (size_t)p->g->csetsize;
+	int css = p->g->csetsize;
 	int n = 0;
 
 	for (i = 0; i < css; i++)
@@ -1185,7 +1183,7 @@ dupl(struct parse *p,
 		return(ret);
 	if (!enlarge(p, p->ssize + len)) /* this many unexpected additions */
 		return(ret);
-	(void) memcpy(p->strip + p->slen, p->strip + start, len * sizeof(sop));
+	(void) memcpy(p->strip + p->slen, p->strip + start, (size_t)len * sizeof(sop));
 	p->slen += len;
 	return(ret);
 }
@@ -1250,7 +1248,7 @@ doinsert(struct parse *p, sop op, size_t opnd, sopno pos)
 	}
 
 	memmove((char *)&p->strip[pos+1], (char *)&p->strip[pos],
-						(HERE()-pos-1)*sizeof(sop));
+						(size_t)(HERE()-pos-1)*sizeof(sop));
 	p->strip[pos] = s;
 }
 
@@ -1279,7 +1277,7 @@ enlarge(struct parse *p, sopno size)
 	if (p->ssize >= size)
 		return 1;
 
-	sp = (sop *)cli_max_realloc(p->strip, size * sizeof(sop));
+	sp = (sop *)cli_max_realloc(p->strip, (size_t)size * sizeof(sop));
 	if (sp == NULL) {
 		SETERROR(REG_ESPACE);
 		return 0;
@@ -1296,7 +1294,7 @@ static void
 stripsnug(struct parse *p, struct re_guts *g)
 {
 	g->nstates = p->slen;
-	g->strip = (sop *)cli_max_realloc((char *)p->strip, p->slen * sizeof(sop));
+	g->strip = (sop *)cli_max_realloc((char *)p->strip, (size_t)p->slen * sizeof(sop));
 	if (g->strip == NULL) {
 		SETERROR(REG_ESPACE);
 		g->strip = p->strip;
@@ -1357,9 +1355,10 @@ findmust(struct parse *p, struct re_guts *g)
 			} while (OP(s) != O_QUEST && OP(s) != O_CH);
 			/* fallthrough */
 		default:		/* things that break a sequence */
-			if (newlen > g->mlen) {		/* ends one */
+			if (newlen > (sopno)g->mlen) {		/* ends one */
 				start = newstart;
-				g->mlen = newlen;
+				if (newlen <= INT_MAX)
+					g->mlen = (int)newlen;
 			}
 			newlen = 0;
 			break;
@@ -1381,7 +1380,7 @@ findmust(struct parse *p, struct re_guts *g)
 	}
 	cp = g->must;
 	scan = start;
-	for (i = g->mlen; i > 0; i--) {
+	for (i = (sopno)g->mlen; i > 0; i--) {
 		while (OP(s = *scan++) != OCHAR)
 			continue;
 		assert(cp < g->must + g->mlen);

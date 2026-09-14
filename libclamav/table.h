@@ -34,7 +34,7 @@ typedef struct table {
     unsigned int flags;
 } table_t;
 
-#define TABLE_HAS_DELETED_ENTRIES 0x1
+#define TABLE_HAS_DELETED_ENTRIES 0x1U
 
 struct table *tableCreate(void);
 void tableDestroy(table_t *table);

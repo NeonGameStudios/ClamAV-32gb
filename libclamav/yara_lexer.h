@@ -67,10 +67,6 @@ int yylex(
     yyscan_t yyscanner,
     YR_COMPILER* compiler);
 
-int yyparse(
-    void* yyscanner,
-    YR_COMPILER* compiler);
-
 void yyerror(
     yyscan_t yyscanner,
     YR_COMPILER* compiler,

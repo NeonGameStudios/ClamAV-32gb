@@ -9,7 +9,7 @@ bounded protocol slice; it does not claim ingress or release qualification.
 
 Canonical checkout and branch:
 
-- `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- `<repository-root>`
 - `largefile-roadmap-qualification`
 - starting commit: `b4cde643fce085fa016338339830b2b28ff9a42a`
 - intentionally dirty working tree preserved; no reset, clean, commit, or push
@@ -45,7 +45,7 @@ Release readiness remains intentionally blocked and unchanged at 597 total,
 0 qualified, 143 bounded, 440 pending, 14 allowlisted unsupported,
 0 unsupported required, and 583 blockers. No certified Linux x86-64,
 full-size, sanitizer, privileged, production-service, or R04 acceptance
-evidence was produced. No remote execution, MCP-SSH, usage reset, GitHub
+evidence was produced. No remote execution, remote SSH, usage reset, GitHub
 workflow action, commit, or push was used.
 
 State: protocol implementation and source/host controls verified; current

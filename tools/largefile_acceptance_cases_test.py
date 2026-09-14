@@ -61,6 +61,13 @@ class AcceptanceCaseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "malformed TSV"):
             cases.read_tsv(malformed, cases.RECORD_HEADER)
 
+    def test_structured_json_rejects_duplicate_keys(self):
+        self.assertEqual(cases.load_json_object('{"status": 0}', "report"), {"status": 0})
+        with self.assertRaisesRegex(ValueError, "duplicate JSON key: status"):
+            cases.load_json_object('{"status": 0, "status": 1}', "report")
+        with self.assertRaisesRegex(ValueError, "not a JSON object"):
+            cases.load_json_object("[]", "report")
+
     def test_record_outcome_and_case_binding_are_fail_closed(self):
         records = self.root / "records.tsv"
         row = {field: "0" for field in cases.RECORD_HEADER}
@@ -72,7 +79,7 @@ class AcceptanceCaseTests(unittest.TestCase):
             "exit_code": "1", "verdict": "DETECTED", "completion": "DETECTION_TERMINATED",
             "reason": "exact tail marker", "alert_signature": "Test.Signature", "alert_offset": "34359738304",
             "sanitizer": "release",
-            "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<=12582912;temporary<=68719476736",
+            "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<12582912;temporary<=68719476736",
             "health": "pass", "cleanup": "pass", "artifacts": "logs/pcre.txt",
         })
         with records.open("w", newline="", encoding="utf-8") as stream:
@@ -92,7 +99,7 @@ class AcceptanceCaseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "structured resource phases"):
             cases.validate_records(records, mapping)
         row["resource_phase"] = (
-            "rss<=33554432;pcre<=41943040;post-pcre<=12582912;"
+            "rss<=33554432;pcre<=41943040;post-pcre<12582912;"
             "temporary<=68719476736"
         )
         row["alert_offset"] = "-"
@@ -113,6 +120,28 @@ class AcceptanceCaseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "invalid resource phase token"):
             cases.validate_records(records, mapping)
 
+    def test_measured_resource_budgets_are_canonical_and_fail_closed(self):
+        valid = (
+            "rss<=33554432;pcre<=41943040;post-pcre<12582912;"
+            "temporary<=68719476736"
+        )
+        self.assertEqual(
+            cases.parse_resource_phases(valid, 2),
+            {"rss", "pcre", "post-pcre", "temporary"},
+        )
+        for phase, token in (
+            ("rss", "rss<=33554433"),
+            ("pcre", "pcre<=41943041"),
+            ("post-pcre", "post-pcre<=12582912"),
+            ("temporary", "temporary<=68719476737"),
+        ):
+            with self.subTest(phase=phase):
+                with self.assertRaisesRegex(ValueError, f"{phase} resource budget"):
+                    cases.parse_resource_phases(token, 2)
+
+        with self.assertRaisesRegex(ValueError, "invalid measured resource phase"):
+            cases.parse_resource_phases("post-pcre<12582912M", 2)
+
     def test_case_suffix_rejects_contradictory_completion(self):
         records = self.root / "records.tsv"
         row = {field: "0" for field in cases.RECORD_HEADER}
@@ -124,7 +153,7 @@ class AcceptanceCaseTests(unittest.TestCase):
             "exit_code": "0", "verdict": "CLEAN", "completion": "COMPLETE",
             "reason": "contradictory control", "alert_signature": "-", "alert_offset": "-",
             "sanitizer": "release",
-            "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<=12582912;temporary<=68719476736",
+            "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<12582912;temporary<=68719476736",
             "health": "pass", "cleanup": "pass", "artifacts": "logs/scan.txt",
         })
         with records.open("w", newline="", encoding="utf-8") as stream:
@@ -153,7 +182,7 @@ class AcceptanceCaseTests(unittest.TestCase):
             "exit_code": "1", "verdict": "DETECTED", "completion": "DETECTION_TERMINATED",
             "reason": "contradictory generic completion", "alert_signature": "Test.Signature",
             "alert_offset": "7", "sanitizer": "release",
-            "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<=12582912;temporary<=68719476736",
+            "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<12582912;temporary<=68719476736",
             "health": "pass", "cleanup": "pass", "artifacts": "logs/scan.txt",
         })
         with records.open("w", newline="", encoding="utf-8") as stream:
@@ -211,7 +240,7 @@ class AcceptanceCaseTests(unittest.TestCase):
             "exit_code": "1", "verdict": "DETECTED", "completion": "DETECTION_TERMINATED",
             "reason": "late marker", "alert_signature": "Test.Signature", "alert_offset": "7",
             "sanitizer": "release",
-            "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<=12582912;temporary<=68719476736",
+            "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<12582912;temporary<=68719476736",
             "health": "pass", "cleanup": "pass", "artifacts": ",".join(artifact_names),
         })
         with records.open("w", newline="", encoding="utf-8") as stream:
@@ -278,7 +307,7 @@ class AcceptanceCaseTests(unittest.TestCase):
             "exit_code": "1", "verdict": "DETECTED", "completion": "DETECTION_TERMINATED",
             "reason": "late marker", "alert_signature": "Test.Signature", "alert_offset": "7",
             "sanitizer": "release",
-            "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<=12582912;temporary<=68719476736",
+            "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<12582912;temporary<=68719476736",
             "health": "pass", "cleanup": "pass",
             "artifacts": ",".join(artifact_names),
         })
@@ -312,7 +341,7 @@ class AcceptanceCaseTests(unittest.TestCase):
             encoding="utf-8",
         )
         row["resource_phase"] = (
-            "rss<=33554432;pcre<=41943040;post-pcre<=12582912;"
+            "rss<=33554432;pcre<=41943040;post-pcre<12582912;"
             "temporary<=68719476736;daemon-health=ping-before-and-after;"
             "cleanup=lifecycle-verified"
         )
@@ -382,6 +411,14 @@ class AcceptanceCaseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "service input identity evidence is malformed"):
             cases.validate_records(records, mapping, evidence_root=evidence)
 
+        (provenance / "service-inputs-before.json").write_text(
+            '{"version": 1, "version": 1, "inputs": {"service-zip": {"sha256": "' +
+            fixture_hash + '"}}}\n',
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ValueError, "duplicate JSON key: version"):
+            cases.validate_records(records, mapping, evidence_root=evidence)
+
     def test_r09_focus_cases_can_be_required_as_one_binding_gate(self):
         manifest = self.root / "r09-manifest.tsv"
         with manifest.open("w", newline="", encoding="utf-8") as stream:
@@ -412,7 +449,7 @@ class AcceptanceCaseTests(unittest.TestCase):
                     "alert_offset": "-",
                     "reason": "focused R09 behavior result",
                     "sanitizer": "release",
-                    "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<=12582912;temporary<=68719476736",
+                    "resource_phase": "rss<=33554432;pcre<=41943040;post-pcre<12582912;temporary<=68719476736",
                     "health": "pass",
                     "cleanup": "pass",
                     "artifacts": "logs/r09.txt",

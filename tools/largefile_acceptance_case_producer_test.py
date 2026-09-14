@@ -8,6 +8,7 @@ from unittest import mock
 
 import largefile_acceptance_cases as acceptance_cases
 import largefile_acceptance_case_producer as producer
+import largefile_acceptance_resources as resources
 
 
 class AcceptanceCaseProducerTests(unittest.TestCase):
@@ -108,6 +109,44 @@ class AcceptanceCaseProducerTests(unittest.TestCase):
                 evidence_root=self.out,
             )
 
+    def test_producer_binds_independent_resource_sidecar_when_requested(self):
+        sidecar = self.out / resources.RESOURCE_PATH
+        sidecar.parent.mkdir(parents=True, exist_ok=True)
+        hashes = {
+            "source_manifest_sha256": producer.sha256(self.out / "provenance/source-manifest.txt"),
+            "build_identity_sha256": producer.sha256(self.out / "provenance/service-build-identity.txt"),
+            "config_sha256": producer.sha256(self.out / "provenance/CMakeCache.txt"),
+        }
+        row = {field: "0" for field in resources.RESOURCE_HEADER}
+        row.update({
+            "kind": "clamscan", "id": "file",
+            "case_id": "clamscan:file:detection-edge",
+            **hashes, "platform": "Linux-x86_64",
+            "sample_source": "procfs-process-tree", "sample_count": "1",
+            "rss_peak_kb": "100", "pss_peak_kb": "80", "vas_peak_kb": "200",
+            "swap_peak_kb": "0", "minor_faults_peak": "1", "major_faults_peak": "0",
+            "read_bytes_peak": "1", "write_bytes_peak": "1",
+            "cancelled_write_bytes_peak": "0", "temporary_peak_bytes": "0",
+            "oom_events_peak": "0", "oom_kill_events_peak": "0",
+            "oom_cgroup_count": "1", "oom_cgroup_digest": "1" * 64,
+            "pcre_rss_peak_kb": "-", "post_pcre_rss_peak_kb": "-",
+        })
+        with sidecar.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(
+                stream, fieldnames=resources.RESOURCE_HEADER,
+                delimiter="\t", lineterminator="\n",
+            )
+            writer.writeheader()
+            writer.writerow(row)
+        fake_uname = mock.Mock(sysname="Linux", machine="x86_64")
+        with mock.patch.object(producer.os, "uname", return_value=fake_uname):
+            count = producer.produce(
+                self.out, self.manifest, self.mapping,
+                resource_sidecar=sidecar,
+            )
+        self.assertEqual(count, 1)
+        self.assertEqual(resources.validate(self.out / "provenance/acceptance-cases.tsv", self.out), 1)
+
     def test_unmapped_workload_is_not_relabelled(self):
         path = self.out / "provenance/service-workload-results.tsv"
         text = path.read_text(encoding="utf-8").replace("production-clamscan", "production_cvd")
@@ -123,6 +162,12 @@ class AcceptanceCaseProducerTests(unittest.TestCase):
         )
         path.write_text(text, encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "unknown workload label"):
+            producer.produce(self.out, self.manifest, self.mapping)
+
+    def test_duplicate_service_input_json_keys_are_rejected(self):
+        path = self.out / "provenance/service-inputs-before.json"
+        path.write_text('{"version": 1, "version": 1, "inputs": {}}\n', encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "duplicate JSON key: version"):
             producer.produce(self.out, self.manifest, self.mapping)
 
     def test_workload_schema_rejects_rows_with_wrong_column_count(self):

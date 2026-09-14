@@ -304,6 +304,16 @@ class InputPolicyTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "invalid schema"):
                     checker.input_evidence(self.root)
 
+    def test_provenance_duplicate_json_keys_are_rejected(self):
+        self.write_evidence()
+        path = self.root / "provenance/service-inputs-before.json"
+        path.write_text(
+            '{"version":1,"version":1,"inputs":{}}',
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ValueError, "duplicate JSON key: version"):
+            checker.input_evidence(self.root)
+
     def test_matching_but_forged_provenance_rechecked_against_input(self):
         evidence = self.write_evidence()
         for phase in ("before", "after"):

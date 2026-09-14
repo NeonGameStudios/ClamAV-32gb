@@ -14,7 +14,7 @@ Exact capability areas exercised:
 - `matcher:fuzzy-image`
 
 Starting commit: `b4cde643fce085fa016338339830b2b28ff9a42a`.
-The canonical checkout is `/Volumes/512gbNVME/github-external/ClamAV-32gb`,
+The canonical checkout is `<repository-root>`,
 branch `largefile-roadmap-qualification`, with the pre-existing dirty working
 tree preserved. The pre-receipt tracked-source manifest hash for this slice is
 `c81db77ce9bd65b9fd5a45a1d74423595473d7e8aa7baab9d03e40bde25cbccd`.
@@ -72,7 +72,7 @@ blocked by the uncached `clam-sigutil` dependency. No certified Linux x86-64,
 sanitizer, production-CVD/service, full-size, materialized-edge, or final
 canary evidence was produced. No capability status was promoted.
 
-No remote execution, MCP-SSH, usage reset, banked reset, GitHub workflow
+No remote execution, remote SSH, usage reset, banked reset, GitHub workflow
 action, commit, or push was performed.
 
 State: `development-verified` for the five focused issue areas; release

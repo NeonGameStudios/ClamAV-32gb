@@ -19,6 +19,7 @@ mod utils;
 pub(crate) type Reader<'a, 'b> = &'b mut crate::reader::Reader<'a>;
 
 pub use crate::onenote::Parser;
+pub use crate::reader::BlobSpoolBudget;
 
 /// The data that represents a OneNote notebook.
 pub mod notebook {

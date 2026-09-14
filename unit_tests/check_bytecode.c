@@ -977,6 +977,27 @@ START_TEST(test_bytecode_read_rejects_null_buffer)
 }
 END_TEST
 
+START_TEST(test_bytecode_malloc_is_bounded_and_reset)
+{
+    struct cli_bc_ctx *bcctx;
+    uint8_t *buffer;
+
+    bcctx = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+
+    ck_assert_ptr_null(cli_bcapi_malloc(bcctx, 0));
+    ck_assert_ptr_null(cli_bcapi_malloc(bcctx, (uint32_t)CLI_MAX_ALLOCATION + 1U));
+    buffer = cli_bcapi_malloc(bcctx, 16);
+    ck_assert_ptr_nonnull(buffer);
+    memset(buffer, 0xa5, 16);
+#if !USE_MPOOL
+    ck_assert_uint_eq(bcctx->nmallocs, 1U);
+#endif
+
+    cli_bytecode_context_destroy(bcctx);
+}
+END_TEST
+
 START_TEST(test_bytecode_api_rejects_invalid_contexts)
 {
     static const uint8_t text[] = "123";
@@ -2544,6 +2565,7 @@ Suite *test_bytecode_suite(void)
 #endif
     tcase_add_test(tc_cli_read, test_bytecode_v1_read_rejects_invalid_offsets);
     tcase_add_test(tc_cli_read, test_bytecode_read_rejects_null_buffer);
+    tcase_add_test(tc_cli_read, test_bytecode_malloc_is_bounded_and_reset);
     tcase_add_test(tc_cli_read, test_bytecode_api_rejects_invalid_contexts);
     tcase_add_test(tc_cli_read, test_bytecode_v1_coordinate_narrowing_is_fail_visible);
     tcase_add_test(tc_cli_read, test_bytecode_output_uses_64bit_accounting_and_temporary_quota);

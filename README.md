@@ -34,15 +34,15 @@ was skipped. Unsupported or incomplete results must remain explicit.
 
 ## Current qualification status
 
-The repository currently tracks 597 capability rows:
+The repository currently tracks 601 capability rows:
 
 | Measure | Current value |
 | --- | ---: |
 | Qualified | 0 |
-| Bounded development slices | 143 |
+| Bounded development slices | 147 |
 | Pending | 440 |
 | Explicitly unsupported | 14 |
-| Blocked by open evidence or qualification gates | 583 |
+| Blocked by open evidence or qualification gates | 587 |
 | Parser rows still blocked | 80 / 80 |
 | Release readiness | **Blocked** |
 
@@ -82,6 +82,8 @@ evidence, and a certified Linux x86-64 run.
   service-input boundary and result policy
 - [largefile-qualification-followups.md](docs/largefile-qualification-followups.md) —
   remaining qualification follow-ups
+- [privacy-audit.md](docs/privacy-audit.md) — privacy scope, redactions, and
+  retained upstream attribution
 
 ## Development checks
 

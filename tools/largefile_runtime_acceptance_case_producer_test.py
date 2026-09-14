@@ -4,8 +4,10 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 import largefile_acceptance_cases as acceptance_cases
+import largefile_acceptance_resources as resources
 import largefile_runtime_acceptance_case_producer as producer
 
 
@@ -145,6 +147,54 @@ class RuntimeAcceptanceCaseProducerTests(unittest.TestCase):
             6,
         )
 
+    def test_runtime_producer_binds_independent_resource_sidecar_when_requested(self):
+        fake_uname = mock.Mock(sysname="Linux", machine="x86_64")
+        with mock.patch.object(producer.os, "uname", return_value=fake_uname):
+            self.assertEqual(producer.produce(self.out, self.manifest, self.mapping), 6)
+        with (self.out / "provenance/acceptance-cases.tsv").open(
+            newline="", encoding="utf-8",
+        ) as stream:
+            records = list(csv.DictReader(stream, delimiter="\t"))
+        sidecar = self.out / resources.RESOURCE_PATH
+        with sidecar.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(
+                stream, fieldnames=resources.RESOURCE_HEADER,
+                delimiter="\t", lineterminator="\n",
+            )
+            writer.writeheader()
+            for record in records:
+                row = {field: "0" for field in resources.RESOURCE_HEADER}
+                row.update({
+                    "kind": record["kind"], "id": record["id"],
+                    "case_id": record["case_id"],
+                    "source_manifest_sha256": record["source_manifest_sha256"],
+                    "build_identity_sha256": record["build_identity_sha256"],
+                    "config_sha256": record["config_sha256"],
+                    "platform": record["platform"],
+                    "sample_source": "procfs-process-tree", "sample_count": "1",
+                    "rss_peak_kb": "100", "pss_peak_kb": "80", "vas_peak_kb": "200",
+                    "swap_peak_kb": "0", "minor_faults_peak": "1",
+                    "major_faults_peak": "0", "read_bytes_peak": "1",
+                    "write_bytes_peak": "1", "cancelled_write_bytes_peak": "0",
+                    "temporary_peak_bytes": "0", "oom_events_peak": "0",
+                    "oom_kill_events_peak": "0", "oom_cgroup_count": "1",
+                    "oom_cgroup_digest": "1" * 64,
+                    "pcre_rss_peak_kb": "-", "post_pcre_rss_peak_kb": "-",
+                })
+                writer.writerow(row)
+        with mock.patch.object(producer.os, "uname", return_value=fake_uname):
+            self.assertEqual(
+                producer.produce(
+                    self.out, self.manifest, self.mapping,
+                    resource_sidecar=sidecar,
+                ),
+                6,
+            )
+        self.assertEqual(
+            resources.validate(self.out / "provenance/acceptance-cases.tsv", self.out),
+            6,
+        )
+
     def test_development_records_identify_the_unsanitized_build(self):
         self.assertEqual(
             producer.produce(self.out, self.manifest, self.mapping, sanitizer="development"),
@@ -162,6 +212,14 @@ class RuntimeAcceptanceCaseProducerTests(unittest.TestCase):
         report["reason"] = "Heuristics.Limits.Exceeded.MaxScanSize"
         report_path.write_text(json.dumps(report) + "\n", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "exact MaxFileSize reason"):
+            producer.produce(self.out, self.manifest, self.mapping)
+
+    def test_duplicate_poc_file_rows_are_rejected(self):
+        path = self.out / "poc/results.tsv"
+        path.write_text(path.read_text(encoding="utf-8") +
+                        "32g-edge.bin\t0\t1\t1\tyes\t1\tyes\tyes\tyes\t0\tyes\t0\n",
+                        encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "duplicate file row"):
             producer.produce(self.out, self.manifest, self.mapping)
 
     def test_oracle_schema_rejects_rows_with_wrong_column_count(self):

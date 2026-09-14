@@ -9,7 +9,7 @@ or change release status.
 
 Canonical checkout and starting identity:
 
-- `/Volumes/512gbNVME/github-external/ClamAV-32gb`
+- `<repository-root>`
 - branch `largefile-roadmap-qualification`
 - starting `HEAD`: `b4cde643fce085fa016338339830b2b28ff9a42a`
 - working tree intentionally remained dirty; existing changes were preserved

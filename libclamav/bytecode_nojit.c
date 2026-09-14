@@ -41,7 +41,7 @@ cl_error_t cli_bytecode_prepare_jit(struct cli_all_bc *bcs)
             return CL_EBYTECODE;
         }
     }
-    cli_dbgmsg("Cannot prepare for JIT, LLVM is not compiled or not linked\n");
+    cli_dbgmsg_no_inline("Cannot prepare for JIT, LLVM is not compiled or not linked\n");
     return CL_EBYTECODE;
 }
 

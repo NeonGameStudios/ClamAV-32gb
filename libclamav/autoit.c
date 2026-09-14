@@ -1254,6 +1254,14 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base)
         }
 
         if (!UNP.csize) {
+            /* An empty member has no payload to materialize, but it is still
+             * a logical child and must consume one MaxFiles slot. */
+            status = cli_updatelimits(ctx, 0);
+            if (status != CL_SUCCESS) {
+                if (status != CL_ETIMEOUT && status != CL_BREAK)
+                    cli_mark_scan_incomplete(ctx, "AutoIt EA05 empty member exceeds configured scan limits");
+                goto done;
+            }
             cli_dbgmsg("autoit: skipping empty file\n");
             base += 13 + 16;
             continue;
@@ -1795,6 +1803,14 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
         }
 
         if (!UNP.csize) {
+            /* An empty member has no payload to materialize, but it is still
+             * a logical child and must consume one MaxFiles slot. */
+            ret = cli_updatelimits(ctx, 0);
+            if (ret != CL_SUCCESS) {
+                if (ret != CL_ETIMEOUT && ret != CL_BREAK)
+                    cli_mark_scan_incomplete(ctx, "AutoIt EA06 empty member exceeds configured scan limits");
+                return ret;
+            }
             cli_dbgmsg("autoit: skipping empty file\n");
             base += 13 + 16;
             continue;

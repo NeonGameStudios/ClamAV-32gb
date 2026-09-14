@@ -199,7 +199,7 @@ void submit_post(const char *host, const char *port, const char *method, const c
     char chunkedlen[21];
     fd_set readfds;
     struct timeval tv;
-    char *acceptable_methods[] = {
+    const char *acceptable_methods[] = {
         "GET",
         "PUT",
         "POST",

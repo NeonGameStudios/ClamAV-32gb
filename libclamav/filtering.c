@@ -137,9 +137,6 @@
 #define detailed_dbg(...)
 #endif
 
-#define BITMAP_CONTAINS(bmap, val) ((bmap)[(val) >> 5] & (1 << ((val)&0x1f)))
-#define BITMAP_INSERT(bmap, val) ((bmap)[(val) >> 5] |= (1 << ((val)&0x1f)))
-
 void filter_init(struct filter *m)
 {
     memset(m->B, ~0, sizeof(m->B));
@@ -147,7 +144,7 @@ void filter_init(struct filter *m)
 }
 
 /* because we use uint32_t */
-#define MAXSOPATLEN 8
+#define MAXSOPATLEN 8U
 
 static inline int filter_isset(const struct filter *m, unsigned pos, uint16_t val)
 {
@@ -158,7 +155,7 @@ static inline void filter_set_atpos(struct filter *m, unsigned pos, uint16_t val
 {
     if (!filter_isset(m, pos, val)) {
         cli_perf_log_count(FILTER_LOAD, pos);
-        m->B[val] &= ~(1 << pos);
+        m->B[val] &= (uint8_t)~(1U << pos);
     }
 }
 
@@ -171,24 +168,24 @@ static inline void filter_set_end(struct filter *m, unsigned pos, uint16_t a)
 {
     if (!filter_end_isset(m, pos, a)) {
         cli_perf_log_count(FILTER_END_LOAD, pos);
-        m->end[a] &= ~(1 << pos);
+        m->end[a] &= (uint8_t)~(1U << pos);
     }
 }
-#define MAX_CHOICES 8
+#define MAX_CHOICES 8U
 /* just an arbitrary limit, if patterns are longer, we cut
  * the filter can only use MAXSOPATLEN (32) characters,
  * this longer buffer is needed so that we can choose the "best" subpattern from
  * it */
-#define MAXPATLEN 255
+#define MAXPATLEN 255U
 
 /* merge another pattern into the filter
  * add('abc'); add('bcd'); will match [ab][bc][cd] */
 int filter_add_static(struct filter *m, const unsigned char *pattern, unsigned long len, const char *name)
 {
     uint16_t q = 0;
-    uint8_t j, maxlen;
+    unsigned j, maxlen;
     uint32_t best    = 0xffffffff;
-    uint8_t best_pos = 0;
+    unsigned best_pos = 0;
 
     UNUSEDPARAM(name);
 
@@ -203,33 +200,33 @@ int filter_add_static(struct filter *m, const unsigned char *pattern, unsigned l
 
     /* we want subsigs to be as long as possible */
     if (len > 4) {
-        maxlen = len - 4;
+        maxlen = (unsigned)(len - 4UL);
         if (maxlen == 1) maxlen = 2;
     } else
         maxlen = 2;
     for (j = 0; (best < 100 && j < MAX_CHOICES) || (j < maxlen); j++) {
         uint32_t num = MAXSOPATLEN;
-        uint8_t k;
+        unsigned k;
         if ((unsigned long)(j + 2) > len)
             break;
         for (k = j; k < len - 1 && (k - j < MAXSOPATLEN); k++) {
-            q = cli_readint16(&pattern[k]);
+            q = (uint16_t)cli_readint16(&pattern[k]);
             /* we want to favor subsigs that add as little as
              * possible to the filter */
-            num += filter_isset(m, k - j, q) ? 0 : MAXSOPATLEN - (k - j);
+            num += filter_isset(m, k - j, q) ? 0U : MAXSOPATLEN - (k - j);
             if ((k == j || k == j + 1) && (q == 0x0000 || q == 0xffff))
-                num += k == j ? 10000 : 1000; /* bad */
+                num += k == j ? 10000U : 1000U; /* bad */
         }
         /* it is very important to keep the end set small */
-        num += 10 * (filter_end_isset(m, k - j - 1, q) ? 0 : 1);
+        num += 10U * (filter_end_isset(m, k - j - 1, q) ? 0U : 1U);
         /* it is very important to have signatures as long as possible
          * */
-        num += 5 * (MAXSOPATLEN - (k - j));
+        num += 5U * (MAXSOPATLEN - (k - j));
         /* if we are lower length than threshold penalize */
         if (k - j + 1 < 4)
-            num += 200;
+            num += 200U;
         /* favour longer patterns */
-        num -= (2 * MAXSOPATLEN - (k + 1 + j)) * (k - j) / 2;
+        num -= (2U * MAXSOPATLEN - (k + 1U + j)) * (k - j) / 2U;
 
         if (num < best) {
             best     = num;
@@ -250,7 +247,7 @@ int filter_add_static(struct filter *m, const unsigned char *pattern, unsigned l
     /* Shift-Or like preprocessing */
     for (j = 0; j < len - 1; j++) {
         /* use overlapping little-endian 2-grams. We need them overlapping because matching can start at any position */
-        q = cli_readint16(&pattern[j]);
+        q = (uint16_t)cli_readint16(&pattern[j]);
         filter_set_atpos(m, j, q);
     }
     /* we use variable length patterns, use last character to mark pattern end,
@@ -260,7 +257,7 @@ int filter_add_static(struct filter *m, const unsigned char *pattern, unsigned l
         j--;
         filter_set_end(m, j, q);
     }
-    return j + 2;
+    return (int)(j + 2U);
 }
 
 struct char_spec {
@@ -281,7 +278,7 @@ static inline unsigned char spec_ith_char(const struct char_spec *spec, unsigned
         assert(i < alt->num);
         return (alt->alt).byte[i];
     }
-    return i;
+    return (unsigned char)i;
 }
 
 #ifndef MIN
@@ -299,7 +296,7 @@ static inline unsigned char spec_ith_char(const struct char_spec *spec, unsigned
         cc1   = spec1->negative ? 0 : c1;            \
         for (; cc0 <= c0end; cc0++) {                \
             for (; cc1 <= c1end; cc1++) {            \
-                uint16_t a = cc0 | (cc1 << 8);       \
+                uint16_t a = (uint16_t)(cc0 | (cc1 << 8)); \
                 if (spec0->negative && cc0 == c0)    \
                     continue;                        \
                 if (spec1->negative && cc1 == c1)    \
@@ -324,7 +321,8 @@ enum badness {
 static inline void get_score(enum badness badness, unsigned i, const struct filter *m, const struct char_spec *spec0, const struct char_spec *spec1, int32_t *score, int32_t *score_end)
 {
     int32_t base = 0;
-    unsigned k0, k1, num_introduced = 0, num_end_introduced = 0;
+    unsigned k0, k1;
+    int32_t num_introduced = 0, num_end_introduced = 0;
     switch (badness) {
         case reject:
             /* not reached */
@@ -364,8 +362,8 @@ static inline void get_score(enum badness badness, unsigned i, const struct filt
         for (k1 = spec1->start; k1 <= spec1->end; k1 += spec1->step) {
             SPEC_FOREACH(spec0, k0, spec1, k1)
             {
-                num_introduced += filter_isset(m, i, a);
-                num_end_introduced += filter_end_isset(m, i, a);
+                num_introduced += (int32_t)filter_isset(m, i, a);
+                num_end_introduced += (int32_t)filter_end_isset(m, i, a);
             }
             SPEC_END_FOR;
         }
@@ -399,7 +397,7 @@ static inline void add_choice(struct choice *choices, unsigned *cnt, unsigned i,
         for (j = 0; j < *cnt; j++) {
             if (choices[j].base < badness) {
                 if (i_neg == -1 || choices[j].base < choices[i_neg].base) {
-                    i_neg = j;
+                    i_neg = (int)j;
                 }
             }
         }
@@ -418,10 +416,10 @@ static inline int32_t spec_iter(const struct char_spec *spec)
 {
     unsigned count;
     assert(spec->step);
-    count = (spec->step + spec->end - spec->start) / spec->step;
+    count = (unsigned)(spec->step + spec->end - spec->start) / spec->step;
     if (spec->negative) /* all chars except itself are added */
         count *= 254;
-    return count;
+    return (int32_t)count;
 }
 
 int filter_add_acpatt(struct filter *m, const struct cli_ac_patt *pat)
@@ -500,11 +498,11 @@ int filter_add_acpatt(struct filter *m, const struct cli_ac_patt *pat)
                 assert(pat->special_table);
                 /* assert(altcnt < pat->alt); */
                 assert(pat->special_table[altcnt]);
-                spec->negative = pat->special_table[altcnt]->negative;
+                spec->negative = (uint8_t)pat->special_table[altcnt]->negative;
                 switch (pat->special_table[altcnt++]->type) {
                     case 1: /* ALT_CHAR */
                         spec->start = 0;
-                        spec->end   = pat->special_table[altcnt - 1]->num - 1;
+                        spec->end   = (uint8_t)(pat->special_table[altcnt - 1]->num - 1U);
                         spec->step  = 1;
                         spec->alt   = pat->special_table[altcnt - 1];
                         break;
@@ -515,13 +513,13 @@ int filter_add_acpatt(struct filter *m, const struct cli_ac_patt *pat)
                 }
                 break;
             case CLI_MATCH_NIBBLE_HIGH:
-                spec->start = (p & 0xf0);
-                spec->end   = spec->start | 0x0f;
+                spec->start = (uint8_t)(p & 0xf0U);
+                spec->end   = (uint8_t)(spec->start | 0x0fU);
                 spec->step  = 1;
                 break;
             case CLI_MATCH_NIBBLE_LOW:
-                spec->start = (p & 0xf);
-                spec->end   = 0xf0 | spec->start;
+                spec->start = (uint8_t)(p & 0xfU);
+                spec->end   = (uint8_t)(0xf0U | spec->start);
                 spec->step  = 0x10;
                 break;
             default:
@@ -589,7 +587,7 @@ int filter_add_acpatt(struct filter *m, const struct cli_ac_patt *pat)
      * only */
     for (i = 0; i < j - 1 && choices_cnt < MAX_CHOICES; i++) {
         enum badness base0 = like, base1 = like;
-        unsigned kend = MIN(j - 1, (i + MAXSOPATLEN) & ~1), k;
+        unsigned kend = MIN(j - 1U, (i + MAXSOPATLEN) & ~1U), k;
         int ki        = -0xff;
         /* add 2 scores: pattern with max length, one where we stop at
          * first negative, and one we stop at last positive, but never
@@ -614,7 +612,7 @@ int filter_add_acpatt(struct filter *m, const struct cli_ac_patt *pat)
                 if (k == i && badness == avoid_anywhere)
                     badness = avoid_first;
                 if (ki == -0xff)
-                    ki = k;
+                    ki = (int)k;
             }
             base0 = MIN(base0, badness);
             if (ki == -0xff)
@@ -624,7 +622,7 @@ int filter_add_acpatt(struct filter *m, const struct cli_ac_patt *pat)
         if (ki > (int)i) {
             /* ki|ki+1|??| */
             /* try subpattern from after the wildcard */
-            i = ki;
+            i = (unsigned)ki;
         }
         /* if score is positive, it replaces a negative choice */
     }
@@ -647,8 +645,8 @@ int filter_add_acpatt(struct filter *m, const struct cli_ac_patt *pat)
              * at the beginning */
             /* TODO: tune magic number here */
             if (p < 6) {
-                iscore *= (6 - p);
-                score_end *= (6 - p);
+                iscore *= (int32_t)(6U - p);
+                score_end *= (int32_t)(6U - p);
             }
             score += iscore;
             if (score + score_end > best_score) {
@@ -710,7 +708,7 @@ int filter_add_acpatt(struct filter *m, const struct cli_ac_patt *pat)
             }
         }
     }
-    return j + 2;
+    return (int)(j + 2U);
 }
 
 /* state 11110011 means that we may have a match of length min 4, max 5 */
@@ -718,7 +716,7 @@ int filter_add_acpatt(struct filter *m, const struct cli_ac_patt *pat)
 __hot__ int filter_search_ext(const struct filter *m, const unsigned char *data, unsigned long len, struct filter_match_info *inf)
 {
     size_t j;
-    uint8_t state      = ~0;
+    uint8_t state      = UINT8_MAX;
     const uint8_t *B   = m->B;
     const uint8_t *End = m->end;
 
@@ -726,7 +724,7 @@ __hot__ int filter_search_ext(const struct filter *m, const unsigned char *data,
     /* look for first match */
     for (j = 0; j < len - 1; j++) {
         uint8_t match_state_end;
-        const uint16_t q0 = cli_readint16(&data[j]);
+        const uint16_t q0 = (uint16_t)cli_readint16(&data[j]);
 
         state           = (state << 1) | B[q0];
         match_state_end = state | End[q0];
@@ -746,7 +744,7 @@ __hot__ int filter_search_ext(const struct filter *m, const unsigned char *data,
 long filter_search(const struct filter *m, const unsigned char *data, unsigned long len)
 {
     size_t j;
-    uint8_t state      = ~0;
+    uint8_t state      = UINT8_MAX;
     const uint8_t *B   = m->B;
     const uint8_t *End = m->end;
 
@@ -754,7 +752,7 @@ long filter_search(const struct filter *m, const unsigned char *data, unsigned l
     if (len < 2) return -1;
     /* Shift-Or like search algorithm */
     for (j = 0; j < len - 1; j++) {
-        const uint16_t q0 = cli_readint16(&data[j]);
+        const uint16_t q0 = (uint16_t)cli_readint16(&data[j]);
         uint8_t match_end;
         state = (state << 1) | B[q0];
         /* state marks with a 0 bit all active states
@@ -768,7 +766,7 @@ long filter_search(const struct filter *m, const unsigned char *data, unsigned l
             /* return position of probable match */
             /* find first 0 starting from MSB, the position of that bit as counted from LSB, is the length of the
              * longest pattern that could match */
-            return j >= MAXSOPATLEN ? j - MAXSOPATLEN : 0;
+            return j >= MAXSOPATLEN ? (long)(j - MAXSOPATLEN) : 0L;
         }
     }
     /* no match */

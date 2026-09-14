@@ -300,7 +300,11 @@ int thrmgr_printstats(int f, char term)
     free((void *)seen);
 #ifdef HAVE_MALLINFO
     {
+#if defined(__GLIBC__) && defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 33)
+        struct mallinfo2 inf = mallinfo2();
+#else
         struct mallinfo inf = mallinfo();
+#endif
         mem_heap            = inf.arena / (1024 * 1024.0);
         mem_mmap            = inf.hblkhd / (1024 * 1024.0);
         mem_used            = (inf.usmblks + inf.uordblks) / (1024 * 1024.0);
@@ -421,7 +425,7 @@ threadpool_t *thrmgr_new(int max_threads, int idle_timeout, int max_queue, void 
     size_t stacksize;
 #endif
 
-    if (max_threads <= 0) {
+    if (max_threads <= 0 || max_queue <= 0) {
         return NULL;
     }
 
@@ -628,6 +632,18 @@ static inline int thrmgr_contended(threadpool_t *pool, int bulk)
     return pool->bulk_queue->item_count + pool->single_queue->item_count + pool->thr_alive - pool->thr_idle + pool->reserved >= pool->queue_max;
 }
 
+/* The reservation is consumed only when a reserved dispatch is committed.
+ * Restore it while pool_mutex is held if admission or worker creation fails,
+ * so another queued stream cannot be starved by a request that never entered
+ * the work queue. */
+static void thrmgr_restore_reservation_locked(threadpool_t *pool)
+{
+    pool->reserved++;
+    pool->reserved_bulk++;
+    pthread_cond_signal(&pool->queueable_single_cond);
+    pthread_cond_signal(&pool->queueable_bulk_cond);
+}
+
 /* when both queues have tasks, it will pick 4 items from the single queue,
  * and 1 from the bulk */
 #define SINGLE_BULK_RATIO 4
@@ -752,6 +768,7 @@ static int thrmgr_dispatch_internal(threadpool_t *threadpool, void *user_data, i
     int ret = TRUE;
     pthread_t thr_id;
     int active;
+    int reservation_consumed = FALSE;
 
     if (!threadpool) {
         return FALSE;
@@ -776,9 +793,14 @@ static int thrmgr_dispatch_internal(threadpool_t *threadpool, void *user_data, i
             threadpool->reserved--;
             if (threadpool->reserved_bulk > 0)
                 threadpool->reserved_bulk--;
+            reservation_consumed = TRUE;
         }
 
         if (threadpool->state != POOL_VALID) {
+            if (reservation_consumed) {
+                thrmgr_restore_reservation_locked(threadpool);
+                reservation_consumed = FALSE;
+            }
             ret = FALSE;
             break;
         }
@@ -797,7 +819,29 @@ static int thrmgr_dispatch_internal(threadpool_t *threadpool, void *user_data, i
             logg(LOGG_DEBUG_NV, "THRMGR: contended, woken\n");
         }
 
+        /* Never publish a queued job unless there is already an idle worker
+         * or a newly created worker that can consume it.  The previous order
+         * accepted the job first, then treated pthread_create() failure as a
+         * successful dispatch, leaving the request queued forever. */
+        if (threadpool->thr_idle == 0 && threadpool->thr_alive < threadpool->thr_max) {
+            if (pthread_create(&thr_id, &(threadpool->pool_attr),
+                               thrmgr_worker, threadpool) != 0) {
+                logg(LOGG_ERROR, "pthread_create failed; dispatch rejected\n");
+                if (reservation_consumed) {
+                    thrmgr_restore_reservation_locked(threadpool);
+                    reservation_consumed = FALSE;
+                }
+                ret = FALSE;
+                break;
+            }
+            threadpool->thr_alive++;
+        }
+
         if (!work_queue_add(queue, user_data)) {
+            if (reservation_consumed) {
+                thrmgr_restore_reservation_locked(threadpool);
+                reservation_consumed = FALSE;
+            }
             ret = FALSE;
             break;
         }
@@ -814,16 +858,6 @@ static int thrmgr_dispatch_internal(threadpool_t *threadpool, void *user_data, i
         logg(LOGG_DEBUG_NV,
              "THRMGR: dispatch accepted: active=%d queued=%d max_threads=%d max_queue=%d\n",
              active, items, threadpool->thr_max, threadpool->queue_max);
-        if ((threadpool->thr_idle < items) &&
-            (threadpool->thr_alive < threadpool->thr_max)) {
-            /* Start a new thread */
-            if (pthread_create(&thr_id, &(threadpool->pool_attr),
-                               thrmgr_worker, threadpool) != 0) {
-                logg(LOGG_ERROR, "pthread_create failed\n");
-            } else {
-                threadpool->thr_alive++;
-            }
-        }
         pthread_cond_signal(&(threadpool->pool_cond));
 
     } while (0);

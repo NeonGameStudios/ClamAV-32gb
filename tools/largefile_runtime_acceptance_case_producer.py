@@ -19,6 +19,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import largefile_acceptance_cases as acceptance_cases
+import largefile_acceptance_resources as acceptance_resources
 import largefile_service_workload_check as workload_check
 
 
@@ -140,12 +141,19 @@ def load_poc_results(root: Path) -> dict[str, dict[str, str]]:
         POC_HEADER,
         "runtime POC results",
     )
-    return {row["file"]: row for row in rows}
+    results: dict[str, dict[str, str]] = {}
+    for row in rows:
+        file_name = row["file"]
+        if file_name in results:
+            fail(f"runtime POC results duplicate file row: {file_name}")
+        results[file_name] = row
+    return results
 
 
 def load_report(path: Path, label: str) -> dict:
     with path.open(encoding="utf-8") as stream:
-        rows = [json.loads(line) for line in stream if line.strip()]
+        rows = [acceptance_cases.load_json_object(line, label)
+                for line in stream if line.strip()]
     if len(rows) != 1 or not isinstance(rows[0], dict):
         fail(f"{label} structured report is not exactly one JSON object")
     return rows[0]
@@ -351,7 +359,7 @@ def record_for(
         "resource_phase": (
             f"rss<={resource['rss_budget_kb']};"
             f"pcre<={resource['pcre_rss_budget_kb']};"
-            f"post-pcre<={resource['post_pcre_rss_budget_kb']};"
+            f"post-pcre<{resource['post_pcre_rss_budget_kb']};"
             f"temporary<={resource['max_temp_bytes']}"
         ),
         "health": "pass",
@@ -361,7 +369,8 @@ def record_for(
 
 
 def produce(root: Path, manifest: Path, mapping_path: Path,
-            sanitizer: str = "release") -> int:
+            sanitizer: str = "release", resource_sidecar: Path | None = None,
+            require_resource_sidecar: bool = False) -> int:
     root = root.resolve()
     mapping = acceptance_cases.validate_map(manifest, mapping_path)
     required = {
@@ -410,6 +419,13 @@ def produce(root: Path, manifest: Path, mapping_path: Path,
         writer.writeheader()
         writer.writerows(sorted(records, key=lambda record: record["case_id"]))
     os.replace(staging, destination)
+    if require_resource_sidecar and resource_sidecar is None:
+        resource_sidecar = Path(acceptance_resources.RESOURCE_PATH)
+    if resource_sidecar is not None:
+        sidecar = resource_sidecar
+        if not sidecar.is_absolute():
+            sidecar = root / sidecar
+        acceptance_resources.bind(destination, root, sidecar)
     return len(records)
 
 
@@ -426,9 +442,20 @@ def main(argv: list[str] | None = None) -> int:
         default="release",
         help="sanitizer/build identity to retain in each record",
     )
+    parser.add_argument(
+        "--resource-sidecar", type=Path,
+        help="bind an independently captured per-case resource sidecar",
+    )
+    parser.add_argument(
+        "--require-resource-sidecar", action="store_true",
+        help="require the default per-case resource sidecar and bind it",
+    )
     args = parser.parse_args(argv)
     try:
-        count = produce(args.runtime_output, args.manifest, args.mapping, args.sanitizer)
+        count = produce(
+            args.runtime_output, args.manifest, args.mapping, args.sanitizer,
+            args.resource_sidecar, args.require_resource_sidecar,
+        )
         print(f"large-file runtime acceptance case producer wrote {count} records")
         return 0
     except (OSError, ValueError, KeyError, csv.Error, json.JSONDecodeError) as error:
