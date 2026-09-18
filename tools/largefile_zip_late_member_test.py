@@ -95,6 +95,22 @@ class ZipLateMemberTests(unittest.TestCase):
         )
         self.assertNotEqual(oracle["fixture_sha256"], self.oracle["fixture_sha256"])
 
+    def test_zip64_extra_values_preserve_original_field_positions(self):
+        extra = fixture.struct.pack(
+            "<HHQQQ", 0x0001, 24, 111, 222, 333
+        )
+        self.assertEqual(
+            fixture._zip64_extra_values(extra, (True, True, False)),
+            [111, 222, None],
+        )
+        self.assertEqual(
+            fixture._zip64_extra_values(
+                fixture.struct.pack("<HHQ", 0x0001, 8, 333),
+                (False, False, True),
+            ),
+            [None, None, 333],
+        )
+
     def test_marker_tampering_is_rejected_by_raw_oracle(self):
         data = bytearray(self.path.read_bytes())
         marker_offset = self.oracle["marker_file_offset"]

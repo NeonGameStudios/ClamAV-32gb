@@ -21,6 +21,8 @@
 #ifndef __ONAS_SCTH_H
 #define __ONAS_SCTH_H
 
+#include <stdio.h>
+
 #if defined(HAVE_SYS_FANOTIFY_H)
 #include <sys/fanotify.h>
 #endif
@@ -64,6 +66,9 @@ struct onas_scan_event {
     uint64_t maxstream;
     int64_t timeout;
     uint8_t bool_opts;
+    FILE *report_stream;
+    FILE *fanotify_evidence_stream;
+    uint64_t permission_event_id;
 } __attribute((packed));
 
 #ifdef HAVE_PRAGMA_PACK

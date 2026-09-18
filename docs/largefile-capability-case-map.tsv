@@ -169,7 +169,7 @@ clamdscan	clamdscan-directory-walk-failure	clamdscan:clamdscan-directory-walk-fa
 clamdscan	clamdscan-idsession-termination-send	clamdscan:clamdscan-idsession-termination-send:clean-edge,clamdscan:clamdscan-idsession-termination-send:detection-edge,clamdscan:clamdscan-idsession-termination-send:limit-edge
 clamd	MULTISCAN	clamd:MULTISCAN:clean-edge,clamd:MULTISCAN:detection-edge,clamd:MULTISCAN:limit-edge
 milter	message	milter:message:clean-edge,milter:message:detection-edge,milter:message:limit-edge
-on-access	permission	on-access:permission:clean-edge,on-access:permission:detection-edge,on-access:permission:limit-edge
+on-access	permission	on-access:permission:clean-edge,on-access:permission:detection-edge,on-access:permission:limit-edge,on-access:permission:resource-edge,on-access:permission:timeout-edge,on-access:permission:parser-edge
 unsupported	native-windows-memory-scan	unsupported:native-windows-memory-scan:unsupported-policy
 matcher	ac	matcher:ac:exact-tail,matcher:ac:limit,matcher:ac:fault
 matcher	bm	matcher:bm:exact-tail,matcher:bm:limit,matcher:bm:fault

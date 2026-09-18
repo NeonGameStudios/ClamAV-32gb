@@ -40,6 +40,7 @@ target_include_directories( clamonacc
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR} # So subdir source can #include "clamonacc.h"
         ${CMAKE_BINARY_DIR} # For clamav-config.h
+        ${CMAKE_SOURCE_DIR}/libclamav # For the structured report construction helper.
         ${CMAKE_SOURCE_DIR}/clamd # Yes, this is a hack! We want to use clamd headers even though clamd isn't a library.
 )
 

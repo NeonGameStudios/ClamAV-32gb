@@ -54,6 +54,7 @@
 
 // libclamav
 #include "clamav.h"
+#include "scan_report.h"
 #include "str.h"
 #include "others.h"
 
@@ -96,6 +97,56 @@ static uint64_t onas_effective_file_limit(uint64_t maxstream, uint64_t sizelimit
     sizelimit = onas_normalize_file_limit(sizelimit);
 
     return (maxstream < sizelimit) ? maxstream : sizelimit;
+}
+
+int onas_client_write_failure_report(FILE *stream, const char *target,
+                                     cl_error_t status, uint64_t root_size,
+                                     uint64_t effective_limit, uint64_t event_id)
+{
+    cl_scan_report_t *report = NULL;
+    cl_scan_report_limits_t limits;
+    char *json = NULL;
+    cl_error_t report_status = status;
+    const char *reason;
+    int result = 0;
+
+    if (stream == NULL)
+        return 0;
+
+    /* A timeout is an application abort in the on-access evidence contract;
+     * keep the transport-specific timeout visible in the human reason while
+     * giving the structured report its fail-closed completion classification.
+     * Never serialize a clean or detection-shaped fallback when the real
+     * daemon frame was not retained. */
+    if (report_status == CL_ETIMEOUT)
+        report_status = CL_BREAK;
+    else if (report_status == CL_SUCCESS || report_status == CL_CLEAN ||
+             report_status == CL_VIRUS)
+        report_status = CL_ERROR;
+
+    reason = (status == CL_ETIMEOUT) ? "OnAccessCurlTimeout" : cl_strerror(status);
+    memset(&limits, 0, sizeof(limits));
+    if (status == CL_EMAXSIZE)
+        limits.max_file_size = effective_limit;
+
+    if (cli_scan_report_create(&report, NULL) != CL_SUCCESS)
+        return -1;
+    cli_scan_report_set_target(report, target != NULL ? target : "FD");
+    cli_scan_report_finish(report, NULL, report_status,
+                           CL_VERDICT_NOTHING_FOUND, NULL);
+    cli_scan_report_set_fallback_details(report, root_size,
+                                         status == CL_EMAXSIZE ? &limits : NULL,
+                                         "CL_TYPE_BINARY_DATA", reason);
+    if (cl_scan_report_to_json(report, &json) != CL_SUCCESS) {
+        cl_scan_report_free(report);
+        return -1;
+    }
+
+    result = onas_write_scan_report(stream, json, strlen(json), event_id);
+
+    free(json);
+    cl_scan_report_free(report);
+    return result;
 }
 
 static int onas_expect_pong(CURL *curl, int64_t timeout)
@@ -592,14 +643,17 @@ int onas_get_clamd_version(struct onas_context **ctx)
  * @param infected  return variable indicating whether daemon returned with an infected verdict or not
  * @param err       return variable passed to the daemon protocol interface indicating how many things went wrong in the course of scanning
  * @param ret_code  return variable passed to the daemon protocol interface indicating last known issue or success
+ * @param report_stream  optional JSONL stream for the validated daemon report
+ * @param report_written  output flag set when this attempt retained a report
  */
-int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, uint64_t sizelimit, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code)
+int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, uint64_t sizelimit, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code, FILE *report_stream, int *report_written, uint64_t event_id)
 {
     CURL *curl        = NULL;
     CURLcode curlcode = CURLE_OK;
     int errors        = 0;
     int scan_result   = 0;
     int printok       = 1;
+    int local_report_written = 0;
     cl_error_t status = CL_CLEAN;
     action_source_t action_source;
     char *resolved_action_path = NULL;
@@ -607,6 +661,9 @@ int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uin
     bool regular_file          = S_ISREG(sb.st_mode);
     uint64_t effective_limit   = onas_effective_file_limit(maxstream, sizelimit);
     static bool disconnected   = false;
+
+    if (report_written == NULL)
+        report_written = &local_report_written;
 
     action_source_init(&action_source);
 
@@ -691,7 +748,8 @@ int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uin
     }
 
     if ((scan_result = onas_dsresult(curl, scantype, effective_limit, fname, have_action_source ? &action_source : NULL, fd, timeout,
-                                     &printok, err, ret_code)) >= 0) {
+                                     &printok, err, ret_code, report_stream,
+                                     report_written, event_id)) >= 0) {
         *infected = scan_result;
     } else {
         logg(LOGG_DEBUG, "ClamClient: connection could not be established ... return code %d\n",

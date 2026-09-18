@@ -506,8 +506,11 @@ static cl_error_t cli_ai_model_read(cli_ctx *ctx, uint64_t *offset, void *buffer
 
 static cl_error_t cli_ai_model_skip(cli_ctx *ctx, uint64_t *offset, uint64_t size)
 {
+    uint8_t buffer[4096];
     uint64_t file_len;
     cl_error_t status;
+    size_t chunk;
+    size_t bytes_read;
 
     if (ctx == NULL || ctx->fmap == NULL || offset == NULL)
         return CL_ENULLARG;
@@ -516,11 +519,24 @@ static cl_error_t cli_ai_model_skip(cli_ctx *ctx, uint64_t *offset, uint64_t siz
     if (*offset > file_len || size > file_len - *offset)
         return cli_ai_model_malformed(ctx, "AI model header or metadata is truncated");
 
-    status = cli_checktimelimit(ctx);
-    if (status != CL_SUCCESS)
-        return status;
+    while (size != 0) {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS)
+            return status;
 
-    *offset += size;
+        chunk = size > sizeof(buffer) ? sizeof(buffer) : (size_t)size;
+        bytes_read = fmap_readn(ctx->fmap, buffer, (size_t)*offset, chunk);
+        if (bytes_read == (size_t)-1) {
+            cli_mark_scan_incomplete(ctx, "AI model skipped backing read failed");
+            return CL_EREAD;
+        }
+        if (bytes_read != chunk)
+            return cli_ai_model_malformed(ctx, "AI model skipped input could not be read completely");
+
+        *offset += (uint64_t)bytes_read;
+        size -= (uint64_t)bytes_read;
+    }
+
     return CL_SUCCESS;
 }
 
@@ -2335,6 +2351,7 @@ static cl_error_t cli_scan_ai_model(cli_ctx *ctx)
  * recognized .pyc is not reported clean after inspecting a raw prefix. */
 #define CLI_PYTHON_MAX_OBJECTS 1048576U
 #define CLI_PYTHON_MAX_DEPTH   64U
+#define CLI_PYTHON_SKIP_CHUNK  4096U
 
 typedef struct cli_python_reader {
     cli_ctx *ctx;
@@ -2380,16 +2397,33 @@ static cl_error_t cli_python_read(cli_python_reader_t *reader, void *buffer, siz
 
 static cl_error_t cli_python_skip(cli_python_reader_t *reader, uint64_t size)
 {
+    uint8_t buffer[CLI_PYTHON_SKIP_CHUNK];
     cl_error_t status;
+    size_t chunk;
+    size_t bytes_read;
 
     if (!reader || !reader->ctx || !reader->ctx->fmap || reader->offset > reader->file_len ||
         size > reader->file_len - reader->offset)
         return CL_EPARSE;
 
-    status = cli_checktimelimit(reader->ctx);
-    if (status != CL_SUCCESS)
-        return status;
-    reader->offset += size;
+    while (size != 0) {
+        status = cli_checktimelimit(reader->ctx);
+        if (status != CL_SUCCESS)
+            return status;
+
+        chunk = size > sizeof(buffer) ? sizeof(buffer) : (size_t)size;
+        bytes_read = fmap_readn(reader->ctx->fmap, buffer, (size_t)reader->offset, chunk);
+        if (bytes_read == (size_t)-1) {
+            cli_mark_scan_incomplete(reader->ctx, "Python compiled bytecode skipped backing read failed");
+            return CL_EREAD;
+        }
+        if (bytes_read != chunk)
+            return CL_EPARSE;
+
+        reader->offset += (uint64_t)bytes_read;
+        size -= (uint64_t)bytes_read;
+    }
+
     return CL_SUCCESS;
 }
 

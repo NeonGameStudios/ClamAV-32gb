@@ -154,6 +154,25 @@ int main(int argc, char **argv)
         logg_verbose    = 1;
     }
 
+    if (optget(opts, "report-json")->enabled) {
+        ctx->report_stream = fopen(optget(opts, "report-json")->strarg, "ab");
+        if (ctx->report_stream == NULL) {
+            mprintf(LOGG_ERROR, "Clamonacc: can't open structured scan report %s: %s\n",
+                    optget(opts, "report-json")->strarg, strerror(errno));
+            onas_cleanup(ctx);
+            return 2;
+        }
+    }
+    if (optget(opts, "fanotify-evidence")->enabled) {
+        ctx->fanotify_evidence_stream = fopen(optget(opts, "fanotify-evidence")->strarg, "ab");
+        if (ctx->fanotify_evidence_stream == NULL) {
+            mprintf(LOGG_ERROR, "Clamonacc: can't open fanotify evidence %s: %s\n",
+                    optget(opts, "fanotify-evidence")->strarg, strerror(errno));
+            onas_cleanup(ctx);
+            return 2;
+        }
+    }
+
     /* And our config file options */
     clamdopts = optparse(optget(opts, "config-file")->strarg, 0, NULL, 1, OPT_CLAMD, 0, NULL);
     if (clamdopts == NULL) {
@@ -474,6 +493,8 @@ void help(void)
     mprintf(LOGG_INFO, "    --version              -V          Print version number and exit\n");
     mprintf(LOGG_INFO, "    --verbose              -v          Be verbose\n");
     mprintf(LOGG_INFO, "    --log=FILE             -l FILE     Save scanning output to FILE\n");
+    mprintf(LOGG_INFO, "    --report-json=FILE                 Save one structured scan report per event\n");
+    mprintf(LOGG_INFO, "    --fanotify-evidence=FILE           Save real fanotify permission decisions as JSONL\n");
     mprintf(LOGG_INFO, "    --foreground           -F          Output to foreground and do not daemonize\n");
     mprintf(LOGG_INFO, "    --watch-list=FILE      -W FILE     Watch directories from FILE\n");
     mprintf(LOGG_INFO, "    --exclude-list=FILE    -e FILE     Exclude directories from FILE\n");
@@ -504,6 +525,14 @@ void onas_context_cleanup(struct onas_context *ctx)
     if (ctx->fan_fd >= 0) {
         close(ctx->fan_fd);
         ctx->fan_fd = -1;
+    }
+    if (ctx->report_stream != NULL) {
+        fclose(ctx->report_stream);
+        ctx->report_stream = NULL;
+    }
+    if (ctx->fanotify_evidence_stream != NULL) {
+        fclose(ctx->fanotify_evidence_stream);
+        ctx->fanotify_evidence_stream = NULL;
     }
     optfree((struct optstruct *)ctx->opts);
     optfree((struct optstruct *)ctx->clamdopts);

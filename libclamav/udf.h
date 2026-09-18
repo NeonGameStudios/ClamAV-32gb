@@ -345,6 +345,18 @@ typedef struct __attribute__((packed)) {
 
 } ExtendedFileEntryDescriptor;
 
+static inline bool getExtendedFileEntryDescriptorSize(const ExtendedFileEntryDescriptor *efed, size_t *size)
+{
+    size_t total;
+
+    if (efed == NULL || size == NULL ||
+        !cli_udf_size_add(sizeof(*efed), le32_to_host(efed->extendedAttrLen), &total) ||
+        !cli_udf_size_add(total, le32_to_host(efed->allocationDescLen), size))
+        return false;
+
+    return true;
+}
+
 // Short allocation descriptor
 typedef struct __attribute__((packed)) {
 

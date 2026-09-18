@@ -32,3 +32,15 @@ Linux x86-64, and retained runtime evidence requirements remain open.
 
 No usage reset, software installation, commit, push, remote command, or
 workflow action was performed.
+
+## Current-source fixture/oracle revalidation — 2026-09-17
+
+- `python3 -B tools/largefile_zip_late_member_test.py` — exit 0, 8 tests.
+- `python3 -B tools/largefile_boundary_corpus_check_test.py` — exit 0, 5
+  tests.
+- `python3 -B tools/largefile_service_oversize_test.py` — exit 0, 23 tests.
+
+The fixture generator, raw late-member oracle, sparse-boundary manifest
+checks, and oversize evidence contract remain fail-closed under current
+source. These are preparation and verifier tests only; no full-size scanner
+run or capability promotion was performed.

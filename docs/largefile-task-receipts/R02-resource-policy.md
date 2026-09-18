@@ -36,6 +36,10 @@ Commands and exits:
 
 - `sh tools/largefile_runtime_evidence_check_test.sh` — exit 0.
 - `sh tools/largefile_service_evidence_check_test.sh` — exit 0.
+- `python3 -B tools/largefile_pcre_phase_evidence_test.py` — exit 0 (11
+  tests).
+- `python3 -B tools/largefile_acceptance_resources_test.py` — exit 0 (7
+  tests).
 - `sh -n tools/largefile_runtime_gate.sh tools/largefile_runtime_evidence_check.sh tools/largefile_service_qualification.sh tools/largefile_service_evidence_check.sh` — exit 0.
 - `git diff --check` — exit 0.
 - `sh tools/largefile_source_guards.sh` — exit 0.

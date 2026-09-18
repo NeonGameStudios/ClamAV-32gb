@@ -170,7 +170,8 @@ const struct clam_option __clam_options[] = {
     {NULL, "version", 'V', CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD | OPT_FRESHCLAM | OPT_CLAMSCAN | OPT_CLAMDSCAN | OPT_SIGTOOL | OPT_MILTER | OPT_CLAMCONF | OPT_CLAMDTOP | OPT_CLAMBC | OPT_CLAMONACC, "", ""},
     {NULL, "debug", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMBC | OPT_CLAMD | OPT_FRESHCLAM | OPT_CLAMSCAN | OPT_SIGTOOL, "", ""},
     {NULL, "gen-json", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN | OPT_SIGTOOL, "", ""},
-    {NULL, "report-json", 0, CLOPT_TYPE_STRING, NULL, 0, NULL, FLAG_REQUIRED, OPT_CLAMSCAN | OPT_CLAMDSCAN, "Write one structured scan report JSON object per input file.", "FILE"},
+    {NULL, "report-json", 0, CLOPT_TYPE_STRING, NULL, 0, NULL, FLAG_REQUIRED, OPT_CLAMSCAN | OPT_CLAMDSCAN | OPT_CLAMONACC, "Write one structured scan report JSON object per input file.", "FILE"},
+    {NULL, "fanotify-evidence", 0, CLOPT_TYPE_STRING, NULL, 0, NULL, FLAG_REQUIRED, OPT_CLAMONACC, "Write real fanotify permission decisions as JSONL.", "FILE"},
     {NULL, "verbose", 'v', CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_FRESHCLAM | OPT_CLAMSCAN | OPT_CLAMDSCAN | OPT_SIGTOOL | OPT_CLAMONACC, "", ""},
     {NULL, "dumpcerts", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMSCAN, "Dump authenticode certificate chain.", ""},
     {NULL, "quiet", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_FRESHCLAM | OPT_CLAMSCAN | OPT_CLAMDSCAN | OPT_SIGTOOL | OPT_CLAMONACC, "", ""},
@@ -589,7 +590,7 @@ const struct clam_option __clam_options[] = {
 
     {"OnAccessExtraScanning", NULL, 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD, "Enables extra scanning and notification after catching certain inotify events. Only works with the DDD system enabled.", "yes"},
 
-    {"OnAccessCurlTimeout", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 5000l, NULL, 0, OPT_CLAMD, "Max amount of time (in milliseconds) that the OnAccess client should spend for every connect, send, and receive attempt when communicating with clamd via curl (5s default)", "10000L"},
+    {"OnAccessCurlTimeout", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 5000l, NULL, 0, OPT_CLAMD, "Max amount of time (in milliseconds) that the OnAccess client should spend for every connect, send, and receive attempt, and for an unknown-size stream source, when communicating with clamd via curl (5s default)", "10000L"},
 
     {"OnAccessMaxThreads", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, CLI_DEFAULT_ONACCESS_MAXTHREADS, NULL, 0, OPT_CLAMD, "Max number of scanning threads to allocate to the OnAccess thread pool at startup--these threads are the ones responsible for creating a connection with the daemon and kicking off scanning after an event has been processed. To prevent clamonacc from consuming all clamd's resources keep this lower than clamd's max threads. The default follows the selected build profile.", CLI_DEFAULT_ONACCESS_MAXTHREADS_STRING},
 

@@ -276,6 +276,37 @@ Default activation changes the source/configuration: produce a new immutable can
 
 These are existing interfaces at this guide's date. Read each script's header again before use. Execute commands individually and retain their real exit statuses; do not pipe a failing test into a successful `tail` and call it passed. Large gates are expensive and require the preceding task prerequisites.
 
+### MCP-SSH continuation procedure
+
+When a remote build or qualification step can outlive one MCP request, use the
+tracked asynchronous command path rather than a detached process. First run
+`ssh_command_preview` with `operation="start"`, then call
+`ssh_command_start` with the exact host ID and administrator-supplied login
+profile. Record the returned `job_id`; poll only that job with
+`ssh_command_status`, and retrieve bounded stdout/stderr chunks with
+`ssh_command_output` using each response's `next_offset`. An exit status is
+authoritative even when output is empty. Do not replace a timed-out or
+ambiguous start with `nohup`, background shell syntax, or an untracked remote
+PID; inspect the job first and cancel it only through `ssh_command_cancel`.
+
+For Sonic1, the reviewed `sonic1-camera-key` profile admits tracked async
+commands beyond the short synchronous command window. The earlier receipt
+recorded a 600-second effective limit; a fresh preview on 2026-09-16 admitted
+a requested 3600-second `operation="start"` with an effective timeout of 3600
+seconds. Treat the limits returned by the current preview as authoritative:
+if a single phase exceeds that returned limit, split it into bounded phases.
+Before Docker execution, call `ssh_docker_provenance` and pass its canonical
+container ID to `ssh_docker_exec` or the command job.
+For large source or evidence movement, use the durable upload/download APIs;
+after an interruption, reconcile with `ssh_transfer_list` and the per-transfer
+status call before resuming, aborting, completing, or committing. If MCP-SSH
+returns `Transport closed`, start a fresh MCP-SSH session before retrying.
+An authoritative transfer-policy denial such as `file_write_limit_exceeded`
+must be recorded as the external staging boundary; do not retry by changing
+the destination or falling back to an untracked chunked copy. Preserve the
+locally checksummed archive and resume only after the policy or transfer
+service changes.
+
 Local source checks (run from the canonical checkout):
 
 ```sh
@@ -305,6 +336,40 @@ sh tools/largefile_service_qualification.sh "$RELEASE_BUILD" "$SERVICE_OUT" \
 sh tools/largefile_service_evidence_check.sh "$SERVICE_OUT" "$RELEASE_BUILD"
 python3 tools/largefile_service_oversize.py "$PRIVATE_CLAMD_SOCKET" \
     "$OVERSIZE_REPORT_OUT" "$PRIVATE_TEMP_DIR" 60
+# R13 capture primitive: run as root on Linux against an already-mounted,
+# privately propagated test filesystem. Repeat once per reviewed case and
+# bind the resulting kernel-event and actor artifacts into the R13 proof.
+python3 -B tools/largefile_fanotify_capture.py \
+    --mount-path "$PRIVATE_MOUNT" \
+    --fixture "$PRIVATE_MOUNT/$CASE_FIXTURE" \
+    --kernel-event-artifact "$CASE_OUT/kernel-event.jsonl" \
+    --actor-result-artifact "$CASE_OUT/actor-result.json" \
+    --fixture-sha256 "$CASE_FIXTURE_SHA256" \
+    --actor-uid "$ACTOR_UID" --case-name "$CASE_NAME"
+# The primitive's observer_response is not the ClamAV decision. The runner
+# must retain permission_response from clamonacc's real fanotify channel and
+# a structured on-access-scan report before binding this case into proof.
+# Build-time clamonacc support for those two retained inputs is opt-in:
+# `--report-json=FILE` writes the validated, terminating clamd report content
+# (or one fail-closed fallback after the final attempt), adding the shared
+# `clamonacc_event_id` join key, while
+# `--fanotify-evidence=FILE` writes the actual response sent to the kernel,
+# its response-write result, event metadata and scan status as JSONL. The
+# latter is process-local evidence; the runner still has to bind it to the
+# observer's raw kernel event, case fixture digest and final scan envelope.
+# Bind one reviewed case only after all four real inputs are retained. The
+# binder rejects ambiguous metadata matches, failed response writes, stale
+# event IDs and already-case-bound raw reports; it emits the three artifacts
+# consumed by the fanotify verifier and does not create a proof envelope.
+python3 -B tools/largefile_fanotify_case_binder.py \
+    --case-name "$CASE_NAME" --fixture-sha256 "$CASE_FIXTURE_SHA256" \
+    --observer-kernel "$CASE_OUT/observer-kernel.jsonl" \
+    --clamonacc-permission "$CASE_OUT/clamonacc-permission.jsonl" \
+    --actor-result "$CASE_OUT/actor-result.json" \
+    --clamonacc-report "$CASE_OUT/clamonacc-report.jsonl" \
+    --output-kernel-event "$CASE_OUT/kernel-event.jsonl" \
+    --output-actor-result "$CASE_OUT/bound-actor-result.jsonl" \
+    --output-scan-report "$CASE_OUT/scan-report.jsonl"
 # Final gate only after R15 prerequisites; currently expected to report blocked.
 sh tools/largefile_release_readiness.sh
 ```

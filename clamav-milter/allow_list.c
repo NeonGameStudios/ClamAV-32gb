@@ -24,6 +24,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -77,7 +78,7 @@ int allow_list_init(const char *fname)
     while (fgets(buf, sizeof(buf), f) != NULL) {
         struct WHLST **addto = &wto;
         char *ptr            = buf;
-        int len;
+        size_t len;
 
         if (*buf == '#' || *buf == ':' || *buf == '!')
             continue;
@@ -88,26 +89,25 @@ int allow_list_init(const char *fname)
         } else if (!strncasecmp("To:", buf, 3))
             ptr += 3;
 
-        len = strlen(ptr) - 1;
-        for (; len >= 0; len--) {
-            if (ptr[len] != '\n' && ptr[len] != '\r') break;
-            ptr[len] = '\0';
-        }
-        if (!len) continue;
+        len = strlen(ptr);
+        while (len > 0 && (ptr[len - 1] == '\n' || ptr[len - 1] == '\r'))
+            ptr[--len] = '\0';
+        if (len == 0) continue;
         if (!(w = (struct WHLST *)malloc(sizeof(*w)))) {
             logg(LOGG_ERROR, "Out of memory loading allow list file\n");
             allow_list_free();
             fclose(f);
             return 1;
         }
-        w->next  = (*addto);
-        (*addto) = w;
         if (cli_regcomp(&w->preg, ptr, REG_ICASE | REG_NOSUB)) {
             logg(LOGG_ERROR, "Failed to compile regex '%s' in allow list file\n", ptr);
+            free(w);
             allow_list_free();
             fclose(f);
             return 1;
         }
+        w->next  = (*addto);
+        (*addto) = w;
     }
     fclose(f);
     return 0;
@@ -137,41 +137,62 @@ int smtpauth_init(const char *r)
     if (!strncmp(r, "file:", 5)) {
         char buf[2048];
         FILE *f    = fopen(r + 5, "r");
-        int rxsize = 0, rxavail = 0, rxused = 0;
+        size_t rxsize = 0, rxused = 0;
 
         if (!f) {
             logg(LOGG_ERROR, "Cannot open allow list file '%s'\n", r + 5);
             return 1;
         }
         while (fgets(buf, sizeof(buf), f) != NULL) {
-            int len;
+            size_t len;
             char *ptr;
+            size_t needed;
 
             if (*buf == '#' || *buf == ':' || *buf == '!')
                 continue;
-            len = strlen(buf) - 1;
-            for (; len >= 0; len--) {
-                if (buf[len] != '\n' && buf[len] != '\r') break;
-                buf[len] = '\0';
+            len = strlen(buf);
+            while (len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r'))
+                buf[--len] = '\0';
+            if (len == 0) continue;
+            if (len > (SIZE_MAX - 1U) / 3U) {
+                free(regex);
+                logg(LOGG_ERROR, "SkipAuthenticated entry is too large\n");
+                fclose(f);
+                return 1;
             }
-            if (len <= 0) continue;
-            if (len * 3 + 1 > rxavail) {
-                ptr        = regex;
-                char *temp = realloc(regex, rxsize + 2048);
+            needed = len * 3U + 1U;
+            if (regex == NULL || needed > rxsize - rxused) {
+                size_t newsize;
+                char *temp;
+
+                if (needed > SIZE_MAX - rxused) {
+                    free(regex);
+                    logg(LOGG_ERROR, "SkipAuthenticated file is too large\n");
+                    fclose(f);
+                    return 1;
+                }
+                newsize = rxused + needed;
+                if (!regex) {
+                    if (newsize > SIZE_MAX - 2U) {
+                        logg(LOGG_ERROR, "SkipAuthenticated file is too large\n");
+                        fclose(f);
+                        return 1;
+                    }
+                    newsize += 2U;
+                }
+                temp = realloc(regex, newsize);
                 if (!temp) {
                     free(regex);
                     logg(LOGG_ERROR, "Cannot allocate memory for SkipAuthenticated file\n");
                     fclose(f);
                     return 1;
                 }
-                regex   = temp;
-                rxavail = 2048;
-                rxsize += 2048;
-                if (!ptr) {
+                regex  = temp;
+                rxsize = newsize;
+                if (rxused == 0) {
                     regex[0] = '^';
                     regex[1] = '(';
-                    rxavail -= 2;
-                    rxused = 2;
+                    rxused   = 2;
                 }
             }
             ptr = buf;
@@ -179,23 +200,39 @@ int smtpauth_init(const char *r)
                 if ((*ptr >= 'A' && *ptr <= 'Z') || (*ptr >= 'a' && *ptr <= 'z') || (*ptr >= '0' && *ptr <= '9') || *ptr == '@') {
                     regex[rxused] = *ptr;
                     rxused++;
-                    rxavail--;
                 } else {
                     regex[rxused]     = '[';
                     regex[rxused + 1] = *ptr;
                     regex[rxused + 2] = ']';
                     rxused += 3;
-                    rxavail -= 3;
                 }
                 ptr++;
             }
             regex[rxused++] = '|';
-            rxavail--;
         }
-        if (rxavail < 4 && !(regex = realloc(regex, rxsize + 4))) {
-            logg(LOGG_ERROR, "Cannot allocate memory for SkipAuthenticated file\n");
+        if (rxused == 0) {
+            free(regex);
             fclose(f);
-            return 1;
+            skipauth = 0;
+            return 0;
+        }
+        if (rxsize - rxused < 2U) {
+            char *temp;
+
+            if (rxused > SIZE_MAX - 2U) {
+                free(regex);
+                logg(LOGG_ERROR, "SkipAuthenticated file is too large\n");
+                fclose(f);
+                return 1;
+            }
+            temp = realloc(regex, rxused + 2U);
+            if (!temp) {
+                free(regex);
+                logg(LOGG_ERROR, "Cannot allocate memory for SkipAuthenticated file\n");
+                fclose(f);
+                return 1;
+            }
+            regex  = temp;
         }
         regex[rxused - 1] = ')';
         regex[rxused]     = '$';

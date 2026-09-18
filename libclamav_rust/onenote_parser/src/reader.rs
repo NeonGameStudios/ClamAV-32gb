@@ -20,6 +20,11 @@ pub trait BlobSpoolBudget {
 
     /// Release previously reserved temporary storage.
     fn release(&self, bytes: u64);
+
+    /// Report a cleanup failure that leaves parser-owned temporary state
+    /// uncertain. The default keeps the standalone parser API compatible;
+    /// scanner integrations can turn the condition into an incomplete scan.
+    fn note_cleanup_failure(&self) {}
 }
 
 static NEXT_SPOOL_ID: AtomicU64 = AtomicU64::new(0);
@@ -128,13 +133,53 @@ impl ReaderSpool {
     }
 
     pub(crate) fn open_reader(&self) -> io::Result<File> {
-        let mut file = self.file.try_clone()?;
+        let mut options = OpenOptions::new();
+        options.read(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+
+            // A replaced spool pathname must not follow a symlink or block on
+            // a FIFO before the owner identity check below can reject it.
+            options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
+        }
+        let mut file = options.open(&self.path)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::MetadataExt;
+
+            let owner_metadata = self.file.metadata()?;
+            let reader_metadata = file.metadata()?;
+            if owner_metadata.dev() != reader_metadata.dev()
+                || owner_metadata.ino() != reader_metadata.ino()
+            {
+                return Err(io::Error::new(
+                    io::ErrorKind::PermissionDenied,
+                    "OneNote parser spool path was replaced",
+                ));
+            }
+        }
         file.seek(SeekFrom::Start(0))?;
         Ok(file)
     }
 
     pub(crate) fn length(&self) -> u64 {
         self.length
+    }
+
+    #[cfg(unix)]
+    fn path_is_owned(&self) -> io::Result<bool> {
+        use std::os::unix::fs::MetadataExt;
+
+        let owner_metadata = self.file.metadata()?;
+        let path_metadata = std::fs::symlink_metadata(&self.path)?;
+        Ok(owner_metadata.dev() == path_metadata.dev() && owner_metadata.ino() == path_metadata.ino())
+    }
+
+    fn note_cleanup_failure(&self) {
+        if let Some(budget) = &self.budget {
+            budget.note_cleanup_failure();
+        }
     }
 }
 
@@ -143,7 +188,30 @@ impl Drop for ReaderSpool {
         if let Some(budget) = &self.budget {
             budget.release(self.length);
         }
-        let _ = std::fs::remove_file(&self.path);
+        #[cfg(unix)]
+        {
+            // Never unlink a pathname that was replaced after the owner file
+            // was created. `symlink_metadata` deliberately does not follow a
+            // replacement symlink, and the identity check also protects
+            // against replacing the path with an unrelated regular file.
+            match self.path_is_owned() {
+                Ok(true) => match std::fs::remove_file(&self.path) {
+                    Ok(()) => {}
+                    Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+                    Err(_) => self.note_cleanup_failure(),
+                },
+                Ok(false) => {}
+                Err(_) => self.note_cleanup_failure(),
+            }
+        }
+        #[cfg(not(unix))]
+        {
+            if let Err(error) = std::fs::remove_file(&self.path) {
+                if error.kind() != io::ErrorKind::NotFound {
+                    self.note_cleanup_failure();
+                }
+            }
+        }
     }
 }
 
@@ -383,7 +451,10 @@ impl<'a> Reader<'a> {
             return Ok(ReaderBlob::Memory(Vec::new()));
         }
 
-        let mut spool = ReaderSpool::create(self.spool_directory.as_deref(), self.blob_budget.clone())?;
+        let mut spool = ReaderSpool::create(
+            self.spool_directory.as_deref(),
+            self.blob_budget.clone(),
+        )?;
         let mut remaining = cnt;
         while remaining != 0 {
             let requested = remaining.min(Self::REFILL_SIZE as u64) as usize;
@@ -656,7 +727,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{checked_reader_end, BlobSpoolBudget, Reader, ReaderBlob};
+    use super::{checked_reader_end, BlobSpoolBudget, Reader, ReaderBlob, ReaderSpool};
     use std::cell::Cell;
     use std::io::{self, Cursor, Read};
     use std::rc::Rc;
@@ -668,6 +739,7 @@ mod tests {
         current: Cell<u64>,
         peak: Cell<u64>,
         max: u64,
+        cleanup_failures: Cell<u32>,
     }
 
     impl BlobSpoolBudget for TestSpoolBudget {
@@ -685,6 +757,11 @@ mod tests {
 
         fn release(&self, bytes: u64) {
             self.current.set(self.current.get().saturating_sub(bytes));
+        }
+
+        fn note_cleanup_failure(&self) {
+            self.cleanup_failures
+                .set(self.cleanup_failures.get().saturating_add(1));
         }
     }
 
@@ -818,6 +895,7 @@ mod tests {
             current: Cell::new(0),
             peak: Cell::new(0),
             max: payload.len() as u64,
+            cleanup_failures: Cell::new(0),
         });
         let mut reader = Reader::from_reader_with_options(
             Cursor::new(payload.clone()),
@@ -840,6 +918,7 @@ mod tests {
             current: Cell::new(0),
             peak: Cell::new(0),
             max: 2,
+            cleanup_failures: Cell::new(0),
         });
         let mut reader = Reader::from_reader_with_options(
             Cursor::new(b"ab".to_vec()),
@@ -869,6 +948,7 @@ mod tests {
             current: Cell::new(0),
             peak: Cell::new(0),
             max: 0,
+            cleanup_failures: Cell::new(0),
         });
         let mut reader = Reader::from_reader_with_options(
             Cursor::new(b"x".to_vec()),
@@ -926,6 +1006,42 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    fn spool_path_inspection_failure_is_reported_to_budget() {
+        use std::fs::OpenOptions;
+        use std::path::PathBuf;
+
+        let _lock = SPOOL_TEST_LOCK.lock().unwrap();
+        let owner_path = std::env::temp_dir().join(format!(
+            "onenote-parser-cleanup-owner-{}",
+            std::process::id()
+        ));
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create_new(true)
+            .open(&owner_path)
+            .unwrap();
+        let budget = Rc::new(TestSpoolBudget {
+            current: Cell::new(0),
+            peak: Cell::new(0),
+            max: 0,
+            cleanup_failures: Cell::new(0),
+        });
+        let oversized_path = PathBuf::from(format!("/tmp/{}", "x".repeat(5000)));
+
+        drop(ReaderSpool {
+            file,
+            path: oversized_path,
+            length: 0,
+            budget: Some(budget.clone()),
+        });
+
+        assert_eq!(budget.cleanup_failures.get(), 1);
+        std::fs::remove_file(owner_path).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
     fn stream_blob_spool_is_owner_readable_only() {
         use std::os::unix::fs::PermissionsExt;
 
@@ -938,6 +1054,92 @@ mod tests {
         };
 
         assert_eq!(std::fs::metadata(path).unwrap().permissions().mode() & 0o777, 0o600);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn replaced_spool_path_is_rejected_by_reader() {
+        use std::os::unix::fs::symlink;
+
+        let _lock = SPOOL_TEST_LOCK.lock().unwrap();
+        let mut reader = Reader::from_reader(Cursor::new(b"private".to_vec()));
+        let blob = reader.read_blob(7).unwrap();
+        let path = match &blob {
+            ReaderBlob::Spool(spool) => spool.path.clone(),
+            ReaderBlob::Memory(_) => panic!("stream-backed blobs must use a private spool"),
+        };
+        let replacement = std::env::temp_dir().join(format!(
+            "onenote-parser-replacement-{}",
+            std::process::id()
+        ));
+
+        std::fs::write(&replacement, b"replacement").unwrap();
+        std::fs::remove_file(&path).unwrap();
+        symlink(&replacement, &path).unwrap();
+
+        let error = match &blob {
+            ReaderBlob::Spool(spool) => match spool.open_reader() {
+                Ok(_) => panic!("replaced spool symlink was opened"),
+                Err(error) => error,
+            },
+            ReaderBlob::Memory(_) => panic!("stream-backed blobs must use a private spool"),
+        };
+        assert_eq!(error.raw_os_error(), Some(libc::ELOOP));
+
+        drop(blob);
+        std::fs::remove_file(&path).unwrap();
+        std::fs::remove_file(replacement).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn replaced_spool_fifo_is_rejected_without_blocking() {
+        use std::ffi::CString;
+        use std::os::unix::ffi::OsStrExt;
+
+        let _lock = SPOOL_TEST_LOCK.lock().unwrap();
+        let mut reader = Reader::from_reader(Cursor::new(b"private".to_vec()));
+        let blob = reader.read_blob(7).unwrap();
+        let path = match &blob {
+            ReaderBlob::Spool(spool) => spool.path.clone(),
+            ReaderBlob::Memory(_) => panic!("stream-backed blobs must use a private spool"),
+        };
+
+        std::fs::remove_file(&path).unwrap();
+        let path_c = CString::new(path.as_os_str().as_bytes()).unwrap();
+        assert_eq!(unsafe { libc::mkfifo(path_c.as_ptr(), 0o600) }, 0);
+
+        let error = match &blob {
+            ReaderBlob::Spool(spool) => match spool.open_reader() {
+                Ok(_) => panic!("replaced spool FIFO was opened as a parser reader"),
+                Err(error) => error,
+            },
+            ReaderBlob::Memory(_) => panic!("stream-backed blobs must use a private spool"),
+        };
+        assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
+
+        drop(blob);
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn replaced_regular_spool_path_is_not_removed_during_cleanup() {
+        let _lock = SPOOL_TEST_LOCK.lock().unwrap();
+        let mut reader = Reader::from_reader(Cursor::new(b"private".to_vec()));
+        let blob = reader.read_blob(7).unwrap();
+        let path = match &blob {
+            ReaderBlob::Spool(spool) => spool.path.clone(),
+            ReaderBlob::Memory(_) => panic!("stream-backed blobs must use a private spool"),
+        };
+
+        std::fs::remove_file(&path).unwrap();
+        std::fs::write(&path, b"replacement").unwrap();
+        assert!(blob.open_reader().is_err());
+
+        drop(blob);
+        assert_eq!(std::fs::read(&path).unwrap(), b"replacement");
+        std::fs::remove_file(path).unwrap();
     }
 
     #[test]

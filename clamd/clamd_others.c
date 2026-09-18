@@ -55,6 +55,7 @@
 #endif
 
 #include <pthread.h>
+#include <stdint.h>
 
 #if HAVE_POLL
 #if HAVE_POLL_H
@@ -211,6 +212,13 @@ int writen(int fd, void *buff, unsigned int count)
             }
             return -1;
         }
+        if (retval == 0) {
+            /* A successful zero-byte write cannot make progress when todo is
+             * non-zero.  Treat it as an I/O failure instead of spinning
+             * forever on a stalled descriptor. */
+            errno = EIO;
+            return -1;
+        }
         todo -= retval;
         current += retval;
     } while (todo > 0);
@@ -222,15 +230,21 @@ static int
 realloc_polldata(struct fd_data *data)
 {
 #ifdef HAVE_POLL
+    struct pollfd *poll_data;
+
     if (data->poll_data_nfds == data->nfds)
         return 0;
-    if (data->poll_data)
-        free(data->poll_data);
-    data->poll_data = malloc(data->nfds * sizeof(*data->poll_data));
-    if (!data->poll_data) {
+    if (data->nfds > SIZE_MAX / sizeof(*poll_data)) {
+        logg(LOGG_ERROR, "realloc_polldata: poll_data size overflow\n");
+        return -1;
+    }
+    poll_data = malloc(data->nfds * sizeof(*poll_data));
+    if (!poll_data) {
         logg(LOGG_ERROR, "realloc_polldata: Memory allocation failed for poll_data\n");
         return -1;
     }
+    free(data->poll_data);
+    data->poll_data = poll_data;
     data->poll_data_nfds = data->nfds;
 #endif
     return 0;
@@ -257,6 +271,13 @@ void fds_cleanup(struct fd_data *data)
 
     for (i = 0, j = 0; i < data->nfds; i++) {
         if (data->buf[i].fd < 0) {
+#ifdef HAVE_FD_PASSING
+            if (data->buf[i].recvfd != -1) {
+                logg(LOGG_DEBUG_NV, "Closing unclaimed FD: %d\n", data->buf[i].recvfd);
+                close(data->buf[i].recvfd);
+                data->buf[i].recvfd = -1;
+            }
+#endif
             if (data->buf[i].buffer)
                 free(data->buf[i].buffer);
             continue;
@@ -434,8 +455,11 @@ int fds_add(struct fd_data *data, int fd, int listen_only, int timeout)
     data->buf               = buf;
     data->nfds              = n;
     data->buf[n - 1].buffer = NULL;
-    if (buf_init(&data->buf[n - 1], listen_only, timeout) < 0)
+    data->buf[n - 1].fd     = -1;
+    if (buf_init(&data->buf[n - 1], listen_only, timeout) < 0) {
+        data->nfds--;
         return -1;
+    }
     data->buf[n - 1].fd = fd;
     return 0;
 }
@@ -713,6 +737,12 @@ void fds_free(struct fd_data *data)
     unsigned i;
     fds_lock(data);
     for (i = 0; i < data->nfds; i++) {
+#ifdef HAVE_FD_PASSING
+        if (data->buf[i].recvfd != -1) {
+            logg(LOGG_DEBUG_NV, "Closing unclaimed FD: %d\n", data->buf[i].recvfd);
+            close(data->buf[i].recvfd);
+            data->buf[i].recvfd = -1;
+        }
         if (data->buf[i].buffer) {
             free(data->buf[i].buffer);
         }
@@ -722,6 +752,7 @@ void fds_free(struct fd_data *data)
 #ifdef HAVE_POLL
     if (data->poll_data)
         free(data->poll_data);
+    data->poll_data_nfds = 0;
 #endif
     data->buf  = NULL;
     data->nfds = 0;

@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <json.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <curl/curl.h>
@@ -291,6 +292,74 @@ int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout, cl_er
     return 0;
 }
 
+/* Add the process-local on-access event identity to a validated daemon report
+ * before publishing it.  Keeping the report fields at the top level lets
+ * existing report consumers continue to inspect them while the event number
+ * gives the R13 runner an explicit join key for clamonacc permission evidence. */
+int onas_write_scan_report(FILE *stream, const char *payload, size_t payload_length, uint64_t event_id)
+{
+    json_object *object = NULL;
+    json_object *event_number;
+    json_object *existing = NULL;
+    const char *serialized;
+    char *alert = NULL;
+    int frame_infected   = 0;
+    int frame_incomplete = 0;
+    cl_error_t frame_status = CL_ERROR;
+    int result = -1;
+
+    if (stream == NULL)
+        return 0;
+    if (payload == NULL || payload_length == 0 || payload_length > UINT32_MAX ||
+        strlen(payload) != payload_length ||
+        event_id > (uint64_t)INT64_MAX)
+        return -1;
+
+    /* The daemon frame was already semantically validated by the caller, but
+     * this helper is also an externally visible publication boundary.  Parse
+     * it through the shared status validator first so trailing bytes,
+     * duplicate top-level keys, non-object payloads, and contradictory
+     * completion/verdict combinations cannot be rewritten into apparently
+     * authoritative JSONL evidence. */
+    if (scan_report_json_status(payload, (uint32_t)payload_length,
+                                &frame_infected, &frame_incomplete,
+                                &frame_status) < 0)
+        goto done;
+    if (scan_report_json_alert(payload, (uint32_t)payload_length, &alert) < 0)
+        goto done;
+    if (frame_infected && (alert == NULL || *alert == '\0'))
+        goto done;
+    free(alert);
+    alert = NULL;
+    object = json_tokener_parse(payload);
+    if (object == NULL || json_object_get_type(object) != json_type_object)
+        goto done;
+    if (json_object_object_get_ex(object, "clamonacc_event_id", &existing))
+        goto done;
+
+    event_number = json_object_new_int64((int64_t)event_id);
+    if (event_number == NULL || json_object_object_add(object, "clamonacc_event_id", event_number) != 0) {
+        if (event_number != NULL)
+            json_object_put(event_number);
+        goto done;
+    }
+
+    serialized = json_object_to_json_string_ext(object, JSON_C_TO_STRING_PLAIN);
+    if (serialized == NULL)
+        goto done;
+    if (fwrite(serialized, 1, strlen(serialized), stream) != strlen(serialized) ||
+        fputc('\n', stream) == EOF || fflush(stream) != 0)
+        goto done;
+
+    result = 0;
+
+done:
+    free(alert);
+    if (object != NULL)
+        json_object_put(object);
+    return result;
+}
+
 /* Inits a RECVLN struct before it can be used in recvln() - see below */
 void onas_recvlninit(struct onas_rcvln *rcv_data, CURL *curl, int sockd)
 {
@@ -302,16 +371,23 @@ void onas_recvlninit(struct onas_rcvln *rcv_data, CURL *curl, int sockd)
 }
 
 int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
-                          int *infected, int *incomplete, cl_error_t *status_out)
+                          int *infected, int *incomplete, cl_error_t *status_out,
+                          FILE *report_stream, int *report_written,
+                          uint64_t event_id)
 {
     int received = 0;
+    char *report_payload = NULL;
+    uint32_t report_length = 0;
 
-    if (!rcv_data || !infected || !incomplete || !status_out)
+    if (!rcv_data || !infected || !incomplete || !status_out ||
+        (report_stream != NULL && report_written == NULL))
         return -1;
 
     *infected   = 0;
     *incomplete = 0;
     *status_out = CL_SUCCESS;
+    if (report_written != NULL)
+        *report_written = 0;
 
     for (;;) {
         uint32_t network_length;
@@ -321,27 +397,47 @@ int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
         int frame_incomplete = 0;
         cl_error_t frame_status = CL_ERROR;
 
-        if (onas_recv_bytes(rcv_data, &network_length, sizeof(network_length), timeout_ms) < 0)
+        if (onas_recv_bytes(rcv_data, &network_length, sizeof(network_length), timeout_ms) < 0) {
+            free(report_payload);
             return -1;
+        }
 
         length = ntohl(network_length);
-        if (length == 0)
-            return received ? 0 : -1;
-        if (length > CLAMD_SCAN_REPORT_MAX_FRAME)
+        if (length == 0) {
+            if (!received)
+                return -1;
+            if (report_stream != NULL) {
+                if (onas_write_scan_report(report_stream, report_payload,
+                                           report_length, event_id) != 0) {
+                    free(report_payload);
+                    return -1;
+                }
+                *report_written = 1;
+            }
+            free(report_payload);
+            return 0;
+        }
+        if (length > CLAMD_SCAN_REPORT_MAX_FRAME) {
+            free(report_payload);
             return -1;
+        }
         if (received) {
             /* Each on-access request has one authoritative structured report
              * frame. Do not merge a second frame, since a duplicate or
              * conflicting daemon response must remain fail-visible. */
             logg(LOGG_ERROR, "Received multiple structured scan report frames from clamd.\n");
+            free(report_payload);
             return -1;
         }
 
         payload = (char *)malloc((size_t)length + 1U);
-        if (!payload)
+        if (!payload) {
+            free(report_payload);
             return -1;
+        }
         if (onas_recv_bytes(rcv_data, payload, length, timeout_ms) < 0) {
             free(payload);
+            free(report_payload);
             return -1;
         }
         payload[length] = '\0';
@@ -349,7 +445,37 @@ int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
         if (scan_report_json_status(payload, length, &frame_infected,
                                     &frame_incomplete, &frame_status) < 0) {
             free(payload);
+            free(report_payload);
             return -1;
+        }
+
+        if (frame_infected) {
+            char *frame_alert = NULL;
+
+            /* A detection without its exact alert name cannot be joined to
+             * the retained case evidence.  Keep the on-access contract in
+             * parity with the daemon report consumer and fail closed before
+             * publishing or allowing the event. */
+            if (scan_report_json_alert(payload, length, &frame_alert) < 0 ||
+                frame_alert == NULL || *frame_alert == '\0') {
+                free(frame_alert);
+                free(payload);
+                free(report_payload);
+                return -1;
+            }
+            free(frame_alert);
+        }
+
+        /* Retain the validated daemon report content for publication after
+         * the terminating zero-length frame.  The event identity is added by
+         * onas_write_scan_report; keeping the write until termination ensures
+         * that a duplicate or truncated frame sequence is never claimed as
+         * proof. */
+        if (report_stream != NULL) {
+            report_payload = payload;
+            report_length = length;
+        } else {
+            free(payload);
         }
 
         received = 1;
@@ -362,7 +488,6 @@ int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
                 (*status_out == CL_SUCCESS || *status_out == CL_ERROR || *status_out == CL_EPARSE))
                 *status_out = frame_status;
         }
-        free(payload);
     }
 }
 

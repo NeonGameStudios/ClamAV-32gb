@@ -4,6 +4,13 @@
 This verifier checks the evidence contract only.  It never creates a mount,
 starts clamonacc, or fabricates kernel events.  A real R13 run must provide
 the JSON document and the retained event/scan artifacts that it names.
+
+The scan-report artifact is a one-record, case-bound structured report copied
+from the on-access clamd exchange by the runner.  It is not a free-form log;
+the process log remains a separate artifact when a case needs text evidence.
+Prevention reports must retain the same ``clamonacc_event_id`` as the selected
+permission event; monitoring-only reports must retain zero because they have
+no permission-event join.
 """
 
 from __future__ import annotations
@@ -12,11 +19,14 @@ import argparse
 import hashlib
 from pathlib import Path, PurePosixPath
 import re
+import struct
 import sys
 
 import largefile_acceptance_cases as acceptance_cases
 
 HASH_RE = re.compile(r"[0-9a-f]{64}\Z")
+HEX_RE = re.compile(r"[0-9a-f]*\Z")
+FAN_OPEN_PERM_MASK = 0x00010000
 CASE_CONTRACT = {
     "clean": ("COMPLETE", 0, "allow", "FAN_ALLOW"),
     "detection": ("DETECTION_TERMINATED", 1, "deny", "FAN_DENY"),
@@ -27,6 +37,12 @@ CASE_CONTRACT = {
 }
 MONITORING_CASES = tuple(CASE_CONTRACT)
 IDENTITY_FIELDS = ("source_manifest", "build_identity", "config")
+SCAN_REPORT_FIELDS = (
+    "status", "verdict", "root_size", "logical_bytes", "matcher_bytes",
+    "contiguous_bytes", "temporary_bytes", "files_scanned",
+    "max_recursion_depth", "elapsed_ms", "parser_operations",
+    "detector_operations", "skipped_operations",
+)
 
 
 def fail(message: str) -> None:
@@ -107,6 +123,181 @@ def validate_artifacts(root: Path, artifacts: object, label: str,
             f"{sorted(required_roles - seen_roles)}")
 
 
+def artifact_path(root: Path, artifacts: object, label: str, role: str) -> Path:
+    require(isinstance(artifacts, list), f"{label} artifacts are not a list")
+    for artifact in artifacts:
+        if isinstance(artifact, dict) and artifact.get("role") == role:
+            return relative_file(
+                root, artifact.get("path"), f"{label} {role} artifact"
+            )
+    fail(f"{label} lacks retained {role} artifact")
+
+
+def load_json_lines(path: Path, label: str) -> list[dict]:
+    rows = []
+    for line_number, line in enumerate(
+        path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        if not line:
+            continue
+        rows.append(acceptance_cases.load_json_object(
+            line, f"{label} line {line_number}"
+        ))
+    require(rows, f"{label} is empty")
+    return rows
+
+
+def validate_kernel_event_artifact(
+    path: Path, label: str, event_id: int, fixture_hash: str,
+    expected_response: str,
+) -> None:
+    records = load_json_lines(path, label)
+    seen_ids: set[int] = set()
+    matching = []
+    target_count = 0
+    for record in records:
+        require(record.get("event_kind") == "FAN_OPEN_PERM",
+                f"{label} has a non-permission event")
+        record_id = record.get("event_id")
+        require(type(record_id) is int and record_id >= 1 and record_id not in seen_ids,
+                f"{label} has an invalid or duplicate event ID")
+        seen_ids.add(record_id)
+        require(record.get("fixture_sha256") == fixture_hash,
+                f"{label} is not bound to the case fixture")
+        require(type(record.get("target")) is bool,
+                f"{label} has no boolean target marker")
+        if record.get("target") is True:
+            target_count += 1
+        mask = record.get("mask")
+        require(type(mask) is int and mask & FAN_OPEN_PERM_MASK,
+                f"{label} does not retain FAN_OPEN_PERM mask evidence")
+        names = record.get("mask_names")
+        require(isinstance(names, list) and "FAN_OPEN_PERM" in names,
+                f"{label} does not retain FAN_OPEN_PERM name evidence")
+        require(record.get("observer_response") == "FAN_ALLOW",
+                f"{label} lacks the recorder's explicit observer response")
+        require(record.get("permission_response") == expected_response,
+                f"{label} lacks ClamAV's explicit permission response")
+        event_path = record.get("path")
+        require(isinstance(event_path, str) and event_path.startswith("/"),
+                f"{label} has no resolved absolute event path")
+        for field in (
+            "timestamp_ns", "event_fd", "event_pid", "event_len",
+            "metadata_len", "metadata_version",
+        ):
+            value = record.get(field)
+            require(type(value) is int and value >= 0,
+                    f"{label} has invalid {field}")
+        raw = record.get("raw_metadata_hex")
+        require(isinstance(raw, str) and len(raw) % 2 == 0 and HEX_RE.fullmatch(raw),
+                f"{label} has invalid raw metadata")
+        try:
+            raw_bytes = bytes.fromhex(raw)
+            raw_event_len, raw_version, _reserved, raw_metadata_len, raw_mask, raw_fd, raw_pid = struct.unpack(
+                "<IBBH Qii", raw_bytes[:24]
+            )
+        except (ValueError, struct.error) as error:
+            raise ValueError(f"{label} raw metadata cannot be decoded") from error
+        require(len(raw_bytes) >= 24 and raw_metadata_len == len(raw_bytes) and
+                raw_event_len >= raw_metadata_len and
+                raw_version == record["metadata_version"] and
+                raw_event_len == record["event_len"] and
+                raw_mask == record["mask"] and
+                raw_fd == record["event_fd"] and
+                raw_pid == record["event_pid"],
+                f"{label} raw metadata does not match structured event fields")
+        if record_id == event_id:
+            require(record.get("target") is True,
+                    f"{label} selected event is not target-bound")
+            matching.append(record)
+    require(target_count == 1,
+            f"{label} does not contain exactly one target-bound event")
+    require(len(matching) == 1,
+            f"{label} does not contain exactly one selected event ID")
+
+
+def validate_actor_artifact(
+    path: Path, label: str, case_name: str, event_id: int,
+    fixture_hash: str, expected_action: str,
+) -> None:
+    records = load_json_lines(path, label)
+    require(len(records) == 1, f"{label} must contain one actor result")
+    record = records[0]
+    require(record.get("case_name") == case_name,
+            f"{label} is not bound to case {case_name}")
+    require(record.get("fixture_sha256") == fixture_hash,
+            f"{label} is not bound to the case fixture")
+    require(record.get("event_id") == event_id,
+            f"{label} is not bound to the selected kernel event")
+    opened = record.get("opened")
+    require(type(opened) is bool,
+            f"{label} has no boolean open observation")
+    require(record.get("observed_action") == expected_action and
+            opened is (expected_action == "allow"),
+            f"{label} contradicts the observed permission action")
+    actor_uid = record.get("actor_uid")
+    require(type(actor_uid) is int and actor_uid > 0,
+            f"{label} has an invalid non-root actor UID")
+    exit_code = record.get("actor_exit_code")
+    require(type(exit_code) is int and (exit_code == 0) is opened,
+            f"{label} actor exit code contradicts the open observation")
+    require(isinstance(record.get("stderr"), str),
+            f"{label} has no actor stderr capture")
+
+
+def validate_scan_report_artifact(
+    path: Path, label: str, case_name: str, fixture_hash: str,
+    expected_completion: str, expected_exit_code: int, expected_event_id: int,
+) -> None:
+    """Require a real, case-bound structured report rather than text filler."""
+    records = load_json_lines(path, label)
+    require(len(records) == 1, f"{label} must contain one structured report")
+    report = records[0]
+    require(report.get("version") == 1 and
+            report.get("evidence_type") == "on-access-scan",
+            f"{label} has an invalid structured report schema")
+    require(report.get("case_name") == case_name,
+            f"{label} is not bound to case {case_name}")
+    require(report.get("fixture_sha256") == fixture_hash,
+            f"{label} is not bound to the case fixture")
+    report_event_id = report.get("clamonacc_event_id")
+    require(type(report_event_id) is int and report_event_id == expected_event_id,
+            f"{label} is not bound to clamonacc event {expected_event_id}")
+    require(report.get("completion") == expected_completion,
+            f"{label} completion does not match the case contract")
+    require(type(report.get("scan_exit_code")) is int and
+            report["scan_exit_code"] == expected_exit_code,
+            f"{label} scan exit does not match the case contract")
+    for field in SCAN_REPORT_FIELDS:
+        value = report.get(field)
+        require(type(value) is int and value >= 0,
+                f"{label} field {field} is not a non-negative integer")
+    require(report["root_size"] > 0,
+            f"{label} does not retain a positive scanned root size")
+    if expected_completion == "COMPLETE":
+        require(report["status"] == 0 and report["verdict"] in (0, 1) and
+                report["skipped_operations"] == 0,
+                f"{label} complete report is not clean and successful")
+        require(report.get("last_alert") in (None, "") and
+                report.get("last_alert_offset") is None,
+                f"{label} clean report contains an unexpected alert")
+    elif case_name == "detection":
+        require(report["verdict"] in (2, 3),
+                f"{label} detection report is not non-clean")
+        require(isinstance(report.get("last_alert"), str) and
+                report["last_alert"],
+                f"{label} detection report lacks an exact alert")
+        require(type(report.get("last_alert_offset")) is int and
+                report["last_alert_offset"] >= 0,
+                f"{label} detection report lacks an alert offset")
+    else:
+        require(report["status"] != 0,
+                f"{label} failure report has a clean status")
+        require(isinstance(report.get("reason"), str) and
+                report["reason"],
+                f"{label} failure report lacks a reason")
+
+
 def validate_prevention_cases(root: Path, cases: object) -> None:
     require(isinstance(cases, list), "fanotify prevention cases are not a list")
     expected_names = set(CASE_CONTRACT)
@@ -137,14 +328,38 @@ def validate_prevention_cases(root: Path, cases: object) -> None:
         require(case.get("health") == "pass" and case.get("cleanup") == "pass",
                 f"fanotify prevention case lacks health/cleanup proof: {name}")
         event_id = case.get("event_id")
-        require(type(event_id) is int and event_id >= 0,
+        require(type(event_id) is int and event_id >= 1,
                 f"fanotify prevention event ID is invalid: {name}")
         require(event_id not in event_ids,
                 f"fanotify prevention event ID is duplicated: {name}")
         event_ids.add(event_id)
         validate_artifacts(
             root, case.get("artifacts"), f"fanotify prevention case {name}",
-            {"kernel-event", "scan-report"},
+            {"kernel-event", "actor-result", "scan-report"},
+        )
+        kernel_path = artifact_path(
+            root, case.get("artifacts"), f"fanotify prevention case {name}",
+            "kernel-event",
+        )
+        actor_path = artifact_path(
+            root, case.get("artifacts"), f"fanotify prevention case {name}",
+            "actor-result",
+        )
+        validate_kernel_event_artifact(
+            kernel_path, f"fanotify prevention case {name} kernel event",
+            event_id, fixture_hash, response,
+        )
+        validate_actor_artifact(
+            actor_path, f"fanotify prevention case {name} actor result",
+            name, event_id, fixture_hash, decision,
+        )
+        scan_path = artifact_path(
+            root, case.get("artifacts"), f"fanotify prevention case {name}",
+            "scan-report",
+        )
+        validate_scan_report_artifact(
+            scan_path, f"fanotify prevention case {name} scan report",
+            name, fixture_hash, completion, exit_code, event_id,
         )
     require(seen == expected_names,
             "fanotify prevention cases do not cover clean, detection, limit, "
@@ -167,6 +382,9 @@ def validate_monitoring_cases(root: Path, monitoring: object) -> None:
                 "fanotify monitoring-only case has an unknown or duplicate name")
         seen.add(name)
         completion, exit_code, _, _ = CASE_CONTRACT[name]
+        fixture_hash = case.get("fixture_sha256")
+        require(isinstance(fixture_hash, str) and HASH_RE.fullmatch(fixture_hash),
+                f"fanotify monitoring fixture hash is invalid: {name}")
         require(case.get("scan_completion") == completion and
                 case.get("scan_exit_code") == exit_code,
                 f"fanotify monitoring-only scan outcome is wrong: {name}")
@@ -179,6 +397,17 @@ def validate_monitoring_cases(root: Path, monitoring: object) -> None:
         validate_artifacts(
             root, case.get("artifacts"), f"fanotify monitoring-only case {name}",
             {"process-log", "scan-report"},
+        )
+        scan_path = artifact_path(
+            root, case.get("artifacts"), f"fanotify monitoring-only case {name}",
+            "scan-report",
+        )
+        # Keep the monitoring-only scan-report contract visible to the source
+        # guard as well as to the runtime verifier.
+        require(scan_path.is_file(), "fanotify monitoring-only scan report is missing")
+        validate_scan_report_artifact(
+            scan_path, f"fanotify monitoring-only case {name} scan report",
+            name, fixture_hash, completion, exit_code, 0,
         )
     require(seen == set(MONITORING_CASES),
             "fanotify monitoring-only cases do not cover the complete matrix")

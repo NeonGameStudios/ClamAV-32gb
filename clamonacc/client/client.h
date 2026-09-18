@@ -22,6 +22,7 @@
 #ifndef __ONAS_CLIENT_H
 #define __ONAS_CLIENT_H
 
+#include <stdio.h>
 #include <curl/curl.h>
 
 #include "optparser.h"
@@ -31,7 +32,8 @@
 #define ONAS_DEFAULT_PING_ATTEMPTS 31
 
 void onas_print_server_version(struct onas_context **ctx);
-int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, uint64_t sizelimit, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code);
+int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, uint64_t sizelimit, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code, FILE *report_stream, int *report_written, uint64_t event_id);
+int onas_client_write_failure_report(FILE *stream, const char *target, cl_error_t status, uint64_t root_size, uint64_t effective_limit, uint64_t event_id);
 CURLcode onas_curl_init(CURL **curl, const char *ipaddr, int64_t port, int64_t timeout);
 int onas_get_clamd_version(struct onas_context **ctx);
 cl_error_t onas_setup_client(struct onas_context **ctx);

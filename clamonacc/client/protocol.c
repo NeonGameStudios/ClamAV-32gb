@@ -44,8 +44,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/types.h>
-#ifdef HAVE_FD_PASSING
+#ifndef _WIN32
 #include <sys/time.h>
+#include <time.h>
 #endif
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
@@ -88,6 +89,93 @@ static ssize_t onas_read_retry(int fd, void *buffer, size_t length)
     return bytes;
 }
 
+#if !defined(_WIN32) && defined(HAVE_SYS_SELECT_H)
+static int onas_source_now_ms(uint64_t *now_ms)
+{
+#if defined(CLOCK_MONOTONIC)
+    struct timespec now;
+
+    if (now_ms == NULL || clock_gettime(CLOCK_MONOTONIC, &now) != 0 ||
+        now.tv_sec < 0 || now.tv_nsec < 0 || now.tv_nsec >= 1000000000L ||
+        (uint64_t)now.tv_sec > (UINT64_MAX - (uint64_t)now.tv_nsec) / 1000000000U)
+        return -1;
+
+    *now_ms = (uint64_t)now.tv_sec * 1000U + (uint64_t)now.tv_nsec / 1000000U;
+    return 0;
+#else
+    struct timeval now;
+
+    if (now_ms == NULL || gettimeofday(&now, NULL) != 0 || now.tv_sec < 0 ||
+        now.tv_usec < 0 || now.tv_usec >= 1000000L)
+        return -1;
+
+    *now_ms = (uint64_t)now.tv_sec * 1000U + (uint64_t)now.tv_usec / 1000U;
+    return 0;
+#endif
+}
+
+static int onas_source_deadline(int64_t timeout_ms, uint64_t *deadline_ms)
+{
+    uint64_t now_ms;
+
+    if (deadline_ms == NULL)
+        return -1;
+
+    *deadline_ms = 0;
+    if (timeout_ms <= 0)
+        return 0;
+
+    if (onas_source_now_ms(&now_ms) != 0)
+        return -1;
+
+    *deadline_ms = ((uint64_t)timeout_ms > UINT64_MAX - now_ms) ? UINT64_MAX : now_ms + (uint64_t)timeout_ms;
+    return 0;
+}
+
+/* Wait for an unknown-size source without allowing a producer that keeps its
+ * write end open to hold an on-access scan forever.  The caller supplies one
+ * absolute deadline for the whole source, so a steady stream of bytes cannot
+ * extend the configured OnAccessCurlTimeout indefinitely. */
+static int onas_source_wait_readable(int fd, uint64_t deadline_ms)
+{
+    if (fd < 0 || fd >= FD_SETSIZE) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    for (;;) {
+        fd_set readfds;
+        struct timeval wait = {0, 0};
+        uint64_t now_ms;
+        uint64_t remaining_ms;
+        int result;
+
+        if (deadline_ms != 0) {
+            if (onas_source_now_ms(&now_ms) != 0)
+                return -1;
+            if (now_ms >= deadline_ms) {
+                errno = ETIMEDOUT;
+                return 0;
+            }
+
+            remaining_ms = deadline_ms - now_ms;
+            wait.tv_sec  = (long)(remaining_ms / 1000U);
+            wait.tv_usec = (long)((remaining_ms % 1000U) * 1000U);
+        }
+
+        FD_ZERO(&readfds);
+        FD_SET(fd, &readfds);
+        /* A zero timeout has the same immediate-poll semantics as the
+         * existing on-access socket wait helpers; it must not become an
+         * unbounded source read merely because this path uses an absolute
+         * deadline representation. */
+        result = select(fd + 1, &readfds, NULL, NULL, &wait);
+        if (result >= 0 || errno != EINTR)
+            return result;
+    }
+}
+#endif
+
 /* Issues an INSTREAM command to clamd and streams the given file
  * Returns >0 on success, 0 soft fail, -1 hard fail */
 static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t timeout, uint64_t maxstream, bool action_stream, cl_error_t *ret_code)
@@ -97,6 +185,7 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
     int ret        = 1;
     int close_flag = 0;
     bool known_size;
+    uint64_t source_deadline_ms = 0;
     STATBUF statbuf;
     uint64_t bytesRead     = 0;
     const char zINSTREAM[] = "zINSTREAMREPORT";
@@ -167,6 +256,17 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
         goto strm_out;
     }
 
+#if !defined(_WIN32) && defined(HAVE_SYS_SELECT_H)
+    if (!known_size && onas_source_deadline(timeout, &source_deadline_ms) != 0) {
+        logg(LOGG_ERROR, "%s: Failed to establish the on-access stream read deadline. ERROR\n",
+             filename ? filename : "FD");
+        if (ret_code)
+            *ret_code = CL_ETIMEOUT;
+        ret = -1;
+        goto strm_out;
+    }
+#endif
+
     /* Regular files have an admitted length. Pipes and other non-regular
      * descriptors are unknown-size streams and must be consumed up to the
      * bounded ceiling instead of being mistaken for empty files because
@@ -175,8 +275,25 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
     while (bytesRead < len) {
         uint64_t remaining = len - bytesRead;
         size_t read_len    = (remaining < sizeof(buf)) ? (size_t)remaining : sizeof(buf);
-        ssize_t bytes      = onas_read_retry(fd, buf, read_len);
+        ssize_t bytes;
         uint32_t chunk_len;
+
+#if !defined(_WIN32) && defined(HAVE_SYS_SELECT_H)
+        if (!known_size) {
+            int wait_result = onas_source_wait_readable(fd, source_deadline_ms);
+
+            if (wait_result <= 0) {
+                logg(LOGG_ERROR, "%s: Unknown-size on-access stream read %s. ERROR\n",
+                     filename ? filename : "FD", (wait_result == 0) ? "timed out" : "failed");
+                if (ret_code)
+                    *ret_code = (wait_result == 0) ? CL_ETIMEOUT : CL_EREAD;
+                ret = -1;
+                goto strm_out;
+            }
+        }
+#endif
+
+        bytes = onas_read_retry(fd, buf, read_len);
 
         if (bytes < 0) {
             logg(LOGG_ERROR, "Failed to read from %s.\n", filename ? filename : "FD");
@@ -258,7 +375,24 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
      * a terminator so the daemon cannot mistake the bounded prefix for a
      * complete clean scan. */
     if (!known_size && bytesRead == len) {
-        ssize_t bytes = onas_read_retry(fd, buf, 1);
+        ssize_t bytes;
+
+#if !defined(_WIN32) && defined(HAVE_SYS_SELECT_H)
+        {
+            int wait_result = onas_source_wait_readable(fd, source_deadline_ms);
+
+            if (wait_result <= 0) {
+                logg(LOGG_ERROR, "%s: Unknown-size on-access stream overflow probe %s. ERROR\n",
+                     filename ? filename : "FD", (wait_result == 0) ? "timed out" : "failed");
+                if (ret_code)
+                    *ret_code = (wait_result == 0) ? CL_ETIMEOUT : CL_EREAD;
+                ret = -1;
+                goto strm_out;
+            }
+        }
+#endif
+
+        bytes = onas_read_retry(fd, buf, 1);
 
         if (bytes > 0) {
             logg(LOGG_ERROR, "%s: Unknown-size input exceeds the effective on-access stream limit; refusing to send a truncated stream. ERROR\n",
@@ -573,7 +707,8 @@ fd_out:
  * Returns the number of infected files or -1 on error
  * NOTE: filename may be NULL for STREAM scantype. */
 int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const action_source_t *action_source,
-                  int fd, int64_t timeout, int *printok, int *errors, cl_error_t *ret_code)
+                  int fd, int64_t timeout, int *printok, int *errors, cl_error_t *ret_code,
+                  FILE *report_stream, int *report_written, uint64_t event_id)
 {
     int infected = 0, len = 0, beenthere = 0;
     char *bol, *eol;
@@ -587,6 +722,9 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
     int (*recv_func)(struct onas_rcvln *, char **, char **, int64_t) = NULL;
     const char *display_filename                                     = (NULL != action_source) ? action_source->display_path : filename;
     int scan_fd                                                      = (NULL != action_source) ? action_source->scan_fd : fd;
+
+    if (report_written != NULL)
+        *report_written = 0;
 
 #ifdef HAVE_FD_PASSING
     if (FILDES == scantype) {
@@ -697,7 +835,8 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
         cl_error_t report_status = CL_SUCCESS;
 
         if (onas_recv_scan_report(&rcv, timeout, &report_infected,
-                                  &report_incomplete, &report_status) < 0) {
+                                  &report_incomplete, &report_status,
+                                  report_stream, report_written, event_id) < 0) {
             if (ret_code && *ret_code == CL_SUCCESS)
                 *ret_code = (rcv.curlcode == CURLE_OPERATION_TIMEDOUT) ? CL_ETIMEOUT : CL_EREAD;
             if (errors)

@@ -2436,6 +2436,21 @@ full descriptor/sequence coverage, full corpus, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain required.
 
+## UDF anchored directory traversal and empty-child accounting — 2026-09-17
+
+The standards-shaped anchored UDF path now resolves the root directory ICB and
+walks bounded parent/descendant FIDs, including regular files and nested
+directories, with cycle, visit, depth, deadline, extent, and shared-limit
+controls. A valid nested regular-file fixture reaches the independently
+expected child marker through the existing scanner. Empty nested directories
+are also admitted through the inclusive `MaxFiles` path, so a recognized empty
+subtree cannot return clean while bypassing child accounting. The legacy linear
+descriptor fallback still reports directory FIDs as explicit unsupported input;
+it does not silently skip them. Full directory corpus, reserve/VDP and mapped
+partition variants, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## UDF allocation-mode and descriptor-window admission — 2026-08-30
 
 UDF file-entry allocation dispatch now reads all three format-defined ICB type
@@ -7665,10 +7680,21 @@ silently abandoning the EA06 layer. The focused public-scan regression is
 registered in `check_clamav`; full AutoIt corpus, sanitizer, and
 supported-build Sonic1 qualification remain release gates.
 
-UDF extended file-entry descriptors are a separate intentional unsupported
-boundary. Because the parser does not implement their allocation and
-extended-attribute semantics, encountering one marks the layer incomplete and
-returns an explicit unsupported result; it is never silently skipped.
+## UDF Extended File Entry admission — 2026-09-17
+
+Both the anchored tree and legacy linear descriptor paths now accept Extended
+File Entry descriptors (tag 266) alongside regular File Entries. Their fixed
+header, extended-attribute area, and allocation-descriptor area use checked
+native-width accounting before the descriptor tag, file type, logical
+information length, or child extent is consumed. Standards-shaped anchored
+and compact legacy fixtures exercise EFE children through the existing
+bounded allocation and nested/empty-file scan paths, including rejection of
+an EFE larger than its logical block.
+
+EFE support remains bounded to the existing 2,048-byte logical-block,
+same-partition and supported-allocation-descriptor contracts, with source-level
+evidence only until the current-source production-linked and sanitizer runners
+are available again.
 
 ## UDF fragmented-file extraction — 2026-08-20
 

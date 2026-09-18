@@ -48,3 +48,23 @@ format-level metadata, and v2 ABI tables required for an independently
 compiled format-8 fixture. The exact blocker is therefore unchanged: an
 authorized compatible ClamAV bytecode compiler or compiler-produced CBC
 format-8 artifact is required.
+
+## Current checkout and MCP-SSH recheck — 2026-09-17
+
+The current checkout was rechecked without changing files or installing a
+toolchain. `unit_tests/input/bytecode_sigs` contains only the retained legacy
+and format-7 text fixtures plus the historical `bytecode.cvd`; no compiled
+format-8 artifact or compiler identity/hash is present. The format-8
+qualification contract in `docs/bytecode-abi-v2.md` therefore remains
+unsatisfied.
+
+The documented MCP-SSH continuation path was also rechecked with host
+`sonic1` and login profile `sonic1-camera-key`. A requested 86,400-second
+tracked start was admitted but returned the authoritative effective limit of
+3,600 seconds. Two identical read-only compiler searches then failed during
+SSH connect before a remote process started (`remote_started=false`), so no
+remote artifact or qualification result was inferred. This confirms that the
+supported extension is checkpointed bounded jobs, not a single job beyond the
+current 3,600-second policy limit.
+
+State remains: `blocked-external-prerequisite`.

@@ -29,6 +29,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <pthread.h>
+#include <time.h>
 
 #if defined(HAVE_SYS_FANOTIFY_H)
 #include <sys/fanotify.h>
@@ -50,12 +51,229 @@
 #endif
 
 static pthread_mutex_t onas_scan_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t onas_evidence_lock = PTHREAD_MUTEX_INITIALIZER;
+static uint64_t onas_permission_event_sequence;
 
 static int onas_scan(struct onas_scan_event *event_data, const char *fname, STATBUF sb, int *infected, int *err, cl_error_t *ret_code);
-static cl_error_t onas_scan_safe(struct onas_scan_event *event_data, const char *fname, STATBUF sb, int *infected, int *err, cl_error_t *ret_code);
+static cl_error_t onas_scan_safe(struct onas_scan_event *event_data, const char *fname, STATBUF sb, int *infected, int *err, cl_error_t *ret_code, FILE *report_stream, int *report_written);
 static cl_error_t onas_scan_thread_scanfile(struct onas_scan_event *event_data, const char *fname, STATBUF sb, int *infected, int *err, cl_error_t *ret_code);
 static cl_error_t onas_scan_thread_handle_dir(struct onas_scan_event *event_data, const char *pathname);
 static cl_error_t onas_scan_thread_handle_file(struct onas_scan_event *event_data, const char *pathname);
+
+/* Publish only the final attempt's retained report.  Retry attempts write to
+ * an unlinked temporary stream so a failed first attempt cannot leave a
+ * second JSONL record for the same on-access event. */
+static int onas_copy_report(FILE *source, FILE *destination)
+{
+    unsigned char buffer[4096];
+    size_t read_count;
+
+    if (source == NULL || destination == NULL || fflush(source) != 0 || fseek(source, 0, SEEK_SET) != 0)
+        return -1;
+
+    while ((read_count = fread(buffer, 1, sizeof(buffer), source)) != 0) {
+        if (fwrite(buffer, 1, read_count, destination) != read_count)
+            return -1;
+    }
+    if (ferror(source) || fflush(destination) != 0)
+        return -1;
+    return 0;
+}
+
+#if defined(HAVE_SYS_FANOTIFY_H)
+static uint64_t onas_next_permission_event_id(void)
+{
+    uint64_t event_id;
+
+    pthread_mutex_lock(&onas_evidence_lock);
+    event_id = ++onas_permission_event_sequence;
+    pthread_mutex_unlock(&onas_evidence_lock);
+    return event_id;
+}
+
+/* POSIX pathnames are byte strings, not necessarily UTF-8.  Preserve valid
+ * UTF-8 sequences in the JSON evidence while escaping malformed bytes so one
+ * hostile filename cannot make the retained JSONL artifact unreadable. */
+static size_t onas_valid_utf8_length(const unsigned char *value, size_t remaining)
+{
+    unsigned char first;
+    unsigned char second;
+
+    if (value == NULL || remaining == 0)
+        return 0;
+
+    first = value[0];
+    if (first < 0x80)
+        return 1;
+    if (remaining < 2)
+        return 0;
+    second = value[1];
+    if (first >= 0xC2 && first <= 0xDF && second >= 0x80 && second <= 0xBF)
+        return 2;
+    if (first >= 0xE0 && first <= 0xEF) {
+        if (remaining < 3)
+            return 0;
+        if (first == 0xE0) {
+            if (second < 0xA0 || second > 0xBF)
+                return 0;
+        } else if (first == 0xED) {
+            if (second < 0x80 || second > 0x9F)
+                return 0;
+        } else if (second < 0x80 || second > 0xBF) {
+            return 0;
+        }
+        if (value[2] < 0x80 || value[2] > 0xBF)
+            return 0;
+        return 3;
+    }
+
+    if (first < 0xF0 || first > 0xF4 || remaining < 4)
+        return 0;
+    if (first == 0xF0) {
+        if (second < 0x90 || second > 0xBF)
+            return 0;
+    } else if (first == 0xF4) {
+        if (second < 0x80 || second > 0x8F)
+            return 0;
+    } else if (second < 0x80 || second > 0xBF) {
+        return 0;
+    }
+    if (value[2] < 0x80 || value[2] > 0xBF ||
+        value[3] < 0x80 || value[3] > 0xBF)
+        return 0;
+    return 4;
+}
+
+static int onas_write_json_string(FILE *stream, const char *value)
+{
+    const unsigned char *cursor = (const unsigned char *)(value != NULL ? value : "");
+    size_t remaining = strlen((const char *)cursor);
+    size_t sequence_length;
+    size_t index;
+
+    if (fputc('"', stream) == EOF)
+        return -1;
+    while (remaining != 0) {
+        if (*cursor >= 0x80) {
+            sequence_length = onas_valid_utf8_length(cursor, remaining);
+
+            if (sequence_length != 0) {
+                for (index = 0; index < sequence_length; index++) {
+                    if (fputc(cursor[index], stream) == EOF)
+                        return -1;
+                }
+                cursor += sequence_length;
+                remaining -= sequence_length;
+                continue;
+            }
+            if (fprintf(stream, "\\u%04x", (unsigned int)*cursor) < 0)
+                return -1;
+            cursor++;
+            remaining--;
+            continue;
+        }
+        switch (*cursor) {
+            case '"':
+            case '\\':
+                if (fputc('\\', stream) == EOF || fputc(*cursor, stream) == EOF)
+                    return -1;
+                break;
+            case '\b':
+                if (fputs("\\b", stream) == EOF)
+                    return -1;
+                break;
+            case '\f':
+                if (fputs("\\f", stream) == EOF)
+                    return -1;
+                break;
+            case '\n':
+                if (fputs("\\n", stream) == EOF)
+                    return -1;
+                break;
+            case '\r':
+                if (fputs("\\r", stream) == EOF)
+                    return -1;
+                break;
+            case '\t':
+                if (fputs("\\t", stream) == EOF)
+                    return -1;
+                break;
+            default:
+                if (*cursor < 0x20) {
+                    if (fprintf(stream, "\\u%04x", (unsigned int)*cursor) < 0)
+                        return -1;
+                } else if (fputc(*cursor, stream) == EOF) {
+                    return -1;
+                }
+                break;
+        }
+        cursor++;
+        remaining--;
+    }
+    return fputc('"', stream) == EOF ? -1 : 0;
+}
+
+static int onas_write_fanotify_evidence(struct onas_scan_event *event_data,
+                                         const char *fname,
+                                         int response_fd,
+                                         uint32_t response,
+                                         int response_written,
+                                         int *infected, int *err,
+                                         cl_error_t *ret_code)
+{
+    struct timespec now;
+    uint64_t timestamp_ns = 0;
+    uint64_t event_id;
+    const char *response_name;
+    int result;
+
+    if (event_data == NULL || event_data->fanotify_evidence_stream == NULL ||
+        event_data->fmd == NULL || fname == NULL)
+        return 0;
+    if (response != FAN_ALLOW && response != FAN_DENY)
+        return -1;
+
+    response_name = (response == FAN_DENY) ? "FAN_DENY" : "FAN_ALLOW";
+
+    pthread_mutex_lock(&onas_evidence_lock);
+    if (event_data->permission_event_id == 0)
+        event_data->permission_event_id = ++onas_permission_event_sequence;
+    event_id = event_data->permission_event_id;
+
+    if (clock_gettime(CLOCK_REALTIME, &now) == 0 && now.tv_sec >= 0)
+        timestamp_ns = ((uint64_t)now.tv_sec * 1000000000ULL) + (uint64_t)now.tv_nsec;
+
+    result = fprintf(event_data->fanotify_evidence_stream,
+                     "{\"artifact_kind\":\"clamonacc-permission-decision\","
+                     "\"clamonacc_event_id\":%llu,\"event_kind\":\"FAN_OPEN_PERM\","
+                     "\"path\":",
+                     (unsigned long long)event_id);
+    if (result >= 0)
+        result = onas_write_json_string(event_data->fanotify_evidence_stream, fname);
+    if (result >= 0)
+        result = fprintf(event_data->fanotify_evidence_stream,
+                         ",\"event_fd\":%d,\"event_pid\":%d,\"event_len\":%u,"
+                         "\"metadata_len\":%u,\"metadata_version\":%u,\"mask\":%llu,"
+                         "\"permission_response\":\"%s\",\"response_written\":%s,"
+                         "\"scan_status\":%d,\"scan_infected\":%d,\"scan_errors\":%d,"
+                         "\"timestamp_ns\":%llu}\n",
+                         response_fd, (int)event_data->fmd->pid,
+                         (unsigned int)event_data->fmd->event_len,
+                         (unsigned int)event_data->fmd->metadata_len,
+                         (unsigned int)event_data->fmd->vers,
+                         (unsigned long long)event_data->fmd->mask,
+                         response_name, response_written ? "true" : "false",
+                         ret_code != NULL ? (int)*ret_code : CL_ERROR,
+                         infected != NULL ? *infected : -1,
+                         err != NULL ? *err : 1,
+                         (unsigned long long)timestamp_ns);
+    if (result >= 0 && fflush(event_data->fanotify_evidence_stream) != 0)
+        result = -1;
+
+    pthread_mutex_unlock(&onas_evidence_lock);
+    return result < 0 ? -1 : 0;
+}
+#endif
 
 /**
  * @brief Safe-scan wrapper, originally used by inotify and fanotify threads, now exists for error checking/convenience.
@@ -67,9 +285,24 @@ static int onas_scan(struct onas_scan_event *event_data, const char *fname, STAT
 {
     int ret                = 0;
     int i                  = 0;
+    int report_written     = 0;
+    int report_capture_failed = 0;
+    FILE *attempt_report_stream = NULL;
     uint8_t retry_on_error = event_data->bool_opts & ONAS_SCTH_B_RETRY_ON_E;
 
-    ret = onas_scan_safe(event_data, fname, sb, infected, err, ret_code);
+    if (event_data->report_stream != NULL) {
+        attempt_report_stream = tmpfile();
+        if (attempt_report_stream == NULL)
+            report_capture_failed = 1;
+    }
+
+    ret = onas_scan_safe(event_data, fname, sb, infected, err, ret_code,
+                         attempt_report_stream, &report_written);
+    if (report_capture_failed && !*err) {
+        *err      = 1;
+        *ret_code = CL_EWRITE;
+        ret       = CL_EWRITE;
+    }
 
     if (*err) {
         switch (*ret_code) {
@@ -92,12 +325,77 @@ static int onas_scan(struct onas_scan_event *event_data, const char *fname, STAT
         if (retry_on_error) {
             logg(LOGG_DEBUG, "ClamMisc: reattempting scan ... \n");
             while (*err && i < event_data->retry_attempts) {
-                ret = onas_scan_safe(event_data, fname, sb, infected, err, ret_code);
+                if (attempt_report_stream != NULL) {
+                    fclose(attempt_report_stream);
+                    attempt_report_stream = NULL;
+                }
+                report_written       = 0;
+                report_capture_failed = 0;
+                if (event_data->report_stream != NULL) {
+                    attempt_report_stream = tmpfile();
+                    if (attempt_report_stream == NULL)
+                        report_capture_failed = 1;
+                }
+
+                ret = onas_scan_safe(event_data, fname, sb, infected, err, ret_code,
+                                     attempt_report_stream, &report_written);
+                if (report_capture_failed && !*err) {
+                    *err      = 1;
+                    *ret_code = CL_EWRITE;
+                    ret       = CL_EWRITE;
+                }
 
                 i++;
             }
         }
     }
+
+    /* Retries belong to one on-access event. Publish the final retained daemon
+     * report once, or emit one fallback after every attempt failed. */
+    if (event_data->report_stream != NULL && report_written && attempt_report_stream != NULL) {
+        int report_error;
+
+        pthread_mutex_lock(&onas_scan_lock);
+        report_error = onas_copy_report(attempt_report_stream, event_data->report_stream);
+        pthread_mutex_unlock(&onas_scan_lock);
+        if (report_error != 0) {
+            logg(LOGG_ERROR, "ClamWorker: could not publish structured on-access scan report for %s\n",
+                 fname != NULL ? fname : "FD");
+            if (*err == 0)
+                *err = 1;
+            if (*ret_code == CL_SUCCESS)
+                *ret_code = CL_EWRITE;
+            if (ret == CL_SUCCESS)
+                ret = CL_EWRITE;
+        }
+    } else if (event_data->report_stream != NULL) {
+        uint64_t root_size = (S_ISREG(sb.st_mode) && sb.st_size > 0) ? (uint64_t)sb.st_size : 0;
+        uint64_t effective_limit = event_data->maxstream;
+
+        if (effective_limit == 0 || (event_data->sizelimit != 0 && event_data->sizelimit < effective_limit))
+            effective_limit = event_data->sizelimit;
+        if (effective_limit == 0)
+            effective_limit = CLI_MAX_LARGE_FILESIZE;
+
+        pthread_mutex_lock(&onas_scan_lock);
+        int report_error = onas_client_write_failure_report(
+            event_data->report_stream, fname, *ret_code, root_size,
+            effective_limit, event_data->permission_event_id);
+        pthread_mutex_unlock(&onas_scan_lock);
+        if (report_error != 0) {
+            logg(LOGG_ERROR, "ClamWorker: could not write structured on-access scan report for %s\n",
+                 fname != NULL ? fname : "FD");
+            if (*err == 0)
+                *err = 1;
+            if (*ret_code == CL_SUCCESS)
+                *ret_code = CL_EWRITE;
+            if (ret == CL_SUCCESS)
+                ret = CL_EWRITE;
+        }
+    }
+
+    if (attempt_report_stream != NULL)
+        fclose(attempt_report_stream);
 
     return ret;
 }
@@ -109,7 +407,7 @@ static int onas_scan(struct onas_scan_event *event_data, const char *fname, STAT
  *
  * TODO: make this configurable?
  */
-static cl_error_t onas_scan_safe(struct onas_scan_event *event_data, const char *fname, STATBUF sb, int *infected, int *err, cl_error_t *ret_code)
+static cl_error_t onas_scan_safe(struct onas_scan_event *event_data, const char *fname, STATBUF sb, int *infected, int *err, cl_error_t *ret_code, FILE *report_stream, int *report_written)
 {
 
     int ret = 0;
@@ -128,7 +426,9 @@ static cl_error_t onas_scan_safe(struct onas_scan_event *event_data, const char 
     pthread_mutex_lock(&onas_scan_lock);
 
     ret = onas_client_scan(event_data->tcpaddr, event_data->portnum, event_data->scantype, event_data->maxstream, event_data->sizelimit,
-                           fname, fd, event_data->timeout, sb, infected, err, ret_code);
+                           fname, fd, event_data->timeout, sb, infected, err, ret_code,
+                           report_stream, report_written,
+                           event_data->permission_event_id);
 
     pthread_mutex_unlock(&onas_scan_lock);
 
@@ -141,6 +441,8 @@ static cl_error_t onas_scan_thread_scanfile(struct onas_scan_event *event_data, 
 #if defined(HAVE_SYS_FANOTIFY_H)
     struct fanotify_response res;
     uint8_t b_fanotify;
+    int response_fd = -1;
+    int response_written = 0;
 #endif
 
     int ret = 0;
@@ -171,6 +473,9 @@ static cl_error_t onas_scan_thread_scanfile(struct onas_scan_event *event_data, 
         }
         res.fd       = event_data->fmd->fd;
         res.response = FAN_ALLOW;
+        response_fd  = res.fd;
+        if (event_data->fmd->mask & FAN_ALL_PERM_EVENTS)
+            event_data->permission_event_id = onas_next_permission_event_id();
     }
 #endif
 
@@ -179,6 +484,28 @@ static cl_error_t onas_scan_thread_scanfile(struct onas_scan_event *event_data, 
 
         if (*err && *ret_code != CL_SUCCESS) {
             logg(LOGG_DEBUG, "ClamWorker: scan failed with error code %d\n", *ret_code);
+        }
+    }
+
+    if (!b_scan && event_data->report_stream != NULL && *err) {
+        uint64_t root_size = (S_ISREG(sb.st_mode) && sb.st_size > 0) ? (uint64_t)sb.st_size : 0;
+        uint64_t effective_limit = event_data->maxstream;
+
+        if (effective_limit == 0 || (event_data->sizelimit != 0 && event_data->sizelimit < effective_limit))
+            effective_limit = event_data->sizelimit;
+        if (effective_limit == 0)
+            effective_limit = CLI_MAX_LARGE_FILESIZE;
+
+        pthread_mutex_lock(&onas_scan_lock);
+        int report_error = onas_client_write_failure_report(
+            event_data->report_stream, fname, *ret_code, root_size,
+            effective_limit, event_data->permission_event_id);
+        pthread_mutex_unlock(&onas_scan_lock);
+        if (report_error != 0) {
+            logg(LOGG_ERROR, "ClamWorker: could not write structured on-access scan report for %s\n",
+                 fname != NULL ? fname : "FD");
+            if (ret == CL_SUCCESS)
+                ret = CL_EWRITE;
         }
     }
 
@@ -217,7 +544,22 @@ static cl_error_t onas_scan_thread_scanfile(struct onas_scan_event *event_data, 
                 (void)onas_release_failed_event(event_data->fan_fd, event_data->fmd);
                 event_data->fmd->fd = -1;
                 ret                = CL_EWRITE;
+            } else {
+                response_written = 1;
             }
+        }
+    }
+
+    if (b_fanotify && event_data->fanotify_evidence_stream != NULL &&
+        (event_data->fmd->mask & FAN_ALL_PERM_EVENTS)) {
+        uint32_t actual_response = response_written ? res.response : FAN_DENY;
+
+        if (onas_write_fanotify_evidence(event_data, fname, response_fd,
+                                         actual_response, response_written,
+                                         infected, err, ret_code) != 0) {
+            logg(LOGG_ERROR, "ClamWorker: could not write structured fanotify permission evidence\n");
+            if (ret == CL_SUCCESS)
+                ret = CL_EWRITE;
         }
     }
 
@@ -569,6 +911,8 @@ cl_error_t onas_map_context_info_to_event_data(struct onas_context *ctx, struct 
     (*event_data)->fan_fd         = ctx->fan_fd;
     (*event_data)->sizelimit      = ctx->sizelimit;
     (*event_data)->retry_attempts = ctx->retry_attempts;
+    (*event_data)->report_stream  = ctx->report_stream;
+    (*event_data)->fanotify_evidence_stream = ctx->fanotify_evidence_stream;
 
     if (ctx->retry_on_error) {
         (*event_data)->bool_opts |= ONAS_SCTH_B_RETRY_ON_E;

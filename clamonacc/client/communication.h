@@ -30,6 +30,8 @@
 #include <sys/param.h>
 #endif
 
+#include <stdio.h>
+
 #include "misc.h"
 
 struct onas_rcvln {
@@ -43,10 +45,13 @@ struct onas_rcvln {
 };
 
 int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout_ms, cl_error_t *ret_code);
+int onas_write_scan_report(FILE *stream, const char *payload, size_t payload_length, uint64_t event_id);
 void onas_recvlninit(struct onas_rcvln *s, CURL *curl, int sockd);
 int onas_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout_ms);
 int onas_fd_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout_ms);
 int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
-                          int *infected, int *incomplete, cl_error_t *status_out);
+                          int *infected, int *incomplete, cl_error_t *status_out,
+                          FILE *report_stream, int *report_written,
+                          uint64_t event_id);
 
 #endif

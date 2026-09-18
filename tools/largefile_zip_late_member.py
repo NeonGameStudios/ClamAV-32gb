@@ -7,6 +7,7 @@ import argparse
 import binascii
 import hashlib
 import json
+import os
 from pathlib import Path
 import struct
 import sys
@@ -83,6 +84,14 @@ def build_fixture(
             target.write(MARKER)
             target.write(b"\n")
 
+    # The roadmap-scale fixture is intentionally validated after generation
+    # and may be read after cache pressure from a multi-minute scan. Force the
+    # completed bytes to stable storage before the oracle binds its digest, so
+    # a delayed writeback failure cannot masquerade as scanner behavior.
+    with path.open("rb+") as stream:
+        stream.flush()
+        os.fsync(stream.fileno())
+
 
 def _read_at(stream, offset: int, count: int) -> bytes:
     if offset < 0 or count < 0:
@@ -106,13 +115,17 @@ def _zip64_extra_values(extra: bytes, needed: tuple[bool, ...]) -> list[int]:
             fail("ZIP extra field is truncated")
         if field_id == 0x0001:
             payload = extra[cursor:end]
-            values = []
+            # ZIP64 values are serialized only for fields whose legacy value
+            # is UINT32_MAX, but callers unpack the result by the original
+            # (uncompressed, compressed, offset) field positions. Preserve
+            # those positions so mixed ZIP64 records remain unambiguous.
+            values = [None] * len(needed)
             payload_cursor = 0
-            for required in needed:
+            for index, required in enumerate(needed):
                 if required:
                     if payload_cursor + 8 > len(payload):
                         fail("ZIP64 extra field is truncated")
-                    values.append(struct.unpack_from("<Q", payload, payload_cursor)[0])
+                    values[index] = struct.unpack_from("<Q", payload, payload_cursor)[0]
                     payload_cursor += 8
             return values
         cursor = end
@@ -171,6 +184,7 @@ def build_oracle(path: Path) -> dict:
     with path.open("rb") as stream:
         _, total_entries, directory_size, directory_offset = _find_eocd(stream, file_size)
         cursor = directory_offset
+        prefix = None
         target = None
         names = []
         for _ in range(total_entries):
@@ -215,13 +229,74 @@ def build_oracle(path: Path) -> dict:
                     "extra_length": extra_length,
                     "local_offset": local_offset,
                 }
+            elif name == PREFIX_MEMBER:
+                if prefix is not None:
+                    fail("ZIP prefix member is duplicated")
+                prefix = {
+                    "flags": flags,
+                    "method": method,
+                    "crc": crc,
+                    "compressed_size": compressed_size,
+                    "uncompressed_size": uncompressed_size,
+                    "name_length": name_length,
+                    "local_offset": local_offset,
+                }
             cursor = end
         if cursor != directory_offset + directory_size:
             fail("ZIP central-directory size does not match its entries")
         if not names:
             fail("ZIP central-directory has no entries")
+        if prefix is None:
+            fail("ZIP prefix member is missing")
         if target is None or names[-1] != TARGET_MEMBER:
             fail("ZIP target member is not the final late member")
+
+        # Validate the large prefix's payload too.  The late-member assertion
+        # is intentionally cheap, but a corrupt prefix would otherwise only
+        # be discovered by ClamAV's extraction CRC check after a multi-minute
+        # scan of a certified-size fixture.
+        prefix_local = LOCAL.unpack(_read_at(stream, prefix["local_offset"], LOCAL.size))
+        if prefix_local[0] != b"PK\x03\x04":
+            fail("ZIP prefix local-header signature is invalid")
+        _, _, prefix_flags, prefix_method, _, _, prefix_crc, prefix_compressed, prefix_uncompressed, prefix_name_length, prefix_extra_length = prefix_local
+        prefix_extra = _read_at(
+            stream,
+            prefix["local_offset"] + LOCAL.size + prefix_name_length,
+            prefix_extra_length,
+        )
+        prefix_uncompressed_value, prefix_compressed_value = _zip64_extra_values(
+            prefix_extra,
+            (prefix_uncompressed == UINT32_MAX, prefix_compressed == UINT32_MAX),
+        ) or (None, None)
+        if prefix_uncompressed == UINT32_MAX:
+            prefix_uncompressed = prefix_uncompressed_value
+        if prefix_compressed == UINT32_MAX:
+            prefix_compressed = prefix_compressed_value
+        for actual, expected in (
+            (prefix_flags, prefix["flags"]),
+            (prefix_method, prefix["method"]),
+            (prefix_crc, prefix["crc"]),
+            (prefix_compressed, prefix["compressed_size"]),
+            (prefix_uncompressed, prefix["uncompressed_size"]),
+        ):
+            if actual != expected:
+                fail("ZIP local and central prefix metadata disagree")
+        prefix_data_start = prefix["local_offset"] + LOCAL.size + prefix_name_length + prefix_extra_length
+        prefix_data_end = prefix_data_start + prefix["compressed_size"]
+        if prefix_data_end > directory_offset or prefix_data_end > file_size:
+            fail("ZIP prefix member data exceeds its declared range")
+        prefix_crc_value = 0
+        prefix_offset = 0
+        while prefix_offset < prefix["compressed_size"]:
+            length = min(WRITE_CHUNK_SIZE, prefix["compressed_size"] - prefix_offset)
+            prefix_crc_value = binascii.crc32(
+                _read_at(stream, prefix_data_start + prefix_offset, length),
+                prefix_crc_value,
+            ) & 0xFFFFFFFF
+            prefix_offset += length
+        if prefix_crc_value != prefix["crc"]:
+            fail("ZIP prefix member CRC does not match its central directory")
+
         local_offset = target["local_offset"]
         if local_offset + LOCAL.size > directory_offset:
             fail("ZIP target local header is outside the file-data range")
@@ -245,10 +320,13 @@ def build_oracle(path: Path) -> dict:
             (local_compressed, target["compressed_size"]),
             (local_uncompressed, target["uncompressed_size"]),
             (local_name_length, target["name_length"]),
-            (local_extra_length, target["extra_length"]),
         ):
             if actual != expected:
                 fail("ZIP local and central target metadata disagree")
+        # A ZIP64 central-directory extra can contain only the target's
+        # local-header offset when the member sizes still fit in 32 bits.
+        # That offset is not repeated in the local header, so the two extra
+        # field lengths are allowed to differ in this valid mixed case.
         name_start = local_offset + LOCAL.size
         data_start = name_start + local_name_length + local_extra_length
         data_end = data_start + target["compressed_size"]

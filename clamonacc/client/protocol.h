@@ -22,6 +22,7 @@
 #ifndef ONAS_PROTO_H
 #define ONAS_PROTO_H
 
+#include <stdio.h>
 #include <curl/curl.h>
 
 #include "misc.h"
@@ -30,5 +31,6 @@
 struct action_source;
 
 int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const struct action_source *action_source,
-                  int fd, int64_t timeout, int *printok, int *errors, cl_error_t *ret_code);
+                  int fd, int64_t timeout, int *printok, int *errors, cl_error_t *ret_code,
+                  FILE *report_stream, int *report_written, uint64_t event_id);
 #endif

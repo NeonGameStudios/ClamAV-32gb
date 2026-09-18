@@ -1238,6 +1238,14 @@ write_config()
         printf 'MaxContiguousSize 32G\n'
         printf 'PCREMaxFileSize 32G\n'
         printf 'StreamMaxLength 32G\n'
+        # Keep daemon engine-side large-file caps aligned with the direct
+        # clamscan qualification path.  These options are separate from the
+        # shared scan-resource budgets above and otherwise retain small legacy
+        # defaults even when the 32-GiB service profile is enabled.
+        printf 'MaxHTMLNormalize 32G\n'
+        printf 'MaxHTMLNoTags 32G\n'
+        printf 'MaxScriptNormalize 32G\n'
+        printf 'MaxZipTypeRcg 32G\n'
         printf 'MaxScanTime %s\n' "$max_scan_time_ms"
         printf 'AlertExceedsMax %s\n' "$alert_exceeds_max"
         printf 'MaxRecursion 17\n'
@@ -1460,6 +1468,8 @@ run_direct_production()
             "$build_dir/clamscan/clamscan" --database="$production_db" \
             --max-filesize=32G --max-scansize=64G --max-matcher-work=256G \
             --max-temporary-size=64G --max-contiguous-size=32G \
+            --max-htmlnormalize=32G --max-htmlnotags=32G \
+            --max-scriptnormalize=32G --max-ziptypercg=32G \
             --pcre-max-filesize=32G --max-scantime="$max_scan_time_ms" \
             --no-summary --debug --report-json="$report" "$production_file" \
             > "$out/logs/production-clamscan.log" 2>&1 || exit $?
@@ -1492,6 +1502,8 @@ run_direct_stdin()
             "$build_dir/clamscan/clamscan" --database="$edge_db" \
             --max-filesize=32G --max-scansize=64G --max-matcher-work=256G \
             --max-temporary-size=64G --max-contiguous-size=32G \
+            --max-htmlnormalize=32G --max-htmlnotags=32G \
+            --max-scriptnormalize=32G --max-ziptypercg=32G \
             --pcre-max-filesize=32G --max-scantime="$max_scan_time_ms" \
             --tempdir="$out/tmp" --no-summary --debug \
             --report-json="$stdin_report" - < "$edge_file" \

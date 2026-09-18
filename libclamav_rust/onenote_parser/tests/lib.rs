@@ -145,6 +145,7 @@ fn test_parse_section_path_reads_before_large_file_rejection() {
     let error = result.expect_err("zero-filled input is not a valid section");
     assert!(
         !error.is_resource_limit(),
-        "path parser rejected the file by whole-file size before parsing: {error}"
+        "path parser rejected the file by whole-file size before parsing: {error}",
+        error = error
     );
 }

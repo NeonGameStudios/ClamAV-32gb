@@ -68,6 +68,11 @@ CASE_COMPLETION_CONTRACTS = {
     "clean-edge": {"COMPLETE"},
     "detection-edge": {"DETECTION_TERMINATED"},
     "limit-edge": {"LIMIT_INCOMPLETE"},
+    # On-access permission has additional fail-closed outcomes beyond the
+    # common ingress trio; R13 verifies these with real fanotify events.
+    "resource-edge": {"RESOURCE_FAILURE"},
+    "timeout-edge": {"APPLICATION_ABORT"},
+    "parser-edge": {"MALFORMED_CONFIRMED"},
     "valid-complete": {"COMPLETE"},
     "late-detection": {"DETECTION_TERMINATED"},
     "malformed-confirmed": {"MALFORMED_CONFIRMED"},
@@ -280,6 +285,11 @@ def case_suffixes(kind: str, identifier: str) -> list[str]:
         return ["required-behavior", "required-failure"]
     if kind == "unsupported":
         return ["unsupported-policy"]
+    if kind == "on-access" and identifier == "permission":
+        return [
+            "clean-edge", "detection-edge", "limit-edge", "resource-edge",
+            "timeout-edge", "parser-edge",
+        ]
     if kind in INGRESS_KINDS or (kind == "library" and identifier in {"path", "fd", "fmap"}):
         return ["clean-edge", "detection-edge", "limit-edge"]
     if kind == "parser":

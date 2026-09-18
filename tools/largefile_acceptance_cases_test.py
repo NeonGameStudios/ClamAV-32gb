@@ -31,6 +31,19 @@ class AcceptanceCaseTests(unittest.TestCase):
         self.assertIn("clamd:SCAN:clean-edge", mapping[2]["required_case_ids"])
         self.assertEqual(mapping[3]["required_case_ids"], "unsupported:macos-first-release:unsupported-policy")
 
+    def test_on_access_permission_requires_fail_closed_cases(self):
+        self.assertEqual(
+            cases.case_suffixes("on-access", "permission"),
+            [
+                "clean-edge", "detection-edge", "limit-edge", "resource-edge",
+                "timeout-edge", "parser-edge",
+            ],
+        )
+        self.assertEqual(
+            cases.case_completion_contract("on-access:permission:parser-edge"),
+            {"MALFORMED_CONFIRMED"},
+        )
+
     def test_missing_capability_is_rejected(self):
         lines = self.mapping.read_text(encoding="utf-8").splitlines()
         self.mapping.write_text("\n".join(lines[:-1]) + "\n", encoding="utf-8")

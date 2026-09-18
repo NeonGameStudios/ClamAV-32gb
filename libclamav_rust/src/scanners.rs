@@ -42,7 +42,7 @@ use crate::{
     sys::{
         cl_error_t, cl_error_t_CL_EFORMAT, cl_error_t_CL_EMAXFILES, cl_error_t_CL_EMAXSIZE,
         cl_error_t_CL_EMEM, cl_error_t_CL_EREAD, cl_error_t_CL_EPARSE,
-        cl_error_t_CL_ETIMEOUT, cl_error_t_CL_ERESOURCE,
+        cl_error_t_CL_ESTAT, cl_error_t_CL_ETIMEOUT, cl_error_t_CL_ERESOURCE,
         cl_error_t_CL_ESEEK, cl_error_t_CL_ETMPFILE, cl_error_t_CL_EUNPACK, cl_error_t_CL_EUNLINK,
         cl_error_t_CL_EWRITE,
         cl_error_t_CL_BREAK, cl_error_t_CL_CLEAN, cl_error_t_CL_ENULLARG, cl_error_t_CL_SUCCESS,
@@ -114,9 +114,38 @@ impl onenote_parser::BlobSpoolBudget for OneNoteParserSpoolBudget {
             unsafe { sys::cli_scan_release_temporary(self.ctx, bytes) };
         }
     }
+
+    fn note_cleanup_failure(&self) {
+        if !self.ctx.is_null() {
+            let reason = b"OneNote parser temporary spool cleanup failed\0";
+            unsafe { sys::cli_mark_scan_incomplete(self.ctx, reason.as_ptr().cast()) };
+        }
+    }
 }
 
 const LHA_HEADER_ALLOCATION_LIMIT: usize = 1024 * 1024 * 1024;
+
+#[cfg(unix)]
+fn temp_spool_identity(fd: libc::c_int) -> Option<(u64, u64)> {
+    let mut metadata: libc::stat = unsafe { std::mem::zeroed() };
+    if unsafe { libc::fstat(fd, &mut metadata) } != 0 {
+        return None;
+    }
+    Some((metadata.st_dev as u64, metadata.st_ino as u64))
+}
+
+#[cfg(unix)]
+fn temp_spool_path_is_owned(path: *const c_char, owner: (u64, u64)) -> io::Result<bool> {
+    let mut metadata: libc::stat = unsafe { std::mem::zeroed() };
+    if unsafe { libc::lstat(path, &mut metadata) } != 0 {
+        let error = io::Error::last_os_error();
+        if error.raw_os_error() == Some(libc::ENOENT) {
+            return Ok(false);
+        }
+        return Err(error);
+    }
+    Ok((metadata.st_dev as u64, metadata.st_ino as u64) == owner)
+}
 
 fn lha_pathname_input_within_allocation_limit(filename_len: usize, extra_headers_len: usize) -> bool {
     let input_len = match filename_len.checked_add(extra_headers_len) {
@@ -325,6 +354,8 @@ struct TempSpool {
     ctx: *mut cli_ctx,
     fd: libc::c_int,
     path: CString,
+    #[cfg(unix)]
+    owner_identity: (u64, u64),
     reserved: u64,
     written: u64,
     cleaned: bool,
@@ -365,12 +396,26 @@ impl TempSpool {
             });
         }
 
+        #[cfg(unix)]
+        let owner_identity = match temp_spool_identity(fd) {
+            Some(identity) => identity,
+            None => {
+                libc::close(fd);
+                let _ = sys::cli_unlink(raw_name);
+                libc::free(raw_name.cast());
+                sys::cli_scan_release_temporary(ctx, expected_size);
+                return Err(cl_error_t_CL_ESTAT);
+            }
+        };
+
         let path = CStr::from_ptr(raw_name).to_owned();
         libc::free(raw_name.cast());
         Ok(Self {
             ctx,
             fd,
             path,
+            #[cfg(unix)]
+            owner_identity,
             reserved: expected_size,
             written: 0,
             cleaned: false,
@@ -508,11 +553,26 @@ impl TempSpool {
 
         let keep_tmp = !(*self.ctx).engine.is_null()
             && (*(*self.ctx).engine).keeptmp != 0;
-        if !keep_tmp
-            && sys::cli_unlink(self.path.as_ptr()) != cl_error_t_CL_SUCCESS
-            && status == cl_error_t_CL_SUCCESS
-        {
-            status = cl_error_t_CL_EUNLINK;
+        if !keep_tmp {
+            #[cfg(unix)]
+            let path_is_owned = temp_spool_path_is_owned(self.path.as_ptr(), self.owner_identity);
+            #[cfg(not(unix))]
+            let path_is_owned: Result<bool, ()> = Ok(true);
+
+            match path_is_owned {
+                Ok(true) => {
+                    if sys::cli_unlink(self.path.as_ptr()) != cl_error_t_CL_SUCCESS
+                        && status == cl_error_t_CL_SUCCESS
+                    {
+                        status = cl_error_t_CL_EUNLINK;
+                    }
+                }
+                Ok(false) => {}
+                Err(_) if status == cl_error_t_CL_SUCCESS => {
+                    status = cl_error_t_CL_EUNLINK;
+                }
+                Err(_) => {}
+            }
         }
 
         self.release_reservation();
@@ -1840,6 +1900,36 @@ mod tests {
     fn rust_spool_write_retries_interrupted_syscalls() {
         assert!(spool_write_is_interrupted(&io::Error::from_raw_os_error(libc::EINTR)));
         assert!(!spool_write_is_interrupted(&io::Error::from_raw_os_error(libc::EIO)));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn temp_spool_cleanup_rejects_replaced_path() {
+        use std::os::unix::ffi::OsStrExt;
+
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("rust-spool");
+        std::fs::write(&path, b"owner").unwrap();
+        let path_c = CString::new(path.as_os_str().as_bytes()).unwrap();
+        let fd = unsafe { libc::open(path_c.as_ptr(), libc::O_RDONLY) };
+        assert!(fd >= 0);
+        let owner = temp_spool_identity(fd).expect("owner identity should be readable");
+
+        std::fs::remove_file(&path).unwrap();
+        std::fs::write(&path, b"replacement").unwrap();
+        assert!(!temp_spool_path_is_owned(path_c.as_ptr(), owner).unwrap());
+
+        assert_eq!(std::fs::read(&path).unwrap(), b"replacement");
+        unsafe { libc::close(fd) };
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn temp_spool_cleanup_reports_path_inspection_failure() {
+        let oversized_path = format!("/tmp/{}", "x".repeat(5000));
+        let path_c = CString::new(oversized_path).unwrap();
+
+        assert!(temp_spool_path_is_owned(path_c.as_ptr(), (0, 0)).is_err());
     }
 
     #[test]

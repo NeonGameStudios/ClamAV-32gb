@@ -356,6 +356,37 @@ if(ENABLE_APP AND UNIX)
     set_tests_properties(largefile_clamd_threadpool PROPERTIES
         LABELS "largefile;release-controls"
         TIMEOUT 60)
+
+    # A zero-progress write must fail immediately instead of spinning forever
+    # while a clamd response or other daemon payload is being sent.
+    add_executable(check_clamd_writen
+        check_clamd_writen.c
+        ${PROJECT_SOURCE_DIR}/clamd/clamd_others.c)
+    target_include_directories(check_clamd_writen
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}
+            ${PROJECT_SOURCE_DIR}/clamd
+            ${PROJECT_SOURCE_DIR}/common
+            ${PROJECT_SOURCE_DIR}/libclamav
+            ${CMAKE_BINARY_DIR})
+    target_link_libraries(check_clamd_writen
+        PRIVATE
+            ClamAV::libclamav
+            ClamAV::common
+            Threads::Threads)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_compile_definitions(check_clamd_writen PRIVATE
+            CLAMAV_TEST_WRITE_WRAP)
+        target_link_options(check_clamd_writen PRIVATE
+            "-Wl,--wrap=write"
+            "-Wl,--wrap=malloc")
+    endif()
+    set_target_properties(check_clamd_writen PROPERTIES COMPILE_FLAGS "${WARNCFLAGS}")
+    add_test(NAME largefile_clamd_writen COMMAND check_clamd_writen
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    set_tests_properties(largefile_clamd_writen PROPERTIES
+        LABELS "largefile;release-controls"
+        TIMEOUT 60)
 endif()
 
 # A configured milter must not continue with a non-null but unusable
@@ -383,6 +414,30 @@ if(ENABLE_APP AND ENABLE_MILTER AND UNIX)
     add_test(NAME largefile_milter_connpool COMMAND check_milter_connpool
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
     set_tests_properties(largefile_milter_connpool PROPERTIES
+        LABELS "largefile;release-controls"
+        TIMEOUT 60)
+endif()
+
+# A file-backed SkipAuthenticated list must accept empty/comment-only files
+# without writing before its regex buffer, and must size long entries safely.
+if(ENABLE_APP AND ENABLE_MILTER AND UNIX)
+    add_executable(check_milter_skipauth
+        check_milter_skipauth.c
+        ${PROJECT_SOURCE_DIR}/clamav-milter/allow_list.c)
+    target_include_directories(check_milter_skipauth
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/clamav-milter
+            ${PROJECT_SOURCE_DIR}/common
+            ${PROJECT_SOURCE_DIR}/libclamav
+            ${CMAKE_BINARY_DIR})
+    target_link_libraries(check_milter_skipauth
+        PRIVATE
+            ClamAV::libclamav
+            ClamAV::common)
+    set_target_properties(check_milter_skipauth PROPERTIES COMPILE_FLAGS "${WARNCFLAGS}")
+    add_test(NAME largefile_milter_skipauth COMMAND check_milter_skipauth
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    set_tests_properties(largefile_milter_skipauth PROPERTIES
         LABELS "largefile;release-controls"
         TIMEOUT 60)
 endif()
@@ -694,6 +749,14 @@ add_test(NAME largefile_clamd_report_protocol
 add_test(NAME largefile_zip_late_member
     COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_zip_late_member_test.py"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+if(UNIX)
+    add_test(NAME largefile_clamonacc_stream_deadline
+        COMMAND sh "${CMAKE_SOURCE_DIR}/tools/largefile_clamonacc_stream_deadline_regression.sh"
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+    set_tests_properties(largefile_clamonacc_stream_deadline PROPERTIES
+        LABELS "largefile;release-controls"
+        TIMEOUT 60)
+endif()
 add_test(NAME largefile_procfs_tree_rss
     COMMAND sh "${CMAKE_SOURCE_DIR}/tools/largefile_procfs_tree_rss_test.sh"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})

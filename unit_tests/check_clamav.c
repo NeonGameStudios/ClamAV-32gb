@@ -7525,6 +7525,48 @@ START_TEST(test_fmap_aging_is_bounded_and_wraps)
 }
 END_TEST
 
+#if SIZE_MAX > UINT32_MAX
+START_TEST(test_fmap_large_logical_windows_preserve_page_contents)
+{
+    struct synthetic_pread_state state;
+    cl_fmap_t *map;
+    const unsigned char *data;
+    unsigned char expected[4096];
+    const size_t length = (size_t)UINT64_C(32) * 1024U * 1024U * 1024U;
+    const size_t window = 64U * 1024U;
+    size_t offset;
+
+    /* The callback synthesizes a distinct byte for every logical page, so a
+     * stale or partially refilled anonymous page cannot pass by looking only
+     * at the first byte of each scan window. Match the 64-KiB read granularity
+     * used by stored ZIP extraction. The map is 32 GiB logically, but aging
+     * keeps physical residency bounded while this exercises the cursor through
+     * a full large-file traversal. */
+    memset(&state, 0, sizeof(state));
+    state.length  = length;
+    state.fail_at = -1;
+    map           = cl_fmap_open_handle(&state, 0, length, synthetic_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+
+    for (offset = 0; offset < length; offset += window) {
+        size_t request = MIN(length - offset, window);
+        size_t page_offset;
+
+        data = fmap_need_off_once(map, offset, request);
+        ck_assert_ptr_nonnull(data);
+        for (page_offset = 0; page_offset < request; page_offset += sizeof(expected)) {
+            size_t page_length = MIN(request - page_offset, sizeof(expected));
+
+            memset(expected, synthetic_byte_at(offset + page_offset), page_length);
+            ck_assert_int_eq(memcmp(data + page_offset, expected, page_length), 0);
+        }
+    }
+
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
+
 START_TEST(test_fmap_gets_releases_read_pages)
 {
     struct synthetic_pread_state state;
@@ -26089,6 +26131,30 @@ static off_t ai_model_read_failure_cb(void *handle, void *buf, size_t count, off
     return -1;
 }
 
+struct bounded_read_failure_state {
+    const uint8_t *data;
+    size_t length;
+    size_t fail_at;
+};
+
+static off_t bounded_read_failure_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    struct bounded_read_failure_state *state = handle;
+    size_t position;
+
+    if (offset < 0 || (uint64_t)offset >= state->length)
+        return 0;
+    position = (size_t)offset;
+    if (position <= state->fail_at && count > state->fail_at - position) {
+        errno = EIO;
+        return -1;
+    }
+    if (count > state->length - position)
+        count = state->length - position;
+    memcpy(buf, state->data + position, count);
+    return (off_t)count;
+}
+
 START_TEST(test_ai_model_parser_preserves_fmap_read_failure)
 {
     static const uint8_t data[] = {
@@ -26146,6 +26212,74 @@ START_TEST(test_python_compiled_parser_preserves_fmap_read_failure)
     ck_assert_ptr_nonnull(scan_engine);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
     map = cl_fmap_open_handle(NULL, 0, sizeof(data), ai_model_read_failure_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_PYTHON_COMPILED", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_python_compiled_parser_preserves_skipped_fmap_read_failure)
+{
+    enum { code_size = 300000, data_size = 8 + 1 + 16 + 5 + code_size + 10 + 10 + 4 + 5 };
+    static uint8_t data[data_size];
+    struct bounded_read_failure_state state;
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+    size_t offset;
+    unsigned int index;
+
+    memset(data, 0, sizeof(data));
+    memcpy(data, "B\r\r\n", 4);
+    offset     = 8;
+    data[offset++] = 'c';
+    offset += 16; /* legacy code-object integer fields */
+    data[offset++] = 's';
+    data[offset++] = (uint8_t)code_size;
+    data[offset++] = (uint8_t)(code_size >> 8);
+    data[offset++] = (uint8_t)(code_size >> 16);
+    data[offset++] = (uint8_t)(code_size >> 24);
+    offset += code_size;
+    for (index = 0; index < 5; index++) {
+        data[offset++] = ')';
+        data[offset++] = 0;
+    }
+    for (index = 0; index < 2; index++) {
+        data[offset++] = 's';
+        offset += 4;
+    }
+    offset += 4; /* first line */
+    data[offset++] = 's';
+    offset += 4; /* line table */
+    ck_assert_uint_eq(offset, sizeof(data));
+
+    memset(&state, 0, sizeof(state));
+    state.data    = data;
+    state.length  = sizeof(data);
+    state.fail_at = 256U * 1024U;
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_handle(&state, 0, sizeof(data), bounded_read_failure_cb, 0);
     ck_assert_ptr_nonnull(map);
     verdict    = CL_VERDICT_STRONG_INDICATOR;
     last_alert = "stale";
@@ -26652,6 +26786,122 @@ START_TEST(test_ai_model_onnx_modelproto_is_structurally_supported)
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
     ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_onnx_preserves_skipped_fmap_read_failure)
+{
+    enum { producer_size = 300000, data_size = 2 + 4 + producer_size + 2 + 4 };
+    static uint8_t data[data_size];
+    struct bounded_read_failure_state state;
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+    size_t offset;
+
+    memset(data, 0, sizeof(data));
+    data[0] = 0x08;
+    data[1] = 0x01; /* ir_version = 1 */
+    data[2] = 0x12;
+    data[3] = 0xe0;
+    data[4] = 0xa7;
+    data[5] = 0x12; /* producer_name length = 300000 */
+    offset = 6 + producer_size;
+    data[offset++] = 0x3a;
+    data[offset++] = 0x00; /* empty graph */
+    data[offset++] = 0x42;
+    data[offset++] = 0x02;
+    data[offset++] = 0x10;
+    data[offset++] = 0x01; /* opset_import { version = 1 } */
+    ck_assert_uint_eq(offset, sizeof(data));
+
+    memset(&state, 0, sizeof(state));
+    state.data    = data;
+    state.length  = sizeof(data);
+    state.fail_at = 256U * 1024U;
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_handle(&state, 0, sizeof(data), bounded_read_failure_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_ai_model_gguf_preserves_skipped_fmap_read_failure)
+{
+    enum { string_size = 300000, data_size = 45 + string_size + 19 };
+    static uint8_t data[data_size];
+    struct bounded_read_failure_state state;
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+    size_t offset;
+
+    memset(data, 0, sizeof(data));
+    memcpy(data, "GGUF", 4);
+    data[4]  = 0x01; /* version = 1 */
+    data[16] = 0x01; /* one metadata entry */
+    data[24] = 0x01; /* metadata key length = 1 */
+    data[32] = 'x';
+    data[33] = 0x08; /* STRING */
+    data[37] = (uint8_t)string_size;
+    data[38] = (uint8_t)(string_size >> 8);
+    data[39] = (uint8_t)(string_size >> 16);
+    data[40] = (uint8_t)(string_size >> 24);
+    offset   = 45 + string_size;
+    ck_assert_uint_eq(offset + 19, sizeof(data));
+
+    memset(&state, 0, sizeof(state));
+    state.data    = data;
+    state.length  = sizeof(data);
+    state.fail_at = 256U * 1024U;
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_handle(&state, 0, sizeof(data), bounded_read_failure_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_AI_MODEL", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
@@ -59332,6 +59582,7 @@ END_TEST
 START_TEST(test_udf_descriptor_size_arithmetic_is_fail_visible)
 {
     FileEntryDescriptor fed;
+    ExtendedFileEntryDescriptor efed;
     size_t size = 0;
 
     memset(&fed, 0, sizeof(fed));
@@ -59339,6 +59590,11 @@ START_TEST(test_udf_descriptor_size_arithmetic_is_fail_visible)
     cli_writeint32(&fed.allocationDescLen, 32);
     ck_assert(getFileEntryDescriptorSize(&fed, &size));
     ck_assert_uint_eq(size, FILE_ENTRY_DESCRIPTOR_SIZE_KNOWN + 16U + 32U);
+    memset(&efed, 0, sizeof(efed));
+    cli_writeint32(&efed.extendedAttrLen, 16);
+    cli_writeint32(&efed.allocationDescLen, 32);
+    ck_assert(getExtendedFileEntryDescriptorSize(&efed, &size));
+    ck_assert_uint_eq(size, sizeof(efed) + 16U + 32U);
     ck_assert(!cli_udf_size_add(SIZE_MAX, 1U, &size));
     ck_assert(!cli_udf_size_add(0, 1U, NULL));
 }
@@ -59758,6 +60014,10 @@ static void test_udf_finalize_descriptor_tags(uint8_t *data, size_t base,
                 ck_assert(getFileEntryDescriptorSize(
                     (const FileEntryDescriptor *)descriptor, &descriptor_size));
                 break;
+            case 266:
+                ck_assert(getExtendedFileEntryDescriptorSize(
+                    (const ExtendedFileEntryDescriptor *)descriptor, &descriptor_size));
+                break;
             default:
                 continue;
         }
@@ -59915,6 +60175,7 @@ START_TEST(test_udf_declared_information_length_is_fail_visible)
         UDF_TEST_FILE_SET            = 256,
         UDF_TEST_FILE_IDENTIFIER     = 257,
         UDF_TEST_FILE_ENTRY          = 261,
+        UDF_TEST_EXTENDED_FILE_ENTRY = 266,
         UDF_TEST_DECLARED_LENGTH     = 2048,
         UDF_TEST_ALLOCATED_LENGTH    = 1024
     };
@@ -60033,6 +60294,26 @@ START_TEST(test_udf_declared_information_length_is_fail_visible)
     ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF extended allocation descriptor transformation is unsupported");
     ck_assert(map->dont_cache_flag);
 
+    /* The legacy linear descriptor run must accept EFE records as well as
+     * regular File Entries and must use the same empty-file admission path. */
+    memset(data + fed_offset, 0, VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le16(data + fed_offset + offsetof(DescriptorTag, tagId), UDF_TEST_EXTENDED_FILE_ENTRY);
+    data[fed_offset + offsetof(ExtendedFileEntryDescriptor, icbTag) + offsetof(ICBTag, fileType)] = 5;
+    test_udf_put_le64(data + fed_offset + offsetof(ExtendedFileEntryDescriptor, infoLength), 0);
+    test_udf_put_le32(data + fed_offset + offsetof(ExtendedFileEntryDescriptor, allocationDescLen), 0);
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map->dont_cache_flag = false;
+    ctx.options         = &options;
+    ctx.engine          = &engine;
+    ctx.fmap            = map;
+
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
     cl_fmap_close(map);
     free(data);
 }
@@ -60055,6 +60336,7 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
         UDF_TEST_FILE_SET        = 256,
         UDF_TEST_FILE_IDENTIFIER = 257,
         UDF_TEST_FILE_ENTRY      = 261,
+        UDF_TEST_EXTENDED_FILE_ENTRY = 266,
         UDF_TEST_SENTINEL        = 0xff03,
         UDF_TEST_PAYLOAD_LENGTH  = 3
     };
@@ -60288,8 +60570,9 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
                   "reserved UDF allocation mode reached child alert: %s", last_virus ? last_virus : "(null)");
 
     /* A directory FID is an authoritative traversal request, not a clean
-     * skippable member. Until directory-tree traversal is implemented, make
-     * the uninspected subtree explicitly unsupported and non-cacheable. */
+     * skippable member. The legacy linear descriptor path still cannot resolve
+     * that subtree, so keep its unsupported result explicit and non-cacheable;
+     * the anchored path below exercises the bounded directory walk. */
     test_udf_put_le16(data + fed_offset + offsetof(FileEntryDescriptor, icbTag) + offsetof(ICBTag, flags), 0);
     data[fid_offset + offsetof(FileIdentifierDescriptor, characteristics)] = 2;
     test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
@@ -60651,13 +60934,16 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
         test_udf_put_le16(data + child_fid_offset + offsetof(FileIdentifierDescriptor, implementationLength), 0);
         data[child_fid_offset + offsetof(FileIdentifierDescriptor, rest)] = 'x';
 
-        test_udf_put_le16(data + child_fed_offset + offsetof(DescriptorTag, tagId), UDF_TEST_FILE_ENTRY);
+        /* The anchored tree must accept the modern Extended File Entry form
+         * with the same bounded allocation and nested-scan semantics as a
+         * regular File Entry. */
+        test_udf_put_le16(data + child_fed_offset + offsetof(DescriptorTag, tagId), UDF_TEST_EXTENDED_FILE_ENTRY);
         test_udf_put_le32(data + child_fed_offset + offsetof(DescriptorTag, tagLocation), 4);
-        data[child_fed_offset + offsetof(FileEntryDescriptor, icbTag) + offsetof(ICBTag, fileType)] = 5;
-        test_udf_put_le64(data + child_fed_offset + offsetof(FileEntryDescriptor, infoLength), 3);
-        test_udf_put_le32(data + child_fed_offset + offsetof(FileEntryDescriptor, allocationDescLen),
+        data[child_fed_offset + offsetof(ExtendedFileEntryDescriptor, icbTag) + offsetof(ICBTag, fileType)] = 5;
+        test_udf_put_le64(data + child_fed_offset + offsetof(ExtendedFileEntryDescriptor, infoLength), 3);
+        test_udf_put_le32(data + child_fed_offset + offsetof(ExtendedFileEntryDescriptor, allocationDescLen),
                           sizeof(short_ad));
-        allocation_descriptor_offset = child_fed_offset + offsetof(FileEntryDescriptor, rest);
+        allocation_descriptor_offset = child_fed_offset + sizeof(ExtendedFileEntryDescriptor);
         test_udf_put_le32(data + allocation_descriptor_offset + offsetof(short_ad, length), 3);
         test_udf_put_le32(data + allocation_descriptor_offset + offsetof(short_ad, position), 5);
         memcpy(data + child_payload_offset, "UDF", 3);
@@ -60679,12 +60965,38 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     }
     cl_fmap_close(map);
 
+    /* A modern EFE whose fixed header plus extended-attribute area exceeds
+     * the logical block must fail before any variable data is consumed. */
+    {
+        size_t child_fed_offset = base + (20 * VOLUME_DESCRIPTOR_SIZE);
+
+        memset(data + child_fed_offset, 0, VOLUME_DESCRIPTOR_SIZE);
+        test_udf_put_le16(data + child_fed_offset + offsetof(DescriptorTag, tagId), UDF_TEST_EXTENDED_FILE_ENTRY);
+        test_udf_put_le32(data + child_fed_offset + offsetof(DescriptorTag, tagLocation), 4);
+        test_udf_put_le32(data + child_fed_offset + offsetof(ExtendedFileEntryDescriptor, extendedAttrLen),
+                          VOLUME_DESCRIPTOR_SIZE);
+    }
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF extended file-entry descriptor exceeds its logical block");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
     /* A valid anchored UDF tree can contain a regular file with no
      * allocation descriptors and no information bytes. It is still a
      * logical child and must consume a MaxFiles slot. */
     {
         size_t child_fed_offset = base + (20 * VOLUME_DESCRIPTOR_SIZE);
 
+        memset(data + child_fed_offset, 0, VOLUME_DESCRIPTOR_SIZE);
+        test_udf_put_le16(data + child_fed_offset + offsetof(DescriptorTag, tagId), UDF_TEST_FILE_ENTRY);
+        test_udf_put_le32(data + child_fed_offset + offsetof(DescriptorTag, tagLocation), 4);
+        data[child_fed_offset + offsetof(FileEntryDescriptor, icbTag) + offsetof(ICBTag, fileType)] = 5;
         test_udf_put_le64(data + child_fed_offset + offsetof(FileEntryDescriptor, infoLength), 0);
         test_udf_put_le32(data + child_fed_offset + offsetof(FileEntryDescriptor, allocationDescLen), 0);
     }
@@ -60712,6 +61024,37 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     ck_assert(!ctx.scan_incomplete);
     ck_assert(!map->dont_cache_flag);
     ck_assert_uint_eq(ctx.scannedfiles, 2);
+
+    /* An empty nested directory is a recognized child just like an empty
+     * regular file. It must consume the inclusive MaxFiles slot instead of
+     * returning clean without updating scannedfiles. */
+    {
+        size_t directory_offset = base + (19 * VOLUME_DESCRIPTOR_SIZE);
+        size_t child_fid_offset = directory_offset + (FILE_IDENTIFIER_DESCRIPTOR_SIZE_KNOWN + 2);
+        size_t child_fed_offset = base + (20 * VOLUME_DESCRIPTOR_SIZE);
+
+        data[child_fid_offset + offsetof(FileIdentifierDescriptor, characteristics)] = 2;
+        test_udf_put_le16(data + child_fed_offset + offsetof(DescriptorTag, tagId),
+                          UDF_TEST_FILE_ENTRY);
+        test_udf_put_le32(data + child_fed_offset + offsetof(DescriptorTag, tagLocation), 4);
+        data[child_fed_offset + offsetof(FileEntryDescriptor, icbTag) + offsetof(ICBTag, fileType)] = 4;
+        test_udf_put_le64(data + child_fed_offset + offsetof(FileEntryDescriptor, infoLength), 0);
+        test_udf_put_le32(data + child_fed_offset + offsetof(FileEntryDescriptor, allocationDescLen), 0);
+        test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
+    }
+    map->dont_cache_flag = false;
+    ctx.scan_incomplete = false;
+    ctx.scan_incomplete_reason = NULL;
+    ctx.limit_exceeded = false;
+    ctx.limit_exceeded_result = CL_SUCCESS;
+    ctx.scannedfiles = 1;
+    scan_engine->maxfiles = 1;
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxFiles");
+    ck_assert(map->dont_cache_flag);
+
     cl_fmap_close(map);
 
     cl_engine_free(scan_engine);
@@ -61515,7 +61858,7 @@ static void test_hfsplus_extent_overflow_leaf(uint8_t *data, size_t offset)
                           sizeof(hfsPlusExtentKey) - sizeof(uint16_t));
     record[offsetof(hfsPlusExtentKey, forkType)] = HFSPLUS_FORKTYPE_DATA;
     test_hfsplus_put_be32(record + offsetof(hfsPlusExtentKey, fileID), user_file_id);
-    test_hfsplus_put_be32(record + offsetof(hfsPlusExtentKey, startBlock), 8);
+    test_hfsplus_put_be32(record + offsetof(hfsPlusExtentKey, startBlock), 1);
     test_hfsplus_put_be32(record + sizeof(hfsPlusExtentKey) + offsetof(hfsPlusExtentDescriptor, startBlock), 40);
     test_hfsplus_put_be32(record + sizeof(hfsPlusExtentKey) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
 
@@ -61524,7 +61867,7 @@ static void test_hfsplus_extent_overflow_leaf(uint8_t *data, size_t offset)
                           sizeof(hfsPlusExtentKey) - sizeof(uint16_t));
     record[offsetof(hfsPlusExtentKey, forkType)] = HFSPLUS_FORKTYPE_RSRC;
     test_hfsplus_put_be32(record + offsetof(hfsPlusExtentKey, fileID), user_file_id);
-    test_hfsplus_put_be32(record + offsetof(hfsPlusExtentKey, startBlock), 8);
+    test_hfsplus_put_be32(record + offsetof(hfsPlusExtentKey, startBlock), 1);
     test_hfsplus_put_be32(record + sizeof(hfsPlusExtentKey) + offsetof(hfsPlusExtentDescriptor, startBlock), 41);
     test_hfsplus_put_be32(record + sizeof(hfsPlusExtentKey) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
 
@@ -62667,21 +63010,15 @@ START_TEST(test_hfsplus_extent_overflow_records_are_followed)
     test_hfsplus_catalog_file_leaf(data, 20 * 512);
     file = data + (20 * 512) + sizeof(hfsNodeDescriptor) + 6 + 2;
     fork = file + offsetof(hfsPlusCatalogFile, dataFork);
-    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 9 * 512);
-    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 9);
-    for (extent = 0; extent < 8; extent++) {
-        size_t extent_offset = offsetof(hfsPlusForkData, extents) + extent * sizeof(hfsPlusExtentDescriptor);
-        test_hfsplus_put_be32(fork + extent_offset + offsetof(hfsPlusExtentDescriptor, startBlock), 32U + extent);
-        test_hfsplus_put_be32(fork + extent_offset + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
-    }
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 2 * 512);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 2);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 32);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
     fork = file + offsetof(hfsPlusCatalogFile, resourceFork);
-    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 9 * 512);
-    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 9);
-    for (extent = 0; extent < 8; extent++) {
-        size_t extent_offset = offsetof(hfsPlusForkData, extents) + extent * sizeof(hfsPlusExtentDescriptor);
-        test_hfsplus_put_be32(fork + extent_offset + offsetof(hfsPlusExtentDescriptor, startBlock), 42U + extent);
-        test_hfsplus_put_be32(fork + extent_offset + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
-    }
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 2 * 512);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 2);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 42);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
     memcpy(data + (40 * 512), "MZP", 3);
 
     scan_engine = cl_engine_new();
@@ -62715,6 +63052,48 @@ START_TEST(test_hfsplus_extent_overflow_records_are_followed)
 
     cl_fmap_close(map);
     map = NULL;
+
+    /* A zero descriptor after the first inline extent is the normal list
+     * terminator. A descriptor with only one zero field is still malformed. */
+    fork = file + offsetof(hfsPlusCatalogFile, dataFork);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 0);
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = scan_engine;
+    ctx.fmap              = map;
+    ctx.options           = &options;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_scanhfsplus(&ctx);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ fork extent is incomplete");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    /* A non-zero descriptor after the all-zero terminator must not be
+     * silently ignored, even when the requested block was already inline. */
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+    test_hfsplus_put_be32(fork + 2 * sizeof(hfsPlusExtentDescriptor) + offsetof(hfsPlusExtentDescriptor, startBlock), 31);
+    test_hfsplus_put_be32(fork + 2 * sizeof(hfsPlusExtentDescriptor) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = scan_engine;
+    ctx.fmap              = map;
+    ctx.options           = &options;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_scanhfsplus(&ctx);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ fork extent follows its terminator");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    test_hfsplus_put_be32(fork + 2 * sizeof(hfsPlusExtentDescriptor) + offsetof(hfsPlusExtentDescriptor, startBlock), 0);
+    test_hfsplus_put_be32(fork + 2 * sizeof(hfsPlusExtentDescriptor) + offsetof(hfsPlusExtentDescriptor, blockCount), 0);
 
     /* A matching record must not let a malformed tail escape validation. */
     test_hfsplus_put_be32(data + (5 * 512) + offsetof(hfsNodeDescriptor, fLink), 1);
@@ -67284,6 +67663,9 @@ static Suite *test_cl_suite(void)
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
     TCase *tc_largefile = NULL;
 #endif
+#if !defined(_WIN32) && defined(ANONYMOUS_MAP) && SIZE_MAX > UINT32_MAX
+    TCase *tc_fmap_large = NULL;
+#endif
     TCase *tc_cl_scan  = tcase_create("cl_scan_api");
     TCase *tc_fmap_api = tcase_create("fmap_api");
     TCase *tc_metadata_json = tcase_create("metadata_json");
@@ -67731,6 +68113,13 @@ static Suite *test_cl_suite(void)
         suite_add_tcase(s, tc_largefile);
         tcase_add_checked_fixture(tc_largefile, cl_setup, cl_teardown);
         tcase_add_test(tc_largefile, test_library_exact_32g_tail_detection);
+    }
+#endif
+#if !defined(_WIN32) && defined(ANONYMOUS_MAP) && SIZE_MAX > UINT32_MAX
+    if (getenv("CLAMAV_FMAP_REGRESSION") != NULL) {
+        tc_fmap_large = tcase_create("fmap_large_logical");
+        suite_add_tcase(s, tc_fmap_large);
+        tcase_add_test(tc_fmap_large, test_fmap_large_logical_windows_preserve_page_contents);
     }
 #endif
     suite_add_tcase(s, tc_dmg);
@@ -68872,6 +69261,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ai_model_parser_rejects_incomplete_model);
     tcase_add_test(tc_cl, test_ai_model_parser_preserves_fmap_read_failure);
     tcase_add_test(tc_cl, test_python_compiled_parser_preserves_fmap_read_failure);
+    tcase_add_test(tc_cl, test_python_compiled_parser_preserves_skipped_fmap_read_failure);
+    tcase_add_test(tc_cl, test_ai_model_onnx_preserves_skipped_fmap_read_failure);
+    tcase_add_test(tc_cl, test_ai_model_gguf_preserves_skipped_fmap_read_failure);
     tcase_add_test(tc_cl, test_ai_model_onnx_accepts_node_metadata_properties);
     tcase_add_test(tc_cl, test_ai_model_onnx_accepts_named_typed_attribute);
     tcase_add_test(tc_cl, test_ai_model_onnx_rejects_unnamed_attribute);
@@ -69099,6 +69491,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_required_unsupported, test_ai_model_parser_rejects_incomplete_model);
     tcase_add_test(tc_required_unsupported, test_ai_model_parser_preserves_fmap_read_failure);
     tcase_add_test(tc_required_unsupported, test_python_compiled_parser_preserves_fmap_read_failure);
+    tcase_add_test(tc_required_unsupported, test_python_compiled_parser_preserves_skipped_fmap_read_failure);
+    tcase_add_test(tc_required_unsupported, test_ai_model_onnx_preserves_skipped_fmap_read_failure);
+    tcase_add_test(tc_required_unsupported, test_ai_model_gguf_preserves_skipped_fmap_read_failure);
     tcase_add_test(tc_required_unsupported, test_ai_model_onnx_accepts_node_metadata_properties);
     tcase_add_test(tc_required_unsupported, test_ai_model_onnx_accepts_named_typed_attribute);
     tcase_add_test(tc_required_unsupported, test_ai_model_onnx_rejects_unnamed_attribute);
@@ -69625,6 +70020,10 @@ static Suite *test_cl_suite(void)
     if (tc_largefile != NULL)
         tcase_set_timeout(tc_largefile, 900);
 #endif
+#if !defined(_WIN32) && defined(ANONYMOUS_MAP) && SIZE_MAX > UINT32_MAX
+    if (tc_fmap_large != NULL)
+        tcase_set_timeout(tc_fmap_large, 900);
+#endif
     user_timeout = getenv("T");
     if (user_timeout) {
         int timeout = atoi(user_timeout);
@@ -69634,6 +70033,10 @@ static Suite *test_cl_suite(void)
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
         if (tc_largefile != NULL)
             tcase_set_timeout(tc_largefile, timeout);
+#endif
+#if !defined(_WIN32) && defined(ANONYMOUS_MAP) && SIZE_MAX > UINT32_MAX
+        if (tc_fmap_large != NULL)
+            tcase_set_timeout(tc_fmap_large, timeout);
 #endif
         printf("Using test case timeout of %d seconds set by user\n", timeout);
     } else {

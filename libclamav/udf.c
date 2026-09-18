@@ -905,7 +905,10 @@ static cl_error_t udf_scan_directory(udf_tree_context *tree,
         return ret;
     if (information_length == 0) {
         CLI_FREE_AND_SET_NULL(extents);
-        return CL_SUCCESS;
+        /* An empty directory is still a recognized nested entry. Admit it
+         * through the same inclusive MaxFiles accounting as an empty file so
+         * an empty subtree cannot bypass the configured child limit. */
+        return udf_admit_empty_file(tree->ctx);
     }
 
     ret = cli_checklimits("UDF", tree->ctx, information_length, 0, 0);
@@ -987,12 +990,13 @@ static cl_error_t udf_scan_icb(udf_tree_context *tree, uint16_t map_index,
                                FileIdentifierDescriptor *fid, size_t depth)
 {
     uint8_t block[VOLUME_DESCRIPTOR_SIZE];
-    const FileEntryDescriptor *fed;
+    ICBTag icb_tag;
     const udf_runtime_partition *partition;
     void *allocation_descriptor;
     size_t descriptor_size;
     uint32_t allocation_descriptor_length;
     uint16_t icb_flags;
+    uint64_t information_length;
     bool already_visited;
     tag_identifier tag_id;
     cl_error_t ret;
@@ -1019,50 +1023,63 @@ static cl_error_t udf_scan_icb(udf_tree_context *tree, uint16_t map_index,
         return ret;
 
     tag_id = getDescriptorTagId((DescriptorTag *)block);
-    if (tag_id == EXTENDED_FILE_ENTRY_DESCRIPTOR) {
-        cli_mark_scan_incomplete(tree->ctx, "UDF extended file entries are unsupported");
-        return CL_EUNPACK;
-    }
-    if (tag_id != FILE_ENTRY_DESCRIPTOR) {
+    if (tag_id == FILE_ENTRY_DESCRIPTOR) {
+        const FileEntryDescriptor *fed = (const FileEntryDescriptor *)block;
+
+        if (!getFileEntryDescriptorSize(fed, &descriptor_size) ||
+            descriptor_size > VOLUME_DESCRIPTOR_SIZE) {
+            cli_mark_scan_incomplete(tree->ctx, "UDF file-entry descriptor exceeds its logical block");
+            return CL_EPARSE;
+        }
+        ret = udf_validate_partition_tag(tree->ctx, &fed->tag, descriptor_size, block_number);
+        if (ret != CL_SUCCESS)
+            return ret;
+        icb_tag            = fed->icbTag;
+        information_length = le64_to_host(fed->infoLength);
+        allocation_descriptor_length = le32_to_host(fed->allocationDescLen);
+    } else if (tag_id == EXTENDED_FILE_ENTRY_DESCRIPTOR) {
+        const ExtendedFileEntryDescriptor *efed = (const ExtendedFileEntryDescriptor *)block;
+
+        if (!getExtendedFileEntryDescriptorSize(efed, &descriptor_size) ||
+            descriptor_size > VOLUME_DESCRIPTOR_SIZE) {
+            cli_mark_scan_incomplete(tree->ctx, "UDF extended file-entry descriptor exceeds its logical block");
+            return CL_EPARSE;
+        }
+        ret = udf_validate_partition_tag(tree->ctx, &efed->tag, descriptor_size, block_number);
+        if (ret != CL_SUCCESS)
+            return ret;
+        icb_tag            = efed->icbTag;
+        information_length = le64_to_host(efed->infoLength);
+        allocation_descriptor_length = le32_to_host(efed->allocationDescLen);
+    } else {
         cli_mark_scan_incomplete(tree->ctx, "UDF ICB does not contain a file entry");
         return CL_EPARSE;
     }
 
-    fed = (const FileEntryDescriptor *)block;
-    if (!getFileEntryDescriptorSize(fed, &descriptor_size) ||
-        descriptor_size > VOLUME_DESCRIPTOR_SIZE) {
-        cli_mark_scan_incomplete(tree->ctx, "UDF file-entry descriptor exceeds its logical block");
-        return CL_EPARSE;
-    }
-    ret = udf_validate_partition_tag(tree->ctx, &fed->tag, descriptor_size, block_number);
-    if (ret != CL_SUCCESS)
-        return ret;
-
-    if (directory_hint != (fed->icbTag.fileType == 4U)) {
+    if (directory_hint != (icb_tag.fileType == 4U)) {
         cli_mark_scan_incomplete(tree->ctx, "UDF file identifier directory type disagrees with its file entry");
         return CL_EPARSE;
     }
-    if (!directory_hint && fed->icbTag.fileType != 5U) {
+    if (!directory_hint && icb_tag.fileType != 5U) {
         cli_mark_scan_incomplete(tree->ctx, "UDF ICB file type is unsupported");
         return CL_EUNPACK;
     }
-    allocation_descriptor_length = le32_to_host(fed->allocationDescLen);
     if (allocation_descriptor_length > descriptor_size) {
         cli_mark_scan_incomplete(tree->ctx, "UDF file-entry allocation descriptor length is invalid");
         return CL_EPARSE;
     }
     allocation_descriptor = (uint8_t *)block + descriptor_size - allocation_descriptor_length;
-    icb_flags = le16_to_host(fed->icbTag.flags);
+    icb_flags = le16_to_host(icb_tag.flags);
 
     if (directory_hint) {
         return udf_scan_directory(tree, partition,
                                   allocation_descriptor, allocation_descriptor_length,
-                                  icb_flags, le64_to_host(fed->infoLength), depth);
+                                  icb_flags, information_length, depth);
     }
     ret = extractFile(tree->ctx, (PartitionDescriptor *)&partition->descriptor,
                       tree->logical_volume_descriptor, allocation_descriptor,
                       allocation_descriptor_length, icb_flags,
-                      le64_to_host(fed->infoLength), fid);
+                      information_length, fid);
     return ret;
 }
 
@@ -1226,42 +1243,65 @@ static cl_error_t udf_scan_anchor_tree(cli_ctx *ctx, const udf_anchor_volume *vo
                         true, NULL, 0);
 }
 
-static cl_error_t parseFileEntryDescriptor(cli_ctx *ctx, FileEntryDescriptor *fed, PartitionDescriptor *pPartitionDescriptor, LogicalVolumeDescriptor *pLogicalVolumeDescriptor, FileIdentifierDescriptor *fileIdentifierDescriptor)
+static cl_error_t parseFileEntryDescriptor(cli_ctx *ctx, const uint8_t *descriptor,
+                                            PartitionDescriptor *pPartitionDescriptor,
+                                            LogicalVolumeDescriptor *pLogicalVolumeDescriptor,
+                                            FileIdentifierDescriptor *fileIdentifierDescriptor)
 {
     cl_error_t ret              = CL_EPARSE;
-    uint16_t tagId              = getDescriptorTagId(&fed->tag);
+    uint16_t tagId              = 0;
     void *allocation_descriptor = NULL;
+    ICBTag icb_tag;
+    uint64_t information_length;
 
     size_t file_entry_descriptor_size;
     size_t allocation_descriptor_len;
 
-    if (FILE_ENTRY_DESCRIPTOR != tagId) {
+    if (descriptor == NULL)
+        goto done;
+    tagId = getDescriptorTagId((const DescriptorTag *)descriptor);
+    if (FILE_ENTRY_DESCRIPTOR != tagId && EXTENDED_FILE_ENTRY_DESCRIPTOR != tagId) {
         cli_warnmsg("parseFileEntryDescriptor: Tag ID of 0x%x does not match File Entry Descriptor.\n", tagId);
         goto done;
     }
 
-    tagId = getDescriptorTagId(&fileIdentifierDescriptor->tag);
-    if (FILE_IDENTIFIER_DESCRIPTOR != tagId) {
-        cli_warnmsg("parseFileEntryDescriptor: Tag ID of 0x%x does not match File Identifier Descriptor.\n", tagId);
+    if (FILE_IDENTIFIER_DESCRIPTOR != getDescriptorTagId(&fileIdentifierDescriptor->tag)) {
+        cli_warnmsg("parseFileEntryDescriptor: Tag ID does not match File Identifier Descriptor.\n");
         goto done;
     }
 
-    // Calculate pointer for the allocation descriptor.
-    // The allocation descriptors are the last bytes of the Extended File Entry.
-    // See Section 14.17 in https://www.ecma-international.org/wp-content/uploads/ECMA-167_3rd_edition_june_1997.pdf
-    if (!getFileEntryDescriptorSize(fed, &file_entry_descriptor_size)) {
-        cli_mark_scan_incomplete(ctx, "UDF file-entry descriptor size overflowed");
-        ret = CL_EFORMAT;
-        goto done;
+    /* The allocation descriptors are the last bytes of either File Entry
+     * form. See Section 14.17 in the ECMA-167 3rd edition. */
+    if (FILE_ENTRY_DESCRIPTOR == tagId) {
+        const FileEntryDescriptor *fed = (const FileEntryDescriptor *)descriptor;
+
+        if (!getFileEntryDescriptorSize(fed, &file_entry_descriptor_size)) {
+            cli_mark_scan_incomplete(ctx, "UDF file-entry descriptor size overflowed");
+            ret = CL_EFORMAT;
+            goto done;
+        }
+        icb_tag            = fed->icbTag;
+        information_length = le64_to_host(fed->infoLength);
+        allocation_descriptor_len = le32_to_host(fed->allocationDescLen);
+    } else {
+        const ExtendedFileEntryDescriptor *efed = (const ExtendedFileEntryDescriptor *)descriptor;
+
+        if (!getExtendedFileEntryDescriptorSize(efed, &file_entry_descriptor_size)) {
+            cli_mark_scan_incomplete(ctx, "UDF extended file-entry descriptor size overflowed");
+            ret = CL_EFORMAT;
+            goto done;
+        }
+        icb_tag            = efed->icbTag;
+        information_length = le64_to_host(efed->infoLength);
+        allocation_descriptor_len = le32_to_host(efed->allocationDescLen);
     }
-    allocation_descriptor_len  = le32_to_host(fed->allocationDescLen);
 
     if (allocation_descriptor_len > file_entry_descriptor_size) {
         cli_dbgmsg("parseFileEntryDescriptor: Allocation Descriptor Length is greater than the File Entry Descriptor Size.\n");
         cli_mark_scan_incomplete(ctx, "UDF allocation descriptor length is invalid");
         goto done;
     }
-    allocation_descriptor = (void *)((uint8_t *)fed + (file_entry_descriptor_size - allocation_descriptor_len));
+    allocation_descriptor = (void *)(descriptor + (file_entry_descriptor_size - allocation_descriptor_len));
 
     // The Allocation Descriptor was taken from the end of the  File Entry Descriptor.
     // We already verified that the File Entry Descriptor is within the fmap,
@@ -1272,7 +1312,7 @@ static cl_error_t parseFileEntryDescriptor(cli_ctx *ctx, FileEntryDescriptor *fe
     ret = extractFile(ctx, pPartitionDescriptor, pLogicalVolumeDescriptor,
                       allocation_descriptor,
                       allocation_descriptor_len,
-                      le16_to_host(fed->icbTag.flags), le64_to_host(fed->infoLength), fileIdentifierDescriptor);
+                      le16_to_host(icb_tag.flags), information_length, fileIdentifierDescriptor);
     if (CL_SUCCESS != ret) {
         cli_dbgmsg("parseFileEntryDescriptor: Failed to extract file.\n");
         goto done;
@@ -1285,11 +1325,13 @@ done:
  * direct File Entry, the descriptor tag records the same partition-relative
  * logical block location.  The scanner collects FIDs and File Entries from
  * separate bounded runs, so list position is not an authoritative pairing. */
-static bool fileEntryMatchesIdentifier(const FileEntryDescriptor *fed,
+static bool fileEntryMatchesIdentifier(const uint8_t *descriptor,
                                        const FileIdentifierDescriptor *fid,
                                        const PartitionDescriptor *partition)
 {
-    return le32_to_host(fed->tag.tagLocation) ==
+    const DescriptorTag *tag = (const DescriptorTag *)descriptor;
+
+    return le32_to_host(tag->tagLocation) ==
                le32_to_host(fid->icb.extentLocation.blockNumber) &&
            le16_to_host(partition->partitionNumber) ==
                le16_to_host(fid->icb.extentLocation.partitionReferenceNumber);
@@ -2059,47 +2101,54 @@ static cl_error_t findFileEntries(cli_ctx *ctx, const uint8_t *const input, Poin
     const uint8_t *buffer = input;
     uint16_t tagId        = getDescriptorTagId((DescriptorTag *)buffer);
     size_t bufUsed;
-    size_t fedDescSize;
+    size_t descriptor_size;
 
     ret = udf_checktimelimit(ctx, "UDF file-entry traversal reached the configured time limit");
     if (ret != CL_SUCCESS)
         return ret;
 
-    while (FILE_ENTRY_DESCRIPTOR == tagId) {
+    while (FILE_ENTRY_DESCRIPTOR == tagId || EXTENDED_FILE_ENTRY_DESCRIPTOR == tagId) {
         ret = udf_checktimelimit(ctx, "UDF file-entry traversal reached the configured time limit");
         if (ret != CL_SUCCESS)
             break;
 
         /* This is how far into the Volume we already are. */
         bufUsed     = buffer - input;
-        if (!getFileEntryDescriptorSize((FileEntryDescriptor *)buffer, &fedDescSize)) {
+        if (FILE_ENTRY_DESCRIPTOR == tagId) {
+            if (!getFileEntryDescriptorSize((const FileEntryDescriptor *)buffer, &descriptor_size)) {
+                cli_mark_scan_incomplete(ctx, "UDF file-entry descriptor size overflowed");
+                ret = CL_EFORMAT;
+                break;
+            }
+        } else if (!getExtendedFileEntryDescriptorSize(
+                       (const ExtendedFileEntryDescriptor *)buffer, &descriptor_size)) {
             cli_mark_scan_incomplete(ctx, "UDF file-entry descriptor size overflowed");
             ret = CL_EFORMAT;
             break;
         }
 
         /* Check that it's safe to save the file identifier pointer for later use */
-        if (bufUsed > VOLUME_DESCRIPTOR_SIZE || fedDescSize > VOLUME_DESCRIPTOR_SIZE - bufUsed) {
+        if (bufUsed > VOLUME_DESCRIPTOR_SIZE || descriptor_size > VOLUME_DESCRIPTOR_SIZE - bufUsed) {
             cli_mark_scan_incomplete(ctx, "UDF file-entry descriptor exceeds its volume block");
             ret = CL_EPARSE;
             break;
         }
         ret = udf_validate_descriptor_tag(ctx, (const DescriptorTag *)buffer,
-                                          fedDescSize, 0, false);
+                                          descriptor_size, 0, false);
         if (ret != CL_SUCCESS)
             break;
 
         /* Add the buffer to the list of file entry pointers */
-        if (CL_SUCCESS != (ret = insertPointer(pfil, buffer, fedDescSize))) {
+        if (CL_SUCCESS != (ret = insertPointer(pfil, buffer, descriptor_size))) {
             goto done;
         }
 
-        /* Check that it's safe to read the TagID from the header of the next FileEntryDescriptor (if one exists) */
-        if (FILE_ENTRY_DESCRIPTOR_SIZE_KNOWN > VOLUME_DESCRIPTOR_SIZE - bufUsed - fedDescSize) {
+        /* Check that it's safe to read the TagID from the next descriptor. */
+        if (sizeof(DescriptorTag) > VOLUME_DESCRIPTOR_SIZE - bufUsed - descriptor_size) {
             break;
         }
 
-        buffer = buffer + fedDescSize;
+        buffer = buffer + descriptor_size;
         tagId  = getDescriptorTagId((DescriptorTag *)buffer);
     }
 
@@ -2447,7 +2496,7 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
 
         cli_dbgmsg("UDF Descriptor Tag ID: %d\n", tagId);
 
-        if ((tagId == EXTENDED_FILE_ENTRY_DESCRIPTOR || tagId == TERMINATING_DESCRIPTOR) &&
+        if (tagId == TERMINATING_DESCRIPTOR &&
             CL_SUCCESS != udf_validate_descriptor_tag(ctx, file_volume_tag,
                                                       VOLUME_DESCRIPTOR_SIZE, 0, false)) {
             ret = CL_EPARSE;
@@ -2466,7 +2515,8 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                 break;
             }
 
-            case FILE_ENTRY_DESCRIPTOR: {
+            case FILE_ENTRY_DESCRIPTOR:
+            case EXTENDED_FILE_ENTRY_DESCRIPTOR: {
                 cl_error_t temp = findFileEntries(ctx, (const uint8_t *)file_volume_tag, &fileEntryList);
                 if (CL_SUCCESS != temp) {
                     if (!ctx->scan_incomplete)
@@ -2475,13 +2525,6 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                     goto done;
                 }
                 break;
-            }
-
-            case EXTENDED_FILE_ENTRY_DESCRIPTOR: {
-                cli_warnmsg("cli_scanudf: Extended File Entry descriptors are unsupported\n");
-                cli_mark_scan_incomplete(ctx, "UDF extended file entries are unsupported");
-                ret = CL_EUNPACK;
-                goto done;
             }
 
             case TERMINATING_DESCRIPTOR:
@@ -2517,7 +2560,7 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
 
                     for (file_entry_index = 0; file_entry_index < fileEntryList.cnt; file_entry_index++) {
                         if (fileEntryMatchesIdentifier(
-                                (FileEntryDescriptor *)fileEntryList.idxs[file_entry_index],
+                                fileEntryList.idxs[file_entry_index],
                                 (FileIdentifierDescriptor *)fileIdentifierList.idxs[i],
                                 &pd_snapshot)) {
                             matched = true;
@@ -2532,7 +2575,7 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                     }
 
                     ret = parseFileEntryDescriptor(ctx,
-                                                   (FileEntryDescriptor *)fileEntryList.idxs[file_entry_index],
+                                                   fileEntryList.idxs[file_entry_index],
                                                    &pd_snapshot, &lvd_snapshot,
                                                    (FileIdentifierDescriptor *)fileIdentifierList.idxs[i]);
                     if (CL_SUCCESS != ret) {

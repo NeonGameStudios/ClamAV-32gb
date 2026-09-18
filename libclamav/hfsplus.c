@@ -1062,6 +1062,8 @@ static cl_error_t hfsplus_resolve_fork_block(cli_ctx *ctx, hfsPlusVolumeHeader *
                                              uint64_t *realFileBlock)
 {
     uint64_t remaining = logicalBlock;
+    uint64_t inlineFileBlock = 0;
+    bool inlineFound = false;
     uint8_t extentNum;
 
     if (ctx == NULL || volHeader == NULL || fork == NULL || realFileBlock == NULL ||
@@ -1076,9 +1078,22 @@ static cl_error_t hfsplus_resolve_fork_block(cli_ctx *ctx, hfsPlusVolumeHeader *
         uint32_t blockCount            = extent->blockCount;
 
         if (startBlock == 0 || blockCount == 0) {
-            if (extentNum < 7) {
+            uint8_t trailingExtent;
+
+            /* Zero descriptors terminate the inline list. A fork normally
+             * uses far fewer than eight descriptors; only a half-empty
+             * descriptor or a non-zero descriptor after the terminator is
+             * malformed. */
+            if (startBlock != 0 || blockCount != 0) {
                 cli_mark_scan_incomplete(ctx, "HFS+ fork extent is incomplete");
                 return CL_EFORMAT;
+            }
+            for (trailingExtent = (uint8_t)(extentNum + 1); trailingExtent < 8; trailingExtent++) {
+                if (fork->extents[trailingExtent].startBlock != 0 ||
+                    fork->extents[trailingExtent].blockCount != 0) {
+                    cli_mark_scan_incomplete(ctx, "HFS+ fork extent follows its terminator");
+                    return CL_EFORMAT;
+                }
             }
             break;
         }
@@ -1092,10 +1107,17 @@ static cl_error_t hfsplus_resolve_fork_block(cli_ctx *ctx, hfsPlusVolumeHeader *
             return CL_EFORMAT;
         }
         if (remaining < blockCount) {
-            *realFileBlock = (uint64_t)startBlock + remaining;
-            return CL_SUCCESS;
+            inlineFileBlock = (uint64_t)startBlock + remaining;
+            inlineFound = true;
+            remaining = 0;
+        } else {
+            remaining -= blockCount;
         }
-        remaining -= blockCount;
+    }
+
+    if (inlineFound) {
+        *realFileBlock = inlineFileBlock;
+        return CL_SUCCESS;
     }
 
     if (fileID == hfsExtentsFileID && forkType == HFSPLUS_FORKTYPE_DATA) {

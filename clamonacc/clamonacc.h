@@ -22,6 +22,8 @@
 #ifndef __ONAS_CLAMONACC_H
 #define __ONAS_CLAMONACC_H
 
+#include <stdio.h>
+
 // libclamav
 #include "clamav.h"
 
@@ -67,6 +69,8 @@ struct onas_context {
     int64_t portnum;
 
     int32_t maxthreads;
+    FILE *report_stream;
+    FILE *fanotify_evidence_stream;
 } __attribute__((packed));
 
 #ifdef HAVE_PRAGMA_PACK

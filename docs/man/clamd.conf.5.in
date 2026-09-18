@@ -827,7 +827,7 @@ Max number of scanning threads to allocate to the OnAccess thread pool at startu
 Default: 5
 .TP
 \fBOnAccessCurlTimeout NUMBER\fR
-Max amount of time (in milliseconds) that the OnAccess client should spend for every connect, send, and receive attempt when communicating with clamd via curl.
+Max amount of time (in milliseconds) that the OnAccess client should spend for every connect, send, and receive attempt when communicating with clamd via curl. Unknown-size stream inputs also use one absolute timeout while waiting for source data, so an open pipe or FIFO cannot hold an on-access scan indefinitely.
 .br
 Default: 5000 (5 seconds)
 .TP

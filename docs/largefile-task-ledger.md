@@ -25,7 +25,7 @@ must be triaged as `R00-TRIAGE` before implementation proceeds.
 
 | Manifest rows | Assignment | Scope |
 | ---: | --- | --- |
-| 423 `library:*` except `path`, `fd`, and `fmap` | `R08-LIBRARY` | Reader/parser/library call paths and fail-closed behavior |
+| 426 `library:*` except `path`, `fd`, and `fmap` | `R08-LIBRARY` | Reader/parser/library call paths and fail-closed behavior |
 | 17 `matcher:*` | `R08-MATCHER` / `R09-REQUIRED-UNSUPPORTED` slice | Native matchers, bytecode, YARA, PCRE, fuzzy-image |
 | 41 `feature:*` | `R08-FEATURE` | Build switches, optional feature behavior, and capability output |
 | 80 `parser:*` | `R08-PARSER` / `R09-REQUIRED-UNSUPPORTED` slice | Every scanner dispatch branch and parser-specific cases |
@@ -33,14 +33,13 @@ must be triaged as `R00-TRIAGE` before implementation proceeds.
 | 3 `library:*` ingress rows (`path`, `fd`, `fmap`) | `R10-INGRESS` | Modern library ingress parity |
 | 14 `unsupported:*` | `R09-ALLOWLIST-AUDIT` | Verify deliberate first-release exclusions remain precise |
 
-The routing table covers the current 601 manifest rows: 426 `library`, 17
-`matcher`, 41 `feature`, 80 `parser`, 23 ingress, and 14 deliberate
-`unsupported` rows (with the three library ingress rows counted in both their
-ownership and ingress routing). The recorded pre-R09 status was 0 qualified,
-143 bounded, 433 pending, and 21 unsupported. The current manifest keeps all
-seven required rows in scope as pending: 0 qualified, 147 bounded, 440
-pending, and 14 allowlisted unsupported. Status labels do not qualify any
-row.
+The routing table covers the current 604 manifest rows: 426 `library` rows
+other than `path`, `fd`, and `fmap`, 3 library ingress rows, 17 `matcher`, 41
+`feature`, 80 `parser`, 23 front-end ingress, and 14 deliberate `unsupported`
+rows. The recorded pre-R09 status was 0 qualified, 143 bounded, 433 pending,
+and 21 unsupported. The current manifest keeps all seven required rows in
+scope as pending: 0 qualified, 147 bounded, 443 pending, and 14 allowlisted
+unsupported. Status labels do not qualify any row.
 
 ## Former required-unsupported escalation (`R09-REQUIRED-UNSUPPORTED`)
 
@@ -2908,6 +2907,20 @@ compiled artifact plus source identity/hash; nothing was installed,
 downloaded, or externally contacted. No capability was promoted. Receipt:
 `docs/largefile-task-receipts/R07-format8-artifact-prerequisite-2026-09-12.md`.
 
+R05 Sonic1 current-source sparse oversized admission (2026-09-16 UTC): after
+regenerating the Git-less snapshot inventory and rebinding the Release build,
+the current Linux x86-64 `clamd` passed the exact 32-GiB+1 `FILDESREPORT`
+probe with both `AlertExceedsMax` modes. Alerts off returned `CL_EMAXSIZE`,
+`LIMIT_INCOMPLETE`, and the exact MaxFileSize reason; alerts on returned
+`DETECTION_TERMINATED` with the exact MaxFileSize alert. Both reports showed
+zero parser, matcher, logical-byte, and temporary work, preserved `PONG`
+health before and after, and removed the sparse fixture. The combined report
+and its verifier passed with the source/build manifest bound to
+`1fce4719f42ed92d5f0a4b8eeebb6db6268cb5981b7251894d950413cce6135f`.
+This closes the R05 live sparse admission slice only; it is not materialized
+32-GiB, production-CVD, or release qualification evidence. Receipt:
+`docs/largefile-task-receipts/R05-sonic1-oversize-admission-current-20260916.md`.
+
 R03 current-host qualification preflight (2026-09-14 UTC): the roadmap
 host preflight exited 1 with `host preflight requires Linux x86-64 (found
 Darwin/arm64)`. The ARM64 Docker environment remains development-only;
@@ -4847,3 +4860,625 @@ artifact with the required v2 ABI metadata, so the external compiler/artifact
 blocker remains precise and unchanged. No software was installed or
 downloaded, and no capability was promoted. Receipt:
 `docs/largefile-task-receipts/R07-format8-artifact-prerequisite-2026-09-12.md`.
+
+R08/R03 current-source Sonic1 exact library edge (2026-09-16 UTC): the
+current-source Linux x86-64 Release `largefile_library_exact_32g` test passed
+1/1 in 341.08 seconds through path, descriptor, and fmap APIs, reaching the
+exact marker at offset `34359738304` and binding the expected strong-indicator
+verdict, `DETECTION_TERMINATED`, exact 32-GiB limits, and post-run cleanup.
+This is a bounded library-ingress slice after the OneNote descriptor-retention
+fix, not a fully materialized release-family or R11 vertical qualification;
+no capability was promoted. Receipt:
+`docs/largefile-task-receipts/R08-R03-sonic1-exact-library-32g-current-20260916.md`.
+
+R11 current-source Sonic1 materialized ZIP late-member slice (2026-09-16
+UTC): the Linux x86-64 Release `clamscan` clean control completed a
+materialized 32-GiB stored ZIP in 330.262 seconds, and the matching isolated
+signature control detected its late marker at outer-file offset
+`34359738091` in 264.276 seconds with `DETECTION_TERMINATED`. The independent
+oracle matched the exact fixture hash before and after both scans. A
+cache-aware integrity control found one post-scan buffered-read byte differing
+from direct I/O at offset `19155960935`; targeted cache eviction restored the
+expected byte and the full oracle passed, but the origin remains unresolved.
+An isolated daemon/client extension then detected the same marker through
+`clamdscan` path and FD-passing ingress, with structured `DETECTION_TERMINATED`
+reports carrying the exact root size and alert offset. The same service
+profile's INSTREAM control returned structured `RESOURCE_FAILURE` because the
+host's approximately 54 GiB free space could not satisfy the 40-GiB
+exploratory temporary budget plus stream/extraction needs. The source checkout
+was dirty and the build identity was older, so these daemon/client results are
+exploratory controls only. No capability was promoted; R11 remains pending
+unconditional integrity qualification, alongside complete production
+CVD/service, sanitizer, resource, on-access, and final release evidence. Receipt:
+`docs/largefile-task-receipts/R11-sonic1-materialized-zip-cache-aware-20260916.md`.
+
+R11 normalized-mode parity and fixture-integrity follow-up (2026-09-16 UTC):
+the daemon and direct `clamscan --normalize=yes` controls were repeated with
+explicit 32-GiB `MaxHTMLNormalize`, `MaxHTMLNoTags`, `MaxScriptNormalize`,
+and `MaxZipTypeRcg` settings. Both returned structured `UNSUPPORTED` results
+with reason `ZIP member did not reach a complete extraction state`, but the
+fixture had already shown one cache-resident prefix byte change and a second
+`0x51` appeared during the independent prefix check. Targeted page eviction
+restored both observed bytes to `0x50`; the corrected full oracle
+revalidation then passed as tracked async job
+`job_560045d795b74a838d87a3f13f5e5af3` with the expected fixture SHA-256,
+exact size, and marker coordinates. These observations do not justify parser
+or temporary-space changes and do not promote R11. Receipt:
+`docs/largefile-task-receipts/R11-sonic1-materialized-zip-cache-aware-20260916.md`.
+
+MCP-SSH asynchronous extension and post-scan integrity closure (2026-09-16
+UTC): Sonic1's documented tracked async command path was confirmed with a
+600-second effective timeout and typed `docker exec` arguments. The current
+source `clamscan` clean run required the explicit `CVD_CERTS_DIR=/src/certs`
+environment and completed in 325.239 seconds with exact 32-GiB/64-GiB/256-GiB
+resource settings, three parser operations, and status `COMPLETE`. The
+post-run oracle again found one cache-resident `0x51` byte at offset
+`8827839591`; targeted `POSIX_FADV_DONTNEED` eviction restored `0x50` and the
+full fixture hash returned to the expected value. The async mechanism is
+usable, but Sonic1 fixture instability still prevents qualification promotion.
+Receipt:
+`docs/largefile-task-receipts/R11-sonic1-materialized-zip-cache-aware-20260916.md`.
+
+R05 current-source Sonic1 sparse 32-GiB+1 service rerun (2026-09-16 UTC):
+the documented MCP-SSH tracked foreground/async path ran the x86-64 `clamd`
+with separate `AlertExceedsMax` on/off configurations. `FILDESREPORT` on
+returned `DETECTION_TERMINATED` with the exact
+`Heuristics.Limits.Exceeded.MaxFileSize` alert; off returned
+`LIMIT_INCOMPLETE` with status 24. Both records independently verified exact
+34,359,738,369-byte sparse metadata, zero parser/matcher/logical/temp work,
+cleanup, and PONG health before and after. The combined evidence validator
+passed, but the dirty source/build identity means this remains development
+evidence and does not promote the release capability. Receipt:
+`docs/largefile-task-receipts/R05-sonic1-oversize-admission-current-20260916.md`.
+
+R13 Sonic1 fanotify capability preflight (2026-09-16 UTC): the documented
+MCP-SSH tracked async path was used with a 600-second effective timeout. UID 0
+inside the existing x86-64 development container still returned
+`fanotify_init: Operation not permitted`. A disposable `docker run --rm
+--privileged` probe with the current clamonacc binary, resolved build
+libraries, and an explicit scoped config passed fanotify initialization and
+then stopped at the expected missing clamd connection. This narrows the
+environmental issue to ordinary-container capability: it does not provide
+R13 permission allow/deny events, a private mount, or qualification evidence.
+Temporary staged files and the disposable container were cleaned up; no
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-fanotify-capability-preflight-2026-09-16.md`.
+
+R13 Sonic1 real permission development smoke (2026-09-16 UTC): a disposable
+privileged Linux x86-64 clamd/clamonacc pair exercised real unprivileged opens
+through `OnAccessIncludePath`. Prevention mode allowed a clean open, denied a
+signature detection with `EPERM`, and denied a two-byte fixture under a
+one-byte on-access limit while logging status 24. Monitoring-only mode allowed
+the signature fixture while logging `FOUND` and did not label it clean. The
+full 64-GiB profile was separately rejected by the application admission gate
+because Sonic1 had 57,154,293,760 free temp bytes versus the required
+73,014,444,032; the smoke used 40 GiB only as an explicitly development-only
+profile. Exact tracked jobs, container IDs, cleanup, and the absence of source
+or production mutation are recorded, but no retained kernel-event artifacts,
+full R13 matrix, sanitizer/resource proof, or qualification promotion exists.
+Receipt: `docs/largefile-task-receipts/R13-sonic1-permission-smoke-2026-09-16.md`.
+
+R13 real-event capture primitive (2026-09-16 UTC): added
+`tools/largefile_fanotify_capture.py` and its focused tests. On an authorized
+Linux root runner, the primitive requires an existing privately propagated
+mount, creates a real `FAN_OPEN_PERM` fanotify group, records raw metadata and
+case-bound event sequence IDs, explicitly answers its observer group, and
+executes the fixture open through a non-root actor. It emits a JSONL kernel
+event artifact and a bound actor-result artifact; it never fabricates scan
+completion, clamonacc decisions, or kernel events. The R13 evidence verifier
+now parses and validates those retained artifacts, including the permission
+mask, raw metadata, selected event binding, actor UID, and observed allow/deny
+action. Capture tests 6/6, fanotify evidence tests 10/10, source guards, and
+`git diff --check` passed. No privileged runner artifact was produced in this
+macOS turn, so R13 remains unqualified and the existing Sonic1 resource and
+certified-runner blockers remain unchanged.
+
+R13 Sonic1 capture-primitive smoke (2026-09-16 UTC): the corrected primitive
+was staged through Docker provenance/exec and run in a disposable privileged
+Linux x86-64 container. On the current source bind, observed as private ext4,
+it marked `FAN_EVENT_ON_CHILD | FAN_OPEN_PERM`, captured one real permission
+event with raw metadata matching the structured version/length/mask/FD/PID
+fields, answered the observer group, and recorded a successful non-root UID
+65534 actor open. The transient script and artifacts were removed successfully
+and no clamd/clamonacc or qualification result was claimed. Local capture
+tests passed 7/7, evidence tests passed 15/15, and the remote disposable run
+exited 0. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-fanotify-capture-primitive-2026-09-16.md`.
+
+R13 MCP-SSH async continuation (2026-09-16 UTC): reviewed the Sonic1
+`sonic1-camera-key` policy and used the tracked `ssh_command_start` path with
+the canonical current-source container. The preview admitted an effective
+600-second async job; status polling reached a terminal failure without a
+timeout or detached process. A bounded diagnostic identified the honest
+cause as `committed inventory is stale` in the older remote source bind. The
+async path is proven as transport orchestration only; no remote output was
+promoted as source or qualification evidence. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-mcp-ssh-async-continuation-2026-09-16.md`.
+The follow-up bounded inventory/provenance check confirmed the same container
+(`clamav-current-source-20260915`) remains on commit
+`08b3ab820e40ac8bd307b0c78c03c94884f1b` with unrelated dirty artifacts, while
+the local checkout is at `6312634ec24539dc6087a76df401a81b8e9aca7c`; it was
+left untouched.
+The current checkout was also packaged as an 18,610,167-byte archive with
+SHA-256 `0a8abc82f48325d96642b24f5f126c06f551e9ccda4c30ef70c8b8b4024de583`.
+The documented durable upload attempt for a new `/tmp` destination was
+rejected before transfer creation by the authoritative MCP-SSH policy reason
+`file_write_limit_exceeded`; no remote file or existing transfer was changed.
+
+R04/R13 case-contract hardening (2026-09-16 UTC): aligned the reviewed
+`on-access:permission` map with R13's six required outcomes by adding
+resource, timeout, and parser failure cases. The fanotify evidence verifier
+now requires each prevention case to retain one case-bound structured
+`on-access-scan` report with matching completion/exit fields, verdict/reason,
+and non-negative scan counters; arbitrary text can no longer satisfy the
+`scan-report` role. The map, verifier, and negative tampering tests passed
+(`15/15` fanotify evidence tests, `15/15` acceptance-case tests), followed by
+the full source-guard suite. This remains schema and verifier progress only;
+no R13 qualification result was promoted.
+
+R13 permission-decision and monitoring evidence binding (2026-09-16 UTC):
+the fanotify verifier now distinguishes the capture primitive's explicit
+observer `FAN_ALLOW` response from ClamAV's retained production permission
+response, requiring the latter to match each case's declared `FAN_ALLOW` or
+`FAN_DENY`. Monitoring-only cases now also carry a fixture digest and a
+case-bound structured `on-access-scan` report instead of an arbitrary report
+text file. Negative tests cover missing ClamAV responses and misbound
+monitoring reports; the focused fanotify suite passes 17/17 and the
+acceptance-case suite passes 15/15. No R13 qualification result was promoted.
+Receipt: `docs/largefile-task-receipts/R13-fanotify-decision-binding-2026-09-16.md`.
+
+R13 clamonacc report-to-permission event join (2026-09-16 UTC): the
+application-side evidence sinks now assign one process-local event ID before
+each fanotify permission scan. The validated terminating clamd report, or
+one final fail-closed fallback after all retries, is published with that same
+`clamonacc_event_id`; the fanotify JSONL record retains the actual kernel
+response and event metadata under the same ID. This prevents stream order from
+being used as proof and keeps transient retry failures from creating duplicate
+reports for one permission event. The final fanotify verifier also requires
+that ID on each prevention scan-report artifact. The new bounded case binder
+joins the observer event, clamonacc permission JSONL, actor result, and raw
+report, rejecting ambiguous metadata matches, failed response writes, and
+stale/bound report identities before emitting verifier-shaped artifacts. The
+disposable ARM64 Clang/CMake `clamonacc` target linked successfully; focused
+capture/evidence/binder/acceptance tests (7/7, 18/18, 5/5, and 15/15), the
+604-capability map, source guards, and diff checks passed. Release
+readiness remains blocked with zero qualified capabilities because certified
+Linux x86-64/full-size evidence and the Sonic1 source/space prerequisites are
+still absent. Receipt:
+`docs/largefile-task-receipts/R13-clamonacc-evidence-sinks-2026-09-16.md`.
+
+R13 independent-verifier invariant hardening (2026-09-16 UTC): the kernel
+artifact verifier now requires exactly one target-bound event per retained
+JSONL artifact, and the actor verifier binds exit status to the observed open
+result. Negative regression coverage was added for both contradictions. The
+focused evidence suite passes 20/20; no qualification result was promoted.
+
+R13 MCP-SSH policy recheck (2026-09-16 UTC): a fresh Sonic1
+`ssh_command_preview` admitted `operation="start"` with an effective timeout
+of 3600 seconds, extending the earlier 600-second observation. A tracked
+server-side clone job reached exit 128 because the private GitHub remote
+requested credentials; the documented client-local durable upload handoff was
+also denied with `file_write_limit_exceeded`. No remote source was promoted,
+and the existing stale container was left untouched.
+
+R13 clamonacc retry report publication (2026-09-16 UTC): each scan attempt's
+structured report is now buffered in a temporary stream, discarded when a
+retry is superseded, and published only once after the final attempt. If no
+terminating report is retained, one fail-closed fallback is emitted. This
+removes duplicate JSONL records for a single on-access event; source guards and
+diff checks pass. Runtime qualification remains pending.
+
+R03 Sonic1 capacity recheck (2026-09-16 UTC): the documented tracked
+MCP-SSH asynchronous path was freshly verified on Linux 5.15 x86-64. Sonic1
+reported 63,953,227,776 available memory bytes, above the roadmap's 48-GiB
+headroom minimum, but only 57,167,429,632 bytes available on disk-backed
+`/tmp`, below the 68-GiB temporary-space prerequisite. The runner therefore
+remains blocked for full-size qualification on temporary capacity; no source,
+container, or qualification evidence was changed. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-capacity-recheck-2026-09-16.md`.
+The accompanying read-only `/tmp` inventory found approximately 34.36 GB in
+`clamav-materialized-edge-20260909` and 34.90 GB in the known stale
+`clamav-32gb-current-20260915` source tree. These remain untouched pending an
+explicit cleanup decision because they may contain retained evidence.
+
+Local regression sweep after the R13 retry-report correction (2026-09-16
+UTC): the complete Python tools discovery passed 199 tests with two
+Linux-only filesystem controls skipped on macOS; the OneNote Cargo package
+passed 80 unit and 5 integration tests; the source snapshot freshness check
+and `git diff --check` also passed. This strengthens development verification
+only; the modified C target and full-size release qualification remain
+pending the current-source Linux runner.
+
+R03 local container configure probe (2026-09-16 UTC): the existing
+`clamav-largefile-local-toolchain2:latest` ARM64 image was used with the
+current source mounted read-only and an out-of-tree build directory. CMake,
+Clang, and Rust were available, but configuration stopped first on missing
+Libcheck development files and, with tests disabled for diagnosis, on missing
+JSONC development files. No software was installed and no qualification
+claim was made. Receipt:
+`docs/largefile-task-receipts/R03-local-container-configure-2026-09-16.md`.
+
+MCP-SSH continuation lifecycle recheck (2026-09-16 UTC): Sonic1 admitted a
+60-second tracked `ssh_command_start`; a 25-second job remained observable as
+running beyond the synchronous window and then completed with exit 0. Bounded
+output retrieval reached EOF, and the probe made no remote source, Docker, or
+filesystem changes. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-mcp-ssh-async-continuation-2026-09-16.md`.
+
+R03 local application-target probe (2026-09-17 UTC): the existing ARM64
+`clamav-largefile-local-toolchain2:latest` image was reused without installing
+software. Its cached library-only configuration was reconfigured against the
+current source successfully, but enabling application targets stopped at the
+missing curl development header/library pair. A temporary type-only curl stub
+did not produce a build claim; preprocessing also exposed incomplete OpenSSL
+development headers in the image. The existing container was stopped after
+the probe. Certified current-source application compilation remains pending
+an authorized image/runner with the required development dependencies and
+Sonic1 remains below the disk-backed temporary-space prerequisite. Receipt:
+`docs/largefile-task-receipts/R03-local-app-target-probe-2026-09-17.md`.
+
+R03 Sonic1 existing x86-64 build environment (2026-09-17 UTC): the known
+container was inspected read-only and confirmed to contain curl/OpenSSL
+development headers, `ENABLE_LIBCLAMAV_ONLY=OFF`, `ENABLE_CLAMONACC=ON`, and
+an existing `clamonacc` target/artifact. Its `/src` bind remains commit
+`08b3ab8…`, not the current checkout's `6312634…`, so the executable and object
+were not used as evidence. Current-source delivery and Sonic1 temporary-space
+admission remain the external prerequisites. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-existing-x86-build-2026-09-17.md`.
+
+R13 Sonic1 MCP-SSH async-limit recheck (2026-09-17 UTC): the current
+`sonic1-camera-key` policy admitted a tracked `ssh_command_start` request for
+86400 seconds only by returning the effective 3600-second limit. A live
+tracked 25-second job remained observable past the synchronous request window,
+then reached `state=succeeded` with exit 0; bounded output retrieval reached
+EOF. The documented path therefore extends short synchronous commands but
+does not authorize a single phase past one hour. Longer phases must be split
+into tracked bounded jobs. No remote source, container, filesystem, or
+qualification evidence changed. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-mcp-ssh-async-limit-2026-09-17.md`.
+
+R13 clamonacc evidence-option documentation closure (2026-09-17 UTC): the
+installed `clamonacc` man-page template now documents `--report-json=FILE`
+and `--fanotify-evidence=FILE`, including their append-only JSONL behavior,
+terminating-report/fail-closed fallback semantics, and the fact that evidence
+capture does not alter the configured on-access policy. This aligns the
+installed interface documentation with the already exposed help/options and
+the R13 evidence contract. No runtime or qualification claim was promoted.
+Receipt: `docs/largefile-task-receipts/R13-clamonacc-evidence-docs-2026-09-17.md`.
+
+R06 OneNote spool pathname-replacement hardening (2026-09-17 UTC): the
+streaming reader now keeps the securely-created owner file open for all spool
+writes, while reopening independent reader handles only after validating their
+Unix device/inode identity against that owner. This preserves independent
+read offsets without introducing a close-and-reopen write window. A regression
+replacing the spool pathname with a symlink is rejected, and the current
+OneNote parser suite passes 81 unit tests plus 5 integration tests. The
+configured Rust toolchain lacks `rustfmt`, so formatting was checked manually;
+no formatter component was installed. Full-size/materialized and certified
+x86-64 qualification remain open. Receipt:
+`docs/largefile-task-receipts/R06-onenote-spool-path-hardening-2026-09-17.md`.
+
+R07 format-8 artifact and MCP-SSH continuation recheck (2026-09-17 UTC): the
+current checkout still contains no independent compiler-produced format-8
+bytecode artifact; the retained bytecode directory contains only legacy/
+format-7 controls and the historical `bytecode.cvd`. On Sonic1, a requested
+86,400-second tracked start was admitted but clamped to the effective 3,600-
+second policy limit, confirming that longer work must be split into bounded,
+checkpointed jobs. Two identical read-only compiler searches then timed out
+during SSH connect before any remote process started, so no remote artifact or
+qualification result was inferred. R07 remains blocked by the missing
+compatible compiler/fixture and current-source runner. Receipt:
+`docs/largefile-task-receipts/R07-format8-artifact-prerequisite-2026-09-12.md`.
+
+R03 Sonic1 async capacity recheck (2026-09-17 UTC): the documented
+MCP-SSH `ssh_command_preview` → `ssh_command_start` path admitted a tracked
+3,600-second async job, and status/output polling completed successfully.
+The read-only `df -B1 -P` result found 57,165,213,696 bytes available on the
+root filesystem and Docker overlays, and 33,400,041,472 bytes on `/dev/shm`;
+no mount reaches the roadmap's approximately 68-GiB staging prerequisite.
+The synchronous SSH timeout is therefore not the blocker, but current-source
+Sonic1 qualification remains blocked by capacity plus the existing authorized
+source-transfer/provenance boundary. Receipt:
+`docs/largefile-task-receipts/R03-local-toolchain-recheck-2026-09-17.md`.
+
+R03 Sonic1 source-tree inventory (2026-09-17 UTC): a tracked read-only
+`find` scan located many historical ClamAV build/evidence directories but only
+one `.git` directory, under `/tmp/clamav-32gb-current-20260915`. Read-only
+`git -C` probes of that tree exited 128 without usable output; no alternate
+current-source repository is available to replace the stale/dirty source
+mount. Historical build directories remain unsuitable as current-source
+provenance. Receipt:
+`docs/largefile-task-receipts/R03-local-toolchain-recheck-2026-09-17.md`.
+
+R03 Sonic1 provenance and capacity recheck (2026-09-17 UTC): the authorized
+`sonic1-camera-key` container provenance still identifies container
+`53f6ca8d4a29…`, image `sha256:c0c10e2d…`, and a writable `/src` bind sourced
+from `/tmp/clamav-32gb-current-20260915`. Read-only checks report source
+commit `08b3ab8…` with unrelated dirty artifacts, not the current checkout
+`6312634…`; the container overlay has 55,825,768 KiB available, below the
+73,014,444,032-byte roadmap temporary-space requirement. No remote mutation or
+qualification evidence was performed. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-provenance-capacity-2026-09-17.md`.
+
+R06 local Rust integration compile recheck (2026-09-17 UTC):
+`cargo test -p clamav_rust --no-run` reached `openssl-sys v0.9.117` and
+stopped because the macOS worktree has neither a discoverable OpenSSL
+development installation nor `pkg-config`. The OneNote parser package itself
+remains verified by 81 unit tests and 5 integration tests; no dependency or
+Rust component was installed. This is an environment blocker for the full
+Rust integration compile, not a parser test failure. Receipt:
+`docs/largefile-task-receipts/R06-onenote-spool-path-hardening-2026-09-17.md`.
+
+R02 resource-policy regression revalidation (2026-09-17 UTC): the independent
+PCRE phase evidence suite passed 11 tests, the acceptance resource-contract
+suite passed 7 tests, and the runtime and service evidence verifier regression
+scripts both exited 0. The 32 GiB overall subcase remains explicitly distinct
+from the 40 GiB PCRE ceiling and strict 12 GiB post-PCRE contract. No live
+phase measurement or capability promotion was performed. Receipt:
+`docs/largefile-task-receipts/R02-resource-policy.md`.
+
+R08 LHA/LZH parser revalidation (2026-09-17 UTC): the vendored `delharc`
+package passed 13 unit tests, including LHA v1/v2 decoding and cumulative
+header-allocation rejection, plus one doctest. This isolated parser evidence
+does not replace the unavailable top-level Rust integration build or certified
+Linux x86-64/full-size capability evidence. Receipt:
+`docs/largefile-task-receipts/R08-lha-delharc-revalidation-2026-09-17.md`.
+
+R03 existing-container Rust integration probe (2026-09-17 UTC): the
+pre-existing `rust:1.97-bookworm` image exposes OpenSSL 3.0.20 and libcurl
+7.88.1, but an offline current-source `cargo test -p clamav_rust --no-run`
+stopped before compilation because the pinned Git dependency `clam-sigutil`
+is absent from the image's Cargo cache. No network fetch or installation was
+performed. Receipt:
+`docs/largefile-task-receipts/R03-local-app-target-probe-2026-09-17.md`.
+
+R05 fixture/oracle revalidation (2026-09-17 UTC): the streaming ZIP late-member
+suite passed 8 tests, the sparse-boundary corpus checker passed 5 tests, and
+the service oversize evidence suite passed 23 tests. These controls validate
+deterministic fixture/oracle construction and fail-closed evidence handling;
+no full-size scanner run or capability promotion was performed. Receipt:
+`docs/largefile-task-receipts/R05-streaming-zip-fixture-2026-09-13.md`.
+
+R06 OneNote spool cleanup hardening (2026-09-17 UTC): Unix spool cleanup now
+checks the owner file's device/inode before unlinking a replaced pathname, so
+an unrelated regular file is not removed during parser drop. The symlink and
+regular-file replacement regressions pass; the OneNote parser suite passes 82
+unit tests and 5 integration tests. Receipt:
+`docs/largefile-task-receipts/R06-onenote-spool-path-hardening-2026-09-17.md`.
+
+R08 shared Rust temporary-spool ownership hardening (2026-09-17 UTC): the
+common `TempSpool` used by ALZ, LHA/LZH, and OneNote now captures the Unix
+device/inode of its opened descriptor and rechecks pathname identity before
+cleanup unlink. Descriptor-identity failure is fail-closed and releases the
+temporary reservation. Inventory parity, diff checks, and the complete source
+guard suite passed. The top-level Rust integration compile remains blocked by
+the local OpenSSL/`pkg-config` environment and the offline container's missing
+`clam-sigutil` cache entry; no qualification claim was promoted. Receipt:
+`docs/largefile-task-receipts/R08-rust-temp-spool-ownership-2026-09-17.md`.
+
+R13 clamonacc report JSON publication boundary (2026-09-17 UTC): the
+`--report-json` enrichment helper now validates the complete payload through
+the shared strict JSON-object parser before adding the process-local event ID,
+so trailing bytes, duplicate top-level keys, and non-object payloads cannot be
+rewritten into evidence. It also rejects lengths above `UINT32_MAX` before the
+shared API cast and cleans up the strict-parser temporary on every exit path.
+The public client header now directly includes the stdio declaration required
+by its `FILE *` interfaces. Inventory parity, diff checks, and the complete
+source guard suite passed; current-source C runtime verification remains open
+because the host lacks its generated build metadata/dependencies and the
+authorized Sonic1 source transfer was denied by MCP-SSH policy. Receipt:
+`docs/largefile-task-receipts/R13-clamonacc-report-json-boundary-2026-09-17.md`.
+
+R13 fanotify evidence pathname JSON hardening (2026-09-17 UTC): the native
+`--fanotify-evidence` serializer now validates multi-byte pathname sequences,
+preserves valid UTF-8, and escapes malformed POSIX pathname bytes as JSON
+Unicode escapes. A follow-up found and fixed the four-byte UTF-8 boundary
+case; the exact helper-and-writer regression now covers valid three-/four-byte
+output preservation, overlong encodings, surrogates, out-of-range values, and
+truncation.
+Inventory parity, diff checks, snapshot freshness, the focused helper
+regression, and the complete source guard suite passed; current-source compile
+and privileged fanotify runtime qualification remain open. Receipt:
+`docs/largefile-task-receipts/R13-fanotify-json-utf8-2026-09-17.md`.
+
+R09 Python compiled-bytecode skipped-read hardening (2026-09-17 UTC): the
+bounded marshal walker now reads skipped payload ranges through 4-KiB fmap
+windows instead of advancing over them without touching the backing source.
+An in-range failure inside a large `co_code` payload is therefore preserved as
+`CL_EREAD`, marked incomplete, and kept non-cacheable. A current-source C
+regression constructs a valid legacy code-object envelope with a 300,000-byte
+skipped payload and fails the fmap after the first 256 KiB; the case is
+registered in both ordinary and required-unsupported suites. Inventory parity,
+diff checks, and the complete source guard suite passed (604 capabilities).
+The new linked C regression remains unexecuted because the local application
+build lacks JSON-C/Check/curl development metadata and current-source Sonic1
+delivery remains blocked. Receipt:
+`docs/largefile-task-receipts/R09-python-skipped-read-2026-09-17.md`.
+
+R09 AI-model skipped-read hardening (2026-09-17 UTC): the AI-model structural
+walker now reads skipped ONNX/GGUF payload ranges through 4-KiB fmap windows
+instead of advancing over them without touching the backing source. An
+in-range failure inside a large ONNX producer metadata or GGUF string payload
+is therefore preserved as `CL_EREAD`, marked incomplete, and kept
+non-cacheable. Current-source C regressions construct valid ONNX and GGUF
+structures with 300,000-byte skipped payloads and fail the fmap after the first
+256 KiB; both cases are registered in ordinary and required-unsupported
+suites.
+Inventory parity, diff checks, and the complete source guard suite passed (604
+capabilities). The new linked C regression remains unexecuted because the
+local application build lacks JSON-C/Check/curl development metadata and
+current-source Sonic1 delivery remains blocked. Receipt:
+`docs/largefile-task-receipts/R09-ai-model-skipped-read-2026-09-17.md`.
+
+R03 local toolchain image recheck (2026-09-17 UTC): both preinstalled ClamAV
+toolchain images were inspected read-only with the current checkout mounted
+read-only. They expose CMake and a C compiler plus OpenSSL headers, but no
+JSON-C or curl development metadata/headers and no prebuilt `clamscan` or
+`check_clamav` artifact. No dependency was installed or disabled, and no build
+claim was made. Receipt:
+`docs/largefile-task-receipts/R03-local-toolchain-recheck-2026-09-17.md`.
+
+R08 Rust temporary-spool pathname inspection hardening (2026-09-17 UTC):
+unexpected Unix `lstat()` failures during temporary-spool cleanup are now
+fail-visible as `CL_EUNLINK`; missing paths and replaced identities remain
+non-destructive. Added an `ENAMETOOLONG` regression alongside the existing
+replacement-path control. Inventory parity, diff checks, and the complete
+source guard suite passed (604 capabilities). The focused Rust test could not
+link on the host because OpenSSL development discovery is unavailable; a
+container retry compiled the crate but could not link its standalone test
+binary without the production ClamAV C ABI symbols. MCP-SSH documentation was
+also verified: `ssh.command.start` allows an effective 3600-second async
+window, with explicit status/output polling; the available Sonic1 container
+is stale relative to the current checkout, so no runtime qualification claim
+was made. Receipt:
+`docs/largefile-task-receipts/R08-rust-temp-spool-lstat-cleanup-2026-09-17.md`.
+
+R06 OneNote parser cleanup propagation (2026-09-17 UTC): the parser's
+`BlobSpoolBudget` now reports unexpected spool pathname/removal failures to the
+scanner integration, which marks the containing scan incomplete while keeping
+missing and replaced paths non-destructive. Unix reader reopening now uses
+`O_NOFOLLOW|O_NONBLOCK`, preventing replaced symlinks from being followed and
+replaced FIFOs from blocking before identity rejection. The new symlink-open,
+replaced-FIFO, replaced-file, and overlong-path regressions and the full parser
+suite passed: 84 unit tests and 5 integration tests.
+Inventory parity, diff checks, and the complete source guard suite passed (604
+capabilities). The production-linked C/Rust integration build and certified
+runtime evidence remain open because the local host lacks OpenSSL/JSON-C/curl
+development metadata and Sonic1 does not yet hold the current source. Receipt:
+`docs/largefile-task-receipts/R06-onenote-spool-path-hardening-2026-09-17.md`.
+
+R10 milter `SkipAuthenticated` file-list hardening (2026-09-17 UTC):
+file-backed authenticated-user lists now accept empty/comment-only files with
+the bypass disabled instead of writing at `regex[-1]`; long entries allocate
+from their encoded regex expansion with `size_t` overflow checks, and final
+terminator growth preserves allocation failures. The registered
+`largefile_milter_skipauth` regression covers empty, comment-only, and 2047-byte
+expanded entries, plus a one-character final allow-list entry without a
+newline, and malformed allow-list cleanup. Both production and test translation units pass strict local
+syntax checks, and the complete source guard suite passes with 604 capabilities.
+The standalone runner compiles the exact production `allow_list.c` with only
+the unavailable full regex/logging link layer stubbed and passes the focused
+test both normally and under ASan/UBSan.
+The linked CTest remains unexecuted because the preinstalled container lacks
+Cargo 1.97+, so CMake configuration stops before compilation; no software was
+installed and no capability was promoted. Full milter-linked, sanitizer,
+resource-policy, Sonic1, service, and certified Linux x86-64 evidence remain
+open. Receipt:
+`docs/largefile-task-receipts/R10-milter-skipauth-empty-list-2026-09-17.md`.
+
+R11 clamd legacy `writen()` zero-progress hardening (2026-09-17 UTC):
+the daemon-local write-all helper now returns `-1` with `EIO` when a
+non-zero request receives `write() == 0`, preventing an infinite loop on a
+stalled descriptor. A focused production-linked `check_clamd_writen` target
+and Linux write-fault injection cover the normal and zero-progress paths.
+The source guard is registered; full CTest, sanitizer, current-source Sonic1,
+and certified Linux qualification remain pending because the configured local
+build prerequisites and current-source remote staging are still unavailable.
+Receipt:
+`docs/largefile-task-receipts/R11-clamd-writen-zero-progress-2026-09-17.md`.
+stalled descriptor. A focused production-linked `check_clamd_writen` target
+and Linux write-fault injection cover the normal and zero-progress paths.
+The source guard is registered; full CTest, sanitizer, current-source Sonic1,
+and certified Linux qualification remain pending because the configured local
+build prerequisites and current-source remote staging are still unavailable.
+Receipt:
+`docs/largefile-task-receipts/R11-clamd-writen-zero-progress-2026-09-17.md`.
+
+R11 follow-up: `fds_add()` now marks a newly allocated slot inactive before buffer initialization and decrements `nfds` when that initialization fails. The focused target injects command-buffer allocation failure and verifies no live descriptor remains.
+
+R12 clamd poll-array and passed-descriptor lifecycle hardening (2026-09-17 UTC):
+`realloc_polldata()` now checks its byte product and allocates replacement
+storage before releasing the old poll array, preserving a valid cleanup path
+when a resize allocation fails. `fds_cleanup()` and `fds_free()` now close
+unclaimed ancillary descriptors held in `recvfd`. The focused production-linked
+`check_clamd_writen` target injects a poll-array resize failure, verifies the
+old array remains usable for teardown, and verifies an unclaimed passed
+descriptor is closed on both removal cleanup and daemon-wide teardown.
+Inventory parity, the snapshot check, `git diff --check`,
+and the complete source guard suite passed (604 capabilities). Linked CTest,
+sanitizer, current-source Sonic1, and certified Linux qualification remain
+pending because the local dependency prerequisites and current-source remote
+staging are unavailable. Receipt:
+`docs/largefile-task-receipts/R12-clamd-fd-lifecycle-2026-09-17.md`.
+
+R14 HFS+ inline extent terminator handling (2026-09-17 UTC):
+`hfsplus_resolve_fork_block()` now accepts the normal all-zero terminator after
+any number of inline extent descriptors, rejects half-empty and
+post-terminator descriptors, and reaches the bounded ExtentOverflow lookup for
+logical blocks beyond the inline list. The existing focused HFS+ overflow
+fixture now uses one inline data/resource extent followed by the terminator,
+then resolves the next block through the matching overflow records. Source
+guards, inventory parity, the snapshot check, and `git diff --check` remain
+required evidence; linked CTest, sanitizer, current-source Sonic1, and
+certified Linux qualification remain pending because the local dependency
+prerequisites and current-source remote staging are unavailable. Receipt:
+`docs/largefile-task-receipts/R14-hfsplus-inline-extent-terminator-2026-09-17.md`.
+
+R08 UDF Extended File Entry admission (2026-09-17 UTC): the anchored UDF ICB
+walker now accepts bounded Extended File Entry descriptors (tag 266), checks
+their fixed/extended-attribute/allocation descriptor size arithmetic, and
+routes their regular-file metadata through the existing validated extent and
+nested-scan path. The standards-shaped fixture now detects the nested marker
+through an EFE child and rejects an EFE larger than its logical block with
+sticky incomplete/cache-taint. The legacy linear descriptor walk remains an
+explicit unsupported boundary, so the implementation is scoped to anchored
+tree traversal. The full source-guard suite, inventory parity, snapshot check,
+and diff checks passed; linked CTest, sanitizer, current-source Sonic1, and
+certified Linux qualification remain pending because the local dependencies,
+Docker runtime, and current-source remote connection are unavailable. Receipt:
+`docs/largefile-task-receipts/R08-udf-extended-file-entry-2026-09-17.md`.
+
+R08 UDF EFE follow-up (2026-09-17 UTC): the legacy linear UDF path now accepts
+tag-266 Extended File Entry records, uses checked EFE sizing during descriptor
+collection and extraction, and shares the existing allocation/empty-file
+admission semantics. The compact legacy regression complements the anchored
+valid and oversized-EFE cases. This removes the former explicit linear-path
+unsupported boundary while leaving the existing allocation-form, logical-block,
+corpus, sanitizer, Sonic1, and release qualification limits intact.
+
+R08 UDF empty-directory MaxFiles admission (2026-09-17 UTC): the anchored UDF
+directory walker now routes a recognized zero-length directory through the
+shared empty-entry admission path, so an empty nested subtree consumes the
+inclusive MaxFiles budget instead of returning clean without accounting. The
+current standards-shaped corpus regression requires CL_EMAXFILES, the exact
+Heuristics.Limits.Exceeded.MaxFiles reason, sticky incomplete state, and map
+cache taint when the enclosing layer is already at its child limit. Source and
+focused regression changes are recorded in
+`docs/largefile-task-receipts/R08-udf-empty-directory-maxfiles-2026-09-17.md`;
+linked CTest, sanitizer, Sonic1, and certified Linux qualification remain
+pending because the local dependency/runtime and current-source remote
+prerequisites are unavailable.
+
+R13 clamonacc detection-report admission (2026-09-17 UTC): the on-access
+structured report boundary now applies semantic status validation and requires
+an exact non-empty alert name for infected frames before retaining or
+publishing JSONL. This aligns the clamonacc socket path with the daemon report
+consumer and prevents alert-less detections from being recorded as
+authoritative evidence. The source guard and inventory checks were updated;
+linked clamonacc runtime, sanitizer, Sonic1, and certified Linux fanotify
+qualification remain pending because the local dependency/runtime and current
+source remote prerequisites are unavailable. Receipt:
+`docs/largefile-task-receipts/R13-clamonacc-report-json-boundary-2026-09-17.md`.
+
+R13 Sonic1 transport diagnostic (2026-09-17 UTC): the documented
+side-effect-free MCP-SSH connection check passed policy and address
+resolution, then timed out during the fixed 20-second TCP-connect phase.
+Authentication and SFTP were not reached, and `remote_started=false`. The
+tracked async path remains usable only when the host is reachable; no async
+timeout or remote mutation occurred in this recheck. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-mcp-ssh-async-limit-2026-09-17.md`.
+
+R13 clamonacc unknown-size stream deadline (2026-09-17 UTC): unknown-size
+on-access stream inputs now use one absolute `OnAccessCurlTimeout` source-read
+deadline, including the final one-byte overflow probe. Idle open pipes fail
+with `CL_ETIMEOUT`, EOF remains normal, and exact-ceiling overflow remains
+`CL_EMAXSIZE`; continuous input cannot extend the deadline, and zero retains
+the existing immediate-poll behavior. The exact production helper regression
+passed for zero-timeout polling, idle timeout, EOF, and data readiness,
+steady-input deadline behavior, and is registered as the Unix CTest
+`largefile_clamonacc_stream_deadline` control. The full source-guard suite and
+inventory parity then passed. This is
+bounded implementation evidence only; linked clamonacc, sanitizer, certified
+Linux, fanotify permission, production-database, and Sonic1 qualification
+remain pending. Receipt:
+`docs/largefile-task-receipts/R13-clamonacc-unknown-stream-deadline-2026-09-17.md`.

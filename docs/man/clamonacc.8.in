@@ -23,6 +23,16 @@ Be verbose.
 \fB\-l FILE, \-\-log=FILE\fR
 Save the scan report to FILE.
 .TP
+\fB\-\-report\-json=FILE\fR
+Append one validated structured JSONL scan report per on-access event to FILE.
+The report is written only after a terminating clamd report is received, or as
+one fail-closed fallback when the event cannot be completed.
+.TP
+\fB\-\-fanotify\-evidence=FILE\fR
+Append the actual Linux fanotify permission response and event metadata as
+JSONL to FILE. This is intended for controlled evidence capture and does not
+change the configured on-access policy.
+.TP
 \fB\-F, \-\-foreground\fR
 Run in foreground; do not daemonize.
 .TP
