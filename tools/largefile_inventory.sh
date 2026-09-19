@@ -36,10 +36,24 @@ category, pattern, search_root = sys.argv[1:]
 pattern = pattern.replace("[[:space:]]", r"\s")
 matcher = re.compile(pattern)
 suffixes = (".c", ".h", ".cc", ".cpp", ".rs")
-skip_dirs = {".git", ".hg", ".svn", "target"}
+skip_dirs = {
+    ".git",
+    ".hg",
+    ".svn",
+    "target",
+    "largefile-evidence",
+    "largefile-corpus",
+}
+
+search_root = os.path.abspath(search_root)
 
 for directory, directories, filenames in os.walk(search_root):
-    directories[:] = sorted(name for name in directories if name not in skip_dirs)
+    root_level = os.path.abspath(directory) == search_root
+    directories[:] = sorted(
+        name
+        for name in directories
+        if name not in skip_dirs and not (root_level and name.startswith("build"))
+    )
     for filename in sorted(filenames):
         if not filename.endswith(suffixes):
             continue
