@@ -5608,3 +5608,15 @@ enabled and no sanitizer diagnostic. This strengthens linked development
 coverage but does not promote the seven rows; certified x86-64, full-size,
 production-CVD/service, resource, and final release evidence remain open.
 Receipt: `docs/largefile-task-receipts/R09-required-unsupported.md`.
+
+R03 current-source Sonic1 registered CTest revalidation (2026-09-19): after
+synchronizing the changed current sources and rebuilding the focused test
+target, the full registered CTest suite passed 31/31 in 255.72 seconds. The
+pass includes the aggregate `libclamav` and `libclamav_rust` suites,
+clamscan/clamd/freshclam/sigtool/milter, source guards, acceptance producers,
+resource controls, and on-access stream controls. This is development
+integration evidence from the existing container, not certified Release or
+sanitizer evidence; no capability was promoted. Certified x86-64, full-size,
+production-CVD/service, resource/fanotify, independent format-8, and final
+release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-ctest-2026-09-19.md`.
