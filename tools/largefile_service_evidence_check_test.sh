@@ -246,6 +246,8 @@ for label in $workload_labels; do
         printf 'signature Synthetic.Detection matched at 123\n' >> "$out/$log_rel"
         report_for_role=$detection_report_json
         workload_status=1
+    elif [ "$kind" = report ]; then
+        printf '%s: OK\n' "$workload_input" > "$out/$log_rel"
     else
         printf 'clean\n' > "$out/$log_rel"
     fi

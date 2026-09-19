@@ -408,8 +408,8 @@ def validate_report_log(path: Path, label: str, report: dict) -> None:
             fail(f"{label} report log does not contain a complete detection outcome")
         return
     if completion == "COMPLETE":
-        if "FOUND" in text:
-            fail(f"{label} report log contains an unexpected detection")
+        if "FOUND" in text or re.search(r"^.*: OK[ \t]*$", text, re.MULTILINE) is None:
+            fail(f"{label} report log does not contain a clean outcome")
         return
     if completion in {
         "LIMIT_INCOMPLETE",

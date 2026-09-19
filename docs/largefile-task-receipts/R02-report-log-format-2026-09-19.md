@@ -24,6 +24,10 @@ CLI/service/legacy rows still require their exact signature semantics and
 offset checks. Wrong structured alerts, contradictory verdicts, and unrelated
 FOUND text remain rejected.
 
+Follow-up refinement: clean typed reports now also require a real `target: OK`
+summary line, and incomplete typed reports require `target: INCOMPLETE ...`;
+arbitrary text without `FOUND` cannot satisfy the outcome contract.
+
 Validation:
 
 - `PYTHONPATH=tools python3 -B -m unittest discover -s tools -p '*_test.py'` — 202 passed, 2 expected macOS filesystem skips.

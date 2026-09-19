@@ -181,6 +181,13 @@ class ResultChecks(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "complete detection outcome"):
             checker.validate_report_log(self.log, "typed-report", report)
 
+    def test_typed_report_log_requires_clean_outcome_line(self):
+        row = self.row(0, "COMPLETE", "-")
+        report = self.report(row)
+        self.log.write_text("debug: no detection\n")
+        with self.assertRaisesRegex(RuntimeError, "clean outcome"):
+            checker.validate_report_log(self.log, "typed-report", report)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

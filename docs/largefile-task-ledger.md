@@ -5494,3 +5494,10 @@ producer, post-run verifier, focused regressions, service-evidence regression,
 capability was promoted; certified current-source Linux/client output and
 full-size qualification remain open. Receipt:
 `docs/largefile-task-receipts/R02-report-log-format-2026-09-19.md`.
+
+R02 typed-report outcome-line follow-up (2026-09-19): the structured-report
+log validator now requires `target: OK` for clean reports and
+`target: INCOMPLETE ...` for incomplete reports; only detection reports may
+use the frontend's bare `target: FOUND` summary because their exact alert and
+offset are bound by the JSON report. The service evidence fixture, focused
+regressions, full source guards, snapshot freshness, and diff checks passed.
