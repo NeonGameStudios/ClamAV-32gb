@@ -369,10 +369,29 @@ def validate_log(path: Path, label: str, oracle_row: tuple, check_offset: bool) 
     if not path.is_file():
         fail(f"{label} has no text log")
     text = path.read_text(encoding="utf-8", errors="replace")
-    _, _, _, _, expected_signature, expected_offset, _ = oracle_row
+    _, _, _, expected_completion, expected_signature, expected_offset, _ = oracle_row
     if expected_signature == "-":
         if "FOUND" in text:
             fail(f"{label} text log contains an unexpected detection")
+        if expected_completion == "COMPLETE":
+            if re.search(r": OK[ \t]*$", text, re.MULTILINE) is None:
+                fail(f"{label} text log does not contain the expected clean outcome")
+        elif expected_completion == "LIMIT_INCOMPLETE":
+            lowered = text.lower()
+            if re.search(r": OK[ \t]*$", text, re.MULTILINE):
+                fail(
+                    f"{label} text log does not contain the expected size-limit "
+                    "outcome (contradictory clean outcome)"
+                )
+            if not any(phrase in lowered for phrase in (
+                "maxfilesize",
+                "max file size",
+                "size limit exceeded",
+                "exceeded max scan size",
+            )):
+                fail(f"{label} text log does not contain the expected size-limit outcome")
+        elif not text.strip():
+            fail(f"{label} text log is empty for a non-complete outcome")
         return
     # Match the actual signature field of a FOUND line, not a substring in a
     # filename, a different signature, or an unrelated debug line.

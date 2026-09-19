@@ -30,7 +30,7 @@ arbitrary text without `FOUND` cannot satisfy the outcome contract.
 
 Validation:
 
-- `PYTHONPATH=tools python3 -B -m unittest discover -s tools -p '*_test.py'` — 202 passed, 2 expected macOS filesystem skips.
+- `PYTHONPATH=tools python3 -B -m unittest discover -s tools -p '*_test.py'` — 207 passed, 2 expected macOS filesystem skips.
 - `sh tools/largefile_service_evidence_check_test.sh` — passed.
 - `sh tools/largefile_source_guards.sh` — passed; 604 capability entries.
 - `python3 tools/largefile_status_snapshot.py --check 32gb-current-snapshot.md` — passed.
@@ -55,3 +55,10 @@ require exactly one recognized outcome line. Detection, clean, and incomplete
 logs reject duplicate or contradictory `FOUND`/`OK`/`INCOMPLETE` result lines;
 the exact JSON alert/offset binding remains authoritative for detection. The
 focused result suite and source guards cover this fail-closed boundary.
+
+Follow-up generic-log completeness correction (2026-09-19): non-report rows now
+require an explicit `: OK` line for `COMPLETE` and a recognized size-limit
+diagnostic for `LIMIT_INCOMPLETE`. Empty logs, arbitrary non-detection text, and
+contradictory clean lines can no longer satisfy a successful or limit outcome.
+The focused result suite covers these cases; this remains verifier evidence,
+not live current-source qualification.

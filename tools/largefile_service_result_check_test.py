@@ -145,6 +145,26 @@ class ResultChecks(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "expected detection"):
                     checker.validate_log(self.log, "false-match", self.row(), False)
 
+    def test_clean_log_requires_an_explicit_ok_outcome(self):
+        row = self.row(0, "COMPLETE", "-")
+        for text in ("", "input: no detections\n", "input: ERROR\n"):
+            with self.subTest(text=text):
+                self.log.write_text(text)
+                with self.assertRaisesRegex(RuntimeError, "clean outcome"):
+                    checker.validate_log(self.log, "missing-clean-result", row, False)
+        self.log.write_text("input: OK\n")
+        checker.validate_log(self.log, "explicit-clean-result", row, False)
+
+    def test_limit_log_requires_an_explicit_size_limit_outcome(self):
+        row = self.row(2, "LIMIT_INCOMPLETE", "-")
+        for text in ("", "input: OK\n", "input: ERROR\n"):
+            with self.subTest(text=text):
+                self.log.write_text(text)
+                with self.assertRaisesRegex(RuntimeError, "size-limit outcome"):
+                    checker.validate_log(self.log, "missing-limit-result", row, False)
+        self.log.write_text("input: ERROR: MaxFileSize exceeded\n")
+        checker.validate_log(self.log, "explicit-limit-result", row, False)
+
     def test_signature_regex_characters_are_literal(self):
         row = self.row(signature="Sig.A+B")
         self.log.write_text("file: Sig.A+B FOUND\n")

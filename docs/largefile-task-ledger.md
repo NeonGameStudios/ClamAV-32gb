@@ -74,6 +74,13 @@ R02 now records the PLAN.md PCRE-phase (40 GiB) and post-PCRE (12 GiB) RSS
 budgets in both runtime and service evidence while preserving the stricter
 32 GiB overall workload bound. R13 real phase sampling remains required.
 
+The R02 service-result verifier now also requires generic clean logs to contain
+an explicit `: OK` outcome and generic `LIMIT_INCOMPLETE` logs to contain a
+recognized size-limit diagnostic. Empty logs, arbitrary non-detection text,
+and contradictory clean lines are rejected instead of being treated as valid
+non-detection results. This closes a fail-open evidence boundary; it does not
+promote any capability or replace current-source runtime qualification.
+
 R04 now maps all 601 capabilities to named required cases and validates the
 case-record schema. The service qualification path has an explicit,
 fail-closed producer for directly mapped clamscan/clamd/clamdscan workloads,
