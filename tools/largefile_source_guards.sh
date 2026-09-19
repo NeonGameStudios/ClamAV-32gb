@@ -7,10 +7,44 @@ set -eu
 
 root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 
+if command -v rg >/dev/null 2>&1; then
+    search_fixed() {
+        rg -U -F -- "$@"
+    }
+
+    search_count() {
+        rg -U -F -c --no-filename -- "$@"
+    }
+
+    search_lines() {
+        rg -U -n --no-heading --no-filename -F -- "$@"
+    }
+
+    search_regex() {
+        rg -E -- "$@"
+    }
+else
+    search_fixed() {
+        grep -F -- "$@"
+    }
+
+    search_count() {
+        grep -F -c -- "$@"
+    }
+
+    search_lines() {
+        grep -F -n -- "$@"
+    }
+
+    search_regex() {
+        grep -E -- "$@"
+    }
+fi
+
 contains() {
     file=$1
     text=$2
-    if ! rg -U -F -- "$text" "$root/$file" >/dev/null 2>&1; then
+    if ! search_fixed "$text" "$root/$file" >/dev/null 2>&1; then
         echo "large-file source guard failed: $file does not contain: $text" >&2
         exit 1
     fi
@@ -20,7 +54,7 @@ count_at_least() {
     file=$1
     text=$2
     minimum=$3
-    actual=$(rg -U -F -c --no-filename -- "$text" "$root/$file" || true)
+    actual=$(search_count "$text" "$root/$file" || true)
     if [ "$actual" -lt "$minimum" ]; then
         echo "large-file source guard failed: $file contains $actual occurrences, expected at least $minimum: $text" >&2
         exit 1
@@ -30,7 +64,7 @@ count_at_least() {
 not_contains() {
     file=$1
     text=$2
-    if rg -U -F -- "$text" "$root/$file" >/dev/null 2>&1; then
+    if search_fixed "$text" "$root/$file" >/dev/null 2>&1; then
         echo "large-file source guard failed: $file still contains: $text" >&2
         exit 1
     fi
@@ -40,15 +74,15 @@ ordered_after() {
     file=$1
     before=$2
     after=$3
-    before_line=$(rg -U -n --no-heading --no-filename -F -- "$before" "$root/$file" | head -n 1 | cut -d: -f1)
-    after_line=$(rg -U -n --no-heading --no-filename -F -- "$after" "$root/$file" | head -n 1 | cut -d: -f1)
+    before_line=$(search_lines "$before" "$root/$file" | head -n 1 | cut -d: -f1)
+    after_line=$(search_lines "$after" "$root/$file" | head -n 1 | cut -d: -f1)
     if [ -z "$before_line" ] || [ -z "$after_line" ] || [ "$before_line" -ge "$after_line" ]; then
         echo "large-file source guard failed: $file does not place '$after' after '$before'" >&2
         exit 1
     fi
 }
 
-if rg -E '^[[:space:]]*uses:[[:space:]]*[^#[:space:]]+@[^0-9a-f]|^[[:space:]]*uses:[[:space:]]*[^#[:space:]]+@[0-9a-f]{1,39}([[:space:]#]|$)' \
+if search_regex '^[[:space:]]*uses:[[:space:]]*[^#[:space:]]+@[^0-9a-f]|^[[:space:]]*uses:[[:space:]]*[^#[:space:]]+@[0-9a-f]{1,39}([[:space:]#]|$)' \
     "$root/.github/workflows/cmake.yml" >/dev/null 2>&1; then
     echo 'large-file source guard failed: workflow action is not pinned to an immutable 40-character commit' >&2
     exit 1
