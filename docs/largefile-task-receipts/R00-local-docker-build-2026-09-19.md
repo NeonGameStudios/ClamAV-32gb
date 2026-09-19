@@ -53,3 +53,25 @@ already provides them). No host software was installed, no usage reset was
 used, no remote state was changed, and no GitHub workflow was triggered.
 Native C/Rust test execution, Release/ASan/UBSan builds, production
 databases, and final qualification remain open.
+
+## Current-source recheck — 2026-09-19
+
+At branch HEAD `5170d7f0`, a fresh disposable configure used the same
+`clamav-largefile-local-toolchain2:latest` image with the current source
+mounted read-only:
+
+```text
+docker run --rm -v <canonical-source>:/src:ro -v <disposable-build>:/build \
+  -w /src clamav-largefile-local-toolchain2:latest \
+  bash -lc 'cmake -S /src -B /build -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    -DENABLE_TESTS=OFF -DENABLE_APP=ON -DENABLE_CLAMONACC=OFF \
+    -DENABLE_MILTER=OFF -DENABLE_UNRAR=OFF -DENABLE_JSON_SHARED=ON'
+```
+
+The C/C++ compiler checks passed, but configuration stopped in
+`cmake/FindRust.cmake`: `Cargo 1.97 or newer is required` and the image has no
+`cargo`. The image also lacks the Git executable. This recheck therefore did
+not reach JSON-C detection; the earlier JSON-C and offline `clam-sigutil`
+failures remain valid independent blockers from the other retained probes.
+No host software was installed, no repository files were mounted writable, no
+remote state changed, and no usage reset was used.

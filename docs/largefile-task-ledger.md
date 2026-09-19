@@ -81,6 +81,13 @@ and contradictory clean lines are rejected instead of being treated as valid
 non-detection results. This closes a fail-open evidence boundary; it does not
 promote any capability or replace current-source runtime qualification.
 
+A fresh current-source configure recheck on 2026-09-19 reached the C/C++
+compiler checks but stopped because the retained Docker toolchain has no
+`cargo` executable for the required Rust 1.97 build step. The image also lacks
+Git. Earlier retained probes independently stop on missing JSON-C development
+files and the offline `clam-sigutil` source. The build remains externally
+blocked; no installation or remote mutation was attempted.
+
 R04 now maps all 601 capabilities to named required cases and validates the
 case-record schema. The service qualification path has an explicit,
 fail-closed producer for directly mapped clamscan/clamd/clamdscan workloads,
