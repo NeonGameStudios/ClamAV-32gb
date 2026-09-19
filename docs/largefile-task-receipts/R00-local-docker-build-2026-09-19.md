@@ -78,6 +78,17 @@ failures remain valid independent blockers from the other retained probes.
 No host software was installed, no repository files were mounted writable, no
 remote state changed, and no usage reset was used.
 
+## Disposable Linux Rust-image probe — 2026-09-19
+
+The locally cached `rust:1.97-bookworm` image was probed with the current
+source mounted read-only, the existing Cargo cache mounted read-only, and an
+external target directory. Because the host selected the image's ARM64
+variant and the image did not have the pinned `1.97-aarch64-unknown-linux-gnu`
+components installed, rustup attempted to download the toolchain before the
+test could begin. The disposable container was stopped and removed; no host
+or repository software was installed and no current-source test result is
+claimed from this attempt.
+
 ## Current host-side full Rust recheck — 2026-09-19
 
 The local macOS Rust 1.97.1 toolchain was also rerun against the complete
