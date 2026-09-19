@@ -26,6 +26,12 @@ The OneNote integration suite includes the logical-input-over-former-cap and
 short-read reader cases. The LHA/LZH suite includes cumulative header
 allocation admission and decoder coverage.
 
+An ARM64 Linux container attempt was also made with direct Rust 1.97.1
+binaries and network access disabled. Cargo first resolved the repository
+workspace and stopped on the absent `clam-sigutil` Git source. Copying each
+standalone crate outside the workspace then stopped on missing offline crates
+(`bytes` for OneNote and `bitflags` for LHA/LZH). No Linux pass is claimed.
+
 ## Limits
 
 These are standalone crate results only. The full `clamav_rust` crate still
