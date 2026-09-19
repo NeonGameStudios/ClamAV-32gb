@@ -5599,3 +5599,12 @@ require exactly one recognized `FOUND`, `OK`, or `INCOMPLETE` outcome line,
 rejecting duplicate or contradictory result lines before the independently
 validated JSON report is accepted. Focused regressions and the source-guard
 sweep pass; no capability was promoted.
+
+R09 current-source native revalidation (2026-09-19): the ARM64 unsanitized
+`cl_suite/required_unsupported` binary passed 61/61 checks, including the
+Python and AI-model skipped-read regressions. The existing native ASan/UBSan
+binary passed the same 61/61 checks with leak detection and UBSan halting
+enabled and no sanitizer diagnostic. This strengthens linked development
+coverage but does not promote the seven rows; certified x86-64, full-size,
+production-CVD/service, resource, and final release evidence remain open.
+Receipt: `docs/largefile-task-receipts/R09-required-unsupported.md`.

@@ -427,3 +427,20 @@ Python marshal backing-read status hardening (2026-09-11 UTC):
   available Docker images lack JSON-C and Check development headers. Full
   Python semantics, certified x86-64, full-size, sanitizer, and release
   qualification remain open.
+
+Current-source native revalidation (2026-09-19 UTC):
+
+- The current-source ARM64 unsanitized Check binary at
+  `/tmp/clamav-current-release-make2/unit_tests/check_clamav` passed the
+  dedicated `cl_suite/required_unsupported` group with `61` checks, zero
+  failures, and zero errors. The run included the Python marshal and AI-model
+  skipped-read regressions introduced after the earlier source-only audit.
+- The existing native ASan/UBSan Check binary at
+  `/tmp/clamav-current-build/unit_tests/check_clamav` passed the same `61`
+  checks with zero failures or errors under `ASAN_OPTIONS=detect_leaks=1` and
+  `UBSAN_OPTIONS=halt_on_error=1`; no sanitizer diagnostic was emitted.
+- Both runs bound the repository's test certificate directory through
+  `CVD_CERTS_DIR` and used the same `T=120` case timeout. This is linked ARM64
+  development evidence only; the seven rows remain pending until their
+  certified x86-64, full-size, production-CVD/service, resource, and final
+  release evidence is complete.
