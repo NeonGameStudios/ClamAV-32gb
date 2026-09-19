@@ -12,8 +12,10 @@ using MCP-SSH.
 - Container architecture: `aarch64`
 - Compiler: Clang 16.0.6
 - CMake: 3.25.1
-- Rust: 1.97.1
-- Source: branch `largefile-roadmap-qualification`, commit `05d2bb3e`
+- Rust: 1.97.1 was available only in the earlier direct-binary probe; the
+  current CMake image recheck has no `cargo` executable
+- Source: historical probe at commit `05d2bb3e`; current-source recheck is
+  recorded below at branch HEAD `5170d7f0`
 - Build directory: disposable container `/tmp/clamav-build`
 
 ## Evidence
