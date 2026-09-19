@@ -43,8 +43,16 @@ cmake --build /tmp/clamav-7f3458c4-build --target check_clamav -j2
 [100%] Built target check_clamav
 ```
 
-With the focused `cl_scan_api` regressions isolated to stay within the MCP-SSH
-command window, the rebuilt binary passed:
+The complete asynchronous `cl_scan_api` run finished against the rebuilt
+binary with exit 0 and no stderr:
+
+```text
+Running suite(s): cl_suite
+100%: Checks: 839, Failures: 0, Errors: 0
+```
+
+The mail/HTML cases were also inspected in smaller runs while diagnosing the
+original failure. Those focused runs passed:
 
 | Focus | Checks | Failures | Errors |
 | --- | ---: | ---: | ---: |
@@ -53,17 +61,18 @@ command window, the rebuilt binary passed:
 | streaming-spool single-message case | 3 | 0 | 0 |
 | single-message no-alert case | 4 | 0 | 0 |
 
-The temporary remote test-selection harness was removed after the runs. The
-remote test source retains one unrelated pre-existing extra PDF test
-registration, so it is not used as a whole-file identity claim.
+The temporary remote test-selection harness was removed after the focused
+runs. The remote test source retains one unrelated pre-existing extra PDF test
+registration, so it is not used as a whole-file identity claim; the complete
+run above is nevertheless the rebuilt binary's full linked `cl_scan_api`
+result.
 
 ## Boundary and next action
 
-The complete linked `cl_scan_api` suite was not allowed to finish because the
-MCP-SSH command wrapper's effective execution window expired before output was
-returned. The earlier full run had 17 failures before this fix; the focused
-mail/HTML regressions are now green against the rebuilt source. Run the full
-linked suite under a runner with a longer command window, then inspect the
-remaining archive-specific cases before any qualification claim.
+The earlier full run had 17 failures before this fix; the complete current
+run now passes all 839 checks. This is development evidence only: it does not
+provide certified x86-64, sanitizer, production-service, R04 acceptance, or
+release qualification evidence. The broader R08 parser matrix and remaining
+roadmap gates remain open.
 
 State: `development-verified`; qualification pending.
