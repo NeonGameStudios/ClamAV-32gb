@@ -4813,6 +4813,8 @@ contains tools/largefile_acceptance_case_producer.py 'validate_report_log(log_pa
 contains tools/largefile_service_result_check_test.py 'test_typed_report_log_can_use_bare_found_after_report_binding'
 contains tools/largefile_service_result_check_test.py 'test_typed_report_log_rejects_contradictory_outcome_lines'
 contains tools/largefile_service_result_check_test.py 'test_typed_report_log_requires_clean_outcome_line'
+contains tools/largefile_service_result_check_test.py 'test_clean_log_requires_an_explicit_ok_outcome'
+contains tools/largefile_service_result_check_test.py 'test_limit_log_requires_an_explicit_size_limit_outcome'
 contains tools/largefile_service_workload_check.py 'csv.reader(stream, delimiter="\t", strict=True)'
 contains tools/largefile_service_workload_check.py 'safe_evidence_file(out, value, label)'
 contains tools/largefile_service_workload_check_test.py 'test_malformed_tsv_quoting_is_rejected'

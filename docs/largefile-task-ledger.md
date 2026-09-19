@@ -88,6 +88,13 @@ Git. Earlier retained probes independently stop on missing JSON-C development
 files and the offline `clam-sigutil` source. The build remains externally
 blocked; no installation or remote mutation was attempted.
 
+The 2026-09-19 MCP-SSH staging recheck used `sonic1` with the supplied
+`sonic1-camera-key` profile. Uploading the current immutable source archive was
+denied before writing with `file_write_limit_exceeded`; the durable transfer
+list had been inspected first, and no alternate destination was tried. The
+existing remote checkout therefore remains unsuitable as current-source
+evidence.
+
 R04 now maps all 601 capabilities to named required cases and validates the
 case-record schema. The service qualification path has an explicit,
 fail-closed producer for directly mapped clamscan/clamd/clamdscan workloads,

@@ -75,3 +75,14 @@ not reach JSON-C detection; the earlier JSON-C and offline `clam-sigutil`
 failures remain valid independent blockers from the other retained probes.
 No host software was installed, no repository files were mounted writable, no
 remote state changed, and no usage reset was used.
+
+## MCP-SSH current-source staging recheck — 2026-09-19
+
+Using the administrator-provided `sonic1` host and `sonic1-camera-key` profile,
+the durable transfer list was inspected before attempting any new transfer.
+An upload of the current immutable archive (62,730,240 bytes,
+SHA-256 `2c6c32a236e87a2be3be6e8ae22a1b336bc7d944af603c18e7313065ffabd12e`) to
+a new `/tmp` destination was denied before writing with the authoritative
+reason `file_write_limit_exceeded`. The existing remote checkout remains the
+stale, dirty tree documented in the earlier Sonic1 receipt. Per MCP-SSH
+continuation policy, no alternate destination or untracked copy was attempted.
