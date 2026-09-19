@@ -26,6 +26,25 @@ The OneNote integration suite includes the logical-input-over-former-cap and
 short-read reader cases. The LHA/LZH suite includes cumulative header
 allocation admission and decoder coverage.
 
+## Current-checkout offline rerun
+
+The same two commands were rerun against the current checkout after the latest
+roadmap changes, using fresh disposable target directories outside the
+repository so Cargo could not create an in-repository build lock:
+
+```text
+CARGO_NET_OFFLINE=true CARGO_TARGET_DIR=/private/tmp/clamav-onenote-offline-current \
+  cargo test --locked --manifest-path libclamav_rust/onenote_parser/Cargo.toml
+  84 unit tests passed; 5 integration tests passed; 1 doc test ignored
+
+CARGO_NET_OFFLINE=true CARGO_TARGET_DIR=/private/tmp/clamav-delharc-offline-current \
+  cargo test --locked --manifest-path libclamav_rust/delharc/Cargo.toml
+  13 unit tests passed; 1 doc test passed; 1 doc test ignored
+```
+
+Both offline reruns passed. The OneNote run emitted existing compiler warnings
+only; no source or generated files were written into the repository.
+
 An ARM64 Linux container attempt was also made with direct Rust 1.97.1
 binaries and network access disabled. Cargo first resolved the repository
 workspace and stopped on the absent `clam-sigutil` Git source. Copying each

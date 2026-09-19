@@ -138,6 +138,15 @@ metadata narrowing. The call-path analysis is retained in
 `docs/largefile-task-receipts/R08-archive-rust-audit.md`; runtime and
 materialized-edge qualification remain open.
 
+The standalone Rust parser revalidation was rerun against the current checkout
+with `CARGO_NET_OFFLINE=true`, `--locked`, and fresh target directories outside
+the repository. OneNote passed 84 unit and 5 integration tests, and Delharc
+passed 13 unit tests plus 1 non-ignored doc test. This is current-checkout
+development evidence only; the full C/Rust application build and release
+qualification remain blocked by the recorded toolchain, native dependency, and
+remote-runner boundaries. Receipt:
+`docs/largefile-task-receipts/R08-rust-standalone-parser-revalidation-2026-09-19.md`.
+
 The follow-on R08 contiguous-read source audit found the roadmap-approved
 whole-map PCRE read and two legacy PE unpacker reads for `PESpin` and `yC`.
 The PCRE path is guarded by the effective PCRE limit, contiguous reservation,
