@@ -141,6 +141,16 @@ hit the container's incompatible mixed-ASan-runtime boundary after successful
 compilation/linking; neither result is promoted to certified qualification.
 Receipt: `docs/largefile-task-receipts/R04-current-source-arm64-development-capture-2026-09-19.md`.
 
+A follow-on no-sanitizer ARM64 recheck rebuilt the current source through the
+`check_clamav` target and ran the Rust consumer through CTest: `libclamav_rust`
+passed 1/1 in 40.88 seconds. The focused native `cl_api` group passed 533/533
+checks; its `traverse_to: Failed open payload` line came from the expected
+negative-path action test. This confirms the Rust/native integration outside
+the retained mixed-ASan runtime boundary, but remains development evidence
+only and does not promote any capability or change the 604/0/147/443/14/0/590
+readiness counts. Receipt:
+`docs/largefile-task-receipts/R03-rust-unsanitized-integration-recheck-2026-09-19.md`.
+
 R05 now independently validates the sparse boundary corpus before scanning and
 again during evidence verification. The checker binds the exact eleven-row
 manifest, logical sizes, marker windows, sparse allocation metadata, and
