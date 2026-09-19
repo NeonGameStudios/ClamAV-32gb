@@ -5620,3 +5620,15 @@ sanitizer evidence; no capability was promoted. Certified x86-64, full-size,
 production-CVD/service, resource/fanotify, independent format-8, and final
 release evidence remain open. Receipt:
 `docs/largefile-task-receipts/R03-sonic1-current-source-ctest-2026-09-19.md`.
+
+R03 exact current-source Sonic1 provenance rebuild (2026-09-19): the
+disposable staging tree was corrected until its source manifest matched the
+local current-source manifest exactly (`f7be88d...`). CMake recorded that
+manifest and the expected development settings, `check_clamav` rebuilt
+successfully, and the full registered CTest suite passed 31/31 in 225.03
+seconds. This remains development integration evidence from the existing
+container; its synthetic Git metadata is not independent provenance, no
+capability was promoted, and certified Release/sanitizer, full-size,
+production-CVD/service, resource/fanotify, independent format-8, and final
+R11–R15 evidence remain open. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-provenance-2026-09-19.md`.
