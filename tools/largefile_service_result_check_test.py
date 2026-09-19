@@ -197,10 +197,20 @@ class ResultChecks(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "complete detection outcome"):
             checker.validate_report_log(self.log, "typed-report", report)
 
+    def test_typed_report_log_rejects_contradictory_outcome_lines(self):
+        report = self.report(self.row())
+        self.log.write_text("input: FOUND\ninput: OK\n")
+        with self.assertRaisesRegex(RuntimeError, "complete detection outcome"):
+            checker.validate_report_log(self.log, "typed-report", report)
+
     def test_typed_report_log_requires_clean_outcome_line(self):
         row = self.row(0, "COMPLETE", "-")
         report = self.report(row)
         self.log.write_text("debug: no detection\n")
+        with self.assertRaisesRegex(RuntimeError, "clean outcome"):
+            checker.validate_report_log(self.log, "typed-report", report)
+
+        self.log.write_text("input: OK\ninput: OK\n")
         with self.assertRaisesRegex(RuntimeError, "clean outcome"):
             checker.validate_report_log(self.log, "typed-report", report)
 

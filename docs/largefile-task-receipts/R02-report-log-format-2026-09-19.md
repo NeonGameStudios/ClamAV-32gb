@@ -49,3 +49,9 @@ budget and rejects `logical_bytes` above that budget. Its FILDESREPORT wire
 fixture now includes the required budget field, and a focused regression
 covers both wrong-budget and over-budget reports. This closes an independent-
 verifier gap; it does not promote any capability.
+
+Follow-up outcome exclusivity correction (2026-09-19): typed report logs now
+require exactly one recognized outcome line. Detection, clean, and incomplete
+logs reject duplicate or contradictory `FOUND`/`OK`/`INCOMPLETE` result lines;
+the exact JSON alert/offset binding remains authoritative for detection. The
+focused result suite and source guards cover this fail-closed boundary.

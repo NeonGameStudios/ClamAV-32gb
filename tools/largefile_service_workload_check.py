@@ -403,12 +403,17 @@ def validate_report_log(path: Path, label: str, report: dict) -> None:
         fail(f"{label} has no text log")
     text = path.read_text(encoding="utf-8", errors="replace")
     completion = report.get("completion")
+    outcome_lines = re.findall(
+        r"^.*: (FOUND|OK|INCOMPLETE(?:[ \t(].*)?)[ \t]*$",
+        text,
+        re.MULTILINE,
+    )
     if completion == "DETECTION_TERMINATED":
-        if re.search(r"^.*: FOUND[ \t]*$", text, re.MULTILINE) is None:
+        if outcome_lines != ["FOUND"]:
             fail(f"{label} report log does not contain a complete detection outcome")
         return
     if completion == "COMPLETE":
-        if "FOUND" in text or re.search(r"^.*: OK[ \t]*$", text, re.MULTILINE) is None:
+        if "FOUND" in text or outcome_lines != ["OK"]:
             fail(f"{label} report log does not contain a clean outcome")
         return
     if completion in {
@@ -418,7 +423,7 @@ def validate_report_log(path: Path, label: str, report: dict) -> None:
         "RESOURCE_FAILURE",
         "APPLICATION_ABORT",
     }:
-        if "FOUND" in text or re.search(r"^.*: INCOMPLETE(?:[ \t(].*)?$", text, re.MULTILINE) is None:
+        if "FOUND" in text or len(outcome_lines) != 1 or not outcome_lines[0].startswith("INCOMPLETE"):
             fail(f"{label} report log does not contain a clean incomplete outcome")
         return
     fail(f"{label} structured report has an unsupported completion")

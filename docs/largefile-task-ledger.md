@@ -5509,3 +5509,9 @@ exceed it. The FILDESREPORT wire fixture was brought up to the same contract,
 and focused wrong-budget/over-budget regressions pass. No capability was
 promoted; current-source certified Linux service evidence and final
 qualification remain open.
+
+R02 typed-report outcome exclusivity (2026-09-19): typed report logs now
+require exactly one recognized `FOUND`, `OK`, or `INCOMPLETE` outcome line,
+rejecting duplicate or contradictory result lines before the independently
+validated JSON report is accepted. Focused regressions and the source-guard
+sweep pass; no capability was promoted.
