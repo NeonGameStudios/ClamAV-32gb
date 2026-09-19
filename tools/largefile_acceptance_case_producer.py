@@ -204,7 +204,10 @@ def record_from_workload(
     report = workload_check.load_report(report_path, label)
     oracle_row = oracle[role]
     workload_check.validate_report(report, label, oracle_row)
-    workload_check.validate_log(log_path, label, oracle_row, row["check_offset"] == "yes")
+    if row["kind"] == "report":
+        workload_check.validate_report_log(log_path, label, report)
+    else:
+        workload_check.validate_log(log_path, label, oracle_row, row["check_offset"] == "yes")
     transport_status = int(row["status"])
     completion = str(report["completion"])
     signature = report.get("last_alert") or "-"

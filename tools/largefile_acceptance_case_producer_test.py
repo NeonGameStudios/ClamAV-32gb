@@ -241,6 +241,9 @@ class AcceptanceCaseProducerTests(unittest.TestCase):
             "logs/production.log\treports/production.jsonl\t0\tno\n",
             encoding="utf-8",
         )
+        # The structured report is the exact alert/offset authority for this
+        # explicitly typed workload; the frontend's summary may omit the name.
+        (self.out / "logs/production.log").write_text("input: FOUND\n", encoding="utf-8")
         count = producer.produce(self.out, self.manifest, self.mapping)
         self.assertEqual(count, 1)
         with (self.out / "provenance/acceptance-cases.tsv").open(

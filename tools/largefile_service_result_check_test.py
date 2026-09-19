@@ -163,6 +163,24 @@ class ResultChecks(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "expected match offset"):
                     checker.validate_log(self.log, "false-offset", self.row(), True)
 
+    def test_typed_report_log_can_use_bare_found_after_report_binding(self):
+        report = self.report(self.row())
+        self.log.write_text("input: FOUND\n")
+        checker.validate_report_log(self.log, "typed-report", report)
+
+    def test_typed_report_log_does_not_replace_exact_report_binding(self):
+        report = self.report(self.row())
+        report["last_alert"] = "Wrong.Signature"
+        self.log.write_text("input: FOUND\n")
+        with self.assertRaisesRegex(RuntimeError, "alert does not exactly match"):
+            checker.validate_report(report, "typed-report", self.row())
+
+    def test_typed_report_log_rejects_unrelated_found_text(self):
+        report = self.report(self.row())
+        self.log.write_text("debug: unrelated FOUND marker\n")
+        with self.assertRaisesRegex(RuntimeError, "complete detection outcome"):
+            checker.validate_report_log(self.log, "typed-report", report)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

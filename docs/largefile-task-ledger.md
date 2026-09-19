@@ -5482,3 +5482,15 @@ bounded implementation evidence only; linked clamonacc, sanitizer, certified
 Linux, fanotify permission, production-database, and Sonic1 qualification
 remain pending. Receipt:
 `docs/largefile-task-receipts/R13-clamonacc-unknown-stream-deadline-2026-09-17.md`.
+
+R02/R04 typed structured-report log format (2026-09-19): `kind=report`
+workloads now validate the exact alert and native-width offset from their
+independently checked JSON report, while accepting a frontend summary that
+prints only `target: FOUND`. The typed path still requires a complete outcome
+line and rejects unrelated or contradictory text; CLI, service, and legacy
+workloads retain exact console-signature and offset validation. The acceptance
+producer, post-run verifier, focused regressions, service-evidence regression,
+604-row source guards, snapshot freshness, and diff checks passed. No
+capability was promoted; certified current-source Linux/client output and
+full-size qualification remain open. Receipt:
+`docs/largefile-task-receipts/R02-report-log-format-2026-09-19.md`.

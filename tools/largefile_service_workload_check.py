@@ -388,6 +388,42 @@ def validate_log(path: Path, label: str, oracle_row: tuple, check_offset: bool) 
             fail(f"{label} text log does not contain the expected match offset")
 
 
+def validate_report_log(path: Path, label: str, report: dict) -> None:
+    """Validate a report frontend's outcome line without re-parsing its alert.
+
+    A structured-report workload is explicitly typed in the workload manifest
+    and its report has already been checked by ``validate_report``.  That
+    report is therefore the authoritative exact alert/offset binding.  Some
+    frontends intentionally print only ``target: FOUND``; requiring the exact
+    alert name in this supplementary text log would reject that valid format.
+    A bare FOUND line is accepted here only for this typed path, never as a
+    substitute for structured-report validation.
+    """
+    if not path.is_file():
+        fail(f"{label} has no text log")
+    text = path.read_text(encoding="utf-8", errors="replace")
+    completion = report.get("completion")
+    if completion == "DETECTION_TERMINATED":
+        if re.search(r"^.*: FOUND[ \t]*$", text, re.MULTILINE) is None:
+            fail(f"{label} report log does not contain a complete detection outcome")
+        return
+    if completion == "COMPLETE":
+        if "FOUND" in text:
+            fail(f"{label} report log contains an unexpected detection")
+        return
+    if completion in {
+        "LIMIT_INCOMPLETE",
+        "UNSUPPORTED",
+        "MALFORMED_CONFIRMED",
+        "RESOURCE_FAILURE",
+        "APPLICATION_ABORT",
+    }:
+        if "FOUND" in text or re.search(r"^.*: INCOMPLETE(?:[ \t(].*)?$", text, re.MULTILINE) is None:
+            fail(f"{label} report log does not contain a clean incomplete outcome")
+        return
+    fail(f"{label} structured report has an unsupported completion")
+
+
 def validate_process_status(label: str, status: int, oracle_row: tuple) -> None:
     expected_exit = oracle_row[2]
     if status != expected_exit:
@@ -552,14 +588,17 @@ def main(argv: list[str]) -> int:
         report = evidence_path(out, report_path, f"{label} report")
         if report is None:
             fail(f"{label} has no report path")
-        validate_report(load_report(report, label), label, oracle[role])
+        report_record = load_report(report, label)
+        validate_report(report_record, label, oracle[role])
         expected_exit = oracle[role][2]
         if kind == "report":
             if status != 0:
                 fail(f"{label} protocol probe did not complete successfully")
+            validate_report_log(log, label, report_record)
         elif status != expected_exit:
             fail(f"{label} process status {status} does not match oracle {expected_exit}")
-        validate_log(log, label, oracle[role], offset_check == "yes")
+        else:
+            validate_log(log, label, oracle[role], offset_check == "yes")
 
     if seen != set(expected):
         missing = ", ".join(sorted(set(expected) - seen))
