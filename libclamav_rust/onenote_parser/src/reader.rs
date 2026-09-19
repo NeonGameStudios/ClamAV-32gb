@@ -84,10 +84,12 @@ impl ReaderBlob {
 
 /// A private temporary file containing one parser-owned binary item.
 pub(crate) struct ReaderSpool {
-    file: File,
+    file: Option<File>,
     path: PathBuf,
     length: u64,
     budget: Option<Rc<dyn BlobSpoolBudget>>,
+    #[cfg(unix)]
+    owner_identity: (u64, u64),
 }
 
 impl ReaderSpool {
@@ -114,11 +116,21 @@ impl ReaderSpool {
             }
             match options.open(&path) {
                 Ok(file) => {
+                    #[cfg(unix)]
+                    let owner_identity = {
+                        use std::os::unix::fs::MetadataExt;
+
+                        let metadata = file.metadata()?;
+                        (metadata.dev() as u64, metadata.ino() as u64)
+                    };
+
                     return Ok(Self {
-                        file,
+                        file: Some(file),
                         path,
                         length: 0,
                         budget,
+                        #[cfg(unix)]
+                        owner_identity,
                     });
                 }
                 Err(error) if error.kind() == io::ErrorKind::AlreadyExists => continue,
@@ -148,10 +160,9 @@ impl ReaderSpool {
         {
             use std::os::unix::fs::MetadataExt;
 
-            let owner_metadata = self.file.metadata()?;
             let reader_metadata = file.metadata()?;
-            if owner_metadata.dev() != reader_metadata.dev()
-                || owner_metadata.ino() != reader_metadata.ino()
+            if self.owner_identity.0 != reader_metadata.dev() as u64
+                || self.owner_identity.1 != reader_metadata.ino() as u64
             {
                 return Err(io::Error::new(
                     io::ErrorKind::PermissionDenied,
@@ -171,9 +182,9 @@ impl ReaderSpool {
     fn path_is_owned(&self) -> io::Result<bool> {
         use std::os::unix::fs::MetadataExt;
 
-        let owner_metadata = self.file.metadata()?;
         let path_metadata = std::fs::symlink_metadata(&self.path)?;
-        Ok(owner_metadata.dev() == path_metadata.dev() && owner_metadata.ino() == path_metadata.ino())
+        Ok(self.owner_identity.0 == path_metadata.dev() as u64
+            && self.owner_identity.1 == path_metadata.ino() as u64)
     }
 
     fn note_cleanup_failure(&self) {
@@ -476,7 +487,12 @@ impl<'a> Reader<'a> {
                     .into());
                 }
             }
-            if let Err(error) = spool.file.write_all(bytes) {
+            if let Err(error) = spool
+                .file
+                .as_mut()
+                .expect("newly-created parser spool must have a writer")
+                .write_all(bytes)
+            {
                 if let Some(budget) = &spool.budget {
                     budget.release(written);
                 }
@@ -485,6 +501,11 @@ impl<'a> Reader<'a> {
             spool.length = new_length;
             remaining -= bytes.len() as u64;
         }
+
+        // The parser may retain many blob spools in its object graph. Keep
+        // only the path and ownership identity after materialization so the
+        // completed spools do not exhaust the process file-descriptor limit.
+        spool.file.take();
 
         Ok(ReaderBlob::Spool(spool))
     }
@@ -1030,10 +1051,11 @@ mod tests {
         let oversized_path = PathBuf::from(format!("/tmp/{}", "x".repeat(5000)));
 
         drop(ReaderSpool {
-            file,
+            file: Some(file),
             path: oversized_path,
             length: 0,
             budget: Some(budget.clone()),
+            owner_identity: (0, 0),
         });
 
         assert_eq!(budget.cleanup_failures.get(), 1);
@@ -1054,6 +1076,21 @@ mod tests {
         };
 
         assert_eq!(std::fs::metadata(path).unwrap().permissions().mode() & 0o777, 0o600);
+    }
+
+    #[test]
+    fn stream_blob_closes_writer_after_materialization() {
+        let _lock = SPOOL_TEST_LOCK.lock().unwrap();
+        let mut reader = Reader::from_reader(Cursor::new(b"private".to_vec()));
+        let blob = reader.read_blob(7).unwrap();
+
+        match blob {
+            ReaderBlob::Spool(spool) => {
+                assert!(spool.file.is_none());
+                assert_eq!(spool.open_reader().unwrap().bytes().count(), 7);
+            }
+            ReaderBlob::Memory(_) => panic!("stream-backed blobs must use a spool"),
+        }
     }
 
     #[cfg(unix)]

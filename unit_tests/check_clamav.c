@@ -36116,6 +36116,12 @@ START_TEST(test_rust_onenote_reader_crosses_former_whole_input_cap)
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
     engine = cl_engine_new();
     ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE,
+                                       (long long)CLI_MAX_LARGE_FILESIZE),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE,
+                                       (long long)CLI_MAX_LOGICAL_SCAN_SIZE),
+                     CL_SUCCESS);
     ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
 
     memset(&state, 0, sizeof(state));
