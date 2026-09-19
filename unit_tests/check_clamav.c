@@ -63055,6 +63055,9 @@ START_TEST(test_hfsplus_extent_overflow_records_are_followed)
     test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 2);
     test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 42);
     test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+    /* The second logical data block is supplied by the ExtentOverflow record
+     * below; the test payload therefore begins at the 512-byte block boundary
+     * in the extracted data fork. */
     memcpy(data + (40 * 512), "MZP", 3);
 
     scan_engine = cl_engine_new();
@@ -63062,7 +63065,7 @@ START_TEST(test_hfsplus_extent_overflow_records_are_followed)
     ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
     ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
     ck_assert_int_eq(cli_add_content_match_pattern(scan_engine->root[0], "HFS.Overflow.Member", "4d5a50", 0, 0, 0,
-                                                   "4096", NULL, 0), CL_SUCCESS);
+                                                   "512", NULL, 0), CL_SUCCESS);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
 
     memset(&options, 0, sizeof(options));
@@ -63111,8 +63114,12 @@ START_TEST(test_hfsplus_extent_overflow_records_are_followed)
     /* A non-zero descriptor after the all-zero terminator must not be
      * silently ignored, even when the requested block was already inline. */
     test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
-    test_hfsplus_put_be32(fork + 2 * sizeof(hfsPlusExtentDescriptor) + offsetof(hfsPlusExtentDescriptor, startBlock), 31);
-    test_hfsplus_put_be32(fork + 2 * sizeof(hfsPlusExtentDescriptor) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + 2 * sizeof(hfsPlusExtentDescriptor) +
+                              offsetof(hfsPlusExtentDescriptor, startBlock),
+                          31);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + 2 * sizeof(hfsPlusExtentDescriptor) +
+                              offsetof(hfsPlusExtentDescriptor, blockCount),
+                          1);
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
@@ -63128,8 +63135,12 @@ START_TEST(test_hfsplus_extent_overflow_records_are_followed)
     ck_assert(map->dont_cache_flag);
     cl_fmap_close(map);
 
-    test_hfsplus_put_be32(fork + 2 * sizeof(hfsPlusExtentDescriptor) + offsetof(hfsPlusExtentDescriptor, startBlock), 0);
-    test_hfsplus_put_be32(fork + 2 * sizeof(hfsPlusExtentDescriptor) + offsetof(hfsPlusExtentDescriptor, blockCount), 0);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + 2 * sizeof(hfsPlusExtentDescriptor) +
+                              offsetof(hfsPlusExtentDescriptor, startBlock),
+                          0);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + 2 * sizeof(hfsPlusExtentDescriptor) +
+                              offsetof(hfsPlusExtentDescriptor, blockCount),
+                          0);
 
     /* A matching record must not let a malformed tail escape validation. */
     test_hfsplus_put_be32(data + (5 * 512) + offsetof(hfsNodeDescriptor, fLink), 1);

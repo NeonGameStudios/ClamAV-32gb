@@ -746,6 +746,7 @@ void fds_free(struct fd_data *data)
         if (data->buf[i].buffer) {
             free(data->buf[i].buffer);
         }
+#endif
     }
     if (data->buf)
         free(data->buf);

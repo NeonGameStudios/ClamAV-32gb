@@ -54,7 +54,7 @@ if rg -E '^[[:space:]]*uses:[[:space:]]*[^#[:space:]]+@[^0-9a-f]|^[[:space:]]*us
     exit 1
 fi
 
-contains libclamav/matcher-bm.c 'sizeof(uint64_t), cli_bm_uint64_cmp'
+contains libclamav/matcher-bm.c 'cli_qsort(data->offtab, data->cnt, sizeof(uint64_t), cli_bm_uint64_cmp)'
 contains libclamav/matcher.h 'CLI_OFF_ANY64'
 contains libclamav/matcher.h 'CLI_OFF_NONE64'
 contains libclamav/matcher.c 'ret = cli_merge_scan_status(ret, cli_exp_eval(ctx, target_ac_root'

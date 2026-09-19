@@ -249,7 +249,7 @@ for label in $workload_labels; do
     elif [ "$kind" = report ]; then
         printf '%s: OK\n' "$workload_input" > "$out/$log_rel"
     else
-        printf 'clean\n' > "$out/$log_rel"
+        printf '%s: OK\n' "$workload_input" > "$out/$log_rel"
     fi
     if [ "$report_rel" != - ]; then
         printf '%s' "$report_for_role" > "$out/$report_rel"
