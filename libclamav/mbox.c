@@ -5487,7 +5487,12 @@ static blob *
 getHrefs(mbox_ctx *mctx, message *m, tag_arguments_t *hrefs, bool *incomplete)
 {
     cli_ctx *ctx = mctx->ctx;
-    const char *tmpdir = ctx && ctx->this_layer_tmpdir ? ctx->this_layer_tmpdir : NULL;
+    /* The mail scanner gives each parsed message its own temporary directory.
+     * HTML normalization writes fixed filenames (nocomment.html and
+     * notags.html), so using the shared scan directory would make concurrent
+     * or nested mail scans collide with one another. */
+    const char *tmpdir = (mctx && mctx->dir) ? mctx->dir
+                                            : (ctx && ctx->this_layer_tmpdir ? ctx->this_layer_tmpdir : NULL);
     fileblob *input    = NULL;
     fmap_t *map        = NULL;
     blob *b            = NULL;
