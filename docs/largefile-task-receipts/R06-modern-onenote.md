@@ -1003,7 +1003,9 @@ Modern scanner-entry regression (2026-09-19 UTC):
   explicitly asserted as zero.
 - In the existing disposable Linux ARM64 container, `cargo test --locked`
   passed 84 unit tests, 6 integration tests, and 1 ignored doctest. The only
-  compiler output was the pre-existing warning set.
+  compiler output was the pre-existing warning set. The application CMake
+  wrapper was then rerun with `ctest --test-dir /tmp/clamav-current-release-make2
+  --output-on-failure -R '^libclamav_rust$'` and passed 1/1 in 0.68 seconds.
 
 This strengthens the modern admission and scanner-entry development boundary,
 but it is not late-child detection evidence: a valid materialized modern
