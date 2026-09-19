@@ -71,11 +71,38 @@ workspace and stopped on the absent `clam-sigutil` Git source. Copying each
 standalone crate outside the workspace then stopped on missing offline crates
 (`bytes` for OneNote and `bitflags` for LHA/LZH). No Linux pass is claimed.
 
+## Exact-toolchain Linux consumer recheck
+
+The locally cached ARM64 `rust:1.97-bookworm` image was rerun with its
+installed `1.97.1-aarch64-unknown-linux-gnu` toolchain selected explicitly,
+avoiding the earlier rustup alias/download boundary. With the current source
+read-only, the existing Cargo cache read-only, and a disposable target outside
+the repository, the complete consumer library compiled offline:
+
+```text
+CARGO_NET_OFFLINE=true CARGO_HOME=/cargo-cache \
+  RUSTUP_TOOLCHAIN=1.97.1-aarch64-unknown-linux-gnu \
+  CARGO_TARGET_DIR=/build-target \
+  cargo build --locked --manifest-path libclamav_rust/Cargo.toml --lib
+  Finished `dev` profile in 2m 22s; libclamav_rust.a was produced
+```
+
+The build included the pinned `clam-sigutil` 1.2.4 source and OpenSSL-backed
+consumer code. The same environment's standalone `cargo test` compiled the
+full crate and dependencies, then failed only while linking the test binary:
+the native ClamAV C ABI hooks (`cli_mark_scan_incomplete`, `cli_versig`, the
+logging/time-limit functions, and related symbols) are supplied by the C
+application build and are not present in a standalone Cargo test invocation.
+This confirms Linux Rust source compilation while leaving C/Rust integration
+linkage, native CMake, runtime, sanitizer, certified x86-64, and release
+qualification open.
+
 ## Limits
 
-These are standalone crate results plus a failed full-consumer preflight. The
-full `clamav_rust` crate remains unverified because the host lacks the required
-OpenSSL development environment, and the native ClamAV configure remains
-blocked by the retained Docker image's missing Cargo and JSON-C prerequisites.
-Current C ABI linkage, production databases, sanitizer parity, certified Linux
-x86-64, and final release qualification remain open.
+These are standalone crate results plus a successful exact-toolchain Linux
+consumer library build and a test-link boundary. The full native C/Rust
+application remains unverified because the retained CMake Docker image lacks
+Cargo and JSON-C prerequisites, while the macOS host lacks the required
+OpenSSL development environment. Current C ABI linkage, production databases,
+sanitizer parity, certified Linux x86-64, and final release qualification
+remain open.

@@ -152,10 +152,14 @@ remote-runner boundaries. Receipt:
 
 The complete `libclamav_rust` consumer was also rerun from the current host
 cache. Cargo resolved `clam-sigutil` 1.2.4 and advanced to `openssl-sys`, which
-stopped on the absent OpenSSL development environment and `pkg-config`. This
-narrows the current host-side Rust blocker without claiming a consumer or
-application build. The retained Docker image still separately lacks Cargo,
-and current-source Sonic1 staging remains denied by the transfer policy.
+stopped on the absent OpenSSL development environment and `pkg-config`. A
+separate exact-toolchain Linux Docker probe then compiled the complete current
+consumer library/static library offline, including OpenSSL and `clam-sigutil`;
+its standalone test binary linked only as far as the expected native ClamAV C
+ABI boundary. This narrows the Rust blocker to application integration rather
+than Rust source compilation. The retained CMake image still separately lacks
+Cargo and JSON-C, and current-source Sonic1 staging remains denied by the
+transfer policy. No capability was promoted.
 
 The follow-on R08 contiguous-read source audit found the roadmap-approved
 whole-map PCRE read and two legacy PE unpacker reads for `PESpin` and `yC`.

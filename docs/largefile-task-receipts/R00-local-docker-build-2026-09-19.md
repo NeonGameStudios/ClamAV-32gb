@@ -111,3 +111,34 @@ a new `/tmp` destination was denied before writing with the authoritative
 reason `file_write_limit_exceeded`. The existing remote checkout remains the
 stale, dirty tree documented in the earlier Sonic1 receipt. Per MCP-SSH
 continuation policy, no alternate destination or untracked copy was attempted.
+
+## Exact-toolchain Linux Rust consumer build — 2026-09-19
+
+The locally cached `rust:1.97-bookworm` ARM64 image contains the installed
+`1.97.1-aarch64-unknown-linux-gnu` toolchain. With that exact toolchain
+selected explicitly, the current source mounted read-only, the existing Cargo
+cache mounted read-only, offline mode enabled, and the build target outside the
+repository, the complete Rust consumer library/static library compiled:
+
+```text
+docker run --rm -v <canonical-source>:/src:ro -v <cargo-cache>:/cargo-cache:ro \
+  -v <disposable-target>:/build-target -w /src \
+  -e RUSTUP_TOOLCHAIN=1.97.1-aarch64-unknown-linux-gnu \
+  -e RUSTUP_SKIP_UPDATE_CHECK=1 -e CARGO_HOME=/cargo-cache \
+  -e CARGO_NET_OFFLINE=true -e CARGO_TARGET_DIR=/build-target \
+  rust:1.97-bookworm cargo build --locked \
+  --manifest-path libclamav_rust/Cargo.toml --lib
+  Finished `dev` profile; `libclamav_rust.a` was produced (390 MiB)
+```
+
+This is the first current-checkout Linux Rust consumer compile after the
+earlier cache and OpenSSL boundaries were narrowed. A separate `cargo test`
+using the same exact toolchain compiled the full crate and dependencies but
+stopped at the final test-binary link because standalone Cargo tests do not
+provide ClamAV's native C ABI symbols, including versioning, logging,
+time-limit, and scan-incomplete hooks. This is an expected C/Rust integration
+boundary, not a Rust source compilation failure. It does not establish a
+native CMake application build, runtime qualification, or release readiness.
+
+No host software was installed, no dependency was fetched, no remote state was
+changed, no GitHub workflow was triggered, and no usage reset was used.
