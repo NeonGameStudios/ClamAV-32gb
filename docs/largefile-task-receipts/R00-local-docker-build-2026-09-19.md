@@ -34,11 +34,22 @@ Both retained local ClamAV toolchain images were checked. Neither contains
 container's copied `pkg-config` binary also cannot start because its
 `libpkgconf.so.3` runtime library is absent.
 
+An independent direct-binary Rust check was also attempted with network access
+disabled and the image's pinned Rust 1.97 toolchain. Cargo stopped before
+compilation because the pinned `clam-sigutil` Git dependency is not present in
+the image's offline cache:
+
+```text
+can't checkout from 'https://github.com/Cisco-Talos/clamav-signature-util'
+you are in the offline mode (--offline)
+```
+
 ## State
 
 `blocked-external-prerequisite`: the existing container image needs a
-compatible JSON-C development package (and a working `pkg-config` runtime),
-or an authorized Linux build runner that already provides them. No host
-software was installed, no usage reset was used, no remote state was changed,
-and no GitHub workflow was triggered. Native C test execution, Release/ASan/
-UBSan builds, production databases, and final qualification remain open.
+compatible JSON-C development package, a working `pkg-config` runtime, and
+the pinned `clam-sigutil` source (or an authorized Linux build runner that
+already provides them). No host software was installed, no usage reset was
+used, no remote state was changed, and no GitHub workflow was triggered.
+Native C/Rust test execution, Release/ASan/UBSan builds, production
+databases, and final qualification remain open.
