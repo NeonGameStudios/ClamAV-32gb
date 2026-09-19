@@ -85,8 +85,11 @@ A fresh current-source configure recheck on 2026-09-19 reached the C/C++
 compiler checks but stopped because the retained Docker toolchain has no
 `cargo` executable for the required Rust 1.97 build step. The image also lacks
 Git. Earlier retained probes independently stop on missing JSON-C development
-files and the offline `clam-sigutil` source. The build remains externally
-blocked; no installation or remote mutation was attempted.
+files, an absent pkg-config runtime, and the offline `clam-sigutil` source. A
+new host-side full Rust recheck resolves the cached `clam-sigutil` 1.2.4 source
+but stops at `openssl-sys` because the macOS worktree has no OpenSSL development
+headers/libraries or `pkg-config`. The build remains externally blocked; no
+installation or remote mutation was attempted.
 
 The 2026-09-19 MCP-SSH staging recheck used `sonic1` with the supplied
 `sonic1-camera-key` profile. Uploading the current immutable source archive was
@@ -146,6 +149,13 @@ development evidence only; the full C/Rust application build and release
 qualification remain blocked by the recorded toolchain, native dependency, and
 remote-runner boundaries. Receipt:
 `docs/largefile-task-receipts/R08-rust-standalone-parser-revalidation-2026-09-19.md`.
+
+The complete `libclamav_rust` consumer was also rerun from the current host
+cache. Cargo resolved `clam-sigutil` 1.2.4 and advanced to `openssl-sys`, which
+stopped on the absent OpenSSL development environment and `pkg-config`. This
+narrows the current host-side Rust blocker without claiming a consumer or
+application build. The retained Docker image still separately lacks Cargo,
+and current-source Sonic1 staging remains denied by the transfer policy.
 
 The follow-on R08 contiguous-read source audit found the roadmap-approved
 whole-map PCRE read and two legacy PE unpacker reads for `PESpin` and `yC`.

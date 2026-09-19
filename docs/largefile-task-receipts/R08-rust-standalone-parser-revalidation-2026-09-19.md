@@ -45,6 +45,26 @@ CARGO_NET_OFFLINE=true CARGO_TARGET_DIR=/private/tmp/clamav-delharc-offline-curr
 Both offline reruns passed. The OneNote run emitted existing compiler warnings
 only; no source or generated files were written into the repository.
 
+## Full Rust consumer recheck
+
+The complete `libclamav_rust` consumer was then attempted with the local Cargo
+cache and a fresh disposable target directory:
+
+```text
+CARGO_NET_OFFLINE=true CARGO_HOME=/Users/claude/.cargo \
+  CARGO_TARGET_DIR=/private/tmp/clamav-rust-full-current \
+  cargo test --locked --manifest-path libclamav_rust/Cargo.toml
+```
+
+Cargo resolved the pinned `clam-sigutil` 1.2.4 Git source from the local cache
+and compiled the dependency graph until `openssl-sys v0.9.117`. The build then
+stopped because the macOS worktree has no discoverable OpenSSL development
+headers/libraries or `pkg-config`; the available `/usr/bin/openssl` is
+LibreSSL and does not provide the required development installation. This
+removes the previously reported local `clam-sigutil` cache miss as the current
+host-side blocker, but does not establish a full Rust or C/Rust application
+build. No software or dependency was installed.
+
 An ARM64 Linux container attempt was also made with direct Rust 1.97.1
 binaries and network access disabled. Cargo first resolved the repository
 workspace and stopped on the absent `clam-sigutil` Git source. Copying each
@@ -53,8 +73,9 @@ standalone crate outside the workspace then stopped on missing offline crates
 
 ## Limits
 
-These are standalone crate results only. The full `clamav_rust` crate still
-cannot run offline because the pinned `clam-sigutil` Git dependency is absent,
-and the native ClamAV configure remains blocked on JSON-C in the retained
-Docker image. Current C ABI linkage, production databases, sanitizer parity,
-certified Linux x86-64, and final release qualification remain open.
+These are standalone crate results plus a failed full-consumer preflight. The
+full `clamav_rust` crate remains unverified because the host lacks the required
+OpenSSL development environment, and the native ClamAV configure remains
+blocked by the retained Docker image's missing Cargo and JSON-C prerequisites.
+Current C ABI linkage, production databases, sanitizer parity, certified Linux
+x86-64, and final release qualification remain open.

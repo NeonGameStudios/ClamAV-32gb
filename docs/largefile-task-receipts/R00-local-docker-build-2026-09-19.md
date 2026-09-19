@@ -78,6 +78,18 @@ failures remain valid independent blockers from the other retained probes.
 No host software was installed, no repository files were mounted writable, no
 remote state changed, and no usage reset was used.
 
+## Current host-side full Rust recheck — 2026-09-19
+
+The local macOS Rust 1.97.1 toolchain was also rerun against the complete
+`libclamav_rust` manifest with `CARGO_NET_OFFLINE=true`, the existing Cargo
+cache, `--locked`, and a disposable target directory outside the repository.
+The cached `clam-sigutil` 1.2.4 Git source resolved successfully, so this
+current host-side attempt advanced past the earlier dependency-cache boundary.
+It stopped in `openssl-sys v0.9.117` because no OpenSSL development headers or
+libraries and no `pkg-config` executable are available. `/usr/bin/openssl`
+reports LibreSSL 3.3.6 and is not a substitute for the required development
+installation. No software was installed and no dependency was fetched.
+
 ## MCP-SSH current-source staging recheck — 2026-09-19
 
 Using the administrator-provided `sonic1` host and `sonic1-camera-key` profile,
