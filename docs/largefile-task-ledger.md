@@ -131,6 +131,16 @@ embedded scan outcome rather than the transport-success status and labels the
 ARM64 Debug build as development. Daemon, library, parser, matcher, feature,
 milter, fanotify, and full-size cases remain open for certified qualification.
 
+The 2026-09-19 current-source ARM64 development recheck rebuilt the complete
+C and Rust application tree to 100% inside a disposable container. The R04
+clamscan file/stdin development capture produced and independently validated
+all six clean, detection, and MaxFileSize-limit records; the 604-row case map
+also passed. The focused `cl_api` group passed 533/533 checks. The aggregate
+`libclamav` CTest exceeded its 1200-second wrapper budget, while the Rust test
+hit the container's incompatible mixed-ASan-runtime boundary after successful
+compilation/linking; neither result is promoted to certified qualification.
+Receipt: `docs/largefile-task-receipts/R04-current-source-arm64-development-capture-2026-09-19.md`.
+
 R05 now independently validates the sparse boundary corpus before scanning and
 again during evidence verification. The checker binds the exact eleven-row
 manifest, logical sizes, marker windows, sparse allocation metadata, and
