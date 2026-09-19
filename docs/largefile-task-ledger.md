@@ -98,6 +98,17 @@ list had been inspected first, and no alternate destination was tried. The
 existing remote checkout therefore remains unsuitable as current-source
 evidence.
 
+The follow-on R03 Sonic1 runner discovery reached the authorized x86-64 host:
+12 CPUs, 66,800,082,944 bytes total memory, 63,935,778,816 bytes available,
+Docker 29.1.3, and a 1,024,209,543,168-byte NVMe device. The active root and
+Docker filesystem has only 57,167,597,568 bytes free, below the roadmap's
+68-GiB temporary-space admission requirement, although the `ubuntu-vg` volume
+group reports approximately 698,808,795,136 bytes unallocated. No storage
+mutation was attempted. The existing running container is stale and dirty
+(`master` at `08b3ab82`) and its Rust command failed during an unauthorized
+rustup sync, so it remains outside the evidence chain. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-runner-discovery-2026-09-19.md`.
+
 R04 now maps all 601 capabilities to named required cases and validates the
 case-record schema. The service qualification path has an explicit,
 fail-closed producer for directly mapped clamscan/clamd/clamdscan workloads,
