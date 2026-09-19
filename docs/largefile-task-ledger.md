@@ -151,6 +151,15 @@ only and does not promote any capability or change the 604/0/147/443/14/0/590
 readiness counts. Receipt:
 `docs/largefile-task-receipts/R03-rust-unsanitized-integration-recheck-2026-09-19.md`.
 
+The R06 parser suite now also exercises the production `scan_section_reader`
+entry point on the valid modern OneNote sample at a logical size of 256 MiB +
+1. The disposable-container run passed 84 unit tests, 6 integration tests,
+and 1 ignored doctest. This confirms scanner-entry admission outside the former
+whole-input cap, while the sample's zero attachment count means it does not
+replace the required materialized late-child fixture or certified qualification
+evidence. Receipt updates are retained in
+`docs/largefile-task-receipts/R06-modern-onenote.md`.
+
 R05 now independently validates the sparse boundary corpus before scanning and
 again during evidence verification. The checker binds the exact eleven-row
 manifest, logical sizes, marker windows, sparse allocation metadata, and

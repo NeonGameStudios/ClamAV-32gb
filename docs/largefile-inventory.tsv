@@ -39647,7 +39647,8 @@ offset-size-arithmetic	libclamav_rust/onenote_parser/src/shared/multi_byte.rs	40
 offset-size-arithmetic	libclamav_rust/onenote_parser/src/utils.rs	14	fn utf16_to_string_bounded(data: &[u8], max_bytes: usize) -> Result<String> {
 offset-size-arithmetic	libclamav_rust/onenote_parser/src/utils.rs	23	    reserve_collection(&mut units, data.len() / 2)?;
 offset-size-arithmetic	libclamav_rust/onenote_parser/tests/lib.rs	113	    let total_len = 256 * 1024 * 1024 + 1;
-offset-size-arithmetic	libclamav_rust/onenote_parser/tests/lib.rs	139	    file.set_len((256 * 1024 * 1024 + 1) as u64).unwrap();
+offset-size-arithmetic	libclamav_rust/onenote_parser/tests/lib.rs	130	    let total_len = 256 * 1024 * 1024 + 1;
+offset-size-arithmetic	libclamav_rust/onenote_parser/tests/lib.rs	163	    file.set_len((256 * 1024 * 1024 + 1) as u64).unwrap();
 offset-size-arithmetic	libclamav_rust/onenote_parser/tests/lib.rs	27	            .min(self.data.len() - self.offset)
 offset-size-arithmetic	libclamav_rust/onenote_parser/tests/lib.rs	29	        output[..count].copy_from_slice(&self.data[self.offset..self.offset + count]);
 offset-size-arithmetic	libclamav_rust/onenote_parser/tests/lib.rs	30	        self.offset += count;

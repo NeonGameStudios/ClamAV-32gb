@@ -992,3 +992,21 @@ compilation, materialized late-content evidence, snapshot integration,
 certified runner, and full parser quota qualification remain open. No
 software, remote execution, Docker, usage reset, commit, push, or GitHub
 workflow action was used.
+
+Modern scanner-entry regression (2026-09-19 UTC):
+
+- The parser integration suite now exercises the production attachment-scanning
+  entry point, `Parser::scan_section_reader`, with the valid `New Section 1.one`
+  sample exposed through a logical reader length of `256 MiB + 1`. The reader
+  reaches the scanner-facing traversal without whole-input admission refusal;
+  the sample contains no embedded attachments, so the callback count is
+  explicitly asserted as zero.
+- In the existing disposable Linux ARM64 container, `cargo test --locked`
+  passed 84 unit tests, 6 integration tests, and 1 ignored doctest. The only
+  compiler output was the pre-existing warning set.
+
+This strengthens the modern admission and scanner-entry development boundary,
+but it is not late-child detection evidence: a valid materialized modern
+fixture with an attachment beyond the former cap, parser-owned quota proof,
+consumer qualification, and certified runner evidence remain open. No
+capability was promoted.

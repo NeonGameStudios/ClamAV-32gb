@@ -124,6 +124,30 @@ fn test_parse_section_reader_accepts_logical_input_above_former_cap() {
 }
 
 #[test]
+fn test_scan_section_reader_accepts_logical_input_above_former_cap() {
+    let path = PathBuf::from("tests/samples/New Section 1.one");
+    let data = std::fs::read(&path).unwrap();
+    let total_len = 256 * 1024 * 1024 + 1;
+    let mut attachments = 0usize;
+
+    let mut parser = Parser::new();
+    parser
+        .scan_section_reader(
+            PaddedReader::new(data, total_len),
+            Path::new("New Section 1.one"),
+            |_name, reader| {
+                attachments += 1;
+                let mut sink = Vec::new();
+                reader.read_to_end(&mut sink).unwrap();
+                true
+            },
+        )
+        .unwrap();
+
+    assert_eq!(attachments, 0);
+}
+
+#[test]
 fn test_parse_section_path_reads_before_large_file_rejection() {
     let path = std::env::temp_dir().join(format!(
         "onenote-path-streaming-{}.one",
