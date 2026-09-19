@@ -5501,3 +5501,11 @@ log validator now requires `target: OK` for clean reports and
 use the frontend's bare `target: FOUND` summary because their exact alert and
 offset are bound by the JSON report. The service evidence fixture, focused
 regressions, full source guards, snapshot freshness, and diff checks passed.
+
+R02 direct-report budget parity (2026-09-19): the independent clamd
+structured-report protocol verifier now requires `max_scan_size` to equal the
+certified 64-GiB logical budget and rejects reports whose `logical_bytes`
+exceed it. The FILDESREPORT wire fixture was brought up to the same contract,
+and focused wrong-budget/over-budget regressions pass. No capability was
+promoted; current-source certified Linux service evidence and final
+qualification remain open.

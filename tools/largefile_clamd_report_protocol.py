@@ -20,6 +20,7 @@ from largefile_service_workload_check import load_oracle as load_qualification_o
 
 
 MAX_FRAME = 16 * 1024 * 1024
+MAX_LOGICAL_BYTES = 64 * 1024 * 1024 * 1024
 REPORT_FIELDS = (
     "status",
     "verdict",
@@ -126,6 +127,10 @@ def validate_report(report, oracle, mode, expected_size):
             fail(f"{mode} report field {field} is not a non-negative integer")
     if report["root_size"] != expected_size:
         fail(f"{mode} report root size does not match oracle")
+    if report.get("max_scan_size") != MAX_LOGICAL_BYTES:
+        fail(f"{mode} report max scan size is not the certified 64-GiB logical budget")
+    if report["logical_bytes"] > report["max_scan_size"]:
+        fail(f"{mode} report exceeds its declared logical-byte budget")
     last_alert = report.get("last_alert")
     if expected_signature == "-":
         if last_alert not in (None, ""):

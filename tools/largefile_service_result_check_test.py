@@ -100,6 +100,22 @@ class ResultChecks(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "non-clean verdict"):
             checker.validate_report(report, "false-clean", row)
 
+    def test_direct_report_protocol_binds_logical_budget(self):
+        row = self.row()
+        report = self.report(row)
+        report["max_scan_size"] = checker.MAX_LOGICAL_BYTES - 1
+        with self.assertRaisesRegex(RuntimeError, "max scan size"):
+            protocol.validate_report(
+                report, ["production", *map(str, row)], "wrong-budget", row[0]
+            )
+
+        report = self.report(row)
+        report["logical_bytes"] = checker.MAX_LOGICAL_BYTES + 1
+        with self.assertRaisesRegex(RuntimeError, "logical-byte budget"):
+            protocol.validate_report(
+                report, ["production", *map(str, row)], "over-budget", row[0]
+            )
+
     def test_exact_signature_field_formats(self):
         for line in (
             "/path/file: Expected.Marker FOUND\n",

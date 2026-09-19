@@ -84,6 +84,7 @@ class FildesReportProtocolTests(unittest.TestCase):
                         "file_type": "CL_TYPE_DATA",
                         "root_size": self.input.stat().st_size,
                         "logical_bytes": self.input.stat().st_size,
+                        "max_scan_size": protocol.MAX_LOGICAL_BYTES,
                         "matcher_bytes": self.input.stat().st_size,
                         "contiguous_bytes": self.input.stat().st_size,
                         "temporary_bytes": 0,

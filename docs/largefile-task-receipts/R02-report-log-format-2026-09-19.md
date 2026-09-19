@@ -41,3 +41,11 @@ Remaining boundary:
 Fresh current-source certified Linux client/daemon outputs, full-size
 materialized fixtures, resource/fanotify evidence, and final release
 qualification remain required. This is development verifier evidence only.
+
+Follow-up parity correction (2026-09-19): the direct
+`largefile_clamd_report_protocol.py` verifier now independently requires the
+structured report's `max_scan_size` to equal the certified 64-GiB logical
+budget and rejects `logical_bytes` above that budget. Its FILDESREPORT wire
+fixture now includes the required budget field, and a focused regression
+covers both wrong-budget and over-budget reports. This closes an independent-
+verifier gap; it does not promote any capability.
