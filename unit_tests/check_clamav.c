@@ -24704,6 +24704,42 @@ START_TEST(test_ignored_file_type_still_runs_raw_matching)
 }
 END_TEST
 
+START_TEST(test_ignored_file_type_raw_only_preserves_incomplete_status)
+{
+    static const uint8_t data[] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict = CL_VERDICT_STRONG_INDICATOR;
+    const char *last_alert = "stale";
+    uint64_t scanned       = UINT64_MAX;
+    cl_error_t ret;
+
+    /* With no parser/general options, cl_scanmap_ex() takes the raw-only
+     * fast path. A recognized ignored type has already been admitted as an
+     * incomplete layer, so a clean raw pass must not make the result cacheable
+     * or silently turn it into CL_SUCCESS. */
+    memset(&options, 0, sizeof(options));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_IGNORED", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_binhex_truncated_data_fork_is_fail_visible)
 {
     static const uint8_t data[] =
@@ -69229,6 +69265,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cli_magic_scan_file_rejects_invalid_inputs);
     tcase_add_test(tc_cl, test_ignored_file_type_is_fail_visible);
     tcase_add_test(tc_cl, test_ignored_file_type_still_runs_raw_matching);
+    tcase_add_test(tc_cl, test_ignored_file_type_raw_only_preserves_incomplete_status);
     tcase_add_test(tc_cl, test_binhex_truncated_data_fork_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_short_resource_fork_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_output_temporary_limit_is_fail_visible);
@@ -69477,6 +69514,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_required_unsupported, test_rar_without_backend_is_explicitly_unsupported);
     tcase_add_test(tc_required_unsupported, test_ignored_file_type_is_fail_visible);
     tcase_add_test(tc_required_unsupported, test_ignored_file_type_still_runs_raw_matching);
+    tcase_add_test(tc_required_unsupported, test_ignored_file_type_raw_only_preserves_incomplete_status);
     tcase_add_test(tc_required_unsupported, test_python_compiled_truncated_parser_is_fail_visible);
     tcase_add_test(tc_required_unsupported, test_python_compiled_parser_accepts_legacy_code_object);
     tcase_add_test(tc_required_unsupported, test_python_compiled_parser_rejects_out_of_range_marshal_reference);
