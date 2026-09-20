@@ -2033,6 +2033,8 @@ not_contains libclamav_rust/onenote_parser/src/onenote/mod.rs 'Parser::read(file
 contains tools/largefile_onenote_late_fixture.py 'FORMER_WHOLE_INPUT_CAP = 256 * 1024 * 1024'
 contains tools/largefile_onenote_late_fixture.py 'ObjectDataBlob'
 contains tools/largefile_onenote_late_fixture.py 'embedded_mz_offset'
+contains tools/largefile_onenote_late_fixture_test.py 'test_prefix_has_one_byte_compact_type_and_end_marker'
+contains tools/largefile_onenote_late_fixture_test.py 'test_payload_below_cap_is_rejected_without_output'
 contains unit_tests/input/CMakeLists.txt 'tgt_largefile_onenote_late_fixture'
 contains unit_tests/CMakeLists.txt 'tgt_largefile_onenote_late_fixture'
 contains unit_tests/check_clamav.c 'test_rust_onenote_reader_detects_materialized_late_child'
