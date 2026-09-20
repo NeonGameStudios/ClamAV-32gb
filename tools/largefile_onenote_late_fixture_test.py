@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import struct
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -49,6 +50,41 @@ class LateFixtureTests(unittest.TestCase):
                     fixture.FORMER_WHOLE_INPUT_CAP - 1,
                 )
             self.assertFalse(output.exists())
+
+    def test_materialized_corpus_places_marker_beyond_cap(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        xor_source = (
+            root
+            / "unit_tests"
+            / "input"
+            / "clamav_hdb_scanfiles"
+            / "clam.exe.webapp-export.one.xor"
+        )
+        xor_script = root / "unit_tests" / "input" / "xor_testfile.py"
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            source = directory / "source.one"
+            output = directory / "late.one"
+            subprocess.run(
+                [
+                    "python3",
+                    "-B",
+                    str(xor_script),
+                    "--in_file",
+                    str(xor_source),
+                    "--out_file",
+                    str(source),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            marker = fixture.write_fixture(
+                source, output, fixture.FORMER_WHOLE_INPUT_CAP
+            )
+            self.assertGreater(marker, fixture.FORMER_WHOLE_INPUT_CAP)
+            self.assertEqual(output.stat().st_size, 268_487_770)
+            self.assertGreaterEqual(output.stat().st_blocks * 512, output.stat().st_size)
 
 
 if __name__ == "__main__":

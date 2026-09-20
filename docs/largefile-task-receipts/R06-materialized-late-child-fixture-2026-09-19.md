@@ -39,7 +39,10 @@ with the existing standalone Rust harness, `git diff --check` passed, the
 capability manifest passed with 604 rows, the status snapshot passed, and the
 full source-guard suite passed. The follow-up deterministic framing suite
 passed 3/3 tests, covering the one-byte compact type encoding, package/first
-element admission, and refusal to create a below-cap output.
+element admission, and refusal to create a below-cap output. It now also
+regenerates the real XOR-hidden corpus and verifies the fully allocated
+268,487,770-byte result and its late marker; the complete fixture suite passed
+4/4 in 1.013 seconds.
 
 ## Qualification boundary
 
