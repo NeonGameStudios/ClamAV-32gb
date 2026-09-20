@@ -94,6 +94,14 @@ at missing JSON-C development files. No dependency was installed and no
 required feature was disabled. Receipt:
 `docs/largefile-task-receipts/R03-local-toolchain-recheck-2026-09-20.md`.
 
+R03 local artifact identity check (2026-09-20): the retained Linux ARM64
+build under `/private/tmp/clamav-native-linux-current` is not reusable as
+current-source evidence. Its 1,706-row source manifest differs from the clean
+current candidate's 1,710-row manifest in 82 sorted lines, and its cache has
+`ENABLE_LARGE_FILE_DEFAULTS=OFF`. The artifact was rejected rather than used
+for runtime proof. Receipt:
+`docs/largefile-task-receipts/R03-local-artifact-identity-2026-09-20.md`.
+
 ## Former required-unsupported escalation (`R09-REQUIRED-UNSUPPORTED`)
 
 These seven rows are assigned to implementation or an explicit user scope decision;
