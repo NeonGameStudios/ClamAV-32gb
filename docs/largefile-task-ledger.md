@@ -6082,3 +6082,14 @@ capability was promoted; current-source linked execution and external
 qualification remain required.
 Receipt:
 `docs/largefile-task-receipts/R08-xar-checksum-hex-2026-09-20.md`.
+
+R03 Sonic1 container revalidation (2026-09-20): read-only MCP-SSH provenance
+and Docker inspection confirmed that the running `/src` bind still points to
+the stale development tree at `08b3ab820e40ac8bd307b0c78c03c94884f1b`, while
+the local qualification checkout is `3af4595e`. The remote checkout also has
+extensive unrelated tracked modifications and untracked build, target,
+fixture, provenance, and evidence payloads. Host/profile access and explicit
+container provenance succeeded, but the remote tree remains unsuitable for
+current-source qualification; no remote mutation or transfer retry was made.
+Receipt:
+`docs/largefile-task-receipts/R03-sonic1-container-revalidation-2026-09-20.md`.
