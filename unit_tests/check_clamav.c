@@ -71657,6 +71657,7 @@ START_TEST(test_egg_solid_azo_members_are_fail_visible)
     ck_assert_uint_gt(archive_length, 0U);
 
     memset(&engine, 0, sizeof(engine));
+    engine.maxcontiguoussize = CLI_DEFAULT_MAX_CONTIGUOUS_SIZE;
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(archive, archive_length);
     ck_assert_ptr_nonnull(map);
