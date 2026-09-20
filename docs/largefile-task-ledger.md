@@ -6105,3 +6105,13 @@ the persistent decoder remains an explicit parser-family requirement. The
 capability manifest, generated snapshot, inventory, and source guards were
 updated together. Receipt:
 `docs/largefile-task-receipts/R08-egg-solid-azo-boundary-2026-09-20.md`.
+
+R03 local build boundary revalidation (2026-09-20): the current vendored
+OneNote parser passed 85 unit tests, 6 integration tests, and one ignored
+doctest offline. The full `clamav_rust` check reached `openssl-sys` and then
+stopped because the host has no discoverable OpenSSL development installation
+or `pkg-config`; the existing CMake Docker toolchain has CMake/Clang/Make but
+no Cargo, JSON-C, or Check and stops at the required Cargo 1.97 check. No
+software was installed, no required feature was disabled, and no partial
+build was treated as application qualification. Receipt:
+`docs/largefile-task-receipts/R03-local-build-boundary-2026-09-20.md`.
