@@ -111,6 +111,17 @@ Git source. No host or repository software was installed, and no CTest or
 qualification evidence was claimed. Receipt:
 `docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.
 
+R03 aggregate fixture accounting follow-up (2026-09-20): the generated
+OneNote late-child fixture is now excluded from the ordinary C and Python
+`clam*` test corpora, its size check is bound to the former 256 MiB OneNote
+materialization cap, and the generated source inventory was refreshed. The
+exact current-source Release rebuild passed; focused `libclamav` passed 1/1
+in 79.60 seconds and the local source-guard suite passed. Remote full CTest
+still has the Git-less archive snapshot limitation, the temporary-space milter
+admission blocker, and five existing clamscan expectation failures; no
+qualification or capability promotion is claimed. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.
+
 The follow-on R03 Sonic1 runner discovery reached the authorized x86-64 host:
 12 CPUs, 66,800,082,944 bytes total memory, 63,935,778,816 bytes available,
 Docker 29.1.3, and a 1,024,209,543,168-byte NVMe device. The active root and

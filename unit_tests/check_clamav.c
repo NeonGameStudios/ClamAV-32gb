@@ -7035,6 +7035,11 @@ static char **testfiles     = NULL;
 static unsigned testfiles_n = 0;
 
 static const int expected_testfiles = 53;
+/* The generated late-child fixture is a dedicated large-file regression, not
+ * part of the ordinary clamav_hdb_scanfiles corpus.  Keep its size check
+ * bound to the OneNote reader's former whole-input materialization limit,
+ * rather than CLI_MAX_ALLOCATION (the independent 1-GiB allocation guard). */
+#define ONENOTE_FORMER_WHOLE_INPUT_CAP (UINT64_C(256) * 1024U * 1024U)
 
 static unsigned skip_files(void)
 {
@@ -7063,6 +7068,8 @@ static void init_testfiles(void)
     testfiles_n = 0;
     while ((dirent = readdir(d))) {
         if (strncmp(dirent->d_name, "clam", 4))
+            continue;
+        if (strcmp(dirent->d_name, "clam.exe.webapp-export.late-child.one") == 0)
             continue;
         i++;
         testfiles = cli_safer_realloc(testfiles, i * sizeof(*testfiles));
@@ -36269,8 +36276,8 @@ START_TEST(test_rust_onenote_reader_detects_materialized_late_child)
     fd = open(sample_path, O_RDONLY | O_BINARY);
     ck_assert_msg(fd >= 0, "open(%s) failed: %s", sample_path, strerror(errno));
     ck_assert_int_eq(FSTAT(fd, &sample_stat), 0);
-    ck_assert_msg((uintmax_t)sample_stat.st_size > (uintmax_t)CLI_MAX_ALLOCATION,
-                  "late-child fixture is not beyond the former cap: %jd",
+    ck_assert_msg((uintmax_t)sample_stat.st_size > ONENOTE_FORMER_WHOLE_INPUT_CAP,
+                  "late-child fixture is not beyond the former 256 MiB cap: %jd",
                   (intmax_t)sample_stat.st_size);
 
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);

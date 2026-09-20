@@ -35,6 +35,7 @@ class TC(testcase.TestCase):
         TC.testpaths = [
             testpath for testpath in TC.path_build.glob('unit_tests/input/clamav_hdb_scanfiles/clam*')
             if not testpath.name.endswith('.xor')
+            and testpath.name != 'clam.exe.webapp-export.late-child.one'
         ] # A list of Path()'s of each of our generated test files
 
         # Prepare a directory to store our test databases
