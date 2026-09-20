@@ -5642,3 +5642,11 @@ resource, source-guard, and acceptance checks. This is Release integration
 evidence only; sanitizer, full-size, production-CVD/service, resource/fanotify,
 independent format-8, and final R11–R15 evidence remain open. Receipt:
 `docs/largefile-task-receipts/R03-sonic1-current-source-release-ctest-2026-09-20.md`.
+
+R03 sanitizer preflight blocker (2026-09-20): Sonic1's existing container has
+only stable/1.97 Rust toolchains and no `clang` or `clang++`. The roadmap
+requires C ASan/UBSan plus Rust nightly address instrumentation, so no valid
+sanitizer suite can be produced without an external toolchain change. No
+software was installed or downloaded; Release integration passed, but R03 and
+release readiness remain open. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-sanitizer-toolchain-blocker-2026-09-20.md`.
