@@ -52,3 +52,17 @@ client ingress parity, sanitizer behavior, fanotify prevention, PCRE resource
 limits, or the production-CVD canary. The release-readiness gate therefore
 remains blocked until those independent evidence requirements are satisfied.
 
+## Regression suite result
+
+With the exact sparse test excluded, the remaining current-source CTest
+regression suite passed `31/31` in `211.29 sec`. This included the library,
+Rust, clamscan, clamd, freshclam, sigtool, milter, on-access, source-guard,
+and release-control tests.
+
+A combined 32-test CTest invocation was attempted with the exact test enabled,
+but the MCP Docker job ended with exit `137` as test 8 started and stopped the
+container. Sonic1 still reported about 63.97 GiB available memory afterward,
+and Docker reported `OOMKilled=false`; therefore that invocation is recorded
+as a runner/wrapper failure, not as a ClamAV test result. The separately
+tracked exact test above is the authoritative exact-boundary result for this
+slice.
