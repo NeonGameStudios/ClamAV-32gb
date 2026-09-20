@@ -124,6 +124,16 @@ clamscan/full-CTest evidence remains pending; no capability was promoted.
 Receipt:
 `docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.
 
+R03 Sonic1 durable-transfer state audit (2026-09-20): reconciled the
+interrupted MCP-SSH upload `transfer_6a4eecbb392a434297c90ae6f7cbfdea` using
+the required transfer-list and per-transfer-status calls. It remains
+`interrupted`, cancelled, at offset zero, with an SFTP “No such file” error and
+`remote_may_still_be_running=true`; no resume, abort, completion, commit, or
+retry was performed. The artifact is not current-source provenance. The
+complete current-source staging path remains blocked by the separately
+recorded authoritative `file_write_limit_exceeded` policy boundary. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-transfer-state-audit-2026-09-20.md`.
+
 R13 Sonic1 source-guard reconciliation (2026-09-20): the two small stale
 fanotify evidence verifier files in the existing Sonic1 staging tree were
 reconciled to the local candidate and verified by exact SHA-256. The tracked
