@@ -23,7 +23,10 @@ class TC(testcase.TestCase):
     def setUpClass(cls):
         super(TC, cls).setUpClass()
 
-        TC.testpaths = list(TC.path_build.glob('unit_tests/input/clamav_hdb_scanfiles/clam*')) # A list of Path()'s of each of our generated test files
+        TC.testpaths = [
+            testpath for testpath in TC.path_build.glob('unit_tests/input/clamav_hdb_scanfiles/clam*')
+            if testpath.name != 'clam.exe.webapp-export.late-child.one'
+        ] # A list of Path()'s of each of our generated test files
 
     @classmethod
     def tearDownClass(cls):

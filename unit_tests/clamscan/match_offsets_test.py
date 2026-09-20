@@ -16,7 +16,10 @@ class TC(testcase.TestCase):
     def setUpClass(cls):
         super(TC, cls).setUpClass()
 
-        TC.testpaths = list(TC.path_build.glob('unit_tests/input/clamav_hdb_scanfiles/clam*')) # A list of Path()'s of each of our generated test files
+        TC.testpaths = [
+            testpath for testpath in TC.path_build.glob('unit_tests/input/clamav_hdb_scanfiles/clam*')
+            if testpath.name != 'clam.exe.webapp-export.late-child.one'
+        ] # A list of Path()'s of each of our generated test files
 
         (TC.path_tmp / 'Clam-VI.ldb').write_text(
             "Clam-VI-Test:Target;Engine:52-255,Target:1;(0&1);VI:43006f006d00700061006e0079004e0061006d0065000000000063006f006d00700061006e007900;VI:500072006f0064007500630074004e0061006d0065000000000063006c0061006d00\n"
@@ -43,7 +46,7 @@ class TC(testcase.TestCase):
         self.step_name('Test LDB VI feature')
 
         testfiles = ' '.join([str(testpath) for testpath in TC.testpaths])
-        command = '{valgrind} {valgrind_args} {clamscan} -d {path_db} {testfiles}'.format(
+        command = '{valgrind} {valgrind_args} {clamscan} --alert-exceeds-max=no -d {path_db} {testfiles}'.format(
             valgrind=TC.valgrind, valgrind_args=TC.valgrind_args, clamscan=TC.clamscan, path_db=TC.path_tmp / 'Clam-VI.ldb', testfiles=testfiles,
         )
         output = self.execute_command(command)

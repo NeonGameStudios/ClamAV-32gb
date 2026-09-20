@@ -20,7 +20,10 @@ class TC(testcase.TestCase):
     def setUpClass(cls):
         super(TC, cls).setUpClass()
 
-        TC.testpaths = list(TC.path_build.glob('unit_tests/input/clamav_hdb_scanfiles/clam*')) # A list of Path()'s of each of our generated test files
+        TC.testpaths = [
+            testpath for testpath in TC.path_build.glob('unit_tests/input/clamav_hdb_scanfiles/clam*')
+            if testpath.name != 'clam.exe.webapp-export.late-child.one'
+        ] # A list of Path()'s of each of our generated test files
 
     @classmethod
     def tearDownClass(cls):
@@ -61,7 +64,7 @@ class TC(testcase.TestCase):
         )
 
         testfiles = ' '.join([str(testpath) for testpath in TC.testpaths])
-        command = '{valgrind} {valgrind_args} {clamscan} -d {path_ldb} -d {path_idb} {testfiles}'.format(
+        command = '{valgrind} {valgrind_args} {clamscan} --alert-exceeds-max=no -d {path_ldb} -d {path_idb} {testfiles}'.format(
             valgrind=TC.valgrind, valgrind_args=TC.valgrind_args,
             clamscan=TC.clamscan,
             path_ldb=TC.path_tmp / 'icon.ldb',

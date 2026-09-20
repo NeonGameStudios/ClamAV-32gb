@@ -111,6 +111,19 @@ Git source. No host or repository software was installed, and no CTest or
 qualification evidence was claimed. Receipt:
 `docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.
 
+R03 clamscan corpus contract normalization (2026-09-20): the remaining
+aggregate expectation mismatches were traced to the large-file default
+`AlertExceedsMax=yes` adding unrelated max-limit heuristic findings to tests
+whose expected counts cover only their target signatures. Basic and ALZ
+negative cases now set the intended fail-visible mode explicitly; weak-icon
+and LDB-VI do the same for their target-count assertions. Generic `clam*`
+corpora exclude the dedicated OneNote late-child fixture, and local source
+guards pass with the 604-capability manifest and acceptance controls. The
+current Sonic1 container no longer has the prior build tree, so fresh remote
+clamscan/full-CTest evidence remains pending; no capability was promoted.
+Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.
+
 R03 aggregate fixture accounting follow-up (2026-09-20): the generated
 OneNote late-child fixture is now excluded from the ordinary C and Python
 `clam*` test corpora, its size check is bound to the former 256 MiB OneNote

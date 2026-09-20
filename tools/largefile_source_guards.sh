@@ -2043,6 +2043,13 @@ contains unit_tests/check_clamav.c 'OneNote.Reader.LateMZ.UNOFFICIAL'
 contains unit_tests/check_clamav.c 'ONENOTE_FORMER_WHOLE_INPUT_CAP (UINT64_C(256) * 1024U * 1024U)'
 contains unit_tests/check_clamav.c 'strcmp(dirent->d_name, "clam.exe.webapp-export.late-child.one") == 0'
 contains unit_tests/clamscan/_basic_test.py "testpath.name != 'clam.exe.webapp-export.late-child.one'"
+contains unit_tests/clamscan/_basic_test.py '--alert-exceeds-max=no'
+contains unit_tests/clamscan/alz_test.py 'no_alert_command = command.replace('
+contains unit_tests/clamscan/assorted_test.py '--alert-exceeds-max=no -d {path_ldb}'
+contains unit_tests/clamscan/assorted_test.py "testpath.name != 'clam.exe.webapp-export.late-child.one'"
+contains unit_tests/clamscan/match_offsets_test.py "testpath.name != 'clam.exe.webapp-export.late-child.one'"
+contains unit_tests/clamscan/match_offsets_test.py '--alert-exceeds-max=no -d {path_db}'
+contains unit_tests/clamscan/regex_test.py "testpath.name != 'clam.exe.webapp-export.late-child.one'"
 contains libclamav_rust/onenote_parser/src/errors.rs 'pub fn into_io_error(self) -> Option<io::Error>'
 contains libclamav_rust/onenote_parser/src/errors.rs 'TemporaryLimit { requested: u64 }'
 contains libclamav_rust/onenote_parser/src/reader.rs 'pub(crate) fn read_vec(&mut self, cnt: usize) -> Result<Vec<u8>>'

@@ -293,7 +293,12 @@ class TC(testcase.TestCase):
                 len(b'not-present'),
             )
         )
-        output = self.execute_command(command)
+        no_alert_command = command.replace(
+            str(TC.clamscan),
+            '{} --alert-exceeds-max=no'.format(TC.clamscan),
+            1,
+        )
+        output = self.execute_command(no_alert_command)
 
         assert output.ec == 2
         expected_results = [

@@ -77,7 +77,7 @@ class TC(testcase.TestCase):
         self.step_name('Test that clamscan alerts on all test files')
 
         testfiles = ' '.join([str(testpath) for testpath in TC.testpaths])
-        command = '{valgrind} {valgrind_args} {clamscan} -d {path_db} {testfiles}'.format(
+        command = '{valgrind} {valgrind_args} {clamscan} --alert-exceeds-max=no -d {path_db} {testfiles}'.format(
             valgrind=TC.valgrind, valgrind_args=TC.valgrind_args,
             clamscan=TC.clamscan,
             path_db=TC.path_db / 'clamav.hdb',
@@ -114,7 +114,7 @@ class TC(testcase.TestCase):
         (TC.path_db / 'clamav.ign2').write_text('ClamAV-Test-File\n')
 
         testfiles = ' '.join([str(testpath) for testpath in TC.testpaths])
-        command = '{valgrind} {valgrind_args} {clamscan} -d {path_db} {testfiles}'.format(
+        command = '{valgrind} {valgrind_args} {clamscan} --alert-exceeds-max=no -d {path_db} {testfiles}'.format(
             valgrind=TC.valgrind, valgrind_args=TC.valgrind_args,
             clamscan=TC.clamscan,
             path_db=TC.path_db,
