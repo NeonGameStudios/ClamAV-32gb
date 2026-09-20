@@ -5698,3 +5698,13 @@ snapshot controls pass. This improves auditability of the existing Sonic1
 fanotify capability blocker but does not create kernel permission evidence or
 promote any capability. Receipt:
 `docs/largefile-task-receipts/R13-sonic1-runtime-runner-and-capability-blocker-2026-09-20.md`.
+
+R06 offline vendored OneNote parser revalidation (2026-09-20): the current
+parser package passed `cargo test --offline` with 85 unit tests, 6 integration
+tests, and 1 ignored doctest. The passing integration set includes the logical
+above-former-cap input, scanner-entry traversal, and short-read reader
+equivalence. This is local parser-library development evidence only; no
+network, installation, consumer C/Rust relink, materialized late-child
+fixture, certified resource run, or capability promotion was performed.
+Receipt:
+`docs/largefile-task-receipts/R06-modern-onenote.md`.

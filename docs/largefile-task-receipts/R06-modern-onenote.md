@@ -1012,3 +1012,17 @@ but it is not late-child detection evidence: a valid materialized modern
 fixture with an attachment beyond the former cap, parser-owned quota proof,
 consumer qualification, and certified runner evidence remain open. No
 capability was promoted.
+
+Offline parser revalidation (2026-09-20 UTC):
+
+- `cargo test --manifest-path libclamav_rust/onenote_parser/Cargo.toml --offline`
+  passed 85 unit tests, 6 integration tests, and 1 ignored doctest against the
+  current vendored parser source.
+- The passing integration set includes logical input above the former
+  256-MiB whole-input cap, scanner-entry traversal, and short-read reader
+  equivalence. No network access, dependency installation, or remote
+  execution was used.
+
+This is stronger current-source parser-library development evidence, but it
+does not replace the full C/Rust consumer relink, materialized late-child
+fixture, certified Linux x86-64 resource run, or final qualification.
