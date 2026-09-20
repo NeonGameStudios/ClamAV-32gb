@@ -8839,6 +8839,7 @@ contains tools/largefile_release_readiness.sh 'largefile_service_evidence_check.
 contains tools/largefile_release_readiness.sh 'test evidence is forbidden for the authoritative release manifest'
 contains tools/largefile_release_readiness.sh 'qualified release evidence does not match the current source outside the release-control manifest'
 contains tools/largefile_source_manifest.sh 'docs/largefile-task-receipts/*'
+contains tools/largefile_source_manifest.sh 'pcre-scale-development-*'
 contains tools/largefile_release_readiness_test.sh 'release gate accepted a $blocked_status capability'
 contains tools/largefile_release_readiness_test.sh 'release gate status mode accepted a $blocked_status capability'
 contains tools/largefile_release_readiness_test.sh 'release gate accepted an unknown option'

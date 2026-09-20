@@ -72,14 +72,15 @@ if [ "$is_git_checkout" = yes ]; then
     done
 else
     # The fallback is for source snapshots without .git.  Exclude generated
-    # build/dependency payloads and the large source archive that may be used
-    # to transport a snapshot to Sonic1; source files and audit controls stay
-    # in the immutable manifest.
+    # build/dependency payloads, retained development fixtures, and the large
+    # source archive that may be used to transport a snapshot to Sonic1;
+    # source files and audit controls stay in the immutable manifest.
     find "$root" -type f \
         -not -path "$root/.git/*" \
         -not -path "$root/.codex/*" \
         -not -path "$root/build*/*" \
         -not -path "$root/target/*" \
+        -not -path "$root/pcre-scale-development-*/*" \
         -not -name '*.tar.gz' \
         -not -name 'libnull.a' \
         -print | LC_ALL=C sort | while IFS= read -r file; do

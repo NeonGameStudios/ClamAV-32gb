@@ -241,6 +241,35 @@ class SnapshotTests(unittest.TestCase):
         )
         self.assertNotEqual(third.read_text(encoding="utf-8"), fourth.read_text(encoding="utf-8"))
 
+    def test_gitless_manifest_excludes_retained_development_payloads(self):
+        """A Git-less delivery must not bind retained fixture payloads."""
+        repo = self.root / "gitless-manifest-repo"
+        tools_dir = repo / "tools"
+        tools_dir.mkdir(parents=True)
+        shutil.copyfile(
+            SOURCE_REPO / "tools" / "largefile_source_manifest.sh",
+            tools_dir / "largefile_source_manifest.sh",
+        )
+        (repo / "runtime.c").write_text("int runtime = 1;\n", encoding="utf-8")
+        (repo / "pcre-scale-development-20260920").mkdir()
+        (repo / "pcre-scale-development-20260920" / "fixture-8g-tail.bin").write_bytes(b"fixture")
+        (repo / "build-debug").mkdir()
+        (repo / "build-debug" / "compile-command.txt").write_text("generated\n", encoding="utf-8")
+        (repo / "transport.tar.gz").write_bytes(b"archive")
+        (repo / "libnull.a").write_bytes(b"archive")
+
+        manifest = self.root / "gitless-manifest.txt"
+        subprocess.run(
+            ["sh", "tools/largefile_source_manifest.sh", str(repo), str(manifest)],
+            cwd=repo,
+            check=True,
+        )
+        entries = manifest.read_text(encoding="utf-8").splitlines()
+        self.assertEqual(
+            [line.rsplit("  ", 1)[1] for line in entries],
+            ["runtime.c", "tools/largefile_source_manifest.sh"],
+        )
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(add_help=False)
