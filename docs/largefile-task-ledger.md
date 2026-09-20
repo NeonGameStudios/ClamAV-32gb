@@ -124,6 +124,22 @@ clamscan/full-CTest evidence remains pending; no capability was promoted.
 Receipt:
 `docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.
 
+R03 current-source Sonic1 daemon aggregate follow-up (2026-09-20): Release
+configuration/build succeeded with Rust 1.97.1; the registered `clamscan`
+aggregate passed 1/1 in 23.33 seconds, and the rebuilt registered `clamd`
+aggregate passed all 18 tests in 31.10 seconds. The native historical-default
+admission test now explicitly models 100/400-MiB limits under
+`CLAMAV_LARGE_FILE_DEFAULTS`; focused custom clamd configs fill only missing
+historical limits so explicit values remain authoritative. The local 604-entry
+source-guard/acceptance suite, Python syntax check, and diff check pass. The
+remote inventory was regenerated after synchronization. A broader matrix
+excluding only the measured milter temporary-space blocker reached the R04
+capture but hit MCP-SSH's 300-second ceiling while hashing the retained 32-GiB
+fixture; it emitted no terminal result, and its exact leftover CTest process
+was stopped. Full matrix, full-size, sanitizer, fanotify, milter-space, and
+release gates remain open; no capability was promoted. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.
+
 R03 aggregate fixture accounting follow-up (2026-09-20): the generated
 OneNote late-child fixture is now excluded from the ordinary C and Python
 `clam*` test corpora, its size check is bound to the former 256 MiB OneNote

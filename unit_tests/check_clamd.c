@@ -1271,6 +1271,16 @@ START_TEST(test_largefile_admission_accepts_historical_defaults)
     char reason[256];
 
     ck_assert_ptr_nonnull(engine);
+    /* CLAMAV_LARGE_FILE_DEFAULTS changes cl_engine_new() to the certified
+     * envelope. Explicitly model the historical service defaults here so
+     * this regression remains independent of the build profile and host
+     * resource availability. */
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE,
+                                       100LL * 1024LL * 1024LL), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE,
+                                       400LL * 1024LL * 1024LL), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE,
+                                       100LL * 1024LL * 1024LL), CL_SUCCESS);
     memset(reason, 0, sizeof(reason));
     ck_assert_int_eq(clamd_largefile_admission_check(engine, NULL, "/path/that/does/not/exist", reason, sizeof(reason)), 1);
     ck_assert_str_eq(reason, "");

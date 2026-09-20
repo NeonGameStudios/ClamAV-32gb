@@ -66,6 +66,7 @@ class TC(testcase.TestCase):
         TC.testpaths = [
             testpath for testpath in TC.path_build.glob('unit_tests/input/clamav_hdb_scanfiles/clam*')
             if not testpath.name.endswith('.xor')
+            and testpath.name != 'clam.exe.webapp-export.late-child.one'
         ] # A list of Path()'s of each of our generated test files
 
         TC.clamd_pid = TC.path_tmp / 'clamd-test.pid'
@@ -111,6 +112,7 @@ class TC(testcase.TestCase):
             # envelope. Large-file admission is exercised separately with
             # explicit certified limits and must not make every small service
             # test depend on a 48 GiB runner.
+            AlertExceedsMax no
             MaxFileSize 100M
             MaxScanSize 400M
             PCREMaxFileSize 100M
@@ -178,6 +180,27 @@ class TC(testcase.TestCase):
         '''
         if clamd_config == None:
             clamd_config = TC.clamd_config
+
+        # The large-file qualification build changes the daemon's compiled
+        # defaults. Keep focused service tests on their historical envelope
+        # unless they explicitly set a limit; their purpose is unrelated to
+        # large-file admission and they must remain runnable on a normal host.
+        config_path = Path(clamd_config)
+        config_text = config_path.read_text()
+        legacy_limits = {
+            'MaxFileSize': '100M',
+            'MaxScanSize': '400M',
+            'PCREMaxFileSize': '100M',
+            'StreamMaxLength': '100M',
+            'OnAccessMaxFileSize': '5M',
+        }
+        missing_limits = [
+            '{} {}'.format(name, value)
+            for name, value in legacy_limits.items()
+            if not re.search(r'^\s*{}\s+'.format(re.escape(name)), config_text, re.MULTILINE)
+        ]
+        if missing_limits:
+            config_path.write_text(config_text.rstrip() + '\n' + '\n'.join(missing_limits) + '\n')
 
         if use_valgrind:
             command = '{valgrind} {valgrind_args} {clamd} --config-file={clamd_config}'.format(

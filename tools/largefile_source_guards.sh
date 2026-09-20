@@ -2050,6 +2050,15 @@ contains unit_tests/clamscan/assorted_test.py "testpath.name != 'clam.exe.webapp
 contains unit_tests/clamscan/match_offsets_test.py "testpath.name != 'clam.exe.webapp-export.late-child.one'"
 contains unit_tests/clamscan/match_offsets_test.py '--alert-exceeds-max=no -d {path_db}'
 contains unit_tests/clamscan/regex_test.py "testpath.name != 'clam.exe.webapp-export.late-child.one'"
+contains unit_tests/clamd_test.py "testpath.name != 'clam.exe.webapp-export.late-child.one'"
+contains unit_tests/clamd_test.py 'AlertExceedsMax no'
+contains unit_tests/clamd_test.py 'legacy_limits = {'
+contains unit_tests/clamd_test.py "'MaxFileSize': '100M'"
+contains unit_tests/clamd_test.py "'MaxScanSize': '400M'"
+contains unit_tests/clamd_test.py "'PCREMaxFileSize': '100M'"
+contains unit_tests/clamd_test.py "'StreamMaxLength': '100M'"
+contains unit_tests/clamd_test.py "'OnAccessMaxFileSize': '5M'"
+contains unit_tests/clamd_test.py 'missing_limits'
 contains libclamav_rust/onenote_parser/src/errors.rs 'pub fn into_io_error(self) -> Option<io::Error>'
 contains libclamav_rust/onenote_parser/src/errors.rs 'TemporaryLimit { requested: u64 }'
 contains libclamav_rust/onenote_parser/src/reader.rs 'pub(crate) fn read_vec(&mut self, cnt: usize) -> Result<Vec<u8>>'
