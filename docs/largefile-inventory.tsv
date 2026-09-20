@@ -8211,6 +8211,8 @@ fixed-width-integer	unit_tests/check_clamav.c	71525	    uint64_t scanned = 0;
 fixed-width-integer	unit_tests/check_clamav.c	71560	    uint64_t scanned = UINT64_MAX;
 fixed-width-integer	unit_tests/check_clamav.c	71592	    static const uint32_t mutation_values[] = {UINT32_MAX, 1, 1, 1, 1, UINT32_MAX};
 fixed-width-integer	unit_tests/check_clamav.c	71599	    uint64_t scanned;
+fixed-width-integer	unit_tests/check_clamav.c	71648	    uint32_t ncomments = 0;
+fixed-width-integer	unit_tests/check_clamav.c	71650	    uint64_t output_length = 0;
 fixed-width-integer	unit_tests/check_clamav.c	7238	    uint32_t old_stats_flags = g_engine->dconf->stats;
 fixed-width-integer	unit_tests/check_clamav.c	7239	    uint32_t old_maxsamples;
 fixed-width-integer	unit_tests/check_clamav.c	7240	    uint32_t old_maxmem;
@@ -23299,6 +23301,7 @@ native-width-integer	unit_tests/check_clamav.c	71390	        const size_t block_
 native-width-integer	unit_tests/check_clamav.c	71449	    size_t i;
 native-width-integer	unit_tests/check_clamav.c	71591	    static const size_t mutation_offsets[] = {808, 812, 904, 924, 932, 416};
 native-width-integer	unit_tests/check_clamav.c	71601	    size_t i;
+native-width-integer	unit_tests/check_clamav.c	71651	    size_t archive_length;
 native-width-integer	unit_tests/check_clamav.c	7197	    size_t large_size = (size_t)UINT32_MAX + 1;
 native-width-integer	unit_tests/check_clamav.c	7241	    size_t large_size = (size_t)UINT32_MAX + 123;
 native-width-integer	unit_tests/check_clamav.c	7263	    ck_assert_msg(NULL != strstr(json, "\"host_info\": \""), "long stats host info was not serialized");
@@ -44607,6 +44610,9 @@ offset-size-arithmetic	unit_tests/check_clamav.c	71399	    offset += sizeof(imag
 offset-size-arithmetic	unit_tests/check_clamav.c	71451	    for (i = 0; i < sizeof(invalid_distances) / sizeof(invalid_distances[0]); i++) {
 offset-size-arithmetic	unit_tests/check_clamav.c	71564	    /* The current TFLite TensorType enum ends at FLOAT8_E5M2 = 22. */
 offset-size-arithmetic	unit_tests/check_clamav.c	71603	    for (i = 0; i < sizeof(mutation_offsets) / sizeof(mutation_offsets[0]); i++) {
+offset-size-arithmetic	unit_tests/check_clamav.c	71643	    uint8_t decoded[sizeof(second) - 1U];
+offset-size-arithmetic	unit_tests/check_clamav.c	71655	        archive, sizeof(archive), first, sizeof(first) - 1U, second,
+offset-size-arithmetic	unit_tests/check_clamav.c	71656	        sizeof(second) - 1U, compressed, sizeof(compressed), 3);
 offset-size-arithmetic	unit_tests/check_clamav.c	7197	    size_t large_size = (size_t)UINT32_MAX + 1;
 offset-size-arithmetic	unit_tests/check_clamav.c	7226	    ck_assert_msg(CL_VIRUS == clean_cache_check(&ctx), "large clean-cache size aliased its truncated 32-bit value");
 offset-size-arithmetic	unit_tests/check_clamav.c	7241	    size_t large_size = (size_t)UINT32_MAX + 123;

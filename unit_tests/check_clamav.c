@@ -67758,7 +67758,7 @@ static const TTest *test_ai_model_tflite_vtable_distance_is_fail_visible;
 static const TTest *test_ai_model_tflite_buffer_data_range_is_fail_visible;
 static const TTest *test_ai_model_tflite_tensor_and_operator_semantics_are_supported;
 static const TTest *test_ai_model_tflite_tensor_type_is_fail_visible;
-static const TTest *test_ai_model_tflite_tensor_and_operator_references_are_fail_visible;
+static const TTest *test_ai_model_tflite_tensor_and_operator_references_are_fail_visible; static const TTest *test_egg_solid_azo_members_are_fail_visible;
 
 static Suite *test_cl_suite(void)
 {
@@ -68396,7 +68396,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_egg_map, test_egg_extra_field_admission_is_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_metadata_index_respects_contiguous_limit);
     tcase_add_test(tc_egg_map, test_egg_oversized_skippable_extra_fields_are_bounded);
-    tcase_add_test(tc_egg_map, test_egg_solid_stored_members_are_streamed);
+    tcase_add_test(tc_egg_map, test_egg_solid_stored_members_are_streamed); tcase_add_test(tc_egg_map, test_egg_solid_azo_members_are_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_solid_bzip2_members_are_streamed);
     tcase_add_test(tc_egg_map, test_egg_solid_deflate_members_are_streamed);
     tcase_add_test(tc_egg_map, test_egg_solid_lzma_members_are_streamed);
@@ -71629,5 +71629,56 @@ START_TEST(test_ai_model_tflite_tensor_and_operator_references_are_fail_visible)
         cl_fmap_close(map);
         cl_engine_free(scan_engine);
     }
+}
+END_TEST
+
+START_TEST(test_egg_solid_azo_members_are_fail_visible)
+{
+    static const uint8_t first[]      = "azo-first";
+    static const uint8_t second[]     = "MZP-azo-late";
+    static const uint8_t compressed[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    uint8_t archive[512];
+    uint8_t decoded[sizeof(second) - 1U];
+    egg_test_output output;
+    fmap_t *map;
+    void *handle = NULL;
+    char **comments = NULL;
+    uint32_t ncomments = 0;
+    const char *filename = NULL;
+    uint64_t output_length = 0;
+    size_t archive_length;
+    cl_error_t ret;
+
+    archive_length = egg_test_solid_archive(
+        archive, sizeof(archive), first, sizeof(first) - 1U, second,
+        sizeof(second) - 1U, compressed, sizeof(compressed), 3);
+    ck_assert_uint_gt(archive_length, 0U);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_egg_open_ex(map, &handle, &comments, &ncomments, &ctx), CL_SUCCESS);
+
+    memset(&output, 0, sizeof(output));
+    output.buffer   = decoded;
+    output.capacity = sizeof(decoded);
+    ret = cli_egg_extract_file_stream(handle, egg_test_capture, &output, &filename,
+                                      &output_length);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert_ptr_null(filename);
+    ck_assert_uint_eq(output_length, 0U);
+    ck_assert_uint_eq(output.length, 0U);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "solid EGG codec requires persistent decoder state");
+    ck_assert(map->dont_cache_flag);
+
+    cli_egg_close(handle);
+    cl_fmap_close(map);
 }
 END_TEST

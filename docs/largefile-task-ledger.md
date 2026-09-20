@@ -6093,3 +6093,15 @@ container provenance succeeded, but the remote tree remains unsuitable for
 current-source qualification; no remote mutation or transfer retry was made.
 Receipt:
 `docs/largefile-task-receipts/R03-sonic1-container-revalidation-2026-09-20.md`.
+
+R08 solid EGG AZO boundary regression (2026-09-20): the registered
+production-path
+solid-stream path now has a focused algorithm-3 regression proving that the
+currently unsupported persistent-decoder codec returns `CL_EUNPACK`, emits no
+member output, records the exact sticky incomplete reason, and marks the fmap
+non-cacheable. Existing successful STORE, BZIP2, DEFLATE, and LZMA solid-stream
+coverage remains registered. No AZO implementation was claimed or promoted;
+the persistent decoder remains an explicit parser-family requirement. The
+capability manifest, generated snapshot, inventory, and source guards were
+updated together. Receipt:
+`docs/largefile-task-receipts/R08-egg-solid-azo-boundary-2026-09-20.md`.
