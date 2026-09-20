@@ -61,7 +61,7 @@ if [ "$is_git_checkout" = yes ]; then
         # settings, source fixtures, verifiers, and the capability manifest
         # remain included.
         case "$relative" in
-            32gb-current-snapshot.md|docs/largefile-task-ledger.md|docs/largefile-task-receipts/*|pcre-scale-development-*/*)
+            32gb-current-snapshot.md|docs/largefile-task-ledger.md|docs/largefile-task-receipts/*|pcre-scale-development-*/*|provenance/*|evidence/*|largefile-evidence-*/*)
                 continue
                 ;;
         esac
@@ -82,6 +82,9 @@ else
         -not -path "$root/build*/*" \
         -not -path "$root/target/*" \
         -not -path "$root/pcre-scale-development-*/*" \
+        -not -path "$root/provenance/*" \
+        -not -path "$root/evidence/*" \
+        -not -path "$root/largefile-evidence-*/*" \
         -not -name '*.tar.gz' \
         -not -name 'libnull.a' \
         -print | LC_ALL=C sort | while IFS= read -r file; do

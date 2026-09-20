@@ -6048,10 +6048,11 @@ evidence remain open. Receipt:
 `docs/largefile-task-receipts/R13-resource-capture-process-log-2026-09-20.md`.
 
 R03 Git-less source-manifest exclusion (2026-09-20): the source identity
-helper now excludes retained root-level `pcre-scale-development-*` fixture
-payloads in both Git and Git-less paths while continuing to include source
-files, build controls, fixtures, and verifiers. Regressions cover a dirty Git
-checkout plus a Git-less delivery with retained fixture data, build output,
+helper now excludes retained root-level `pcre-scale-development-*`,
+`provenance/`, `evidence/`, and `largefile-evidence-*` payloads in both Git
+and Git-less paths while continuing to include source files, build controls,
+fixtures, and verifiers. Regressions cover a dirty Git checkout plus a
+Git-less delivery with retained fixture/evidence data, build output,
 transport archives, and `libnull.a`; the source-guard suite and full local
 tools suite pass (604 capability rows; 229 tests, 2 expected skips). This
 makes future current-source staging diagnostics practical without relabeling

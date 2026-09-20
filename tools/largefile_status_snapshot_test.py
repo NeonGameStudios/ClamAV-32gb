@@ -219,6 +219,10 @@ class SnapshotTests(unittest.TestCase):
         retained = repo / "pcre-scale-development-20260920"
         retained.mkdir()
         (retained / "fixture-8g-tail.bin").write_bytes(b"retained evidence")
+        for directory in ("provenance", "evidence", "largefile-evidence-20260920"):
+            generated = repo / directory
+            generated.mkdir()
+            (generated / "record.json").write_text("generated evidence\n", encoding="utf-8")
         second = self.root / "manifest-two.txt"
         subprocess.run(
             ["sh", "tools/largefile_source_manifest.sh", str(repo), str(second)],
@@ -256,6 +260,10 @@ class SnapshotTests(unittest.TestCase):
         (repo / "runtime.c").write_text("int runtime = 1;\n", encoding="utf-8")
         (repo / "pcre-scale-development-20260920").mkdir()
         (repo / "pcre-scale-development-20260920" / "fixture-8g-tail.bin").write_bytes(b"fixture")
+        for directory in ("provenance", "evidence", "largefile-evidence-20260920"):
+            generated = repo / directory
+            generated.mkdir()
+            (generated / "record.json").write_text("generated evidence\n", encoding="utf-8")
         (repo / "build-debug").mkdir()
         (repo / "build-debug" / "compile-command.txt").write_text("generated\n", encoding="utf-8")
         (repo / "transport.tar.gz").write_bytes(b"archive")
