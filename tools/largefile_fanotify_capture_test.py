@@ -60,6 +60,15 @@ class FanotifyCaptureTests(unittest.TestCase):
         self.assertEqual(capture.mask_names(capture.FAN_OPEN_PERM), ["FAN_OPEN_PERM"])
         self.assertEqual(capture.mask_names(0x40), ["0x40"])
 
+    def test_target_binding_requires_actor_pid_for_same_path(self):
+        fixture = Path("/private/test-mount/fixture")
+        self.assertTrue(
+            capture.event_targets_actor(str(fixture), fixture, 4321, 4321)
+        )
+        self.assertFalse(
+            capture.event_targets_actor(str(fixture), fixture, 9876, 4321)
+        )
+
     def test_permission_response_targets_event_fd_on_fanotify_channel(self):
         read_fd, write_fd = os.pipe()
         try:

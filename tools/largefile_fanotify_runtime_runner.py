@@ -160,6 +160,19 @@ def wait_for_daemon(
     fail(f"clamd did not become ready: {last_error}")
 
 
+def wait_for_file(
+    path: Path, process: subprocess.Popen, timeout: float, label: str,
+) -> None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if path.is_file() and not path.is_symlink():
+            return
+        if process.poll() is not None:
+            fail(f"{label} exited before readiness with status {process.returncode}")
+        time.sleep(0.05)
+    fail(f"{label} did not become ready: {path}")
+
+
 def stop_process(process: subprocess.Popen | None, name: str) -> dict[str, object]:
     if process is None:
         return {"started": False, "alive_after_cleanup": False, "exit_code": None}
@@ -296,6 +309,8 @@ def run_case(args: argparse.Namespace) -> dict[str, object]:
     report_path = raw / "clamonacc-report.jsonl"
     observer_kernel = raw / "observer-kernel.jsonl"
     observer_actor = raw / "observer-actor.json"
+    observer_ready = raw / "observer-ready"
+    observer_start = raw / "observer-start"
     clamd_process = None
     clamonacc_process = None
     observer_process = None
@@ -314,6 +329,25 @@ def run_case(args: argparse.Namespace) -> dict[str, object]:
                 )
             wait_for_daemon(clamd_process, socket_path, args.startup_timeout, clamd_log)
             health["clamd_startup_pong"] = True
+            if not args.monitoring_only:
+                observer = source_root / "tools" / "largefile_fanotify_capture.py"
+                observer_process = subprocess.Popen([
+                    sys.executable, "-B", str(observer),
+                    "--mount-path", str(mount_path), "--fixture", str(fixture),
+                    "--kernel-event-artifact", str(observer_kernel),
+                    "--actor-result-artifact", str(observer_actor),
+                    "--fixture-sha256", fixture_hash,
+                    "--actor-uid", str(args.actor_uid), "--case-name", args.case_name,
+                    "--ready-file", str(observer_ready),
+                    "--start-file", str(observer_start),
+                    "--timeout-seconds", str(args.actor_timeout),
+                ], stdout=(logs / "observer.log").open("w", encoding="utf-8"),
+                   stderr=subprocess.STDOUT)
+                wait_for_file(
+                    observer_ready, observer_process, args.startup_timeout,
+                    "fanotify observer",
+                )
+                health["observer_ready"] = True
             with clamonacc_log.open("w", encoding="utf-8") as stream:
                 clamonacc_process = subprocess.Popen(
                     [str(clamonacc), "--config-file", str(config_path), "--foreground",
@@ -333,17 +367,7 @@ def run_case(args: argparse.Namespace) -> dict[str, object]:
             if args.monitoring_only:
                 actor_process = start_actor(fixture, args.actor_uid, raw / "monitor-actor.json")
             else:
-                observer = source_root / "tools" / "largefile_fanotify_capture.py"
-                observer_process = subprocess.Popen([
-                    sys.executable, "-B", str(observer),
-                    "--mount-path", str(mount_path), "--fixture", str(fixture),
-                    "--kernel-event-artifact", str(observer_kernel),
-                    "--actor-result-artifact", str(observer_actor),
-                    "--fixture-sha256", fixture_hash,
-                    "--actor-uid", str(args.actor_uid), "--case-name", args.case_name,
-                    "--timeout-seconds", str(args.actor_timeout),
-                ], stdout=(logs / "observer.log").open("w", encoding="utf-8"),
-                   stderr=subprocess.STDOUT)
+                write_text(observer_start, "start\n")
                 observer_status = observer_process.wait(timeout=args.actor_timeout + 10)
                 if observer_status != 0:
                     fail(f"fanotify observer exited with status {observer_status}")

@@ -118,6 +118,14 @@ class RuntimeRunnerTests(unittest.TestCase):
                 {"clamonacc_event_id": 7},
             )
 
+    def test_observer_readiness_requires_a_live_process(self):
+        with tempfile.TemporaryDirectory(prefix="clamav-r13-ready-") as name:
+            ready = Path(name) / "observer-ready"
+            with self.assertRaisesRegex(runner.RunnerError, "exited before readiness"):
+                runner.wait_for_file(
+                    ready, self._ExitedProcess(1), 0.1, "fanotify observer"
+                )
+
 
 if __name__ == "__main__":
     raise SystemExit(unittest.main())

@@ -124,6 +124,18 @@ clamscan/full-CTest evidence remains pending; no capability was promoted.
 Receipt:
 `docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.
 
+R13 Sonic1 host fanotify development smoke (2026-09-20): fixed observer
+target binding to require the actor PID and changed the runtime runner to arm
+the observer before starting clamonacc through an explicit readiness/start
+handshake. The current-source Sonic1 host then passed real clean prevention
+(`FAN_ALLOW`), detection prevention (`FAN_DENY` with a structured
+`DETECTION_TERMINATED` report and alert offset), and a separate monitoring-only
+clean smoke. Health, cleanup, bound artifact hashes, focused tests, and the
+604-entry source-guard/release-readiness gate passed. This remains scaled
+development evidence; no capability was promoted and full R13, full-size,
+sanitizer, production-CVD, and release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-host-fanotify-development-smoke-2026-09-20.md`.
+
 R03 current-source Sonic1 daemon aggregate follow-up (2026-09-20): Release
 configuration/build succeeded with Rust 1.97.1; the registered `clamscan`
 aggregate passed 1/1 in 23.33 seconds, and the rebuilt registered `clamd`
