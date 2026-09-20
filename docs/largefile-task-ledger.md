@@ -135,6 +135,17 @@ current-source provenance or qualification; the full source transfer remains
 blocked by the recorded MCP-SSH policy boundary. Receipt:
 `docs/largefile-task-receipts/R13-sonic1-source-guard-reconciliation-2026-09-20.md`.
 
+R03 Sonic1 reconciled registered CTest (2026-09-20): after reconciling the
+two small stale fanotify evidence files, the existing tracked build ran the
+full registered suite and passed 28/28 in 449.13 seconds. The pass includes
+the aggregate `libclamav` and `libclamav_rust` suites, clamscan, clamd,
+freshclam, sigtool, milter, source guards, acceptance schema/producers,
+development acceptance capture, resource controls, and report protocols.
+This is development integration evidence from the older remote staging tree,
+not a current-source rebuild or qualification; the source provenance,
+full-size, sanitizer, fanotify kernel, and release blockers remain. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-reconciled-ctest-2026-09-20.md`.
+
 R13 Sonic1 host fanotify development smoke (2026-09-20): fixed observer
 target binding to require the actor PID and changed the runtime runner to arm
 the observer before starting clamonacc through an explicit readiness/start
