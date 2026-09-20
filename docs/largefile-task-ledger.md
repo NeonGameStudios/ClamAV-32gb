@@ -145,6 +145,16 @@ real sparse 64-MiB-plus-one case with `FAN_DENY`, `LIMIT_INCOMPLETE`, and exit
 artifact hashes were captured. This remains development evidence only; no
 capability was promoted. The same receipt records the updated hashes.
 
+R13 resource-case follow-up (2026-09-20): Sonic1 passed the real prevention
+resource contract with the clean fixture and development-only
+`MaxTemporarySize=2`: clamonacc retained `FAN_DENY` with event ID 1, the
+structured report was `RESOURCE_FAILURE` with status 35 and scan exit 2, and
+the bound kernel/actor/report artifacts were hashed. A one-byte limit variant
+also produced the expected resource report but missed the observer bind due
+to the very short denial path, so it remains a diagnostic artifact rather
+than qualification evidence. Timeout/parser, full-size and release gates
+remain open; no capability was promoted.
+
 R03 current-source Sonic1 daemon aggregate follow-up (2026-09-20): Release
 configuration/build succeeded with Rust 1.97.1; the registered `clamscan`
 aggregate passed 1/1 in 23.33 seconds, and the rebuilt registered `clamd`

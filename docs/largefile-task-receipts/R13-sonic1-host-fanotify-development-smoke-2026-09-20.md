@@ -45,6 +45,12 @@ Observed prevention cases:
   `AlertExceedsMax=no` produced `LIMIT_INCOMPLETE`, actor denied, `FAN_DENY`,
   and scan exit `2`; the report retained the exact MaxFileSize reason and no
   partial scan bytes.
+- Resource fixture: the clean fixture under a development-only
+  `MaxTemporarySize=2` limit produced `RESOURCE_FAILURE`, actor denied,
+  `FAN_DENY`, and scan exit `2`; the report retained status `35` and the
+  exact temporary-storage-limit reason. A one-byte variant reproduced the
+  same resource result but exposed a timing-only observer miss, so it was not
+  used as the bound case.
 - Monitoring-only clean fixture: actor opened and the structured scan report
   completed without claiming a permission event.
 
@@ -62,6 +68,7 @@ Selected retained-artifact SHA-256 values:
 | clean | `931991a16890461dd32f1862fdef4efd9cd49df73a3f9fcdb6e04bd0ddc7ecc2` | `4c6a2a12ce4924d440d896b1aa39f1f2e7b7d8f0f8f8e6973e2b1375b72af845` | `995d28ba039e0ad5fd2e786fb05925aa61c26434734f705ded855e55b2e00e5a` | `63daa9720ff3dc947aff3887ceabba4bcb91aaf5a7e58b5f0783bc0b0f2aaaa3` |
 | detection | `e0794d9aa989193c1af6c90eb6dfc2acbc2cf7e4d6adb8400680b600ffbb9b78` | `ac56452f761af729e0f912283683ed8b1422a86561aebf912bddea52285e797c` | `2d789e421ea72cc7ecd28f1e0c94339279bf4a843339eda04bdb8ba61e027076` | `0159f40d29815fef38b1c0e67d90c4998c7f5ecbfb914a013bdf787853c63aff` |
 | limit | `33540e9e129116c077d84eae32ffcd33663da56b9ee016ee570e76ee2182cf9a` | `e6c89d3a27784d1a41faa992b2bbac0acbdf74d0e170f7ee241f2855151065b5` | `3a4a6278dba66eed9d6e9de2ded11492fd27851c1cccd6d463ed16e3db36e7a3` | `5f46932f0bf22ae4702b7398054727dcd46a71c1b590940f90c3ab1be8ca00a3` |
+| resource | `91dde7be109b11deb992bc4dea388c5843465b52b229591bcec7c85670769320` | `8e43981b7fbd50f2ebb7ddc91cd55c0fb92bf240e6f156c64fa66ba4eb0f8234` | `0a8d243535d91b0b05c66e69b4ed1b3ae0621b9bbd700431e7130e1d65ccd306` | `a466ccfbbec62a3845cbbe511cc421ed11d793ead473b28dad106090ce301c03` |
 
 ## Verification and limits
 
@@ -73,9 +80,9 @@ Selected retained-artifact SHA-256 values:
   capability and release-readiness controls;
 - `git diff --check` — passed.
 
-This is development verification of two real host prevention outcomes and one
-monitoring-only outcome. It does not promote `on-access:permission`: the six
-case prevention matrix, timeout/resource/parser cases, full-size resource and
+This is development verification of four real host prevention outcomes and
+one monitoring-only outcome. It does not promote `on-access:permission`: the
+six-case prevention matrix, timeout/parser cases, full-size resource and
 PCRE phases, sanitizer toolchain, certified Linux x86-64, production-CVD
 parity, and final release gate remain open. No software was installed or
 downloaded, no production deployment was changed, and the routine GitHub push
