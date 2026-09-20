@@ -103,6 +103,27 @@ class RuntimeRunnerTests(unittest.TestCase):
             self.assertIn("StreamMaxLength 32G", content)
             self.assertIn("OnAccessPrevention yes", content)
 
+    def test_alert_exceeds_max_override_replaces_runner_default(self):
+        with tempfile.TemporaryDirectory(prefix="clamav-r13-alerts-") as name:
+            root = Path(name)
+            for directory in ("db", "tmp", "watch"):
+                (root / directory).mkdir()
+            args = types.SimpleNamespace(
+                max_file_size="64M",
+                max_scan_size="128M",
+                max_temporary_size="64M",
+                max_scan_time="60000",
+                clamd_option=["AlertExceedsMax=no"],
+            )
+            config = root / "clamd.conf"
+            runner.write_config(
+                config, root / "db", root / "clamd.sock", root / "clamd.pid",
+                root / "tmp", root / "watch", True, None, args,
+            )
+            content = config.read_text(encoding="utf-8")
+            self.assertIn("AlertExceedsMax no", content)
+            self.assertNotIn("AlertExceedsMax yes", content)
+
     def test_report_selection_binds_one_permission_event(self):
         with tempfile.TemporaryDirectory(prefix="clamav-r13-reports-") as name:
             root = Path(name)

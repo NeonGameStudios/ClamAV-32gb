@@ -136,6 +136,15 @@ development evidence; no capability was promoted and full R13, full-size,
 sanitizer, production-CVD, and release qualification remain open. Receipt:
 `docs/largefile-task-receipts/R13-sonic1-host-fanotify-development-smoke-2026-09-20.md`.
 
+R13 limit-case follow-up (2026-09-20): the scaled private-host run initially
+exposed that the runner's duplicate `AlertExceedsMax` configuration prevented
+the alerts-off contract from taking effect. The runner now resolves that
+option once, its regression covers `AlertExceedsMax=no`, and Sonic1 passed the
+real sparse 64-MiB-plus-one case with `FAN_DENY`, `LIMIT_INCOMPLETE`, and exit
+2. The exact temporary mount was unmounted and removed after the retained
+artifact hashes were captured. This remains development evidence only; no
+capability was promoted. The same receipt records the updated hashes.
+
 R03 current-source Sonic1 daemon aggregate follow-up (2026-09-20): Release
 configuration/build succeeded with Rust 1.97.1; the registered `clamscan`
 aggregate passed 1/1 in 23.33 seconds, and the rebuilt registered `clamd`

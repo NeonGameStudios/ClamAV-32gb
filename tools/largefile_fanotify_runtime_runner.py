@@ -94,6 +94,14 @@ def write_config(
     cvd_certs: Path | None,
     args: argparse.Namespace,
 ) -> list[str]:
+    extra_options: list[tuple[str, str]] = []
+    alert_exceeds_max = "yes"
+    for option in args.clamd_option:
+        name, setting = parse_option(option)
+        if name == "AlertExceedsMax":
+            alert_exceeds_max = setting
+        else:
+            extra_options.append((name, setting))
     lines = [
         f"DatabaseDirectory {database}",
         f"LocalSocket {socket_path}",
@@ -111,7 +119,7 @@ def write_config(
         "StreamMaxLength 32G",
         "MaxRecursion 17",
         "MaxFiles 10000",
-        "AlertExceedsMax yes",
+        f"AlertExceedsMax {alert_exceeds_max}",
         "Foreground yes",
         "Debug yes",
         "LogVerbose yes",
@@ -122,9 +130,7 @@ def write_config(
     ]
     if cvd_certs is not None:
         lines.insert(1, f"CVDCertsDirectory {cvd_certs}")
-    for option in args.clamd_option:
-        name, setting = parse_option(option)
-        lines.append(f"{name} {setting}")
+    lines.extend(f"{name} {setting}" for name, setting in extra_options)
     write_text(path, "\n".join(lines) + "\n")
     return lines
 
