@@ -329,6 +329,7 @@ def main():
             "MaxScanSize 400M",
             "PCREMaxFileSize 100M",
             "StreamMaxLength 100M",
+            "OnAccessMaxFileSize 100M",
         ]
     else:
         clamd_file_limit = "32G"
