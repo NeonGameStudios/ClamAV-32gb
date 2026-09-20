@@ -41,6 +41,18 @@ and 21 unsupported. The current manifest keeps all seven required rows in
 scope as pending: 0 qualified, 147 bounded, 443 pending, and 14 allowlisted
 unsupported. Status labels do not qualify any row.
 
+R03 Sonic1 CMake manifest-timeout boundary (2026-09-20): the pre-existing
+Sonic1 image was revalidated as a complete native/Rust environment, but its
+stale dirty source mount required hashing 22,511 manifest entries, including a
+retained ~32 GiB fixture. MCP-SSH's Docker execution returned its fixed
+20-second transport timeout while the same remote CMake process continued;
+the process later ended before dependency discovery or Makefile generation,
+and the wrapper retained no reliable CMake exit status or stderr. The cache
+records the stale revision `08b3ab820e40ac8bd307b0c78c03c94884f1b`, not the
+current candidate. This is an execution-lifecycle boundary, not current-source
+qualification; no capability status changed. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-cmake-manifest-timeout-2026-09-20.md`.
+
 ## Former required-unsupported escalation (`R09-REQUIRED-UNSUPPORTED`)
 
 These seven rows are assigned to implementation or an explicit user scope decision;
