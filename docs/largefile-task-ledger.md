@@ -41,6 +41,20 @@ and 21 unsupported. The current manifest keeps all seven required rows in
 scope as pending: 0 qualified, 147 bounded, 443 pending, and 14 allowlisted
 unsupported. Status labels do not qualify any row.
 
+R03/R09 current-source audit (2026-09-20): the current candidate `53d4d777`
+passes the source-guard suite, the full local large-file tooling suite (229
+tests, 2 expected skips), the readiness snapshot check, and `git diff --check`.
+The seven required R09 rows have implementation and fail-visible regression
+coverage, but remain pending because current-source production-linked,
+sanitizer, certified x86-64, production-CVD/service, materialized-large-file,
+Sonic1, and final qualification evidence remain open. Read-only MCP-SSH
+revalidation confirms the running Sonic1 container still binds the stale dirty
+tree `/tmp/clamav-32gb-current-20260915`; the current-source durable handoff
+remains unavailable after the authoritative `file_write_limit_exceeded`
+denial. No transfer retry, manual chunking, capability promotion, or software
+installation occurred. Receipt:
+`docs/largefile-task-receipts/R03-R09-current-source-audit-2026-09-20.md`.
+
 R03 Sonic1 CMake manifest-timeout boundary (2026-09-20): the pre-existing
 Sonic1 image was revalidated as a complete native/Rust environment, but its
 stale dirty source mount required hashing 22,511 manifest entries, including a
