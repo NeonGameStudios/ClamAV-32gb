@@ -55,6 +55,13 @@ denial. No transfer retry, manual chunking, capability promotion, or software
 installation occurred. Receipt:
 `docs/largefile-task-receipts/R03-R09-current-source-audit-2026-09-20.md`.
 
+The retained exact-source directory `/tmp/clamav-32gb-7f3458c4` was also
+revalidated read-only: it still contains Git baseline `aa6c0077`, but not the
+current candidate `7633c81d`. A bounded 2.1 MiB source-only patch was denied
+before write by the same authoritative `file_write_limit_exceeded` policy.
+This removes the last safe remote reuse path; current-candidate qualification
+now requires an external handoff or administrator-configured validation change.
+
 R03 Sonic1 CMake manifest-timeout boundary (2026-09-20): the pre-existing
 Sonic1 image was revalidated as a complete native/Rust environment, but its
 stale dirty source mount required hashing 22,511 manifest entries, including a

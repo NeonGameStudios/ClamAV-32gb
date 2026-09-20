@@ -65,6 +65,16 @@ transfer ledger still records the interrupted current-source handoff
 retried, no alternate destination was used, and no manual chunking or untracked
 remote process was started.
 
+The retained exact-source directory `/tmp/clamav-32gb-7f3458c4` still exists
+on Sonic1 and has a Git checkout at baseline `aa6c0077`, matching the earlier
+Release CTest receipt. A read-only `git cat-file -e 7633c81d^{commit}` check
+failed, so that repository does not already contain the current candidate. A
+bounded 2,131,060-byte source-only patch from `aa6c0077` to `7633c81d` was then
+submitted through the documented client-local durable handoff with SHA-256
+`4d352c2c39300f686cf1bb55b3990eca571e0a63954e39eabfbe61c202f64b07`; MCP-SSH
+denied it before remote write with `file_write_limit_exceeded`. No retry with a
+different destination or manual chunking was attempted.
+
 ## Result
 
 The current source passes all available local guards and tooling tests, but the
