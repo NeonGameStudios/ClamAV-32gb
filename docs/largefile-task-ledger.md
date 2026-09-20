@@ -190,6 +190,16 @@ qualification remain blocked by the recorded toolchain, native dependency, and
 remote-runner boundaries. Receipt:
 `docs/largefile-task-receipts/R08-rust-standalone-parser-revalidation-2026-09-19.md`.
 
+The R06 follow-up materialized the existing attachment-bearing OneNote corpus
+into a fully allocated 256 MiB + 1-byte file under `/private/tmp`. The vendored
+file-backed parser accepted it and produced the same model as the 52,297-byte
+source after filename normalization, including one embedded `clam.exe`
+object. The current offline parser suite passed 85 unit tests, 6 integration
+tests, and 1 ignored doctest. This proves a physical oversized container but
+not a late serialized child beyond the former boundary, so R06 remains
+development-verified and pending certified/materialized-late-child evidence.
+Receipt: `docs/largefile-task-receipts/R06-materialized-oversized-onenote-container-2026-09-19.md`.
+
 The complete `libclamav_rust` consumer was also rerun from the current host
 cache. Cargo resolved `clam-sigutil` 1.2.4 and advanced to `openssl-sys`, which
 stopped on the absent OpenSSL development environment and `pkg-config`. A
