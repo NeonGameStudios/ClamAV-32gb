@@ -30,6 +30,11 @@ without installing software or weakening required Rust/CMake features.
   CMake, Clang, and Make, but no Cargo, JSON-C development package, or Check
   package. A read-only CMake configure therefore stops at the required Cargo
   1.97 check before producing a build (`exit 1`).
+- The existing `rust:1.97-bookworm` image supplies GCC, OpenSSL development
+  support, and Rust `1.97.1`, but has no CMake, JSON-C, or Check. The two
+  pre-existing images therefore complement one another but neither is a
+  complete native ClamAV build environment; no image composition or package
+  installation was attempted.
 
 No host software was installed, no repository dependency was changed, and no
 feature was disabled to obtain a partial pass.

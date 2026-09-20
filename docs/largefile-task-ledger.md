@@ -6119,5 +6119,7 @@ installed Rust `1.97.1` toolchain and completed the current-source
 `clamav_rust` `cargo check --offline --locked` (`exit 0`). The full crate test
 target reached linking but correctly stopped on unresolved native ClamAV C
 symbols because no coherent CMake-built library was present (`exit 101`).
-No software was installed or downloaded. Receipt:
+The pinned Rust image has no CMake, JSON-C, or Check, while the local CMake
+image has no Cargo, JSON-C, or Check; no single complete native build image is
+available locally. No software was installed or downloaded. Receipt:
 `docs/largefile-task-receipts/R03-local-build-boundary-2026-09-20.md`.
