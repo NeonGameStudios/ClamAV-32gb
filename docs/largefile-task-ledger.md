@@ -155,6 +155,26 @@ to the very short denial path, so it remains a diagnostic artifact rather
 than qualification evidence. Timeout/parser, full-size and release gates
 remain open; no capability was promoted.
 
+R13 timeout-case follow-up (2026-09-20): the fanotify verifier's timeout
+expectation was corrected to match the established public `CL_ETIMEOUT` /
+`LIMIT_INCOMPLETE` mapping; `APPLICATION_ABORT` remains reserved for
+uncategorized cancellation (`CL_BREAK`). After synchronizing that contract,
+Sonic1 passed the real clean-fixture deadline case with development-only
+`MaxScanTime=1`, `FAN_DENY`, status 21, scan exit 2, and the canonical
+`Heuristics.Limits.Exceeded.MaxScanTime` reason. Bound artifacts were hashed;
+the parser case and full-size/release gates remain open.
+
+R13 fast-denial observer/parser follow-up (2026-09-20): the passive fanotify
+recorder now uses `FAN_CLASS_PRE_CONTENT`, retaining fast resource, timeout,
+and parser permission events before clamonacc's authoritative `CONTENT` group
+completes its response while still replying `FAN_ALLOW`. A fresh Sonic1 sweep
+passed clean, detection, resource, timeout, sparse limit, and a 32-byte
+truncated copy of the checked-in ZIP fixture as `MALFORMED_CONFIRMED`; all
+six prevention cases now bind actor/kernel/report artifacts with fresh hashes.
+Focused evidence coverage is 21/21 and the source guard covers the observer
+class. This is still scaled development evidence; no capability was
+promoted.
+
 R03 current-source Sonic1 daemon aggregate follow-up (2026-09-20): Release
 configuration/build succeeded with Rust 1.97.1; the registered `clamscan`
 aggregate passed 1/1 in 23.33 seconds, and the rebuilt registered `clamd`

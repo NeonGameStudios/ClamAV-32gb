@@ -32,7 +32,10 @@ CASE_CONTRACT = {
     "detection": ("DETECTION_TERMINATED", 1, "deny", "FAN_DENY"),
     "limit": ("LIMIT_INCOMPLETE", 2, "deny", "FAN_DENY"),
     "resource": ("RESOURCE_FAILURE", 2, "deny", "FAN_DENY"),
-    "timeout": ("APPLICATION_ABORT", 2, "deny", "FAN_DENY"),
+    # MaxScanTime is CL_ETIMEOUT.  The public scanner/session contract maps
+    # that configured deadline to LIMIT_INCOMPLETE; APPLICATION_ABORT is
+    # reserved for CL_BREAK/cancellation without a configured limit.
+    "timeout": ("LIMIT_INCOMPLETE", 2, "deny", "FAN_DENY"),
     "parser": ("MALFORMED_CONFIRMED", 2, "deny", "FAN_DENY"),
 }
 MONITORING_CASES = tuple(CASE_CONTRACT)

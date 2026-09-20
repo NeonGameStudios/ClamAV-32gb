@@ -35,7 +35,10 @@ import subprocess
 import sys
 import time
 
-FAN_CLASS_CONTENT = 0x00000004
+# The passive recorder must receive the permission event before clamonacc's
+# CONTENT group can complete a very fast deny (resource/timeout/parser cases).
+# It always replies FAN_ALLOW; clamonacc remains the authoritative decision.
+FAN_CLASS_PRE_CONTENT = 0x00000008
 FAN_CLOEXEC = 0x00000001
 FAN_NONBLOCK = 0x00000002
 FAN_UNLIMITED_QUEUE = 0x00000010
@@ -196,7 +199,7 @@ def _fanotify_init() -> int:
     function.argtypes = [ctypes.c_uint, ctypes.c_uint]
     function.restype = ctypes.c_int
     flags = (
-        FAN_CLASS_CONTENT | FAN_CLOEXEC | FAN_NONBLOCK |
+        FAN_CLASS_PRE_CONTENT | FAN_CLOEXEC | FAN_NONBLOCK |
         FAN_UNLIMITED_QUEUE | FAN_UNLIMITED_MARKS
     )
     event_flags = os.O_RDONLY | getattr(os, "O_LARGEFILE", 0) | os.O_CLOEXEC

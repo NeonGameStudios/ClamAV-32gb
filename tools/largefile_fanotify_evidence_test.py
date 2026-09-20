@@ -130,6 +130,10 @@ class FanotifyEvidenceTests(unittest.TestCase):
                 json.dumps(report, sort_keys=True) + "\n", encoding="utf-8"
             )
 
+    def test_timeout_contract_matches_public_cl_timeout_mapping(self):
+        self.assertEqual(checker.CASE_CONTRACT["timeout"][0], "LIMIT_INCOMPLETE")
+        self.assertNotEqual(checker.CASE_CONTRACT["timeout"][0], "APPLICATION_ABORT")
+
     def document(self):
         identity = {}
         for field, filename in {
