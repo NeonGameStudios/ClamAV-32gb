@@ -168,6 +168,19 @@ evidence without current-source identity, timestamped formal proof JSON,
 32-GiB qualification, or capability promotion. Receipt:
 `docs/largefile-task-receipts/R13-resource-capture-process-log-2026-09-20.md`.
 
+R03 Sonic1 source-identity gap recheck (2026-09-20): the existing Docker
+`/src` mount was checked through the supplied `sonic1-camera-key` profile and
+the documented asynchronous MCP-SSH command path. A source-only manifest of
+the current committed candidate (`45c69d47`) contains 1,704 entries and has
+SHA-256
+`0c93a00c815f2d31eff1c7aca06fef5f265aebc423acd299c06368970c571019`; the
+remote Git-less `/src` tree contains 1,780 entries and has SHA-256
+`409360e0baf2c05332e130e3fe3ca6d3357d069d57e5ac248f2eba63d9f0a185`.
+Although `matcher.c`, the resource wrapper, and `scanners.c` match
+individually, the complete source identity does not. The existing build and
+clean-13 evidence therefore remain development-only. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-source-identity-gap-2026-09-20.md`.
+
 R13 phase-acknowledged boundary capture and clean-control revalidation
 (2026-09-20): added the opt-in phase acknowledgement rendezvous so the
 qualification-only watcher can take an independent procfs/tree snapshot at
