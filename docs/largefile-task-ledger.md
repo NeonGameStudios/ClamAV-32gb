@@ -5657,3 +5657,12 @@ the 50,331,648 KiB minimum, no finite cgroup memory limit, and 37,088,712 KiB
 free filesystem space. It also retained the missing `clang` and `file` tool
 entries; sanitizer work remains externally blocked. Receipt:
 `docs/largefile-task-receipts/R03-sonic1-host-preflight-2026-09-20.md`.
+
+R13 current-source Sonic1 privileged permission smoke (2026-09-20): the exact
+current-source Release build passed a real unprivileged clean open with
+`FAN_ALLOW` and passed a real detection open with `FAN_DENY`; the retained
+fanotify events were bound to the typed reports, including detection alert
+offset 7. This is development evidence for the prevention path only; the full
+R13 matrix, monitoring-only parity, timeout/resource cases, full-size,
+sanitizer, and release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-current-source-permission-smoke-2026-09-20.md`.
