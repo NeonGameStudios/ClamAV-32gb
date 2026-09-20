@@ -6069,3 +6069,16 @@ no alternate destination, manual chunking, or untracked process was used.
 Current-source Sonic1 qualification remains externally blocked.
 Receipt:
 `docs/largefile-task-receipts/R03-sonic1-source-identity-gap-2026-09-20.md`.
+
+R08 XAR checksum declaration validation (2026-09-20): the XAR checksum
+declaration parser now rejects same-length SHA-1/MD5 values containing a
+non-hexadecimal character through the shared hexadecimal decoder, preserving
+CL_EFORMAT, sticky incomplete state, and fmap non-cacheability instead of
+falling through to a later checksum-mismatch path. The existing declaration
+regression now covers an exact-length non-hexadecimal digest alongside the
+unsupported-style control. Source guards pass for all 604 capability rows;
+the full local tools suite passes 229 tests with two expected skips. No
+capability was promoted; current-source linked execution and external
+qualification remain required.
+Receipt:
+`docs/largefile-task-receipts/R08-xar-checksum-hex-2026-09-20.md`.

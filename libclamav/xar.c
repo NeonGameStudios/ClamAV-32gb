@@ -537,15 +537,15 @@ static int xar_get_checksum_values(xmlTextReaderPtr reader, unsigned char **cksu
         xmlval = xmlTextReaderConstValue(reader);
         if (xmlval) {
             cli_dbgmsg("cli_scanxar: checksum value is %s.\n", xmlval);
-            if (((*hash == XAR_CKSUM_SHA1) && (xmlStrlen(xmlval) == 2 * SHA1_HASH_SIZE)) ||
-                ((*hash == XAR_CKSUM_MD5) && (xmlStrlen(xmlval) == 2 * MD5_HASH_SIZE))) {
+            if (((((*hash == XAR_CKSUM_SHA1) && (xmlStrlen(xmlval) == 2 * SHA1_HASH_SIZE)) ||
+                  ((*hash == XAR_CKSUM_MD5) && (xmlStrlen(xmlval) == 2 * MD5_HASH_SIZE))) && cli_hex2str_to((const char *)xmlval, (char[SHA1_HASH_SIZE]){0}, (size_t)xmlStrlen(xmlval)) == 0)) {
                 *cksum = xmlStrdup(xmlval);
                 if (*cksum == NULL) {
                     cli_dbgmsg("cli_scanxar: checksum value allocation failed.\n");
                     return CL_EMEM;
                 }
             } else {
-                cli_dbgmsg("cli_scanxar: checksum type is unknown or length is invalid.\n");
+                cli_dbgmsg("cli_scanxar: checksum type, length, or hexadecimal value is invalid.\n");
                 *hash  = XAR_CKSUM_OTHER;
                 return CL_EFORMAT;
             }

@@ -33007,7 +33007,7 @@ START_TEST(test_xar_checksum_declaration_is_fail_visible)
         "</data></file></toc></xar>",
         "<?xml version=\"1.0\"?><xar><toc><file><data>"
         "<offset>0</offset><length>3</length><size>3</size>"
-        "<archived-checksum style=\"sha1\">00</archived-checksum>"
+        "<archived-checksum style=\"sha1\">000000000000000000000000000000000000000g</archived-checksum>"
         "</data></file></toc></xar>"
     };
     static const cl_error_t expected_status[] = {CL_EUNPACK, CL_EFORMAT};

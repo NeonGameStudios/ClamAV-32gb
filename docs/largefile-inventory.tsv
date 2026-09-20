@@ -18361,6 +18361,7 @@ native-width-integer	libclamav/xar.c	489	            *value = (size_t)numval;
 native-width-integer	libclamav/xar.c	502	    hash - pointer to int for returning checksum algorithm.
 native-width-integer	libclamav/xar.c	505	static int xar_get_checksum_values(xmlTextReaderPtr reader, unsigned char **cksum, int *hash)
 native-width-integer	libclamav/xar.c	52	static const void *xar_need_range(fmap_t *map, size_t at, size_t len, cl_error_t *status)
+native-width-integer	libclamav/xar.c	541	                  ((*hash == XAR_CKSUM_MD5) && (xmlStrlen(xmlval) == 2 * MD5_HASH_SIZE))) && cli_hex2str_to((const char *)xmlval, (char[SHA1_HASH_SIZE]){0}, (size_t)xmlStrlen(xmlval)) == 0)) {
 native-width-integer	libclamav/xar.c	569	     length - pointer to long for returning value of the <length> element.
 native-width-integer	libclamav/xar.c	570	     offset - pointer to long for returning value of the <offset> element.
 native-width-integer	libclamav/xar.c	571	     size - pointer to long for returning value of the <size> element.
@@ -38871,8 +38872,8 @@ offset-size-arithmetic	libclamav/xar.c	482	            while (*endptr == ' ' || 
 offset-size-arithmetic	libclamav/xar.c	483	                endptr++;
 offset-size-arithmetic	libclamav/xar.c	484	            if (errno == ERANGE || numval > SIZE_MAX || endptr == start || *endptr != '\0') {
 offset-size-arithmetic	libclamav/xar.c	52	static const void *xar_need_range(fmap_t *map, size_t at, size_t len, cl_error_t *status)
-offset-size-arithmetic	libclamav/xar.c	540	            if (((*hash == XAR_CKSUM_SHA1) && (xmlStrlen(xmlval) == 2 * SHA1_HASH_SIZE)) ||
-offset-size-arithmetic	libclamav/xar.c	541	                ((*hash == XAR_CKSUM_MD5) && (xmlStrlen(xmlval) == 2 * MD5_HASH_SIZE))) {
+offset-size-arithmetic	libclamav/xar.c	540	            if (((((*hash == XAR_CKSUM_SHA1) && (xmlStrlen(xmlval) == 2 * SHA1_HASH_SIZE)) ||
+offset-size-arithmetic	libclamav/xar.c	541	                  ((*hash == XAR_CKSUM_MD5) && (xmlStrlen(xmlval) == 2 * MD5_HASH_SIZE))) && cli_hex2str_to((const char *)xmlval, (char[SHA1_HASH_SIZE]){0}, (size_t)xmlStrlen(xmlval)) == 0)) {
 offset-size-arithmetic	libclamav/xar.c	569	     length - pointer to long for returning value of the <length> element.
 offset-size-arithmetic	libclamav/xar.c	570	     offset - pointer to long for returning value of the <offset> element.
 offset-size-arithmetic	libclamav/xar.c	571	     size - pointer to long for returning value of the <size> element.
