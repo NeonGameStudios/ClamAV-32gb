@@ -58,6 +58,7 @@ OUTCOME_EXIT = {"clean": 0, "detection": 1, "limit": 2}
 DETECTION_SIGNATURE = "LargeFile.R04.Service.Detection"
 DETECTION_MARKER = b"SERVICE-R04-DIRECT-DETECTION"
 DETECTION_PREFIX = b"service-r04-prefix:"
+DEVELOPMENT_LOGICAL_SCAN_LIMIT = "64G"
 REPORT_NUMERIC_FIELDS = (
     "logical_bytes", "matcher_bytes", "contiguous_bytes", "temporary_bytes",
     "files_scanned", "max_recursion_depth", "elapsed_ms", "parser_operations",
@@ -179,7 +180,11 @@ def write_config(
         "MaxThreads 1",
         "MaxQueue 2",
         f"MaxFileSize {max_file}",
-        "MaxScanSize 64M",
+        # The structured-report validator binds every service record to the
+        # certified 64-GiB logical budget, even though these fixtures remain
+        # small development controls and the other resource limits stay
+        # deliberately bounded.
+        f"MaxScanSize {DEVELOPMENT_LOGICAL_SCAN_LIMIT}",
         "MaxMatcherWork 256M",
         "MaxTemporarySize 64M",
         "MaxContiguousSize 64M",
@@ -502,7 +507,8 @@ def make_record(
         **numeric,
         "sanitizer": "development",
         "resource_phase": (
-            f"development-envelope;mode={identifier};max-file=64M;max-scan=64M;"
+            f"development-envelope;mode={identifier};max-file=64M;"
+            f"max-scan={DEVELOPMENT_LOGICAL_SCAN_LIMIT};"
             "max-temp=64M;daemon-rss=unmeasured;socket=tempfs"
         ),
         "health": "pass",
@@ -583,7 +589,7 @@ def capture(
         f"platform={os.uname().sysname}-{os.uname().machine}\n"
         "sanitizer=development\n"
         "max_file_size=64M\n"
-        "max_scan_size=64M\n"
+        f"max_scan_size={DEVELOPMENT_LOGICAL_SCAN_LIMIT}\n"
         "max_temporary_size=64M\n",
         encoding="utf-8",
     )
