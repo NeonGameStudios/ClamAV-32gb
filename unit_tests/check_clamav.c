@@ -36249,6 +36249,75 @@ START_TEST(test_rust_onenote_reader_streams_corpus_attachment_above_former_cap)
     free(sample_data);
 }
 END_TEST
+
+START_TEST(test_rust_onenote_reader_detects_materialized_late_child)
+{
+    const char *sample_path = OBJDIR PATHSEP "input" PATHSEP "clamav_hdb_scanfiles" PATHSEP
+                              "clam.exe.webapp-export.late-child.one";
+    struct stat sample_stat;
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    cl_fmap_t *map;
+    cl_error_t ret;
+    int fd;
+
+    if (sizeof(size_t) < sizeof(uint64_t))
+        return;
+
+    fd = open(sample_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", sample_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &sample_stat), 0);
+    ck_assert_msg((uintmax_t)sample_stat.st_size > (uintmax_t)CLI_MAX_ALLOCATION,
+                  "late-child fixture is not beyond the former cap: %jd",
+                  (intmax_t)sample_stat.st_size);
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cli_initroots(engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         engine->root[0], "OneNote.Reader.LateMZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+
+    map = cl_fmap_open_handle(&fd, 0, (size_t)sample_stat.st_size, pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cl_fmap_set_name(map, sample_path), CL_SUCCESS);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ONENOTE | CL_SCAN_PARSE_ARCHIVE | CL_SCAN_PARSE_PE;
+    memset(&layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                = engine;
+    ctx.dconf                 = engine->dconf;
+    ctx.options               = &options;
+    ctx.fmap                  = map;
+    ctx.this_layer_tmpdir     = tmpdir;
+    ctx.recursion_stack       = layers;
+    ctx.recursion_stack_size  = sizeof(layers) / sizeof(layers[0]);
+    layers[0].fmap            = map;
+    layers[0].type            = CL_TYPE_ONENOTE;
+    layers[0].size            = (size_t)sample_stat.st_size;
+    layers[0].tmpdir          = tmpdir;
+
+    ret = scan_onenote(&ctx);
+
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    ck_assert_str_eq(cli_get_last_virus(&ctx), "OneNote.Reader.LateMZ.UNOFFICIAL");
+    ck_assert_uint_eq(ctx.temporary_bytes, 0U);
+    ck_assert_uint_gt(ctx.temporary_peak, 0U);
+
+    free_test_layer_evidence(layers, sizeof(layers) / sizeof(layers[0]));
+    cl_fmap_close(map);
+    close(fd);
+    cl_engine_free(engine);
+}
+END_TEST
 #endif
 
 START_TEST(test_apm_truncated_driver_map_is_format_error)
@@ -68772,6 +68841,7 @@ static Suite *test_cl_suite(void)
 #if defined(ANONYMOUS_MAP) && !defined(_WIN32)
     tcase_add_test(tc_rust_onenote, test_rust_onenote_reader_crosses_former_whole_input_cap);
     tcase_add_test(tc_rust_onenote, test_rust_onenote_reader_streams_corpus_attachment_above_former_cap);
+    tcase_add_test(tc_rust_onenote, test_rust_onenote_reader_detects_materialized_late_child);
 #endif
     suite_add_tcase(s, tc_msxml_map);
     tcase_add_test(tc_msxml_map, test_msxml_missing_map_is_fail_visible);

@@ -163,6 +163,7 @@ target_compile_definitions(check_clamav PUBLIC OBJDIR="${OBJDIR}" SRCDIR="${SRCD
 # even though the corresponding backend is enabled, making the harness fail
 # before it reaches any library assertions.
 add_dependencies(check_clamav tgt_clamd_test_inputs)
+add_dependencies(check_clamav tgt_largefile_onenote_late_fixture)
 
 # Exercise the decompressor-construction failure contract with the exact
 # external call sites used by libclamav. GNU ld's --wrap is deliberately

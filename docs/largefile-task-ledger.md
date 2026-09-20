@@ -200,6 +200,17 @@ not a late serialized child beyond the former boundary, so R06 remains
 development-verified and pending certified/materialized-late-child evidence.
 Receipt: `docs/largefile-task-receipts/R06-materialized-oversized-onenote-container-2026-09-19.md`.
 
+The next R06 slice made the stronger late-child fixture reproducible. A new
+generator inserts a valid unreferenced FSSHTTPB `ObjectDataBlob` before the
+existing attachment data, fully allocates the 256 MiB payload, and leaves the
+original OneNote IDs/references unchanged. The resulting 268,487,770-byte
+fixture places the embedded `MZ` at byte 268,468,815, beyond the former cap;
+the vendored `scan_section_reader` callback streamed one 544-byte `clam.exe`
+attachment. A production-linked CTest and CMake fixture target are now wired,
+but have not run from this checkout because local CMake is unavailable and the
+remote current-source transfer remains denied. No capability was promoted.
+Receipt: `docs/largefile-task-receipts/R06-materialized-late-child-fixture-2026-09-19.md`.
+
 The complete `libclamav_rust` consumer was also rerun from the current host
 cache. Cargo resolved `clam-sigutil` 1.2.4 and advanced to `openssl-sys`, which
 stopped on the absent OpenSSL development environment and `pkg-config`. A

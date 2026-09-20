@@ -116,6 +116,27 @@ foreach(TESTFILE ${ENCRYPTED_TESTFILES})
     decrypt_testfile(${TESTFILE})
 endforeach()
 
+# Keep the large modern OneNote late-child fixture generated rather than
+# checked in.  The generator inserts a valid, unreferenced ObjectDataBlob
+# before the existing data elements so the real embedded child is physically
+# beyond the former 256 MiB whole-input boundary.
+set(LARGEFILE_ONENOTE_LATE_FIXTURE
+    ${CMAKE_CURRENT_BINARY_DIR}/clamav_hdb_scanfiles/clam.exe.webapp-export.late-child.one)
+set(LARGEFILE_ONENOTE_LATE_FIXTURE_SCRIPT
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/largefile_onenote_late_fixture.py)
+add_custom_command(
+    OUTPUT ${LARGEFILE_ONENOTE_LATE_FIXTURE}
+    COMMAND ${Python3_EXECUTABLE} ${LARGEFILE_ONENOTE_LATE_FIXTURE_SCRIPT}
+            ${CMAKE_CURRENT_BINARY_DIR}/clamav_hdb_scanfiles/clam.exe.webapp-export.one
+            ${LARGEFILE_ONENOTE_LATE_FIXTURE}
+    DEPENDS
+        ${LARGEFILE_ONENOTE_LATE_FIXTURE_SCRIPT}
+        ${CMAKE_CURRENT_BINARY_DIR}/clamav_hdb_scanfiles/clam.exe.webapp-export.one)
+add_custom_target(tgt_largefile_onenote_late_fixture
+    DEPENDS ${LARGEFILE_ONENOTE_LATE_FIXTURE})
+add_dependencies(tgt_largefile_onenote_late_fixture
+    tgt_clamav_hdb_scanfiles_clam.exe.webapp-export.one)
+
 # A targeted check_clamd build must carry the complete fixture set used by the
 # Python service test. The normal ALL build already materializes these files,
 # but relying on that implicit ordering makes focused production-linked service
