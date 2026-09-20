@@ -49,6 +49,36 @@ class AcceptanceResourceCaptureTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "symlinked"):
                 capture.append_phase_event(path, "complete")
 
+    def test_process_log_rejects_symlink(self):
+        with tempfile.TemporaryDirectory(prefix="largefile-resource-log-") as directory:
+            root = Path(directory)
+            (root / "provenance").mkdir()
+            (root / "temporary").mkdir()
+            for name in ("source", "build", "config"):
+                (root / name).write_text(name, encoding="utf-8")
+            target = root / "provenance/target.log"
+            target.write_text("", encoding="utf-8")
+            (root / "provenance/process.log").symlink_to(target)
+            args = argparse.Namespace(
+                evidence_root=root,
+                source_manifest=Path("source"),
+                build_identity=Path("build"),
+                config=Path("config"),
+                temporary_root=Path("temporary"),
+                output=Path("provenance/resources.tsv"),
+                phase_file=None,
+                process_log=Path("provenance/process.log"),
+                sample_interval_ms=10,
+                kind="parser",
+                id="CL_TYPE_DATA",
+                case_id="parser:CL_TYPE_DATA:valid-complete",
+                command=["synthetic-command"],
+            )
+            with mock.patch.object(capture.subprocess, "Popen") as start:
+                with self.assertRaisesRegex(ValueError, "process log is symlinked"):
+                    capture.capture(args)
+            start.assert_not_called()
+
     def test_live_sampler_failure_is_fail_closed(self):
         class FakeProcess:
             pid = 4242
@@ -77,6 +107,7 @@ class AcceptanceResourceCaptureTests(unittest.TestCase):
                 temporary_root=Path("temporary"),
                 output=Path("provenance/resources.tsv"),
                 phase_file=None,
+                process_log=None,
                 sample_interval_ms=10,
                 kind="parser",
                 id="CL_TYPE_DATA",

@@ -156,6 +156,18 @@ fanotify, production-CVD/service, or release evidence; no capability was
 promoted. Receipt:
 `docs/largefile-task-receipts/R13-pcre-resource-phase-bridge-sonic1-smoke-2026-09-20.md`.
 
+R13 Sonic1 coherent resource-capture/process-log smoke (2026-09-20): the
+resource producer now optionally retains merged scanner output with
+symlink/non-empty-path rejection and closes that artifact on failure and
+completion paths. One tracked 8-GiB PCRE positive-control run then published
+358 process-tree samples, PCRE/post-PCRE peaks, the ordered phase protocol,
+and the object-bound runtime process log in the same evidence root. The
+supervisor's exit 1 is the expected scanner detection status; the wrapper
+published its row before returning it. This remains stale-tree development
+evidence without current-source identity, timestamped formal proof JSON,
+32-GiB qualification, or capability promotion. Receipt:
+`docs/largefile-task-receipts/R13-resource-capture-process-log-2026-09-20.md`.
+
 R13 Sonic1 source-guard reconciliation (2026-09-20): the two small stale
 fanotify evidence verifier files in the existing Sonic1 staging tree were
 reconciled to the local candidate and verified by exact SHA-256. The tracked

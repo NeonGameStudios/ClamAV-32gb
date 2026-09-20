@@ -315,6 +315,18 @@ def capture(args: argparse.Namespace) -> int:
     phase_file.parent.mkdir(parents=True, exist_ok=True)
     phase_file.write_text("", encoding="utf-8")
 
+    process_log: Path | None = None
+    process_log_stream = None
+    requested_process_log = getattr(args, "process_log", None)
+    if requested_process_log is not None:
+        process_log = path_under(root, requested_process_log, "process log")
+        if process_log.exists() and process_log.is_symlink():
+            fail(f"process log is symlinked: {process_log}")
+        if process_log.exists() and process_log.stat().st_size:
+            fail(f"process log already contains data: {process_log}")
+        process_log.parent.mkdir(parents=True, exist_ok=True)
+        process_log_stream = process_log.open("wb")
+
     environment = os.environ.copy()
     environment["CLAMAV_LARGEFILE_RESOURCE_PHASE_FILE"] = str(phase_file)
     environment["CLAMAV_LARGEFILE_RESOURCE_PHASE_PROTOCOL"] = "pcre-start,post-pcre,complete"
@@ -323,8 +335,12 @@ def capture(args: argparse.Namespace) -> int:
             args.command,
             env=environment,
             start_new_session=True,
+            stdout=process_log_stream if process_log_stream is not None else None,
+            stderr=subprocess.STDOUT if process_log_stream is not None else None,
         )
     except OSError as error:
+        if process_log_stream is not None:
+            process_log_stream.close()
         fail(f"acceptance command could not start: {error}")
 
     baseline_oom: dict[str, str | int] | None = None
@@ -369,14 +385,22 @@ def capture(args: argparse.Namespace) -> int:
                 time.sleep(args.sample_interval_ms / 1000)
     except KeyboardInterrupt:
         terminate_child(process)
+        if process_log_stream is not None:
+            process_log_stream.close()
         raise
 
     if sampling_error is not None:
         process.wait()
+        if process_log_stream is not None:
+            process_log_stream.close()
         fail(f"resource sampling failed while command was alive: {sampling_error}")
     if int(current["sample_count"]) < 1:
+        if process_log_stream is not None:
+            process_log_stream.close()
         fail(last_error)
     return_code = process.wait()
+    if process_log_stream is not None:
+        process_log_stream.close()
     append_phase_event(phase_file, "complete")
     if args.kind == "matcher" and args.id == "pcre":
         if phase_peaks["pcre_rss_peak_kb"] is None or phase_peaks["post_pcre_rss_peak_kb"] is None:
@@ -435,6 +459,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--temporary-root", required=True, type=Path)
     parser.add_argument("--output", type=Path, default=Path(resources.RESOURCE_PATH))
     parser.add_argument("--phase-file", type=Path)
+    parser.add_argument("--process-log", type=Path)
     parser.add_argument("--sample-interval-ms", type=int, default=100)
     args = parser.parse_args(option_argv)
     if args.sample_interval_ms < 10 or args.sample_interval_ms > 10000:
