@@ -98,6 +98,19 @@ list had been inspected first, and no alternate destination was tried. The
 existing remote checkout therefore remains unsuitable as current-source
 evidence.
 
+The follow-on current-source transfer succeeded through the MCP-SSH durable
+handoff in eighteen bounded chunks. The assembled archive for commit
+`86693659` matched locally and remotely at 18,354,218 bytes with SHA-256
+`95152fe19cf7847f886f009fc895b0f85cc776160127937e63db084fad3c490`; the
+extracted OneNote fixture generator hash also matched the local checkout.
+Sonic1 CMake configuration then succeeded with the existing x86-64 image,
+static/shared libraries, tests, milter, clamonacc, JSON-C, and the
+pre-provisioned Rust 1.97 toolchain visible. The serialized native build
+reached 29% before Cargo stopped on the absent offline `clam-sigutil` 1.2.4
+Git source. No host or repository software was installed, and no CTest or
+qualification evidence was claimed. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.
+
 The follow-on R03 Sonic1 runner discovery reached the authorized x86-64 host:
 12 CPUs, 66,800,082,944 bytes total memory, 63,935,778,816 bytes available,
 Docker 29.1.3, and a 1,024,209,543,168-byte NVMe device. The active root and
