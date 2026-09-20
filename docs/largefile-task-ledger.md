@@ -6120,9 +6120,8 @@ installed Rust `1.97.1` toolchain and completed the current-source
 target reached linking but correctly stopped on unresolved native ClamAV C
 symbols because no coherent CMake-built library was present (`exit 101`).
 The pinned Rust image has no CMake, JSON-C, or Check, while the local CMake
-image has no Cargo, JSON-C, or Check; no single complete native build image is
-available locally. Sonic1 does have the native dependencies in its existing
-ClamAV image, but only a stable Rust toolchain and a stale dirty source mount;
-current-source qualification remains blocked. No software was installed or
-downloaded. Receipt:
+image has no Cargo, JSON-C, or Check. Sonic1's existing ClamAV image does have
+the complete native dependencies and Rust/Rustc/Cargo 1.97.1, but only against
+the stale dirty source mount; current-source qualification remains blocked.
+No software was installed or downloaded. Receipt:
 `docs/largefile-task-receipts/R03-local-build-boundary-2026-09-20.md`.
