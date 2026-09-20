@@ -145,6 +145,17 @@ snapshot freshness, and diff checks pass. No capability was promoted and no
 linked/full-size qualification was claimed. Receipt:
 `docs/largefile-task-receipts/R13-pcre-resource-phase-bridge-2026-09-20.md`.
 
+R13 Sonic1 PCRE resource-phase bridge smoke (2026-09-20): after reconciling
+only the current `matcher.c` into the existing stale development staging tree,
+the `clamav` and `clamscan` targets both built successfully. A bounded custom
+PCRE positive-control scan then emitted the exact phase protocol
+`pcre-start` -> `post-pcre` to the opt-in capture file and returned the
+expected detection status. This is runtime evidence for the bridge, not
+current-source provenance, full-size resource qualification, sanitizer,
+fanotify, production-CVD/service, or release evidence; no capability was
+promoted. Receipt:
+`docs/largefile-task-receipts/R13-pcre-resource-phase-bridge-sonic1-smoke-2026-09-20.md`.
+
 R13 Sonic1 source-guard reconciliation (2026-09-20): the two small stale
 fanotify evidence verifier files in the existing Sonic1 staging tree were
 reconciled to the local candidate and verified by exact SHA-256. The tracked
