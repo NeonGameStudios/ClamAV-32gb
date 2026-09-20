@@ -6113,5 +6113,11 @@ stopped because the host has no discoverable OpenSSL development installation
 or `pkg-config`; the existing CMake Docker toolchain has CMake/Clang/Make but
 no Cargo, JSON-C, or Check and stops at the required Cargo 1.97 check. No
 software was installed, no required feature was disabled, and no partial
-build was treated as application qualification. Receipt:
+build was treated as application qualification. Follow-up with the existing
+Linux `rust:1.97-bookworm` image and read-only host Cargo caches used the
+installed Rust `1.97.1` toolchain and completed the current-source
+`clamav_rust` `cargo check --offline --locked` (`exit 0`). The full crate test
+target reached linking but correctly stopped on unresolved native ClamAV C
+symbols because no coherent CMake-built library was present (`exit 101`).
+No software was installed or downloaded. Receipt:
 `docs/largefile-task-receipts/R03-local-build-boundary-2026-09-20.md`.
