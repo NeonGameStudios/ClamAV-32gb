@@ -5747,3 +5747,17 @@ network, installation, consumer C/Rust relink, materialized late-child
 fixture, certified resource run, or capability promotion was performed.
 Receipt:
 `docs/largefile-task-receipts/R06-modern-onenote.md`.
+
+R03 current-source Sonic1 build follow-up (2026-09-20): reused the existing
+read-only Cargo cache to clear the prior `clam-sigutil` dependency boundary,
+completed the exact current-source Release build, and fixed a real clamscan
+MaxFileSize SIGSEGV in the Rust-backed stderr bridge by switching from an
+allocating UTF-8 conversion to direct byte output. Sonic1 then passed the
+focused scanner/protocol 4-test slice, the 6-test acceptance/capture slice,
+all 6 service/threadpool checks, and the `libclamav_rust` CTest. Local source
+guards, snapshot controls, and the 215-test Python large-file suite also pass.
+The archive-based remote source guard remains environment-limited because
+the transferred source has no `.git`; full-size qualification, sanitizer,
+fanotify, and release evidence remain open. No capability was promoted.
+Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.

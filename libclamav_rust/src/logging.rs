@@ -22,6 +22,7 @@
 
 use std::{
     ffi::{CStr, CString},
+    io::Write,
     os::raw::c_char,
 };
 
@@ -114,6 +115,6 @@ pub unsafe extern "C" fn clrs_eprint(c_buf: *const c_char) {
         return;
     }
 
-    let msg = unsafe { CStr::from_ptr(c_buf) }.to_string_lossy();
-    eprint!("{}", msg);
+    let msg = unsafe { CStr::from_ptr(c_buf) }.to_bytes();
+    let _ = std::io::stderr().lock().write_all(msg);
 }
