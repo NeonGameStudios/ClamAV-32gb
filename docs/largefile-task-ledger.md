@@ -6059,3 +6059,13 @@ makes future current-source staging diagnostics practical without relabeling
 the existing stale Sonic1 mount or promoting any capability.
 Receipt:
 `docs/largefile-task-receipts/R03-gitless-source-manifest-exclusion-2026-09-20.md`.
+
+R03 compressed current-source staging retry (2026-09-20): a single
+16,272,723-byte bzip2-compressed archive of clean candidate `a776abf8` was
+submitted through the documented durable MCP-SSH handoff and was denied
+before writing with `file_write_limit_exceeded`. The previous agent-owned
+transfer was reconciled and ended interrupted with possible remote activity;
+no alternate destination, manual chunking, or untracked process was used.
+Current-source Sonic1 qualification remains externally blocked.
+Receipt:
+`docs/largefile-task-receipts/R03-sonic1-source-identity-gap-2026-09-20.md`.

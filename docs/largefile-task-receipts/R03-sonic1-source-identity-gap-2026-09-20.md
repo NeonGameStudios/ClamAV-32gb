@@ -66,4 +66,18 @@ MCP-SSH denied the request before writing with
 `file_write_limit_exceeded` (request `req_aebc572aecb5445786898f2b5e7f91b9`).
 No alternate destination, manual chunking, or untracked process was used.
 
+Compressed current-candidate staging retry (2026-09-20): the clean
+`a776abf8` candidate was packaged as one `git archive` stream compressed with
+the existing host `bzip2 -9` tool. The archive measured 16,272,723 bytes with
+SHA-256
+`f9212ad185b2caefddff5487a6b327e4f8d2868bf613b733cddf6ac741ccf9d7`. The
+documented durable `ssh_files_upload_start` handoff to
+`/tmp/clamav-current-a776abf8.tar.bz2` was denied before writing with
+`file_write_limit_exceeded` (request `req_d8147f2bfe08458eb17f35c5a07a4df8`).
+The prior agent-owned transfer
+`transfer_6a4eecbb392a434297c90ae6f7cbfdea` was reconciled through status,
+cancel, status, abort, and final status; abort reported ambiguous cleanup and
+the final state was `interrupted` with `remote_may_still_be_running=true`.
+No alternate destination, manual chunking, or untracked process was used.
+
 State: staging-blocked; no capability promoted.
