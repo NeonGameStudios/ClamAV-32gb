@@ -73,6 +73,18 @@ already built. This is image-level diagnostic evidence only because the `/src`
 mount is stale and dirty; the current source candidate still needs its own
 configure/build evidence.
 
+R03 current candidate staging (2026-09-20): clean commit `8da0127b` was
+packaged as an 18,405,433-byte archive with SHA-256
+`f15d1bb1510b53c5e6868e68f21a8625f26f554704c299f79afa0cb77f609dfe`; its
+source manifest has 1,710 rows and SHA-256
+`f7def859347ea1473e8d52014fb78a61765b5e8a77ee54673dc2427a436a5`. The
+documented durable MCP-SSH upload was denied before transfer creation with
+`file_write_limit_exceeded` (request
+`req_7bae5f635a254c0fbfaa5d734ef295c1`). The existing Sonic1 `/src` bind is
+still stale and dirty, so no current-source qualification evidence was
+claimed. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-8da0127b-staging-2026-09-20.md`.
+
 ## Former required-unsupported escalation (`R09-REQUIRED-UNSUPPORTED`)
 
 These seven rows are assigned to implementation or an explicit user scope decision;
