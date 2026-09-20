@@ -35,6 +35,13 @@ without installing software or weakening required Rust/CMake features.
   pre-existing images therefore complement one another but neither is a
   complete native ClamAV build environment; no image composition or package
   installation was attempted.
+- Sonic1's pre-existing `clamav-32gb:dev-current` image has the native side
+  needed for a CMake build: CMake 3.25.1, GCC 12.2, JSON-C 0.16, and Check
+  0.15.2. Its Rust inventory contains only the stable toolchain, not the
+  project's required Rust 1.97 line. The running source container using that
+  image still binds `/tmp/clamav-32gb-current-20260915` at revision
+  `08b3ab820e40ac8bd307b0c78c03c94884f1b` with extensive dirty changes, so it
+  is not a current-source candidate.
 
 No host software was installed, no repository dependency was changed, and no
 feature was disabled to obtain a partial pass.
