@@ -57,4 +57,13 @@ the durable MCP-SSH upload path, or use another authorized runner that can
 hold the candidate and its evidence. Do not relabel the existing `/src` mount
 as current-source evidence. No software was installed or downloaded.
 
+Current archive staging retry (2026-09-20): a fresh immutable archive of
+`45c69d47` was created locally at 18,395,807 bytes with SHA-256
+`e5038cbd1b6d7ab20c6fd9d212aba520f9807a8c9eb45bb6f4258ca674a6d5d2`. The
+documented durable `ssh_files_upload_start` path was attempted for
+`/tmp/clamav-current-45c69d47.tar.gz` with the exact byte count and checksum.
+MCP-SSH denied the request before writing with
+`file_write_limit_exceeded` (request `req_aebc572aecb5445786898f2b5e7f91b9`).
+No alternate destination, manual chunking, or untracked process was used.
+
 State: staging-blocked; no capability promoted.
