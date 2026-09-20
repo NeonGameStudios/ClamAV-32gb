@@ -370,13 +370,27 @@ python3 -B tools/largefile_fanotify_case_binder.py \
     --output-kernel-event "$CASE_OUT/kernel-event.jsonl" \
     --output-actor-result "$CASE_OUT/bound-actor-result.jsonl" \
     --output-scan-report "$CASE_OUT/scan-report.jsonl"
+# Reusable one-case coordinator: the caller must supply an authorized Linux
+# mount, exact current-source binaries, database identity, and output root.
+python3 -B tools/largefile_fanotify_runtime_runner.py \
+    --source-root "$SOURCE_ROOT" \
+    --clamd "$RELEASE_BUILD/clamd/clamd" \
+    --clamonacc "$RELEASE_BUILD/clamonacc/clamonacc" \
+    --database-directory "$PRIVATE_DB" \
+    --cvd-certs-dir "$CVD_CERTS_DIR" \
+    --mount-path "$PRIVATE_MOUNT" --fixture "$PRIVATE_MOUNT/$CASE_FIXTURE" \
+    --output-root "$CASE_OUT" --case-name "$CASE_NAME" \
+    --source-manifest "$SOURCE_MANIFEST_OUT" \
+    --build-identity "$BUILD_IDENTITY"
+# Add --monitoring-only for the separate monitoring-only contract. A smaller
+# --max-temporary-size is development-only and cannot qualify release work.
 # Final gate only after R15 prerequisites; currently expected to report blocked.
 sh tools/largefile_release_readiness.sh
 ```
 
 The library exact-edge CTest is `largefile_library_exact_32g`, registered only when `ENABLE_LARGE_FILE_QUALIFICATION_TEST` is enabled; absence is not a passing test. Existing focused C tests can use `CK_RUN_CASE=<verified-case-name> ctest -R '^libclamav$' --output-on-failure` from the coherent build directory. Discover case names in source instead of guessing.
 
-`largefile_runtime_gate.sh` currently takes `CLAMSCAN OUTPUT_DIRECTORY RSS_BUDGET_KB` and requires explicit sanitizer, memory-headroom and provenance settings documented in its header. R02 must resolve its RSS contract before prescribing a full-PCRE release invocation. Do not bypass it using `--test-manifest`, disabled sanitizers, smaller production constants or a non-certified platform. An early authoritative readiness run is diagnostic and currently exits 1; it must not be treated as task failure if the assigned task never claimed release qualification. Only a fully verified final candidate may be called ready. Fanotify and capability-case runner commands must be implemented and documented under R04/R13; no complete existing command is claimed here.
+`largefile_runtime_gate.sh` currently takes `CLAMSCAN OUTPUT_DIRECTORY RSS_BUDGET_KB` and requires explicit sanitizer, memory-headroom and provenance settings documented in its header. R02 must resolve its RSS contract before prescribing a full-PCRE release invocation. Do not bypass it using `--test-manifest`, disabled sanitizers, smaller production constants or a non-certified platform. An early authoritative readiness run is diagnostic and currently exits 1; it must not be treated as task failure if the assigned task never claimed release qualification. Only a fully verified final candidate may be called ready. The R13 one-case fanotify coordinator is now implemented and documented; its real prevention matrix remains blocked until an authorized Linux runtime provides the required fanotify capability and host resources.
 
 ## Copy/paste prompt for one Luna 5.6 subagent
 

@@ -5666,3 +5666,14 @@ offset 7. This is development evidence for the prevention path only; the full
 R13 matrix, monitoring-only parity, timeout/resource cases, full-size,
 sanitizer, and release evidence remain open. Receipt:
 `docs/largefile-task-receipts/R13-sonic1-current-source-permission-smoke-2026-09-20.md`.
+
+R13 one-case runtime runner and Sonic1 capability recheck (2026-09-20): the
+reusable runner now starts real clamd/clamonacc, retains bindable observer,
+permission, actor, report, health, and cleanup artifacts, and supports
+prevention or monitoring-only execution. Its local tests and source guards
+pass. Sonic1's current Docker/kernel boundary returns `fanotify_init` with
+`EPERM` even under privileged and explicitly unconfined disposable Docker;
+the daemon's certified temporary admission also remains above available host
+space. No failed run was treated as fanotify evidence or qualification.
+Receipt:
+`docs/largefile-task-receipts/R13-sonic1-runtime-runner-and-capability-blocker-2026-09-20.md`.

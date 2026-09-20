@@ -9610,6 +9610,10 @@ contains tools/largefile_fanotify_evidence_test.py 'test_scan_report_must_bind_p
 contains tools/largefile_fanotify_case_binder.py 'does not have exactly one unambiguous match'
 contains tools/largefile_fanotify_case_binder.py 'selected.get("response_written") is True'
 contains tools/largefile_fanotify_case_binder.py 'same ``clamonacc_event_id``'
+contains tools/largefile_fanotify_runtime_runner.py 'case_binder.bind('
+contains tools/largefile_fanotify_runtime_runner.py 'fanotify observer'
+contains tools/largefile_fanotify_runtime_runner.py 'parser.add_argument("--max-file-size", default="32G")'
+contains tools/largefile_fanotify_runtime_runner_test.py 'test_report_selection_binds_one_permission_event'
 contains tools/largefile_fanotify_case_binder_test.py 'test_ambiguous_permission_match_is_rejected'
 contains tools/largefile_fanotify_case_binder_test.py 'test_report_must_bind_clamonacc_event_id'
 contains tools/largefile_release_readiness.sh 'pcre-rss-phase-evidence.json'
@@ -9689,6 +9693,7 @@ python3 -B "$root/tools/largefile_runtime_acceptance_case_producer_test.py"
 python3 -B "$root/tools/largefile_fanotify_evidence_test.py"
 python3 -B "$root/tools/largefile_fanotify_capture_test.py"
 python3 -B "$root/tools/largefile_fanotify_case_binder_test.py"
+python3 -B "$root/tools/largefile_fanotify_runtime_runner_test.py"
 python3 -B "$root/tools/largefile_pcre_phase_evidence_test.py"
 python3 -B "$root/tools/largefile_development_service_capture_test.py"
 python3 -B "$root/tools/largefile_clamd_legacy_protocol_test.py"
