@@ -5650,3 +5650,10 @@ sanitizer suite can be produced without an external toolchain change. No
 software was installed or downloaded; Release integration passed, but R03 and
 release readiness remain open. Receipt:
 `docs/largefile-task-receipts/R03-sonic1-sanitizer-toolchain-blocker-2026-09-20.md`.
+
+R03 Sonic1 host preflight (2026-09-20): the repository preflight passed on
+Linux x86-64 with 12 CPUs, 62,282,008 KiB effective available memory against
+the 50,331,648 KiB minimum, no finite cgroup memory limit, and 37,088,712 KiB
+free filesystem space. It also retained the missing `clang` and `file` tool
+entries; sanitizer work remains externally blocked. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-host-preflight-2026-09-20.md`.
