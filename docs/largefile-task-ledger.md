@@ -85,6 +85,15 @@ still stale and dirty, so no current-source qualification evidence was
 claimed. Receipt:
 `docs/largefile-task-receipts/R03-sonic1-current-source-8da0127b-staging-2026-09-20.md`.
 
+R03 local toolchain matrix (2026-09-20): the pre-existing
+`clamav-largefile-local-toolchain:latest` image configured the current
+read-only source far enough to find Rust 1.98.1, OpenSSL, and ZLIB, then
+exited at missing BZip2 development headers/libraries. The other pre-existing
+`clamav-largefile-local-toolchain2:latest` image reaches Rust 1.97.1 but stops
+at missing JSON-C development files. No dependency was installed and no
+required feature was disabled. Receipt:
+`docs/largefile-task-receipts/R03-local-toolchain-recheck-2026-09-20.md`.
+
 ## Former required-unsupported escalation (`R09-REQUIRED-UNSUPPORTED`)
 
 These seven rows are assigned to implementation or an explicit user scope decision;
