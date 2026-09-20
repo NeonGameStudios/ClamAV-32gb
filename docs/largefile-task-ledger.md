@@ -46,12 +46,32 @@ Sonic1 image was revalidated as a complete native/Rust environment, but its
 stale dirty source mount required hashing 22,511 manifest entries, including a
 retained ~32 GiB fixture. MCP-SSH's Docker execution returned its fixed
 20-second transport timeout while the same remote CMake process continued;
-the process later ended before dependency discovery or Makefile generation,
-and the wrapper retained no reliable CMake exit status or stderr. The cache
+the process later ended before dependency discovery or Makefile generation.
+The async command path then retained exit 1 and showed that direct Cargo
+discovery attempted an unwritable rustup channel sync, while
+`rustup run stable cargo --version` succeeded at 1.97.1. `cmake/FindRust.cmake`
+now applies the explicit Rustup environment during version and native-static-
+libs probes; a read-only local CMake smoke found Cargo/Rustc/Rustup before
+stopping at the local image's missing JSON-C development files. The cache
 records the stale revision `08b3ab820e40ac8bd307b0c78c03c94884f1b`, not the
-current candidate. This is an execution-lifecycle boundary, not current-source
+current candidate. This remains development progress, not current-source
 qualification; no capability status changed. Receipt:
 `docs/largefile-task-receipts/R03-sonic1-cmake-manifest-timeout-2026-09-20.md`.
+
+The same async route then completed an environment-injected CMake configure
+and generation with exit 0, finding the native and Rust dependencies in the
+Sonic1 image. The check used `RUSTUP_TOOLCHAIN=stable` and
+`RUSTUP_SKIP_SELF_UPDATE=1` against the stale dirty source mount, so it
+confirms the image-level Rust discovery path but does not qualify the current
+source candidate. A bounded stale-source build smoke was run to expose any
+later image-level failure; capability status remains unchanged.
+
+That stale-source smoke reached the production build and then stopped at the
+`check_clamav` unit-test link boundary (exit 2; no retained linker stderr).
+The isolated `clamav` target passed to 100%, and the production binaries were
+already built. This is image-level diagnostic evidence only because the `/src`
+mount is stale and dirty; the current source candidate still needs its own
+configure/build evidence.
 
 ## Former required-unsupported escalation (`R09-REQUIRED-UNSUPPORTED`)
 

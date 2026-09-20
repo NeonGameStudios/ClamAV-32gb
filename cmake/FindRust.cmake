@@ -151,7 +151,21 @@ function(find_rust_program RUST_PROGRAM)
     )
 
     if(${RUST_PROGRAM}_EXECUTABLE)
-        execute_process(COMMAND "${${RUST_PROGRAM}_EXECUTABLE}" --version
+        # Rustup shims consult rust-toolchain.toml even for harmless version
+        # probes.  On a pre-provisioned/offline runner that can cause the shim
+        # to attempt a channel sync before CMake has a chance to select the
+        # already-installed toolchain.  Use the same fail-closed environment
+        # as the later Rust build commands so discovery is deterministic and
+        # does not require a writable rustup home or network access.
+        set(CLAMAV_RUST_DISCOVERY_ENVIRONMENT "RUSTUP_SKIP_SELF_UPDATE=1")
+        if(RUSTUP_TOOLCHAIN)
+            list(APPEND CLAMAV_RUST_DISCOVERY_ENVIRONMENT
+                "RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN}")
+        endif()
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E env
+                ${CLAMAV_RUST_DISCOVERY_ENVIRONMENT}
+                "${${RUST_PROGRAM}_EXECUTABLE}" --version
             OUTPUT_VARIABLE ${RUST_PROGRAM}_VERSION_OUTPUT
             ERROR_VARIABLE ${RUST_PROGRAM}_VERSION_ERROR
             RESULT_VARIABLE ${RUST_PROGRAM}_VERSION_RESULT
@@ -486,7 +500,10 @@ endif()
 # Determine the native libs required to link w/ rust static libs
 # message(STATUS "Detecting native static libs for rust: ${rustc_EXECUTABLE} --crate-type staticlib --print=native-static-libs ${EMPTY_FILE}")
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -E env "CARGO_TARGET_DIR=${CMAKE_BINARY_DIR}" ${rustc_EXECUTABLE} --crate-type staticlib --print=native-static-libs ${EMPTY_FILE}
+    COMMAND ${CMAKE_COMMAND} -E env
+        ${CLAMAV_RUSTUP_ENVIRONMENT}
+        "CARGO_TARGET_DIR=${CMAKE_BINARY_DIR}"
+        ${rustc_EXECUTABLE} --crate-type staticlib --print=native-static-libs ${EMPTY_FILE}
     OUTPUT_VARIABLE RUST_NATIVE_STATIC_LIBS_OUTPUT
     ERROR_VARIABLE RUST_NATIVE_STATIC_LIBS_ERROR
     RESULT_VARIABLE RUST_NATIVE_STATIC_LIBS_RESULT
