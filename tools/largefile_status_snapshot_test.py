@@ -216,6 +216,9 @@ class SnapshotTests(unittest.TestCase):
         (repo / "32gb-current-snapshot.md").write_text("status two\n", encoding="utf-8")
         (repo / "docs" / "largefile-task-ledger.md").write_text("task two\n", encoding="utf-8")
         (receipt_dir / "task-one.md").write_text("receipt two\n", encoding="utf-8")
+        retained = repo / "pcre-scale-development-20260920"
+        retained.mkdir()
+        (retained / "fixture-8g-tail.bin").write_bytes(b"retained evidence")
         second = self.root / "manifest-two.txt"
         subprocess.run(
             ["sh", "tools/largefile_source_manifest.sh", str(repo), str(second)],

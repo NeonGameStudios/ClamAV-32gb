@@ -56,11 +56,12 @@ if [ "$is_git_checkout" = yes ]; then
         # Generated status dashboards, the coordinator's task ledger, and
         # bounded task receipts are external run metadata. Keeping them out of
         # the immutable source identity prevents evidence bookkeeping from
-        # participating in a source-manifest fixed point. Executable code,
-        # build settings, fixtures, verifiers, and the capability manifest
+        # participating in a source-manifest fixed point. Retained development
+        # fixture payloads are external evidence too. Executable code, build
+        # settings, source fixtures, verifiers, and the capability manifest
         # remain included.
         case "$relative" in
-            32gb-current-snapshot.md|docs/largefile-task-ledger.md|docs/largefile-task-receipts/*)
+            32gb-current-snapshot.md|docs/largefile-task-ledger.md|docs/largefile-task-receipts/*|pcre-scale-development-*/*)
                 continue
                 ;;
         esac

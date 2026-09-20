@@ -10,11 +10,13 @@ immutable source manifest.
 ## Change
 
 `tools/largefile_source_manifest.sh` now excludes root-level
-`pcre-scale-development-*` payload directories in its Git-less path while
-continuing to include source files, build controls, fixtures, verifiers, and
-the manifest helper itself. A regression test covers a Git-less delivery with
-the retained 8-GiB fixture, build output, transport archive, and `libnull.a`.
-The test confirms only the source file and helper remain in the manifest.
+`pcre-scale-development-*` payload directories in both its Git and Git-less
+paths while continuing to include source files, build controls, fixtures,
+verifiers, and the manifest helper itself. Regression tests cover a dirty Git
+checkout and a Git-less delivery with the retained 8-GiB fixture, build
+output, transport archive, and `libnull.a`. They confirm only the source file
+and helper remain in the minimal Git-less manifest and that retained evidence
+does not change the Git-mode manifest.
 
 Parent commit: `12cb52f130e873c0e8989280b0f0d58a3f070eec`.
 
