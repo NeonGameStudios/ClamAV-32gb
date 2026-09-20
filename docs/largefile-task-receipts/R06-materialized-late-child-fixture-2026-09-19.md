@@ -37,7 +37,9 @@ bytes beyond `268,435,456` (`256 MiB`). The vendored parser's public
 The generator was also run through its CLI help path, the fixture was checked
 with the existing standalone Rust harness, `git diff --check` passed, the
 capability manifest passed with 604 rows, the status snapshot passed, and the
-full source-guard suite passed.
+full source-guard suite passed. The follow-up deterministic framing suite
+passed 3/3 tests, covering the one-byte compact type encoding, package/first
+element admission, and refusal to create a below-cap output.
 
 ## Qualification boundary
 

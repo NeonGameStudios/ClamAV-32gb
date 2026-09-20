@@ -211,6 +211,10 @@ but have not run from this checkout because local CMake is unavailable and the
 remote current-source transfer remains denied. No capability was promoted.
 Receipt: `docs/largefile-task-receipts/R06-materialized-late-child-fixture-2026-09-19.md`.
 
+The late-child generator now has a deterministic 3/3 framing test covering
+the compact type byte, package admission, and below-cap refusal, preventing a
+future fixture regeneration from silently changing the binary boundary.
+
 The complete `libclamav_rust` consumer was also rerun from the current host
 cache. Cargo resolved `clam-sigutil` 1.2.4 and advanced to `openssl-sys`, which
 stopped on the absent OpenSSL development environment and `pkg-config`. A
