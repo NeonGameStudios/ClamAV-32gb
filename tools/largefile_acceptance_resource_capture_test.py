@@ -28,6 +28,27 @@ class AcceptanceResourceCaptureTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "symlinked"):
                 capture.phase_state(path)
 
+    def test_append_phase_event_writes_terminal_event(self):
+        with tempfile.TemporaryDirectory(prefix="largefile-resource-phase-") as directory:
+            path = Path(directory) / "phase"
+            path.write_text("pcre-start\npost-pcre\n", encoding="utf-8")
+            capture.append_phase_event(path, "complete")
+            self.assertEqual(
+                path.read_text(encoding="utf-8"),
+                "pcre-start\npost-pcre\ncomplete\n",
+            )
+            self.assertEqual(capture.phase_state(path), "complete")
+
+    def test_append_phase_event_rejects_symlink(self):
+        with tempfile.TemporaryDirectory(prefix="largefile-resource-phase-") as directory:
+            root = Path(directory)
+            target = root / "target"
+            target.write_text("post-pcre\n", encoding="utf-8")
+            path = root / "phase"
+            path.symlink_to(target)
+            with self.assertRaisesRegex(ValueError, "symlinked"):
+                capture.append_phase_event(path, "complete")
+
     def test_live_sampler_failure_is_fail_closed(self):
         class FakeProcess:
             pid = 4242

@@ -21,6 +21,7 @@ import os
 from pathlib import Path
 import re
 import signal
+import stat
 import subprocess
 import sys
 import time
@@ -166,6 +167,37 @@ def phase_state(path: Path) -> str:
         else:
             state = "complete"
     return state
+
+
+def append_phase_event(path: Path, event: str) -> None:
+    """Append one terminal phase event without following a replacement symlink."""
+    if event not in PHASE_EVENTS:
+        fail(f"unknown phase event: {event}")
+    if path.is_symlink():
+        fail(f"phase protocol is symlinked: {path}")
+    flags = os.O_WRONLY | os.O_APPEND
+    nofollow = getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags | nofollow)
+    except OSError as error:
+        raise CaptureError(f"cannot append phase protocol {path}: {error}") from error
+    try:
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            fail(f"phase protocol is not a regular file: {path}")
+        payload = f"{event}\n".encode("ascii")
+        offset = 0
+        while offset < len(payload):
+            try:
+                written = os.write(descriptor, payload[offset:])
+            except InterruptedError:
+                continue
+            if written <= 0:
+                fail(f"phase protocol write made no progress: {path}")
+            offset += written
+    except OSError as error:
+        raise CaptureError(f"cannot write phase protocol {path}: {error}") from error
+    finally:
+        os.close(descriptor)
 
 
 def sample_row(
@@ -345,6 +377,7 @@ def capture(args: argparse.Namespace) -> int:
     if int(current["sample_count"]) < 1:
         fail(last_error)
     return_code = process.wait()
+    append_phase_event(phase_file, "complete")
     if args.kind == "matcher" and args.id == "pcre":
         if phase_peaks["pcre_rss_peak_kb"] is None or phase_peaks["post_pcre_rss_peak_kb"] is None:
             fail("PCRE resource capture lacks both pcre and post-pcre phase samples")

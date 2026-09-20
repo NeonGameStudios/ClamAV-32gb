@@ -134,6 +134,17 @@ complete current-source staging path remains blocked by the separately
 recorded authoritative `file_write_limit_exceeded` policy boundary. Receipt:
 `docs/largefile-task-receipts/R03-sonic1-transfer-state-audit-2026-09-20.md`.
 
+R13 PCRE resource-phase bridge (2026-09-20): closed the local producer gap
+where `largefile_acceptance_resource_capture.py` created a PCRE phase file but
+the application never wrote its `pcre-start` or `post-pcre` events. The
+full-subject matcher now emits those opt-in events through the existing PCRE
+boundaries, the wrapper appends a terminal `complete` event after a successful
+capture loop, and no-follow/symlink and sampler-failure controls remain
+fail-closed. Forty-two focused Python tests, the 604-entry source guards,
+snapshot freshness, and diff checks pass. No capability was promoted and no
+linked/full-size qualification was claimed. Receipt:
+`docs/largefile-task-receipts/R13-pcre-resource-phase-bridge-2026-09-20.md`.
+
 R13 Sonic1 source-guard reconciliation (2026-09-20): the two small stale
 fanotify evidence verifier files in the existing Sonic1 staging tree were
 reconciled to the local candidate and verified by exact SHA-256. The tracked

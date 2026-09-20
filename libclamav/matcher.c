@@ -26,6 +26,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifdef HAVE_UNISTD_H
@@ -68,10 +71,89 @@
  * these boundaries and retains the actual log. */
 static void largefile_pcre_phase_dbg(const cli_ctx *ctx, const char *phase, size_t subject_bytes, bool subject_released)
 {
+#ifndef _WIN32
+    static bool resource_pcre_started;
+    static bool resource_pcre_released;
+#endif
+
     if (!ctx || !phase || !ctx->recursion_stack || ctx->recursion_stack_size == 0 ||
         ctx->recursion_level >= ctx->recursion_stack_size) {
         return;
     }
+
+    /* The resource capture wrapper creates this file before starting the
+     * scanner. Keep this opt-in and independent of debug logging so a real
+     * process-tree sampler can bind its phase peaks to the application event.
+     * Only the first full-subject PCRE transition in a process is recorded;
+     * later nested layers must not invalidate the one-case protocol. */
+#ifndef _WIN32
+    if (strcmp(phase, "before-pcre") == 0 && !resource_pcre_started) {
+        const char *path = getenv("CLAMAV_LARGEFILE_RESOURCE_PHASE_FILE");
+        if (path && path[0]) {
+            int fd = open(path,
+                          O_WRONLY | O_APPEND
+#ifdef O_CLOEXEC
+                              | O_CLOEXEC
+#endif
+#ifdef O_NOFOLLOW
+                              | O_NOFOLLOW
+#endif
+            );
+            if (fd >= 0) {
+                const char event[] = "pcre-start\n";
+                size_t written = 0;
+                bool complete = true;
+                while (written < sizeof(event) - 1U) {
+                    ssize_t count = write(fd, event + written,
+                                          (sizeof(event) - 1U) - written);
+                    if (count < 0 && errno == EINTR)
+                        continue;
+                    if (count <= 0) {
+                        complete = false;
+                        break;
+                    }
+                    written += (size_t)count;
+                }
+                if (complete)
+                    resource_pcre_started = true;
+                close(fd);
+            }
+        }
+    } else if (strcmp(phase, "post-pcre-before-deep-parse") == 0 &&
+               resource_pcre_started && !resource_pcre_released) {
+        const char *path = getenv("CLAMAV_LARGEFILE_RESOURCE_PHASE_FILE");
+        if (path && path[0]) {
+            int fd = open(path,
+                          O_WRONLY | O_APPEND
+#ifdef O_CLOEXEC
+                              | O_CLOEXEC
+#endif
+#ifdef O_NOFOLLOW
+                              | O_NOFOLLOW
+#endif
+            );
+            if (fd >= 0) {
+                const char event[] = "post-pcre\n";
+                size_t written = 0;
+                bool complete = true;
+                while (written < sizeof(event) - 1U) {
+                    ssize_t count = write(fd, event + written,
+                                          (sizeof(event) - 1U) - written);
+                    if (count < 0 && errno == EINTR)
+                        continue;
+                    if (count <= 0) {
+                        complete = false;
+                        break;
+                    }
+                    written += (size_t)count;
+                }
+                if (complete)
+                    resource_pcre_released = true;
+                close(fd);
+            }
+        }
+    }
+#endif
 
     cli_dbgmsg("largefile_pcre_phase: phase=%s object_id=%zu recursion_level=%u subject_bytes=%zu subject_released=%u\n",
                phase, ctx->recursion_stack[ctx->recursion_level].object_id,
