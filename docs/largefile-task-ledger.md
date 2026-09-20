@@ -124,6 +124,17 @@ clamscan/full-CTest evidence remains pending; no capability was promoted.
 Receipt:
 `docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.
 
+R13 Sonic1 source-guard reconciliation (2026-09-20): the two small stale
+fanotify evidence verifier files in the existing Sonic1 staging tree were
+reconciled to the local candidate and verified by exact SHA-256. The tracked
+remote source-guard job then passed with exit 0: 604-capability manifest,
+release-readiness, acceptance schema/case-map, snapshot, and all fanotify
+evidence regressions passed, including the retained `actor-result` contract.
+This is development verification against the older remote staging tree, not
+current-source provenance or qualification; the full source transfer remains
+blocked by the recorded MCP-SSH policy boundary. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-source-guard-reconciliation-2026-09-20.md`.
+
 R13 Sonic1 host fanotify development smoke (2026-09-20): fixed observer
 target binding to require the actor PID and changed the runtime runner to arm
 the observer before starting clamonacc through an explicit readiness/start
