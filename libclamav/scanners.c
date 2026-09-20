@@ -10088,7 +10088,8 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
     /*
      * Run the file type parsers that we normally use before the raw scan.
      */
-    cli_dbgmsg("largefile_pcre_phase: phase=deep-parse recursion_level=%u subject_released=%u\n",
+    cli_dbgmsg("largefile_pcre_phase: phase=deep-parse object_id=%zu recursion_level=%u subject_released=%u\n",
+               ctx->recursion_stack[ctx->recursion_level].object_id,
                ctx->recursion_level, ctx->largefile_pcre_subject_released ? 1U : 0U);
     perf_nested_start(ctx, PERFT_CONTAINER, PERFT_SCAN);
     switch (type) {

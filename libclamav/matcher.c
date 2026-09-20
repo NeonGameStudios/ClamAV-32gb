@@ -73,8 +73,9 @@ static void largefile_pcre_phase_dbg(const cli_ctx *ctx, const char *phase, size
         return;
     }
 
-    cli_dbgmsg("largefile_pcre_phase: phase=%s recursion_level=%u subject_bytes=%zu subject_released=%u\n",
-               phase, ctx->recursion_level, subject_bytes, subject_released ? 1U : 0U);
+    cli_dbgmsg("largefile_pcre_phase: phase=%s object_id=%zu recursion_level=%u subject_bytes=%zu subject_released=%u\n",
+               phase, ctx->recursion_stack[ctx->recursion_level].object_id,
+               ctx->recursion_level, subject_bytes, subject_released ? 1U : 0U);
 }
 
 #ifdef CLI_PERF_LOGGING

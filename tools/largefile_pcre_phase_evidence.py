@@ -22,6 +22,13 @@ PCRE_RSS_BUDGET_KB = 41943040
 POST_PCRE_RSS_BUDGET_KB = 12582912
 PHASES = ("before-pcre", "pcre", "post-pcre-before-deep-parse", "deep-parse")
 IDENTITY_FIELDS = ("source_manifest", "build_identity", "config")
+RUNTIME_MARKER_RE = re.compile(
+    r"largefile_pcre_phase: phase=(?P<phase>[^ ]+) "
+    r"object_id=(?P<object_id>[0-9]+) "
+    r"recursion_level=(?P<recursion_level>[0-9]+)"
+    r"(?: subject_bytes=(?P<subject_bytes>[0-9]+))? "
+    r"subject_released=(?P<subject_released>[01])\Z"
+)
 
 
 def fail(message: str) -> None:
@@ -109,26 +116,43 @@ def validate_runtime_markers(root: Path, artifacts: object) -> None:
     process_log = relative_file(root, process_logs[0].get("path"),
                                 "PCRE process-log artifact")
     lines = process_log.read_text(encoding="utf-8").splitlines()
-    required = (
-        "largefile_pcre_phase: phase=before-pcre ",
-        "largefile_pcre_phase: phase=pcre ",
-        "largefile_pcre_phase: phase=post-pcre-before-deep-parse ",
-        "largefile_pcre_phase: phase=deep-parse ",
-    )
-    positions = []
-    for marker in required:
-        matches = [index for index, line in enumerate(lines) if marker in line]
-        require(matches, f"PCRE process log lacks runtime marker: {marker.strip()}")
-        positions.append(matches[0])
-    require(positions == sorted(positions),
-            "PCRE runtime phase markers are out of order")
+    grouped: dict[tuple[int, int], list[tuple[int, str, int | None, bool]]] = {}
+    for index, line in enumerate(lines):
+        match = RUNTIME_MARKER_RE.fullmatch(line)
+        if not match:
+            continue
+        key = (int(match.group("object_id")), int(match.group("recursion_level")))
+        grouped.setdefault(key, []).append((
+            index,
+            match.group("phase"),
+            int(match.group("subject_bytes")) if match.group("subject_bytes") else None,
+            match.group("subject_released") == "1",
+        ))
 
-    post_line = lines[positions[2]]
-    deep_line = lines[positions[3]]
-    require("subject_released=1" in post_line,
-            "PCRE process log does not record subject release")
-    require("subject_released=1" in deep_line,
-            "PCRE process log does not bind deep parsing after release")
+    require(grouped, "PCRE process log lacks object-bound runtime markers")
+    for events in grouped.values():
+        selected: list[tuple[int, str, int | None, bool]] = []
+        previous_position = -1
+        for phase in PHASES:
+            candidate = next(
+                (event for event in events
+                 if event[0] > previous_position and event[1] == phase),
+                None,
+            )
+            if candidate is None:
+                selected = []
+                break
+            selected.append(candidate)
+            previous_position = candidate[0]
+        if len(selected) == len(PHASES):
+            before, pcre, post, deep = selected
+            subject_bytes = [event[2] for event in (before, pcre, post)]
+            if (None not in subject_bytes and len(set(subject_bytes)) == 1 and
+                    not before[3] and not pcre[3] and post[3] and deep[3] and
+                    [event[0] for event in selected] == sorted(event[0] for event in selected)):
+                return
+
+    require(False, "PCRE process log lacks a valid object-bound runtime marker sequence or markers are out of order")
 
 
 def integer(value: object, label: str, minimum: int = 0) -> int:

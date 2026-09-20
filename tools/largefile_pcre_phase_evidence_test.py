@@ -32,10 +32,10 @@ class PcrePhaseEvidenceTests(unittest.TestCase):
             "rss.tsv": b"phase\trss_kb\ttree_rss_kb\n",
             "scan-report.jsonl": b"DETECTION_TERMINATED\n",
             "process.log": (
-                b"largefile_pcre_phase: phase=before-pcre subject_bytes=34359738368 subject_released=0\n"
-                b"largefile_pcre_phase: phase=pcre subject_bytes=34359738368 subject_released=0\n"
-                b"largefile_pcre_phase: phase=post-pcre-before-deep-parse subject_bytes=34359738368 subject_released=1\n"
-                b"largefile_pcre_phase: phase=deep-parse recursion_level=0 subject_released=1\n"
+                b"largefile_pcre_phase: phase=before-pcre object_id=7 recursion_level=0 subject_bytes=34359738368 subject_released=0\n"
+                b"largefile_pcre_phase: phase=pcre object_id=7 recursion_level=0 subject_bytes=34359738368 subject_released=0\n"
+                b"largefile_pcre_phase: phase=post-pcre-before-deep-parse object_id=7 recursion_level=0 subject_bytes=34359738368 subject_released=1\n"
+                b"largefile_pcre_phase: phase=deep-parse object_id=7 recursion_level=0 subject_released=1\n"
             ),
         }.items():
             (self.root / "artifacts" / filename).write_bytes(content)
@@ -157,7 +157,7 @@ class PcrePhaseEvidenceTests(unittest.TestCase):
         document = self.document()
         process_log = self.root / "artifacts/process.log"
         process_log.write_text(
-            "largefile_pcre_phase: phase=before-pcre subject_bytes=34359738368 subject_released=0\n",
+            "largefile_pcre_phase: phase=before-pcre object_id=7 recursion_level=0 subject_bytes=34359738368 subject_released=0\n",
             encoding="utf-8",
         )
         document["artifacts"][-1]["sha256"] = checker.digest(process_log)
@@ -168,14 +168,39 @@ class PcrePhaseEvidenceTests(unittest.TestCase):
         document = self.document()
         process_log = self.root / "artifacts/process.log"
         process_log.write_text(
-            "largefile_pcre_phase: phase=deep-parse recursion_level=0 subject_released=1\n"
-            "largefile_pcre_phase: phase=before-pcre subject_bytes=34359738368 subject_released=0\n"
-            "largefile_pcre_phase: phase=pcre subject_bytes=34359738368 subject_released=0\n"
-            "largefile_pcre_phase: phase=post-pcre-before-deep-parse subject_bytes=34359738368 subject_released=1\n",
+            "largefile_pcre_phase: phase=deep-parse object_id=7 recursion_level=0 subject_released=1\n"
+            "largefile_pcre_phase: phase=before-pcre object_id=7 recursion_level=0 subject_bytes=34359738368 subject_released=0\n"
+            "largefile_pcre_phase: phase=pcre object_id=7 recursion_level=0 subject_bytes=34359738368 subject_released=0\n"
+            "largefile_pcre_phase: phase=post-pcre-before-deep-parse object_id=7 recursion_level=0 subject_bytes=34359738368 subject_released=1\n",
             encoding="utf-8",
         )
         document["artifacts"][-1]["sha256"] = checker.digest(process_log)
         with self.assertRaisesRegex(ValueError, "out of order"):
+            checker.validate(self.write(document), self.root)
+
+    def test_unrelated_object_markers_do_not_satisfy_phase_contract(self):
+        document = self.document()
+        process_log = self.root / "artifacts/process.log"
+        process_log.write_text(
+            "largefile_pcre_phase: phase=deep-parse object_id=3 recursion_level=0 subject_released=1\n"
+            "largefile_pcre_phase: phase=before-pcre object_id=7 recursion_level=0 subject_bytes=34359738368 subject_released=0\n"
+            "largefile_pcre_phase: phase=pcre object_id=7 recursion_level=0 subject_bytes=34359738368 subject_released=0\n"
+            "largefile_pcre_phase: phase=post-pcre-before-deep-parse object_id=7 recursion_level=0 subject_bytes=34359738368 subject_released=1\n"
+            "largefile_pcre_phase: phase=deep-parse object_id=7 recursion_level=0 subject_released=1\n",
+            encoding="utf-8",
+        )
+        document["artifacts"][-1]["sha256"] = checker.digest(process_log)
+        checker.validate(self.write(document), self.root)
+
+    def test_missing_object_identity_is_rejected(self):
+        document = self.document()
+        process_log = self.root / "artifacts/process.log"
+        process_log.write_text(
+            "largefile_pcre_phase: phase=before-pcre subject_bytes=34359738368 subject_released=0\n",
+            encoding="utf-8",
+        )
+        document["artifacts"][-1]["sha256"] = checker.digest(process_log)
+        with self.assertRaisesRegex(ValueError, "object-bound"):
             checker.validate(self.write(document), self.root)
 
     def test_artifact_tampering_is_rejected(self):
