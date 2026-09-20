@@ -36,6 +36,26 @@ container has neither the required C compiler frontend nor a nightly Rust
 toolchain, so a valid sanitizer evidence run cannot be produced on this
 runner without an external toolchain change.
 
+## Existing-image audit follow-up
+
+A read-only Docker inventory and executable probe were repeated on 2026-09-20
+UTC. The available images included `clamav-32gb:dev-current`,
+`clamav-32gb:test-tools-742a8a4`, `mtgo-ai-player2:local-native-fix`,
+`mtgo-ai-player2:local-native`, `ghcr.io/jidicula/clang-format:16`, and
+`rust:1.97-bookworm`. Probing the already-present images that appeared
+potentially relevant with `docker run --rm --entrypoint clang ... --version`
+or `--entrypoint rustup ... toolchain list` returned exit 127 (executable not
+found) for all four probes. No image pull, package installation, or source
+mutation occurred. The inventory therefore does not provide an existing
+replacement for the missing C compiler frontend or Rust nightly toolchain.
+
+The same read-only host recheck measured 37,977,477,120 bytes available on
+the disk-backed root filesystem and 63,750,356,992 bytes available memory;
+the root free space remains below the roadmap's approximately 68 GB
+disk-backed staging requirement, while memory remains above the 48 GiB
+minimum. These values do not relax the sanitizer or full-size qualification
+requirements.
+
 ## Disposition
 
 R03 Release integration is complete for this runner, but R03 as a whole and

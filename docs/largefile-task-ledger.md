@@ -5658,6 +5658,15 @@ free filesystem space. It also retained the missing `clang` and `file` tool
 entries; sanitizer work remains externally blocked. Receipt:
 `docs/largefile-task-receipts/R03-sonic1-host-preflight-2026-09-20.md`.
 
+R03 Sonic1 existing-image sanitizer audit (2026-09-20): the read-only Docker
+inventory found no already-present image that supplied the missing `clang` or
+Rust nightly toolchain; all four targeted `clang`/`rustup` executable probes
+returned exit 127. The host recheck measured 37,977,477,120 bytes of
+disk-backed free space and 63,750,356,992 bytes available memory. This
+confirms the sanitizer/toolchain and full-size staging prerequisites remain
+external blockers without installing or pulling software. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-sanitizer-toolchain-blocker-2026-09-20.md`.
+
 R13 current-source Sonic1 privileged permission smoke (2026-09-20): the exact
 current-source Release build passed a real unprivileged clean open with
 `FAN_ALLOW` and passed a real detection open with `FAN_DENY`; the retained
