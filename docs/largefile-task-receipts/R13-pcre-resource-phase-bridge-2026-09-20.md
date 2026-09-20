@@ -47,6 +47,11 @@ blocked by the recorded MCP-SSH durable-write policy boundary. No linked C
 compile, 32-GiB resource run, sanitizer run, or release qualification is
 claimed from this slice.
 
+A non-installing GCC/Clang syntax probe using the existing generated build
+flags was attempted against the current `libclamav/matcher.c`; it stopped
+before translation because the host does not provide `openssl/ssl.h` (exit 1).
+No dependency was installed or downloaded.
+
 Remaining failures / next slice: build and exercise this bridge in a coherent
 current-source Linux x86-64 candidate, then retain real process-tree samples
 at the application events and bind them through the existing PCRE phase
