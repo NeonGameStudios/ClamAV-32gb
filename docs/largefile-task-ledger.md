@@ -5677,3 +5677,15 @@ the daemon's certified temporary admission also remains above available host
 space. No failed run was treated as fanotify evidence or qualification.
 Receipt:
 `docs/largefile-task-receipts/R13-sonic1-runtime-runner-and-capability-blocker-2026-09-20.md`.
+
+R13 runtime-runner failure-artifact follow-up (2026-09-20): startup, observer,
+timeout, and report-binding failures after output initialization now retain
+provenance, health/cleanup, and a structured `failure.json`, while a
+successful result remains the only path that writes `result.json`. The health
+artifact records the pre-cleanup ping only after that ping succeeds. The
+focused runner suite passes 4/4, including a mocked `clamonacc` startup
+failure that verifies cleanup and retained failure evidence; source guards and
+snapshot controls pass. This improves auditability of the existing Sonic1
+fanotify capability blocker but does not create kernel permission evidence or
+promote any capability. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-runtime-runner-and-capability-blocker-2026-09-20.md`.

@@ -14,14 +14,26 @@ refuses to overwrite an output directory, refuses runner-owned configuration
 overrides, records the effective configuration and fixture hash, and includes
 daemon/client diagnostics when startup fails.
 
-Added `tools/largefile_fanotify_runtime_runner_test.py` with three helper
+Added `tools/largefile_fanotify_runtime_runner_test.py` with four helper
 tests, source-guard coverage, and the runner command entry point in the
 roadmap. Local checks passed:
 
-- `python3 -B tools/largefile_fanotify_runtime_runner_test.py` — 3/3;
+- `python3 -B tools/largefile_fanotify_runtime_runner_test.py` — 4/4;
 - `git diff --check`;
 - `sh tools/largefile_source_guards.sh` — 604-entry manifest, readiness,
   acceptance, fanotify, runner, and source-guard suites passed.
+
+## Failure-artifact follow-up
+
+The runner now retains `provenance.json`, `health-cleanup.json`, and a
+fail-visible `failure.json` when daemon/client startup, the observer, or
+report binding fails after the output directory is created. This is important
+for the Sonic1 `fanotify_init` `EPERM` boundary: a failed attempt now records
+the exact error and whether cleanup completed instead of returning only a
+process exit status. The pre-cleanup daemon health flag is also set only after
+the post-actor ping succeeds. The focused failure-path regression exercises a
+mocked `clamonacc` startup failure and verifies retained artifacts, complete
+cleanup, and the absence of a false `result.json`.
 
 ## Sonic1 execution
 

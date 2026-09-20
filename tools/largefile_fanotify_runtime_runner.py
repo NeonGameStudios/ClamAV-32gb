@@ -303,84 +303,89 @@ def run_case(args: argparse.Namespace) -> dict[str, object]:
     health: dict[str, object] = {}
     cleanup: dict[str, object] = {}
     started = time.time_ns()
+    result: dict[str, object] | None = None
+    failure: str | None = None
     try:
-        with clamd_log.open("w", encoding="utf-8") as stream:
-            clamd_process = subprocess.Popen(
-                [str(clamd), f"--config-file={config_path}"],
-                stdout=stream, stderr=subprocess.STDOUT,
-            )
-        wait_for_daemon(clamd_process, socket_path, args.startup_timeout, clamd_log)
-        health["clamd_startup_pong"] = True
-        with clamonacc_log.open("w", encoding="utf-8") as stream:
-            clamonacc_process = subprocess.Popen(
-                [str(clamonacc), "--config-file", str(config_path), "--foreground",
-                 f"--report-json={report_path}",
-                 f"--fanotify-evidence={permission_path}",
-                 f"--log={clamonacc_log}"],
-                stdout=stream, stderr=subprocess.STDOUT,
-            )
-        time.sleep(1.0)
-        if clamonacc_process.poll() is not None:
-            detail = clamonacc_log.read_text(encoding="utf-8", errors="replace")[-4096:]
-            fail(
-                f"clamonacc exited before the actor with status {clamonacc_process.returncode}; "
-                f"log tail: {detail.strip()}"
-            )
-        health["clamonacc_alive_before_actor"] = True
-        if args.monitoring_only:
-            actor_process = start_actor(fixture, args.actor_uid, raw / "monitor-actor.json")
-        else:
-            observer = source_root / "tools" / "largefile_fanotify_capture.py"
-            observer_process = subprocess.Popen([
-                sys.executable, "-B", str(observer),
-                "--mount-path", str(mount_path), "--fixture", str(fixture),
-                "--kernel-event-artifact", str(observer_kernel),
-                "--actor-result-artifact", str(observer_actor),
-                "--fixture-sha256", fixture_hash,
-                "--actor-uid", str(args.actor_uid), "--case-name", args.case_name,
-                "--timeout-seconds", str(args.actor_timeout),
-            ], stdout=(logs / "observer.log").open("w", encoding="utf-8"),
-               stderr=subprocess.STDOUT)
-            observer_status = observer_process.wait(timeout=args.actor_timeout + 10)
-            if observer_status != 0:
-                fail(f"fanotify observer exited with status {observer_status}")
-        if actor_process is not None:
-            actor_process.wait(timeout=args.actor_timeout + 10)
-        time.sleep(1.0)
-        health["clamd_pre_cleanup_pong"] = True
-        ping(socket_path)
-    finally:
-        cleanup["observer"] = stop_process(observer_process, "fanotify observer")
-        cleanup["actor"] = stop_process(actor_process, "monitoring actor")
-        cleanup["clamonacc"] = stop_process(clamonacc_process, "clamonacc")
-        cleanup["clamd"] = stop_process(clamd_process, "clamd")
-        cleanup["socket_absent"] = not socket_path.exists()
-        cleanup["pid_absent"] = not pid_path.exists()
-        cleanup["complete"] = bool(cleanup["socket_absent"] and cleanup["pid_absent"])
-    if not cleanup["complete"]:
-        fail("runtime cleanup left a socket or PID file behind")
+        try:
+            with clamd_log.open("w", encoding="utf-8") as stream:
+                clamd_process = subprocess.Popen(
+                    [str(clamd), f"--config-file={config_path}"],
+                    stdout=stream, stderr=subprocess.STDOUT,
+                )
+            wait_for_daemon(clamd_process, socket_path, args.startup_timeout, clamd_log)
+            health["clamd_startup_pong"] = True
+            with clamonacc_log.open("w", encoding="utf-8") as stream:
+                clamonacc_process = subprocess.Popen(
+                    [str(clamonacc), "--config-file", str(config_path), "--foreground",
+                     f"--report-json={report_path}",
+                     f"--fanotify-evidence={permission_path}",
+                     f"--log={clamonacc_log}"],
+                    stdout=stream, stderr=subprocess.STDOUT,
+                )
+            time.sleep(1.0)
+            if clamonacc_process.poll() is not None:
+                detail = clamonacc_log.read_text(encoding="utf-8", errors="replace")[-4096:]
+                fail(
+                    f"clamonacc exited before the actor with status {clamonacc_process.returncode}; "
+                    f"log tail: {detail.strip()}"
+                )
+            health["clamonacc_alive_before_actor"] = True
+            if args.monitoring_only:
+                actor_process = start_actor(fixture, args.actor_uid, raw / "monitor-actor.json")
+            else:
+                observer = source_root / "tools" / "largefile_fanotify_capture.py"
+                observer_process = subprocess.Popen([
+                    sys.executable, "-B", str(observer),
+                    "--mount-path", str(mount_path), "--fixture", str(fixture),
+                    "--kernel-event-artifact", str(observer_kernel),
+                    "--actor-result-artifact", str(observer_actor),
+                    "--fixture-sha256", fixture_hash,
+                    "--actor-uid", str(args.actor_uid), "--case-name", args.case_name,
+                    "--timeout-seconds", str(args.actor_timeout),
+                ], stdout=(logs / "observer.log").open("w", encoding="utf-8"),
+                   stderr=subprocess.STDOUT)
+                observer_status = observer_process.wait(timeout=args.actor_timeout + 10)
+                if observer_status != 0:
+                    fail(f"fanotify observer exited with status {observer_status}")
+            if actor_process is not None:
+                actor_process.wait(timeout=args.actor_timeout + 10)
+            time.sleep(1.0)
+            ping(socket_path)
+            health["clamd_pre_cleanup_pong"] = True
+        finally:
+            cleanup["observer"] = stop_process(observer_process, "fanotify observer")
+            cleanup["actor"] = stop_process(actor_process, "monitoring actor")
+            cleanup["clamonacc"] = stop_process(clamonacc_process, "clamonacc")
+            cleanup["clamd"] = stop_process(clamd_process, "clamd")
+            cleanup["socket_absent"] = not socket_path.exists()
+            cleanup["pid_absent"] = not pid_path.exists()
+            cleanup["complete"] = bool(cleanup["socket_absent"] and cleanup["pid_absent"])
+        if not cleanup["complete"]:
+            fail("runtime cleanup left a socket or PID file behind")
 
-    if args.monitoring_only:
-        monitor_actor = raw / "monitor-actor.json"
-        if not monitor_actor.is_file() or not report_path.is_file():
-            fail("monitoring-only run did not retain actor and report artifacts")
-        result = {
-            "case_name": args.case_name,
-            "mode": "monitoring-only",
-            "fixture_sha256": fixture_hash,
-            "report": str(report_path.relative_to(output_root)),
-            "actor": str(monitor_actor.relative_to(output_root)),
-        }
-    else:
-        event_id = select_permission_event_id(permission_path)
-        selected_report = raw / "clamonacc-report-target.jsonl"
-        select_report(report_path, event_id, selected_report)
-        bound_result = case_binder.bind(
-            args.case_name, fixture_hash, observer_kernel, permission_path,
-            observer_actor, selected_report, bound / "kernel-event.jsonl",
-            bound / "actor-result.jsonl", bound / "scan-report.jsonl",
-        )
-        result = {"case_name": args.case_name, "mode": "prevention", **bound_result}
+        if args.monitoring_only:
+            monitor_actor = raw / "monitor-actor.json"
+            if not monitor_actor.is_file() or not report_path.is_file():
+                fail("monitoring-only run did not retain actor and report artifacts")
+            result = {
+                "case_name": args.case_name,
+                "mode": "monitoring-only",
+                "fixture_sha256": fixture_hash,
+                "report": str(report_path.relative_to(output_root)),
+                "actor": str(monitor_actor.relative_to(output_root)),
+            }
+        else:
+            event_id = select_permission_event_id(permission_path)
+            selected_report = raw / "clamonacc-report-target.jsonl"
+            select_report(report_path, event_id, selected_report)
+            bound_result = case_binder.bind(
+                args.case_name, fixture_hash, observer_kernel, permission_path,
+                observer_actor, selected_report, bound / "kernel-event.jsonl",
+                bound / "actor-result.jsonl", bound / "scan-report.jsonl",
+            )
+            result = {"case_name": args.case_name, "mode": "prevention", **bound_result}
+    except (OSError, RunnerError, subprocess.SubprocessError, ValueError, KeyError) as error:
+        failure = str(error)
 
     provenance = {
         "source_root": str(source_root),
@@ -397,6 +402,14 @@ def run_case(args: argparse.Namespace) -> dict[str, object]:
     }
     write_text(output_root / "provenance.json", json.dumps(provenance, indent=2, sort_keys=True) + "\n")
     write_text(output_root / "health-cleanup.json", json.dumps({"health": health, "cleanup": cleanup}, indent=2, sort_keys=True) + "\n")
+    if failure is not None:
+        write_text(
+            output_root / "failure.json",
+            json.dumps({"error": failure, "cleanup_complete": cleanup.get("complete", False)}, indent=2, sort_keys=True) + "\n",
+        )
+        raise RunnerError(failure)
+    if result is None:
+        raise RunnerError("runtime runner completed without a result")
     write_text(output_root / "result.json", json.dumps(result, indent=2, sort_keys=True) + "\n")
     return result
 
