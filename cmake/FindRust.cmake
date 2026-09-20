@@ -191,7 +191,7 @@ function(cargo_vendor)
     message(STATUS "Running `cargo vendor` to collect dependencies for ${ARGS_TARGET}. This may take a while if the local crates.io index needs to be updated ...")
     make_directory(${CMAKE_SOURCE_DIR}/.cargo)
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E env "CARGO_TARGET_DIR=${ARGS_BINARY_DIRECTORY}" ${cargo_EXECUTABLE} vendor "${CMAKE_SOURCE_DIR}/.cargo/vendor"
+        COMMAND ${CMAKE_COMMAND} -E env ${CLAMAV_RUSTUP_ENVIRONMENT} "CARGO_TARGET_DIR=${ARGS_BINARY_DIRECTORY}" ${cargo_EXECUTABLE} vendor "${CMAKE_SOURCE_DIR}/.cargo/vendor"
         WORKING_DIRECTORY "${ARGS_SOURCE_DIRECTORY}"
         OUTPUT_VARIABLE CARGO_VENDOR_OUTPUT
         ERROR_VARIABLE CARGO_VENDOR_ERROR
@@ -245,6 +245,7 @@ function(add_rust_executable)
     list(JOIN MY_CARGO_ARGS " " MY_CARGO_ARGS_STRING)
 
     list(APPEND ARGS_ENVIRONMENT "CARGO_TARGET_DIR=${ARGS_BINARY_DIRECTORY}" "CARGO_INCLUDE_DIRECTORIES=\"${ARGS_INCLUDE_DIRECTORIES}\"")
+    list(APPEND ARGS_ENVIRONMENT ${CLAMAV_RUSTUP_ENVIRONMENT})
 
     # Build the executable.
     add_custom_command(
@@ -298,6 +299,7 @@ function(add_rust_library)
     list(JOIN MY_CARGO_ARGS " " MY_CARGO_ARGS_STRING)
 
     list(APPEND ARGS_ENVIRONMENT "CARGO_CMD=build" "CARGO_TARGET_DIR=${ARGS_BINARY_DIRECTORY}" "MAINTAINER_MODE=${MAINTAINER_MODE}" "CARGO_INCLUDE_DIRECTORIES=\"${ARGS_INCLUDE_DIRECTORIES}\"" "RUSTFLAGS=${RUSTFLAGS}" "RUSTC=${rustc_EXECUTABLE}")
+    list(APPEND ARGS_ENVIRONMENT ${CLAMAV_RUSTUP_ENVIRONMENT})
 
     # Build the library and generate the c-binding
     if("${CMAKE_OSX_ARCHITECTURES}" MATCHES "^(arm64;x86_64|x86_64;arm64)$")
@@ -384,7 +386,7 @@ function(add_rust_test)
     # flags and add the configured C sanitizer runtime only for test links.
     set(RUST_TESTFLAGS "${RUSTFLAGS}")
     string(REGEX MATCH "-fsanitize=[^ ]+" RUST_C_SANITIZER_FLAG "${CMAKE_EXE_LINKER_FLAGS}")
-    set(RUST_TEST_ENVIRONMENT)
+    set(RUST_TEST_ENVIRONMENT ${CLAMAV_RUSTUP_ENVIRONMENT})
     if(RUST_C_SANITIZER_FLAG)
         string(APPEND RUST_TESTFLAGS " -C link-arg=${RUST_C_SANITIZER_FLAG}")
 
@@ -538,6 +540,16 @@ if(NOT RUST_COMPILER_TARGET)
 endif()
 
 set(CARGO_ARGS "build" "--locked")
+
+# Rustup shims otherwise try to refresh the channel named by
+# rust-toolchain.toml before every CTest Cargo invocation.  Keep self-update
+# disabled for all builds, and allow certified/offline runners to select an
+# already-installed toolchain explicitly (for example, RUSTUP_TOOLCHAIN=stable)
+# without changing the repository's pinned default for ordinary builds.
+set(CLAMAV_RUSTUP_ENVIRONMENT "RUSTUP_SKIP_SELF_UPDATE=1")
+if(RUSTUP_TOOLCHAIN)
+    list(APPEND CLAMAV_RUSTUP_ENVIRONMENT "RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN}")
+endif()
 
 if(EXISTS "${CMAKE_SOURCE_DIR}/.cargo/vendor")
     list(APPEND CARGO_ARGS "--offline")

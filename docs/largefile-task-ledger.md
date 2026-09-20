@@ -151,6 +151,21 @@ was promoted; materialized full-size, production-database, sanitizer,
 fanotify, milter-space, and release gates remain open. Receipt:
 `docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.
 
+R03 Rustup offline-toolchain correction (2026-09-20): the bounded current
+Sonic1 Release slice first exposed `libclamav_rust` trying to sync the pinned
+rustup channel into a non-writable `/home/clamdev/.rustup/tmp`; 20/21 tests
+otherwise passed. CMake now accepts `RUSTUP_TOOLCHAIN`, propagates the selected
+toolchain plus `RUSTUP_SKIP_SELF_UPDATE=1` through Rust build/vendor/test
+commands, and leaves the repository pin unchanged when empty. Reconfigured
+with installed `stable`, the final 21-test slice passed 21/21 in 42.37 seconds.
+The final source-manifest hash is
+`731a30796ca7e93c515aede1e47693dba179e1c60860e859ff4906c0658977ef` and the
+CMakeCache hash is
+`913c90b1a4178b9422e9249a21e5763755abd43c457d64d6dc0bc896d8a4c844`. No
+capability was promoted; full-size, production-CVD, sanitizer, fanotify,
+milter-space, and release gates remain open. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.
+
 R03 aggregate fixture accounting follow-up (2026-09-20): the generated
 OneNote late-child fixture is now excluded from the ordinary C and Python
 `clam*` test corpora, its size check is bound to the former 256 MiB OneNote

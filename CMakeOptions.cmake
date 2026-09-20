@@ -147,5 +147,8 @@ option(ENABLE_SYSTEMD
 option(RUST_COMPILER_TARGET
     "Use a custom target triple to build the Rust components. Needed for cross-compiling.")
 
+set(RUSTUP_TOOLCHAIN "$ENV{RUSTUP_TOOLCHAIN}" CACHE STRING
+    "Explicit rustup toolchain for Rust build and test commands; empty preserves rust-toolchain.toml.")
+
 option(DO_NOT_SET_RPATH
     "Don't set the RPATH on UNIX systems.")
