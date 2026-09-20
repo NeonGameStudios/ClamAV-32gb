@@ -46,6 +46,8 @@ PHASE_SAMPLE_LABELS = {
     "post-pcre": "post-pcre",
     "deep-parse": "deep-parse",
 }
+POST_PCRE_RSS_BUDGET_KB = 12582912
+POST_PCRE_RELEASE_WAIT_SECONDS = 20.0
 SAFE_CASE_RE = re.compile(r"[^A-Za-z0-9_.-]+")
 
 
@@ -293,6 +295,13 @@ def record_sample_measurement(
 
     if state not in {"pre-pcre", "pcre", "post-pcre", "deep-parse", "complete"}:
         fail(f"sample has an invalid phase: {state}")
+    # The application writes post-pcre immediately after releasing the full
+    # subject, but Linux may take a short interval to reclaim the unlocked
+    # pages.  Keep those transitional samples in the PCRE peak and do not
+    # acknowledge the application boundary until the independent sampler has
+    # observed the required post-release headroom.
+    if state == "post-pcre" and metric["rss_kb"] >= POST_PCRE_RSS_BUDGET_KB:
+        state = "pcre"
     phase_rss_key = {
         "pcre": "pcre_rss_peak_kb",
         "post-pcre": "post_pcre_rss_peak_kb",
@@ -386,12 +395,22 @@ def phase_event_measurement(
     label = PHASE_SAMPLE_LABELS.get(event)
     if label is None:
         return None
-    # The phase boundary needs an independent RSS/tree snapshot immediately;
-    # the regular sampler remains authoritative for OOM counters and temporary
-    # tree peaks.  Running both slower samplers here can span the next phase.
+    # The phase boundary needs an independent RSS/tree snapshot.  For
+    # post-PCRE, wait for the actual process-tree RSS to fall below the
+    # contract before acknowledging the application.  This preserves the
+    # ordering guarantee: deep parsing cannot begin until the independent
+    # sampler has observed the required headroom.
+    deadline = time.monotonic() + POST_PCRE_RELEASE_WAIT_SECONDS
+    while True:
+        metric = metric_sample(pid)
+        if label != "post-pcre" or metric["rss_kb"] < POST_PCRE_RSS_BUDGET_KB:
+            break
+        if time.monotonic() >= deadline:
+            fail("post-PCRE RSS did not fall below the 12 GiB budget before acknowledgement")
+        time.sleep(0.01)
     measurement = (
         label,
-        metric_sample(pid),
+        metric,
         dict(baseline_oom),
         0,
     )

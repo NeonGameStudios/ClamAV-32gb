@@ -50,22 +50,28 @@ def numeric_status(status_path: Path, pid: int) -> dict[str, int]:
         raise FileNotFoundError(status_path)
 
 
-def pss_kb(pid_path: Path) -> int:
-    fields = {}
+def smaps_memory_kb(pid_path: Path) -> tuple[int, int]:
+    """Return RSS and PSS from one smaps_rollup snapshot.
+
+    Reading RSS from /proc/<pid>/status and PSS from smaps_rollup can observe
+    different points while a large mmap is faulting in.  That can make a
+    valid process-tree sample appear to have PSS greater than RSS.  Keep the
+    two values paired from the same kernel-provided rollup instead.
+    """
+    fields: dict[str, int] = {}
     try:
         for raw in (pid_path / "smaps_rollup").read_text(encoding="utf-8").splitlines():
             key, separator, value = raw.partition(":")
-            if separator and key == "Pss":
+            if separator and key in {"Rss", "Pss"}:
                 value = value.strip().split(None, 1)[0]
                 if not value.isdigit():
-                    raise ValueError("Pss is not numeric")
+                    raise ValueError(f"{key} is not numeric")
                 fields[key] = int(value)
-                break
     except (OSError, UnicodeError, ValueError):
         raise FileNotFoundError(pid_path / "smaps_rollup")
-    if "Pss" not in fields:
+    if set(fields) != {"Rss", "Pss"}:
         raise FileNotFoundError(pid_path / "smaps_rollup")
-    return fields["Pss"]
+    return fields["Rss"], fields["Pss"]
 
 
 def stat_faults(pid_path: Path) -> tuple[int, int]:
@@ -128,7 +134,7 @@ def collect_processes() -> tuple[dict[int, int], dict[int, dict[str, int]]]:
             continue
         parents[pid] = status["PPid"]
         try:
-            pss = pss_kb(entry)
+            rss, pss = smaps_memory_kb(entry)
             minor, major = stat_faults(entry)
             read_bytes, write_bytes, cancelled = io_counters(entry)
         except FileNotFoundError:
@@ -138,7 +144,7 @@ def collect_processes() -> tuple[dict[int, int], dict[int, dict[str, int]]]:
             continue
         processes[pid] = {
             "ppid": status["PPid"],
-            "rss_kb": status["VmRSS"],
+            "rss_kb": rss,
             "pss_kb": pss,
             "vas_kb": status["VmSize"],
             "swap_kb": status["VmSwap"],

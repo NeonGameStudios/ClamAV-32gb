@@ -295,6 +295,19 @@ afterward. The strict R13 proof therefore remains correctly unavailable; no
 resource sidecar or capability promotion was accepted. Receipt:
 `docs/largefile-task-receipts/R13-resource-capture-process-log-2026-09-20.md`.
 
+R13 Sonic1 exact-size PCRE resource capture (2026-09-20): the current
+source-bound release scanner read an exactly 32-GiB logical sparse fixture and
+returned the expected `DETECTION_TERMINATED` / `PcreTail.UNOFFICIAL` result.
+The independent process-tree recorder published 1,538 samples with
+`rss_peak_kb=33636728`, `pss_peak_kb=33634545`, `vas_peak_kb=33691832`, zero
+swap, zero temporary bytes, zero OOM events/kills, `pcre_rss_peak_kb=33636728`,
+and `post_pcre_rss_peak_kb=82296`. The sampler-side phase acknowledgement now
+waits for independent sub-12-GiB post-PCRE RSS and classifies transitional
+high-RSS samples as PCRE peak. This is exact-logical-size sparse evidence, not
+materialized-input or formal deep-parse qualification: the positive detection
+terminates before parser dispatch. No capability was promoted. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-exact-size-pcre-resource-2026-09-20.md`.
+
 R13 Sonic1 source-guard reconciliation (2026-09-20): the two small stale
 fanotify evidence verifier files in the existing Sonic1 staging tree were
 reconciled to the local candidate and verified by exact SHA-256. The tracked

@@ -104,3 +104,49 @@ and six clamdscan client modes across clean, detection, and limit outcomes.
 This is still development evidence: it does not qualify materialized 32-GiB
 service inputs, sanitizer parity, production CVDs, fanotify, PCRE resource
 phases, or final release readiness.
+
+## C ASan/UBSan qualification slice
+
+Sonic1 produced a separate RelWithDebInfo build with GCC
+`-fsanitize=address,undefined -fno-omit-frame-pointer` in the native compile
+and link graph, preserving the Release feature set. The tracked sanitizer
+CTest run excluding only `largefile_library_exact_32g` completed `31/31`
+tests successfully in `396.82 sec`; no AddressSanitizer, UndefinedBehaviorSanitizer,
+or runtime-error diagnostics were reported.
+
+- Sanitizer `clamscan` SHA-256:
+  `730b54206d3534c16c4edbd79637f3294cc0e4c73c455a705969aa76212db920`.
+- CMake cache SHA-256:
+  `3c648d81b4f2a29880faed802946452065185ae96c71a5a65ec8c41426be42b2`.
+- Compile-commands SHA-256:
+  `ad9577537148b36eed4def7bd46b1ef75d82f812779d3d4f5410f1da43abfba4`.
+- Source manifest SHA-256:
+  `1467bb29c64d76457408cecdefbc1ff9cb84aed64513a58eb76f00a919f16976`.
+
+Rust unit tests passed within this C-sanitized run, but the Rust artifacts
+were not address-instrumented: Sonic1 has only stable `1.97`/`stable` Rust
+toolchains, and `rustc -Zsanitizer=address` fails because `-Z` requires
+nightly. Required Rust sanitizer qualification therefore remains open.
+
+## Exact-size PCRE resource capture
+
+Sonic1 also completed a current-source-bound PCRE positive-control scan over
+an exactly 32-GiB logical sparse file. The scan returned
+`DETECTION_TERMINATED` with the expected `PcreTail.UNOFFICIAL` alert after
+reading `32.00 GiB`; the report recorded equal
+`root_size=logical_bytes=contiguous_bytes=34,359,738,368` values and
+`matcher_bytes=34,368,129,024`.
+
+The independent process-tree recorder retained 1,538 samples with RSS
+`33,636,728 KiB`, PSS `33,634,545 KiB`, VAS `33,691,832 KiB`, zero swap,
+zero temporary bytes, zero OOM events/kills, a PCRE RSS peak of
+`33,636,728 KiB`, and a post-PCRE RSS peak of `82,296 KiB`. The post-PCRE
+acknowledgement was held until an independent sample observed RSS below the
+12-GiB budget; high transitional samples remained in the PCRE peak.
+
+This is useful resource-bound evidence, but it is sparse rather than fully
+materialized and the positive detection terminates before a legitimate deep
+parse phase. It therefore does not promote `matcher:pcre` or clear the
+materialized-input, deep-parse, production-CVD/service, sanitizer, fanotify,
+or final release gates. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-exact-size-pcre-resource-2026-09-20.md`.

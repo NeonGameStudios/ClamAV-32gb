@@ -231,6 +231,72 @@ class AcceptanceResourceCaptureTests(unittest.TestCase):
             )
             self.assertTrue((root / "provenance/resources.tsv").is_file())
 
+    def test_post_pcre_boundary_waits_for_headroom(self):
+        high = {
+            "rss_kb": capture.POST_PCRE_RSS_BUDGET_KB + 1,
+            "pss_kb": capture.POST_PCRE_RSS_BUDGET_KB + 1,
+            "vas_kb": capture.POST_PCRE_RSS_BUDGET_KB + 1,
+            "swap_kb": 0,
+            "minor_faults": 0,
+            "major_faults": 0,
+            "read_bytes": 0,
+            "write_bytes": 0,
+            "cancelled_write_bytes": 0,
+            "root_rss_kb": capture.POST_PCRE_RSS_BUDGET_KB + 1,
+            "process_count": 1,
+        }
+        low = dict(high)
+        low.update({
+            "rss_kb": capture.POST_PCRE_RSS_BUDGET_KB - 1,
+            "pss_kb": capture.POST_PCRE_RSS_BUDGET_KB - 1,
+            "vas_kb": capture.POST_PCRE_RSS_BUDGET_KB - 1,
+            "root_rss_kb": capture.POST_PCRE_RSS_BUDGET_KB - 1,
+        })
+        with tempfile.TemporaryDirectory(prefix="largefile-phase-ack-") as directory:
+            ack = Path(directory) / "post-pcre.ack"
+            with mock.patch.object(capture, "metric_sample", side_effect=[high, low]), \
+                    mock.patch.object(capture.time, "sleep"):
+                measurement = capture.phase_event_measurement(
+                    "post-pcre", 123, {"oom_cgroup_digest": "0" * 64}, ack
+                )
+            self.assertIsNotNone(measurement)
+            self.assertEqual(measurement[1]["rss_kb"], capture.POST_PCRE_RSS_BUDGET_KB - 1)
+            self.assertEqual(ack.read_text(encoding="ascii"), "post-pcre\n")
+
+    def test_transitional_post_pcre_sample_counts_as_pcre(self):
+        current = {
+            "sample_count": 0,
+            **{field: 0 for field in capture.METRIC_FIELDS},
+            "temporary_peak_bytes": 0,
+            "oom_events_peak": 0,
+            "oom_kill_events_peak": 0,
+            "oom_cgroup_count": 0,
+            "oom_cgroup_digest": "",
+        }
+        metric = {
+            "rss_kb": capture.POST_PCRE_RSS_BUDGET_KB + 1,
+            "pss_kb": capture.POST_PCRE_RSS_BUDGET_KB + 1,
+            "vas_kb": capture.POST_PCRE_RSS_BUDGET_KB + 1,
+            "swap_kb": 0,
+            "minor_faults": 0,
+            "major_faults": 0,
+            "read_bytes": 0,
+            "write_bytes": 0,
+            "cancelled_write_bytes": 0,
+        }
+        oom = {
+            "oom_events": 0,
+            "oom_kill_events": 0,
+            "oom_cgroup_count": 1,
+            "oom_cgroup_digest": "0" * 64,
+        }
+        phase_peaks = {"pcre_rss_peak_kb": None, "post_pcre_rss_peak_kb": None}
+        capture.record_sample_measurement(
+            metric, oom, 0, "post-pcre", oom.copy(), current, phase_peaks
+        )
+        self.assertEqual(phase_peaks["pcre_rss_peak_kb"], metric["rss_kb"])
+        self.assertIsNone(phase_peaks["post_pcre_rss_peak_kb"])
+
     def test_live_sampler_failure_is_fail_closed(self):
         class FakeProcess:
             pid = 4242
