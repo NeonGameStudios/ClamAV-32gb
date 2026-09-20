@@ -69,11 +69,54 @@
  * path. These are debug events rather than accounting shortcuts: the
  * external qualification runner samples the process tree independently at
  * these boundaries and retains the actual log. */
-static void largefile_pcre_phase_dbg(const cli_ctx *ctx, const char *phase, size_t subject_bytes, bool subject_released)
+#ifndef _WIN32
+static void largefile_pcre_phase_wait_for_ack(const char *event)
+{
+    const char *ack_path = getenv("CLAMAV_LARGEFILE_RESOURCE_PHASE_ACK_FILE");
+    size_t event_len;
+    unsigned attempt;
+
+    if (!ack_path || !ack_path[0] || !event || !event[0])
+        return;
+
+    event_len = strlen(event);
+    for (attempt = 0; attempt < 30000U; attempt++) {
+        int fd = open(ack_path, O_RDONLY
+#ifdef O_CLOEXEC
+                      | O_CLOEXEC
+#endif
+#ifdef O_NOFOLLOW
+                      | O_NOFOLLOW
+#endif
+        );
+        if (fd >= 0) {
+            char buffer[64];
+            ssize_t count;
+
+            do {
+                count = read(fd, buffer, sizeof(buffer));
+            } while (count < 0 && errno == EINTR);
+            close(fd);
+            if (count == (ssize_t)(event_len + 1U) &&
+                memcmp(buffer, event, event_len) == 0 &&
+                buffer[event_len] == '\n') {
+                (void)unlink(ack_path);
+                return;
+            }
+        }
+        usleep(1000);
+    }
+
+    cli_dbgmsg("largefile_pcre_phase: phase ack timeout for %s\n", event);
+}
+#endif
+
+void largefile_pcre_phase_dbg(const cli_ctx *ctx, const char *phase, size_t subject_bytes, bool subject_released)
 {
 #ifndef _WIN32
     static bool resource_pcre_started;
     static bool resource_pcre_released;
+    static bool resource_pcre_deep_parsed;
 #endif
 
     if (!ctx || !phase || !ctx->recursion_stack || ctx->recursion_stack_size == 0 ||
@@ -117,6 +160,8 @@ static void largefile_pcre_phase_dbg(const cli_ctx *ctx, const char *phase, size
                 if (complete)
                     resource_pcre_started = true;
                 close(fd);
+                if (complete)
+                    largefile_pcre_phase_wait_for_ack("pcre-start");
             }
         }
     } else if (strcmp(phase, "post-pcre-before-deep-parse") == 0 &&
@@ -150,6 +195,44 @@ static void largefile_pcre_phase_dbg(const cli_ctx *ctx, const char *phase, size
                 if (complete)
                     resource_pcre_released = true;
                 close(fd);
+                if (complete)
+                    largefile_pcre_phase_wait_for_ack("post-pcre");
+            }
+        }
+    } else if (strcmp(phase, "deep-parse") == 0 &&
+               resource_pcre_started && resource_pcre_released &&
+               !resource_pcre_deep_parsed) {
+        const char *path = getenv("CLAMAV_LARGEFILE_RESOURCE_PHASE_FILE");
+        if (path && path[0]) {
+            int fd = open(path,
+                          O_WRONLY | O_APPEND
+#ifdef O_CLOEXEC
+                              | O_CLOEXEC
+#endif
+#ifdef O_NOFOLLOW
+                              | O_NOFOLLOW
+#endif
+            );
+            if (fd >= 0) {
+                const char event[] = "deep-parse\n";
+                size_t written = 0;
+                bool complete = true;
+                while (written < sizeof(event) - 1U) {
+                    ssize_t count = write(fd, event + written,
+                                          (sizeof(event) - 1U) - written);
+                    if (count < 0 && errno == EINTR)
+                        continue;
+                    if (count <= 0) {
+                        complete = false;
+                        break;
+                    }
+                    written += (size_t)count;
+                }
+                if (complete)
+                    resource_pcre_deep_parsed = true;
+                close(fd);
+                if (complete)
+                    largefile_pcre_phase_wait_for_ack("deep-parse");
             }
         }
     }

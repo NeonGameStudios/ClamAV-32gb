@@ -408,6 +408,10 @@ int cli_lsig_bytecode_compatible(uint64_t file_size, const uint64_t *offsets, ui
  */
 cl_error_t cli_check_fp(cli_ctx *ctx, const char *vname);
 
+/* Emit the opt-in PCRE phase boundary used by the external resource sampler. */
+void largefile_pcre_phase_dbg(const cli_ctx *ctx, const char *phase,
+                              size_t subject_bytes, bool subject_released);
+
 cl_error_t cli_matchmeta(cli_ctx *ctx, const char *fname, size_t fsizec, size_t fsizer, int encrypted, unsigned int filepos, int res1);
 
 /** Parse the executable headers and, if successful, populate exeinfo

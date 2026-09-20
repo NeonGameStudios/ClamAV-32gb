@@ -155,6 +155,13 @@ def main(argv: list[str]) -> int:
     if not argv:
         print(f"usage: {Path(sys.argv[0]).name} ROOT_PID...", file=sys.stderr)
         return 2
+    include_root = False
+    if argv and argv[0] == "--include-root":
+        include_root = True
+        argv = argv[1:]
+    if not argv:
+        print(f"usage: {Path(sys.argv[0]).name} ROOT_PID...", file=sys.stderr)
+        return 2
     roots: list[int] = []
     for raw in argv:
         if not PID_RE.fullmatch(raw) or int(raw) < 1:
@@ -199,7 +206,10 @@ def main(argv: list[str]) -> int:
         "cancelled_write_bytes",
     )
     totals = [sum(row[name] for row in rows) for name in names]
-    print("\t".join(str(value) for value in totals + [len(rows), ",".join(str(pid) for pid in sorted(selected))]))
+    output = totals + [len(rows), ",".join(str(pid) for pid in sorted(selected))]
+    if include_root:
+        output.insert(0, str(processes[roots[0]]["rss_kb"]))
+    print("\t".join(str(value) for value in output))
     return 0
 
 

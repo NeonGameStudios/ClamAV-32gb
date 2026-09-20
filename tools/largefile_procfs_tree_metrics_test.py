@@ -67,6 +67,18 @@ def main() -> int:
         )
         if rejected.returncode == 0:
             raise AssertionError("sampler accepted a non-numeric PID")
+
+        rooted = subprocess.run(
+            [sys.executable, str(SAMPLER), "--include-root", str(parent.pid)],
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+        rooted_fields = rooted.stdout.rstrip("\n").split("\t")
+        if len(rooted_fields) != 12 or any(not field for field in rooted_fields):
+            raise AssertionError(f"malformed rooted sampler output: {rooted.stdout!r}")
+        if int(rooted_fields[0]) > int(rooted_fields[1]):
+            raise AssertionError(f"root RSS exceeds tree RSS: {rooted_fields!r}")
         print("large-file procfs tree metrics test passed")
         return 0
     finally:

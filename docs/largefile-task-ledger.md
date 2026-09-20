@@ -168,6 +168,35 @@ evidence without current-source identity, timestamped formal proof JSON,
 32-GiB qualification, or capability promotion. Receipt:
 `docs/largefile-task-receipts/R13-resource-capture-process-log-2026-09-20.md`.
 
+R13 phase-acknowledged boundary capture and clean-control revalidation
+(2026-09-20): added the opt-in phase acknowledgement rendezvous so the
+qualification-only watcher can take an independent procfs/tree snapshot at
+`pcre-start`, `post-pcre`, and `deep-parse` before the scanner advances; the
+production path remains unchanged when the ACK environment variable is
+absent. The C89-compatible Sonic1 rebuild exits 0, the local focused suite
+passes 25/25, and the full local tools suite passes 228 tests with two
+expected skips. Clean-13 completes `OK` on the exact 8-GiB-minus-8-byte fixture
+(size `8589934584`, SHA-256
+`1d887622f47df15eb5d8bcb461f6412406abe8542ed9aa6a9c6cd62af80a12d8`) with
+the exact four-phase file and 340 resource samples. It records
+`rss_peak_kb=8426796`, `pss_peak_kb=8423832`, `vas_peak_kb=8476916`,
+`pcre_rss_peak_kb=8426796`, `post_pcre_rss_peak_kb=8372540`, zero OOM events,
+zero OOM kills, and zero swap. This remains stale-tree development evidence,
+not a formal R13 proof or capability promotion, because current-source
+identity, exact 32-GiB evidence, formal proof JSON, sanitizer, fanotify,
+production-CVD/service, and release evidence remain open. Receipt:
+`docs/largefile-task-receipts/R13-resource-capture-process-log-2026-09-20.md`.
+
+R13 clean phase-order control (2026-09-20): a disposable nonmatching PCRE
+database completed an `OK` scan over the same 8-GiB-minus-8-byte fixture and
+retained 414 ordered process-tree samples with root RSS bounded by aggregate
+tree RSS. The phase file remained `pcre-start` -> `post-pcre` -> `complete`,
+with no legitimate `deep-parse` sample: the current scanner dispatch emits its
+parser marker before the raw PCRE pass, and the post-release marker occurs
+afterward. The strict R13 proof therefore remains correctly unavailable; no
+resource sidecar or capability promotion was accepted. Receipt:
+`docs/largefile-task-receipts/R13-resource-capture-process-log-2026-09-20.md`.
+
 R13 Sonic1 source-guard reconciliation (2026-09-20): the two small stale
 fanotify evidence verifier files in the existing Sonic1 staging tree were
 reconciled to the local candidate and verified by exact SHA-256. The tracked
@@ -5944,3 +5973,60 @@ the transferred source has no `.git`; full-size qualification, sanitizer,
 fanotify, and release evidence remain open. No capability was promoted.
 Receipt:
 `docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.
+
+R13 resource sample-trace retention (2026-09-20): the existing acceptance
+resource capture now optionally retains an ordered, timestamped TSV trace for
+each successful procfs sample, separating the wrapped process RSS from the
+aggregate process-tree RSS and recording the sampled process count and phase.
+The trace path is fail-closed for symlinks, pre-existing data, sampler/write
+failures, interruption, and startup errors. The focused resource/phase suite
+passes 30/30; the full local tools suite passes 224 tests with two expected
+Linux filesystem skips. This enables later construction of the strict R13
+PCRE proof JSON but does not itself create one or promote `matcher:pcre`.
+Receipt: `docs/largefile-task-receipts/R13-resource-capture-process-log-2026-09-20.md`.
+
+R07 format-8 availability follow-up (2026-09-20): the local host has only
+Apple `/usr/bin/clang` among the probed compiler tools; `llvm-as`, `llc`,
+`opt`, and `llvm-config` are absent. The existing Sonic1 disposable container
+also has none of the required LLVM tools, and its read-only source/build
+inventory contains only legacy `.cbc`/`.cud` controls, with no independent
+format-8 module. The current-source `clambc` smoke remains development-only
+and was built without LLVM/JIT support. R07 therefore remains blocked on an
+authorized compatible compiler or independently compiled format-8 artifact
+plus source identity/hash on a qualifying Linux x86-64 runner. No software
+was installed or downloaded and no capability was promoted. Receipt:
+`docs/largefile-task-receipts/R07-clambc-current-source-smoke-2026-09-20.md`.
+
+R13 procfs/phase-capture correction and Sonic1 revalidation (2026-09-20): the
+independent process-tree sampler now reads root RSS and aggregate tree RSS
+from one procfs snapshot when requested, eliminating cross-read skew that
+could otherwise make a valid sample fail closed. The rebuilt Sonic1
+positive-control scan retained 190 ordered samples, preserved the exact
+8-GiB-tail detection and expected exit 1, and recorded zero OOM events/kills;
+its application phase file correctly stopped at `pcre-start` -> `post-pcre`
+-> `complete` because detection terminated before parser dispatch. The
+resource wrapper was then hardened so terminal `complete` is never fabricated
+as a `deep-parse` sample. The full local tools suite passes 227 tests with two
+expected Linux-only skips, the focused resource/procfs regressions pass 11/11,
+the 604-entry source guards pass, and no capability was promoted. This remains
+stale-tree development evidence without current-source identity, a 32-GiB
+qualification run, a formal R13 proof JSON, or release evidence. Receipt:
+`docs/largefile-task-receipts/R13-resource-capture-process-log-2026-09-20.md`.
+
+R13 post-raw deep-parse boundary correction and clean-control revalidation
+(2026-09-20): moved the application `deep-parse` bridge after the outer raw
+scan and suppressed the duplicate generic binary-data full-map scan once that
+raw scan has completed. Local focused resource/procfs/phase tests pass 24/24,
+the 604-entry source guard passes, the synchronized Sonic1 scanner source
+hash is
+`c16345902a42b4b1ebb20ad8b70dde9acc79a1316c455243aa13410946753761`, and the
+remote `clamscan` rebuild exits 0. A fresh nonmatching 8-GiB clean control
+finishes `OK` with exactly one full-map `matcher_run`; its phase file is
+`pcre-start` -> `post-pcre` -> `deep-parse` -> `complete`, and its runtime
+markers show post-release `deep-parse` with `subject_bytes=0`. The independent
+sampler retains 175 root/tree-bounded samples but misses the very short PCRE
+and post-PCRE windows, so no resource sidecar or strict R13 proof is claimed.
+This remains stale-tree development evidence; full-size, current-source,
+resource-peak, sanitizer, fanotify, production-CVD/service, and release
+evidence remain open. Receipt:
+`docs/largefile-task-receipts/R13-resource-capture-process-log-2026-09-20.md`.

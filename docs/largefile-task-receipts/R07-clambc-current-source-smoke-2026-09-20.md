@@ -44,3 +44,24 @@ Remaining dependency:
   Linux x86-64 runner. Until then `matcher:bytecode` remains pending.
 
 State: `development-verified; blocked-external-prerequisite`
+
+Follow-up availability audit (2026-09-20):
+
+- The local host exposes `/usr/bin/clang`, but no `llvm-as`, `llc`, `opt`, or
+  `llvm-config` was available. The broad read-only search found no independent
+  format-8 bytecode artifact outside the repository.
+- The same Sonic1 container was rechecked through the typed Docker boundary.
+  Its compiler lookup returned no `clang`, `clang++`, `llvm-as`, `llc`, `opt`,
+  or `llvm-config`; this is an availability result, not an installation
+  attempt.
+- A read-only source/build inventory found only the repository's legacy
+  `.cbc`/`.cud` controls and no `.bc`/`.ll` or independently identified
+  format-8 module. The container's previously recorded `clambc` smoke remains
+  valid, but its runtime was built without LLVM/JIT support.
+
+The exact blocker is unchanged: an authorized compatible format-8 compiler or
+independently compiled format-8 artifact, with source identity and hash, is
+needed on a qualifying Linux x86-64 runner before R07 can exercise the v2
+globals and cross-4-GiB operations in both interpreter and JIT. No software
+was installed, downloaded, or externally contacted, and no capability was
+promoted.

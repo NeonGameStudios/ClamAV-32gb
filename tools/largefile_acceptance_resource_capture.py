@@ -24,7 +24,9 @@ import signal
 import stat
 import subprocess
 import sys
+import threading
 import time
+from queue import Empty, Queue
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import largefile_acceptance_resources as resources
@@ -38,7 +40,12 @@ METRIC_FIELDS = (
     "minor_faults_peak", "major_faults_peak", "read_bytes_peak",
     "write_bytes_peak", "cancelled_write_bytes_peak",
 )
-PHASE_EVENTS = {"pcre-start", "post-pcre", "complete"}
+PHASE_EVENTS = {"pcre-start", "post-pcre", "deep-parse", "complete"}
+PHASE_SAMPLE_LABELS = {
+    "pcre-start": "pcre",
+    "post-pcre": "post-pcre",
+    "deep-parse": "deep-parse",
+}
 SAFE_CASE_RE = re.compile(r"[^A-Za-z0-9_.-]+")
 
 
@@ -94,10 +101,14 @@ def temporary_size(path: Path) -> int:
     return total
 
 
-def run_sampler(tool: Path, pid: int) -> list[str]:
+def run_sampler(tool: Path, pid: int, include_root: bool = False) -> list[str]:
     try:
+        command = [sys.executable, str(tool)]
+        if include_root:
+            command.append("--include-root")
+        command.append(str(pid))
         result = subprocess.run(
-            [sys.executable, str(tool), str(pid)],
+            command,
             capture_output=True,
             text=True,
             timeout=5,
@@ -115,17 +126,42 @@ def run_sampler(tool: Path, pid: int) -> list[str]:
 
 
 def metric_sample(pid: int) -> dict[str, int]:
-    fields = run_sampler(METRICS_TOOL, pid)
-    if len(fields) != 11 or any(not value.isdigit() for value in fields[:10]):
+    fields = run_sampler(METRICS_TOOL, pid, include_root=True)
+    if len(fields) != 12 or any(not value.isdigit() for value in fields[:11]):
         fail("process-tree resource sampler returned an invalid metric row")
     return dict(zip(
         (
-            "rss_kb", "pss_kb", "vas_kb", "swap_kb", "minor_faults",
-            "major_faults", "read_bytes", "write_bytes",
+            "root_rss_kb", "rss_kb", "pss_kb", "vas_kb", "swap_kb",
+            "minor_faults", "major_faults", "read_bytes", "write_bytes",
             "cancelled_write_bytes", "process_count",
         ),
-        (int(value) for value in fields[:10]),
+        (int(value) for value in fields[:11]),
     ))
+
+
+def append_sample_trace(
+    stream: object,
+    sequence: int,
+    phase: str,
+    rss_kb: int,
+    tree_rss_kb: int,
+    process_count: int,
+) -> None:
+    """Write one ordered, timestamped process-tree sample."""
+    if sequence < 1 or phase not in {
+        "before-pcre", "pcre", "post-pcre-before-deep-parse", "deep-parse",
+    }:
+        fail("sample trace has an invalid sequence or phase")
+    if rss_kb < 0 or tree_rss_kb < rss_kb or process_count < 1:
+        fail("sample trace has invalid resource values")
+    try:
+        stream.write(
+            f"{sequence}\t{time.time_ns()}\t{phase}\t{rss_kb}\t"
+            f"{tree_rss_kb}\t{process_count}\n"
+        )
+        stream.flush()
+    except (AttributeError, OSError) as error:
+        raise CaptureError(f"cannot write process sample trace: {error}") from error
 
 
 def oom_sample(pid: int) -> dict[str, str | int]:
@@ -142,14 +178,15 @@ def oom_sample(pid: int) -> dict[str, str | int]:
     }
 
 
-def phase_state(path: Path) -> str:
-    state = "pre-pcre"
+def phase_events(path: Path) -> list[str]:
     if path.is_symlink():
         fail(f"phase protocol is symlinked: {path}")
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
     except (OSError, UnicodeError) as error:
         raise CaptureError(f"cannot read phase protocol {path}: {error}") from error
+    events: list[str] = []
+    state = "pre-pcre"
     for line_number, line in enumerate(lines, start=1):
         event = line.strip()
         if not event:
@@ -164,6 +201,25 @@ def phase_state(path: Path) -> str:
             if state not in {"pcre", "post-pcre"}:
                 fail(f"phase protocol enters post-PCRE without PCRE at line {line_number}")
             state = "post-pcre"
+        elif event == "deep-parse":
+            if state not in {"post-pcre", "deep-parse"}:
+                fail(f"phase protocol enters deep parse before post-PCRE at line {line_number}")
+            state = "deep-parse"
+        else:
+            state = "complete"
+        events.append(event)
+    return events
+
+
+def phase_state(path: Path) -> str:
+    state = "pre-pcre"
+    for event in phase_events(path):
+        if event == "pcre-start":
+            state = "pcre"
+        elif event == "post-pcre":
+            state = "post-pcre"
+        elif event == "deep-parse":
+            state = "deep-parse"
         else:
             state = "complete"
     return state
@@ -200,16 +256,16 @@ def append_phase_event(path: Path, event: str) -> None:
         os.close(descriptor)
 
 
-def sample_row(
-    pid: int,
-    temporary_root: Path,
-    phase_file: Path,
+def record_sample_measurement(
+    metric: dict[str, int],
+    oom: dict[str, str | int],
+    temporary_bytes: int,
+    state: str,
     baseline_oom: dict[str, str | int],
     current: dict[str, int],
     phase_peaks: dict[str, int | None],
+    sample_trace: object | None = None,
 ) -> dict[str, int | str]:
-    metric = metric_sample(pid)
-    oom = oom_sample(pid)
     for key in ("oom_events", "oom_kill_events"):
         if int(oom[key]) < int(baseline_oom[key]):
             fail(f"OOM counter decreased during capture: {key}")
@@ -233,11 +289,10 @@ def sample_row(
         ("cancelled_write_bytes", "cancelled_write_bytes_peak"),
     ):
         current[destination] = max(current[destination], metric[source])
-    current["temporary_peak_bytes"] = max(
-        current["temporary_peak_bytes"], temporary_size(temporary_root)
-    )
+    current["temporary_peak_bytes"] = max(current["temporary_peak_bytes"], temporary_bytes)
 
-    state = phase_state(phase_file)
+    if state not in {"pre-pcre", "pcre", "post-pcre", "deep-parse", "complete"}:
+        fail(f"sample has an invalid phase: {state}")
     phase_rss_key = {
         "pcre": "pcre_rss_peak_kb",
         "post-pcre": "post_pcre_rss_peak_kb",
@@ -246,7 +301,197 @@ def sample_row(
         phase_peaks[phase_rss_key] = max(
             int(phase_peaks[phase_rss_key] or 0), metric["rss_kb"]
         )
+    if sample_trace is not None:
+        sample_phase = {
+            "pre-pcre": "before-pcre",
+            "pcre": "pcre",
+            "post-pcre": "post-pcre-before-deep-parse",
+            "deep-parse": "deep-parse",
+        }.get(state)
+        # ``complete`` is a terminal wrapper event, not an application
+        # phase.  In particular, a detection may terminate before parser
+        # dispatch, so mapping completion to ``deep-parse`` would fabricate
+        # the phase that R13 requires the application to emit and the
+        # independent sampler to observe.
+        if sample_phase is None:
+            return current
+        append_sample_trace(
+            sample_trace,
+            int(current["sample_count"]) + 1,
+            sample_phase,
+            metric["root_rss_kb"],
+            metric["rss_kb"],
+            metric["process_count"],
+        )
     return current
+
+
+def sample_row(
+    pid: int,
+    temporary_root: Path,
+    phase_file: Path,
+    baseline_oom: dict[str, str | int],
+    current: dict[str, int],
+    phase_peaks: dict[str, int | None],
+    sample_trace: object | None = None,
+    phase_override: str | None = None,
+) -> dict[str, int | str]:
+    metric = metric_sample(pid)
+    oom = oom_sample(pid)
+    return record_sample_measurement(
+        metric,
+        oom,
+        temporary_size(temporary_root),
+        phase_override or phase_state(phase_file),
+        baseline_oom,
+        current,
+        phase_peaks,
+        sample_trace,
+    )
+
+
+def phase_event_sample(
+    event: str,
+    pid: int,
+    temporary_root: Path,
+    phase_file: Path,
+    baseline_oom: dict[str, str | int],
+    current: dict[str, int],
+    phase_peaks: dict[str, int | None],
+    sample_trace: object | None = None,
+) -> dict[str, int | str]:
+    """Capture one external procfs snapshot for an observed runtime event."""
+    label = PHASE_SAMPLE_LABELS.get(event)
+    if label is None:
+        return current
+    return sample_row(
+        pid,
+        temporary_root,
+        phase_file,
+        baseline_oom,
+        current,
+        phase_peaks,
+        sample_trace,
+        phase_override=label,
+    )
+
+
+def phase_event_measurement(
+    event: str,
+    pid: int,
+    baseline_oom: dict[str, str | int],
+    ack_file: Path,
+) -> tuple[str, dict[str, int], dict[str, str | int], int] | None:
+    """Take the metric snapshot for a phase event without sharing sampler state."""
+    label = PHASE_SAMPLE_LABELS.get(event)
+    if label is None:
+        return None
+    # The phase boundary needs an independent RSS/tree snapshot immediately;
+    # the regular sampler remains authoritative for OOM counters and temporary
+    # tree peaks.  Running both slower samplers here can span the next phase.
+    measurement = (
+        label,
+        metric_sample(pid),
+        dict(baseline_oom),
+        0,
+    )
+    write_phase_ack(ack_file, event)
+    return measurement
+
+
+def write_phase_ack(path: Path, event: str) -> None:
+    """Release one opt-in scanner phase rendezvous after sampling it."""
+    if path.is_symlink():
+        fail(f"phase acknowledgement is symlinked: {path}")
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    nofollow = getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags | nofollow, 0o600)
+        try:
+            payload = f"{event}\n".encode("ascii")
+            offset = 0
+            while offset < len(payload):
+                written = os.write(descriptor, payload[offset:])
+                if written <= 0:
+                    fail(f"phase acknowledgement write made no progress: {path}")
+                offset += written
+        finally:
+            os.close(descriptor)
+    except OSError as error:
+        raise CaptureError(f"cannot write phase acknowledgement {path}: {error}") from error
+
+
+def drain_phase_measurements(
+    measurements: Queue[tuple[str, dict[str, int], dict[str, str | int], int]],
+    baseline_oom: dict[str, str | int],
+    current: dict[str, int],
+    phase_peaks: dict[str, int | None],
+    sample_trace: object | None,
+    sample_lock: threading.Lock,
+) -> None:
+    """Merge event snapshots after the watcher has sampled them independently."""
+    while True:
+        try:
+            state, metric, oom, temporary_bytes = measurements.get_nowait()
+        except Empty:
+            return
+        with sample_lock:
+            record_sample_measurement(
+                metric,
+                oom,
+                temporary_bytes,
+                state,
+                baseline_oom,
+                current,
+                phase_peaks,
+                sample_trace,
+            )
+            current["sample_count"] = int(current["sample_count"]) + 1
+
+
+def watch_phase_events(
+    process: subprocess.Popen[object],
+    phase_file: Path,
+    temporary_root: Path,
+    baseline_oom: dict[str, str | int],
+    measurements: Queue[tuple[str, dict[str, int], dict[str, str | int], int]],
+    ack_file: Path,
+    stop: threading.Event,
+    errors: list[CaptureError],
+) -> None:
+    """Observe phase writes while the regular sampler is collecting metrics."""
+    seen = 0
+    while not stop.is_set():
+        try:
+            events = phase_events(phase_file)
+            if len(events) < seen:
+                fail("phase protocol was truncated while capture was live")
+            new_events = events[seen:]
+            seen = len(events)
+            for event in new_events:
+                try:
+                    measurement = phase_event_measurement(
+                        event, process.pid, baseline_oom, ack_file
+                    )
+                except CaptureError as error:
+                    # Do not strand the scanner at an opt-in rendezvous when
+                    # the independent sampler itself fails; the capture then
+                    # fails closed after the command exits.
+                    if event in PHASE_SAMPLE_LABELS:
+                        try:
+                            write_phase_ack(ack_file, event)
+                        except CaptureError as ack_error:
+                            errors.append(ack_error)
+                    errors.append(error)
+                    return
+                if measurement is not None:
+                    measurements.put(measurement)
+        except CaptureError as error:
+            errors.append(error)
+            return
+        if process.poll() is not None:
+            return
+        stop.wait(0.001)
 
 
 def append_row(path: Path, row: dict[str, int | str], root: Path) -> None:
@@ -314,6 +559,15 @@ def capture(args: argparse.Namespace) -> int:
         fail(f"phase protocol already contains data: {phase_file}")
     phase_file.parent.mkdir(parents=True, exist_ok=True)
     phase_file.write_text("", encoding="utf-8")
+    phase_ack_file = path_under(
+        root,
+        phase_file.with_name(f".{phase_file.name}.ack"),
+        "phase acknowledgement",
+    )
+    if phase_ack_file.exists():
+        if phase_ack_file.is_symlink():
+            fail(f"phase acknowledgement is symlinked: {phase_ack_file}")
+        fail(f"phase acknowledgement already exists: {phase_ack_file}")
 
     process_log: Path | None = None
     process_log_stream = None
@@ -327,9 +581,43 @@ def capture(args: argparse.Namespace) -> int:
         process_log.parent.mkdir(parents=True, exist_ok=True)
         process_log_stream = process_log.open("wb")
 
+    sample_trace: Path | None = None
+    sample_trace_stream = None
+    requested_sample_trace = getattr(args, "sample_log", None)
+    if requested_sample_trace is not None:
+        sample_trace = path_under(root, requested_sample_trace, "sample trace")
+        if sample_trace.exists() and sample_trace.is_symlink():
+            if process_log_stream is not None:
+                process_log_stream.close()
+            fail(f"sample trace is symlinked: {sample_trace}")
+        if sample_trace.exists() and sample_trace.stat().st_size:
+            if process_log_stream is not None:
+                process_log_stream.close()
+            fail(f"sample trace already contains data: {sample_trace}")
+        sample_trace.parent.mkdir(parents=True, exist_ok=True)
+        sample_trace_stream = sample_trace.open("w", encoding="utf-8")
+        sample_trace_stream.write(
+            "sequence\ttimestamp_ns\tphase\trss_kb\ttree_rss_kb\tprocess_count\n"
+        )
+        sample_trace_stream.flush()
+
+    def close_capture_streams() -> None:
+        for stream in (process_log_stream, sample_trace_stream):
+            if stream is not None and not stream.closed:
+                stream.close()
+
+    def cleanup_phase_ack() -> None:
+        if phase_ack_file.is_symlink():
+            fail(f"phase acknowledgement is symlinked: {phase_ack_file}")
+        try:
+            phase_ack_file.unlink()
+        except FileNotFoundError:
+            pass
+
     environment = os.environ.copy()
     environment["CLAMAV_LARGEFILE_RESOURCE_PHASE_FILE"] = str(phase_file)
     environment["CLAMAV_LARGEFILE_RESOURCE_PHASE_PROTOCOL"] = "pcre-start,post-pcre,complete"
+    environment["CLAMAV_LARGEFILE_RESOURCE_PHASE_ACK_FILE"] = str(phase_ack_file)
     try:
         process = subprocess.Popen(
             args.command,
@@ -339,8 +627,7 @@ def capture(args: argparse.Namespace) -> int:
             stderr=subprocess.STDOUT if process_log_stream is not None else None,
         )
     except OSError as error:
-        if process_log_stream is not None:
-            process_log_stream.close()
+        close_capture_streams()
         fail(f"acceptance command could not start: {error}")
 
     baseline_oom: dict[str, str | int] | None = None
@@ -359,16 +646,45 @@ def capture(args: argparse.Namespace) -> int:
     }
     last_error = "no successful process-tree sample"
     sampling_error: CaptureError | None = None
+    sample_lock = threading.Lock()
+    phase_measurements: Queue[
+        tuple[str, dict[str, int], dict[str, str | int], int]
+    ] = Queue()
+    phase_watch_stop = threading.Event()
+    phase_watch_errors: list[CaptureError] = []
+    phase_watch_thread: threading.Thread | None = None
+    next_regular_sample = 0.0
     try:
         while process.poll() is None:
             try:
                 if baseline_oom is None:
                     baseline_oom = oom_sample(process.pid)
-                sample_row(
-                    process.pid, temporary_root, phase_file,
-                    baseline_oom, current, phase_peaks,
-                )
-                current["sample_count"] = int(current["sample_count"]) + 1
+                if phase_watch_thread is None:
+                    phase_watch_thread = threading.Thread(
+                        target=watch_phase_events,
+                        args=(
+                            process, phase_file, temporary_root, baseline_oom,
+                            phase_measurements, phase_ack_file,
+                            phase_watch_stop, phase_watch_errors,
+                        ),
+                        name="largefile-phase-watch",
+                        daemon=True,
+                    )
+                    phase_watch_thread.start()
+
+                now = time.monotonic()
+                if now >= next_regular_sample:
+                    with sample_lock:
+                        sample_row(
+                            process.pid, temporary_root, phase_file,
+                            baseline_oom, current, phase_peaks, sample_trace_stream,
+                        )
+                        current["sample_count"] = int(current["sample_count"]) + 1
+                    drain_phase_measurements(
+                        phase_measurements, baseline_oom, current, phase_peaks,
+                        sample_trace_stream, sample_lock,
+                    )
+                    next_regular_sample = now + args.sample_interval_ms / 1000
             except CaptureError as error:
                 last_error = str(error)
                 # A single successful sample is not enough to claim a peak:
@@ -382,25 +698,50 @@ def capture(args: argparse.Namespace) -> int:
                     terminate_child(process)
                     break
             if process.poll() is None:
-                time.sleep(args.sample_interval_ms / 1000)
+                delay = max(0.001, min(
+                    0.005, next_regular_sample - time.monotonic()
+                ))
+                time.sleep(delay)
     except KeyboardInterrupt:
         terminate_child(process)
-        if process_log_stream is not None:
-            process_log_stream.close()
+        phase_watch_stop.set()
+        if phase_watch_thread is not None:
+            phase_watch_thread.join(timeout=5)
+        cleanup_phase_ack()
+        close_capture_streams()
         raise
+
+    if phase_watch_thread is not None:
+        # Let the watcher drain events it observed while the final regular
+        # procfs sample was in flight.  Setting stop first would discard a
+        # valid boundary merely because the wrapped command exited during
+        # that slower sample.
+        phase_watch_thread.join(timeout=5)
+    phase_watch_stop.set()
+    if phase_watch_thread is not None:
+        phase_watch_thread.join(timeout=1)
+        if phase_watch_thread.is_alive():
+            phase_watch_errors.append(
+                CaptureError("phase event sampler did not stop after command exit")
+            )
+    if baseline_oom is not None:
+        drain_phase_measurements(
+            phase_measurements, baseline_oom, current, phase_peaks,
+            sample_trace_stream, sample_lock,
+        )
+    cleanup_phase_ack()
+    if phase_watch_errors and sampling_error is None:
+        sampling_error = phase_watch_errors[0]
 
     if sampling_error is not None:
         process.wait()
-        if process_log_stream is not None:
-            process_log_stream.close()
+        close_capture_streams()
         fail(f"resource sampling failed while command was alive: {sampling_error}")
     if int(current["sample_count"]) < 1:
-        if process_log_stream is not None:
-            process_log_stream.close()
+        close_capture_streams()
         fail(last_error)
     return_code = process.wait()
-    if process_log_stream is not None:
-        process_log_stream.close()
+    close_capture_streams()
     append_phase_event(phase_file, "complete")
     if args.kind == "matcher" and args.id == "pcre":
         if phase_peaks["pcre_rss_peak_kb"] is None or phase_peaks["post_pcre_rss_peak_kb"] is None:
@@ -460,6 +801,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, default=Path(resources.RESOURCE_PATH))
     parser.add_argument("--phase-file", type=Path)
     parser.add_argument("--process-log", type=Path)
+    parser.add_argument("--sample-log", type=Path)
     parser.add_argument("--sample-interval-ms", type=int, default=100)
     args = parser.parse_args(option_argv)
     if args.sample_interval_ms < 10 or args.sample_interval_ms > 10000:

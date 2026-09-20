@@ -9791,6 +9791,7 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
     cl_verdict_t verdict_at_this_level = CL_VERDICT_NOTHING_FOUND;
 
     bool cache_enabled              = true;
+    bool raw_scan_completed         = false;
     cli_file_t dettype              = CL_TYPE_ANY;
     uint8_t typercg                 = 1;
     bitset_t *old_hook_lsig_matches = NULL;
@@ -10083,14 +10084,15 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         if (cli_scan_result_should_halt(ctx, ret, &status)) {
             goto done;
         }
+        raw_scan_completed = true;
     }
 
     /*
-     * Run the file type parsers that we normally use before the raw scan.
+     * Run the file type parsers that we normally use before the outer raw
+     * scan. The R13 deep-parse boundary is intentionally emitted later,
+     * immediately before the post-raw parser dispatch, so it cannot be
+     * mistaken for a parser phase that precedes full-subject PCRE.
      */
-    cli_dbgmsg("largefile_pcre_phase: phase=deep-parse object_id=%zu recursion_level=%u subject_released=%u\n",
-               ctx->recursion_stack[ctx->recursion_level].object_id,
-               ctx->recursion_level, ctx->largefile_pcre_subject_released ? 1U : 0U);
     perf_nested_start(ctx, PERFT_CONTAINER, PERFT_SCAN);
     switch (type) {
         case CL_TYPE_IGNORED:
@@ -10603,11 +10605,16 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
             goto done;
         }
         status = cli_merge_scan_status(status, normalized_status);
+        raw_scan_completed = true;
     }
 
     /*
-     * Now run the rest of the file type parsers.
+     * Now run the rest of the file type parsers. This is the application
+     * boundary used by the R13 proof: the full-subject PCRE path has already
+     * released its subject before this dispatch begins.
      */
+    largefile_pcre_phase_dbg(ctx, "deep-parse", 0,
+                             ctx->largefile_pcre_subject_released);
     switch (type) {
         /* bytecode hooks triggered by a lsig must be a hook
          * called from one of the functions here */
@@ -10666,7 +10673,12 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
             break;
 
         case CL_TYPE_BINARY_DATA:
-            ret = cli_scan_fmap(ctx, CL_TYPE_OTHER, false, NULL, AC_SCAN_VIR, NULL);
+            /* The outer raw pass already covered this unnormalized layer.
+             * Repeating the generic fmap scan would run full-subject PCRE a
+             * second time after the phase boundary and contaminate the deep-
+             * parse resource interval with another PCRE allocation. */
+            if (!raw_scan_completed)
+                ret = cli_scan_fmap(ctx, CL_TYPE_OTHER, false, NULL, AC_SCAN_VIR, NULL);
             break;
 
         case CL_TYPE_PDF: /* FIXMELIMITS: pdf should be an archive! */
