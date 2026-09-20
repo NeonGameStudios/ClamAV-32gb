@@ -140,6 +140,17 @@ was stopped. Full matrix, full-size, sanitizer, fanotify, milter-space, and
 release gates remain open; no capability was promoted. Receipt:
 `docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.
 
+R03/R04 bounded Sonic1 control recheck (2026-09-20): the current Git-less
+source manifest was regenerated as
+`810005372ba60a644e52a462a4f0a545a8e9dfa018f308fc7120a2afe26a9c09` against
+container `53f6ca8d4a29f9ca60370197fb1552196aa908fb4ec4714a28b54f92edbd15a9`.
+The acceptance schema/resource/producers/report-protocol group passed 5/5 in
+0.62 seconds. The on-access/clamd admission and queue, clamscan admission, and
+independent ZIP late-member group passed 5/5 in 0.47 seconds. No capability
+was promoted; materialized full-size, production-database, sanitizer,
+fanotify, milter-space, and release gates remain open. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-86693659-2026-09-19.md`.
+
 R03 aggregate fixture accounting follow-up (2026-09-20): the generated
 OneNote late-child fixture is now excluded from the ordinary C and Python
 `clam*` test corpora, its size check is bound to the former 256 MiB OneNote
