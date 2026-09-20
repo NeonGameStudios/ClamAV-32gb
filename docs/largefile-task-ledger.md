@@ -5632,3 +5632,13 @@ capability was promoted, and certified Release/sanitizer, full-size,
 production-CVD/service, resource/fanotify, independent format-8, and final
 R11–R15 evidence remain open. Receipt:
 `docs/largefile-task-receipts/R03-sonic1-current-source-provenance-2026-09-19.md`.
+
+R03 exact current-source Sonic1 Release validation (2026-09-20): the Release
+tree was corrected to use `ENABLE_STATIC_LIB=ON` so internal-symbol tests link,
+then the complete default target built successfully with `-j1`. The full
+registered CTest suite passed 31/31 in 220.08 seconds, including all 24
+large-file/release-control tests and the aggregate application, service, milter,
+resource, source-guard, and acceptance checks. This is Release integration
+evidence only; sanitizer, full-size, production-CVD/service, resource/fanotify,
+independent format-8, and final R11–R15 evidence remain open. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-current-source-release-ctest-2026-09-20.md`.
