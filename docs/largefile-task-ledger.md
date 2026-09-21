@@ -6296,3 +6296,14 @@ recorded stale-container `clambc` smoke remains development-only and lacks
 LLVM/JIT. No software was installed, downloaded, transferred, or promoted.
 Receipt:
 `docs/largefile-task-receipts/R07-sonic1-format8-availability-2026-09-20.md`.
+
+R05 boundary corpus revalidation (2026-09-20): the current-source
+`largefile_boundary_corpus.sh` generated and independently checked all 11
+reviewed boundary rows, including exact 32-GiB head and tail markers. Both
+32-GiB files reported the exact 34,359,738,368-byte logical size while using
+only 32 filesystem blocks, confirming sparse—not materialized—controls. The
+manifest SHA-256 was
+`2e0897e26f19380b3fddc7bd4af704d770904c94d08bbb43e622f83cc598b90a`.
+This revalidates the R05 oracle tooling but does not claim full traversal or
+qualification. The temporary corpus was removed after verification. Receipt:
+`docs/largefile-task-receipts/R05-boundary-corpus-revalidation-2026-09-20.md`.
