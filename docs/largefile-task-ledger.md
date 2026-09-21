@@ -6251,3 +6251,13 @@ promote any capability. Current-source staging, parser-family breadth,
 sanitizer parity, production-CVD/service, fanotify/on-access, ingress parity,
 and final readiness remain open. Receipt:
 `docs/largefile-task-receipts/R13-sonic1-materialized-clean-deep-parse-resource-2026-09-20.md`.
+
+R01/R04/R13 local verifier revalidation (2026-09-20): after the new Sonic1
+materialized PCRE receipts were recorded, the current candidate's source
+guards, 604-entry capability/release-readiness controls, and complete local
+tool suite were rerun. The combined suite passed 231 tests with two expected
+Linux-only filesystem-control skips and exited 0; the resource-capture
+phase-watch control also retained its expected five-sample success. This
+revalidates the fail-closed evidence machinery but provides no certified
+Linux x86-64 runtime evidence and promotes no capability. Receipt:
+`docs/largefile-task-receipts/R01-R04-R13-local-verifier-revalidation-2026-09-20.md`.
