@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import largefile_acceptance_cases as acceptance_cases
@@ -73,10 +74,35 @@ def read_status(repo: Path, test_manifest: Path | None = None) -> dict:
 
 def head_revision(repo: Path) -> str:
     result = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
-                            capture_output=True, text=True, check=True)
-    revision = result.stdout.strip()
-    if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", revision):
-        raise RuntimeError("git returned an invalid HEAD revision")
+                            capture_output=True, text=True, check=False)
+    if result.returncode == 0:
+        revision = result.stdout.strip()
+        if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", revision):
+            raise RuntimeError("git returned an invalid HEAD revision")
+        return revision
+
+    # CMake deliberately supports Git-less source snapshots by binding the
+    # build to the SHA-256 of largefile_source_manifest.sh's deterministic
+    # content manifest. Keep this dashboard/provenance helper on the same
+    # identity path so source-level guards also work after archive extraction.
+    manifest_tool = repo / "tools" / "largefile_source_manifest.sh"
+    if not manifest_tool.is_file():
+        detail = result.stderr.strip() or "git revision unavailable"
+        raise RuntimeError(f"unable to identify source revision: {detail}")
+    with tempfile.TemporaryDirectory(prefix="largefile-status-manifest-") as directory:
+        manifest = Path(directory) / "source-manifest.txt"
+        manifest_result = subprocess.run(
+            ["sh", str(manifest_tool), str(repo), str(manifest)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if manifest_result.returncode != 0:
+            detail = manifest_result.stderr.strip() or "source manifest generation failed"
+            raise RuntimeError(detail)
+        revision = hashlib.sha256(manifest.read_bytes()).hexdigest()
+    if not re.fullmatch(r"[0-9a-f]{64}", revision):
+        raise RuntimeError("source manifest returned an invalid revision")
     return revision
 
 

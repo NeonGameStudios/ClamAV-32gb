@@ -183,6 +183,24 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(provenance["snapshot_sha256"], snapshot.hashlib.sha256(text.encode()).hexdigest())
         json.dumps(provenance)
 
+    def test_gitless_revision_uses_content_manifest(self):
+        repo = self.root / "gitless-revision"
+        (repo / "tools").mkdir(parents=True)
+        shutil.copyfile(
+            SOURCE_REPO / "tools" / "largefile_source_manifest.sh",
+            repo / "tools" / "largefile_source_manifest.sh",
+        )
+        (repo / "runtime.c").write_text("int runtime = 1;\n", encoding="utf-8")
+        manifest = self.root / "expected-source-manifest.txt"
+        subprocess.run(
+            ["sh", "tools/largefile_source_manifest.sh", str(repo), str(manifest)],
+            cwd=SOURCE_REPO,
+            check=True,
+        )
+
+        expected = snapshot.hashlib.sha256(manifest.read_bytes()).hexdigest()
+        self.assertEqual(snapshot.head_revision(repo), expected)
+
     def test_generated_metadata_is_not_source_manifest_identity(self):
         """Promotion metadata must not create a source-manifest fixed point."""
         repo = self.root / "manifest-repo"
