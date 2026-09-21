@@ -6235,3 +6235,19 @@ diagnostic, but the positive detection ends before deep parsing; Sonic1 also
 has only 24 GiB free disk and active host swap with approximately 1.97 GiB in
 use, so no capability was promoted and R05/R11/R13/R15 remain open. Receipt:
 `docs/largefile-task-receipts/R13-sonic1-materialized-exact-pcre-resource-2026-09-20.md`.
+
+R13 Sonic1 fully materialized exact-size clean deep-parse diagnostic
+(2026-09-20): the clean counterpart ran against a fully allocated exact
+32-GiB regular file in `tmpfs:/dev/shm`, verified no holes and the `CLEANTAG`
+suffix, returned `completion=COMPLETE`, and read `32.00 GiB` in 178.360
+seconds. Its phase sequence was `pcre-start` -> `post-pcre` -> `deep-parse`
+-> `complete`, with one parser operation and one detector operation. The
+independent process-tree sidecar retained 1,498 samples with RSS
+`33638244 KiB`, PSS `33635337 KiB`, VAS `33691832 KiB`, zero process swap,
+zero temporary bytes, and zero OOM events/kills; the cgroup OOM count did not
+change. This proves one full-size RAM-backed deep-parse control but does not
+satisfy disk-backed staging or host-wide no-swap requirements, and it does not
+promote any capability. Current-source staging, parser-family breadth,
+sanitizer parity, production-CVD/service, fanotify/on-access, ingress parity,
+and final readiness remain open. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-materialized-clean-deep-parse-resource-2026-09-20.md`.

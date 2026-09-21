@@ -151,6 +151,30 @@ materialized-input, deep-parse, production-CVD/service, sanitizer, fanotify,
 or final release gates. Receipt:
 `docs/largefile-task-receipts/R13-sonic1-exact-size-pcre-resource-2026-09-20.md`.
 
+## Fully materialized exact-size clean deep-parse diagnostic
+
+Sonic1 then ran the clean control against a fully allocated exact 32-GiB
+regular file in the RAM-backed `tmpfs:/dev/shm` path. The fixture was verified
+at `34359738368` logical bytes with no reported holes and the retained
+`CLEANTAG` suffix. The Release scan completed cleanly in 178.360 seconds,
+read `32.00 GiB`, and reported `completion=COMPLETE`.
+
+This run reached the intended phase sequence
+`pcre-start` -> `post-pcre` -> `deep-parse` -> `complete`, with one parser
+operation and one detector operation. The resource sidecar retained 1,498
+process-tree samples: RSS `33638244 KiB`, PSS `33635337 KiB`, VAS
+`33691832 KiB`, zero process swap, zero temporary bytes, zero OOM events/kills,
+PCRE RSS `33638208 KiB`, and post-PCRE RSS `83812 KiB`. The cgroup OOM count
+was unchanged during the run.
+
+This is the first Sonic1 full-size materialized control in this sequence to
+prove a real deep-parse phase, but it is still one diagnostic slice. The
+RAM-backed file does not satisfy the roadmap's disk-backed staging requirement,
+and Sonic1's active host swap means the no-swap gate remains open. It does not
+promote any capability or clear the parser-family, current-source,
+sanitizer, service/CVD, fanotify, ingress, or final readiness gates. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-materialized-clean-deep-parse-resource-2026-09-20.md`.
+
 ## Fully materialized exact-size PCRE diagnostic
 
 After recovering temporary disk headroom, Sonic1 ran the same positive PCRE
