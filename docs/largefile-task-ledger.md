@@ -6261,3 +6261,16 @@ phase-watch control also retained its expected five-sample success. This
 revalidates the fail-closed evidence machinery but provides no certified
 Linux x86-64 runtime evidence and promotes no capability. Receipt:
 `docs/largefile-task-receipts/R01-R04-R13-local-verifier-revalidation-2026-09-20.md`.
+
+R06 OneNote spool owner-identity revalidation (2026-09-20): the current
+vendored parser's spool replacement test exposed a Linux temporary-filesystem
+inode-reuse gap in the prior pathname identity check. `ReaderSpool` now keeps
+an owner file handle after closing the materialization writer, and uses that
+live inode for reader validation and cleanup; the prior stored identity remains
+the fallback for synthetic fixtures. The disposable pinned Rust image passed
+85/85 unit tests and 6/6 integration tests offline, including replacement
+regular-file, FIFO, symlink, budget, cleanup, and nested-reader cases. This
+is ARM64 parser-library development evidence only; no capability was promoted
+and full ClamAV-linked, certified x86-64, materialized, sanitizer, service,
+production-CVD, fanotify, and release gates remain open. Receipt:
+`docs/largefile-task-receipts/R06-onenote-spool-owner-identity-2026-09-20.md`.

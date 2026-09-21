@@ -90,6 +90,8 @@ pub(crate) struct ReaderSpool {
     budget: Option<Rc<dyn BlobSpoolBudget>>,
     #[cfg(unix)]
     owner_identity: (u64, u64),
+    #[cfg(unix)]
+    owner_file: Option<File>,
 }
 
 impl ReaderSpool {
@@ -123,6 +125,13 @@ impl ReaderSpool {
                         let metadata = file.metadata()?;
                         (metadata.dev() as u64, metadata.ino() as u64)
                     };
+                    let owner_file = match file.try_clone() {
+                        Ok(owner_file) => owner_file,
+                        Err(error) => {
+                            let _ = std::fs::remove_file(&path);
+                            return Err(error);
+                        }
+                    };
 
                     return Ok(Self {
                         file: Some(file),
@@ -131,6 +140,8 @@ impl ReaderSpool {
                         budget,
                         #[cfg(unix)]
                         owner_identity,
+                        #[cfg(unix)]
+                        owner_file: Some(owner_file),
                     });
                 }
                 Err(error) if error.kind() == io::ErrorKind::AlreadyExists => continue,
@@ -161,8 +172,9 @@ impl ReaderSpool {
             use std::os::unix::fs::MetadataExt;
 
             let reader_metadata = file.metadata()?;
-            if self.owner_identity.0 != reader_metadata.dev() as u64
-                || self.owner_identity.1 != reader_metadata.ino() as u64
+            let (owner_dev, owner_ino) = self.owner_file_identity()?;
+            if owner_dev != reader_metadata.dev() as u64
+                || owner_ino != reader_metadata.ino() as u64
             {
                 return Err(io::Error::new(
                     io::ErrorKind::PermissionDenied,
@@ -183,8 +195,21 @@ impl ReaderSpool {
         use std::os::unix::fs::MetadataExt;
 
         let path_metadata = std::fs::symlink_metadata(&self.path)?;
-        Ok(self.owner_identity.0 == path_metadata.dev() as u64
-            && self.owner_identity.1 == path_metadata.ino() as u64)
+        let (owner_dev, owner_ino) = self.owner_file_identity()?;
+        Ok(owner_dev == path_metadata.dev() as u64 && owner_ino == path_metadata.ino() as u64)
+    }
+
+    #[cfg(unix)]
+    fn owner_file_identity(&self) -> io::Result<(u64, u64)> {
+        use std::os::unix::fs::MetadataExt;
+
+        match &self.owner_file {
+            Some(owner_file) => {
+                let metadata = owner_file.metadata()?;
+                Ok((metadata.dev() as u64, metadata.ino() as u64))
+            }
+            None => Ok(self.owner_identity),
+        }
     }
 
     fn note_cleanup_failure(&self) {
@@ -502,9 +527,9 @@ impl<'a> Reader<'a> {
             remaining -= bytes.len() as u64;
         }
 
-        // The parser may retain many blob spools in its object graph. Keep
-        // only the path and ownership identity after materialization so the
-        // completed spools do not exhaust the process file-descriptor limit.
+        // Close the writer after materialization. Retain the owner handle so
+        // unlink/recreate cannot recycle the original inode and bypass the
+        // replacement check.
         spool.file.take();
 
         Ok(ReaderBlob::Spool(spool))
@@ -1056,6 +1081,7 @@ mod tests {
             length: 0,
             budget: Some(budget.clone()),
             owner_identity: (0, 0),
+            owner_file: None,
         });
 
         assert_eq!(budget.cleanup_failures.get(), 1);

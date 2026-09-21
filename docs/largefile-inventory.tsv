@@ -39664,26 +39664,26 @@ offset-size-arithmetic	libclamav_rust/onenote_parser/src/onestore/types/prop_set
 offset-size-arithmetic	libclamav_rust/onenote_parser/src/onestore/types/prop_set.rs	21	    pub(crate) fn parse_at_depth(reader: Reader, depth: usize) -> Result<PropertySet> {
 offset-size-arithmetic	libclamav_rust/onenote_parser/src/onestore/types/property.rs	165	    fn parse_property_values(reader: Reader, depth: usize) -> Result<PropertyValue> {
 offset-size-arithmetic	libclamav_rust/onenote_parser/src/onestore/types/property.rs	189	/// [\[MS-ONESTORE\] 2.6.6]: https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-onestore/17d8c39e-6cc2-4fcd-8d10-aee950fd0ab2
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	1010	            .read_blob((payload.len() + 1) as u64)
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	1022	                    .starts_with(&format!("onenote-parser-{}-", std::process::id()))
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	1051	        let oversized_path = PathBuf::from(format!("/tmp/{}", "x".repeat(5000)));
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	1193	        let count = (Reader::MAX_COLLECTION_BYTES / size_of::<u64>() + 1) as u64;
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	177	    pub(crate) fn length(&self) -> u64 {
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	234	fn checked_reader_end(start: usize, length: usize, max: usize) -> Result<usize> {
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	255	    pub(crate) const REFILL_SIZE: usize = 64 * 1024;
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	256	    pub(crate) const MAX_MATERIALIZED_BYTES: usize = 256 * 1024 * 1024;
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	257	    pub(crate) const MAX_COLLECTION_BYTES: usize = 64 * 1024 * 1024;
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	318	    fn ensure(&mut self, cnt: usize) -> Result<()> {
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	379	    pub(crate) fn read(&mut self, cnt: usize) -> Result<&[u8]> {
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	397	    pub(crate) fn read_vec(&mut self, cnt: usize) -> Result<Vec<u8>> {
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	432	            let read_len = (cnt - data.len()).min(Self::REFILL_SIZE);
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	1035	            .read_blob((payload.len() + 1) as u64)
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	1047	                    .starts_with(&format!("onenote-parser-{}-", std::process::id()))
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	1076	        let oversized_path = PathBuf::from(format!("/tmp/{}", "x".repeat(5000)));
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	1219	        let count = (Reader::MAX_COLLECTION_BYTES / size_of::<u64>() + 1) as u64;
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	189	    pub(crate) fn length(&self) -> u64 {
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	259	fn checked_reader_end(start: usize, length: usize, max: usize) -> Result<usize> {
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	280	    pub(crate) const REFILL_SIZE: usize = 64 * 1024;
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	281	    pub(crate) const MAX_MATERIALIZED_BYTES: usize = 256 * 1024 * 1024;
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	282	    pub(crate) const MAX_COLLECTION_BYTES: usize = 64 * 1024 * 1024;
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	343	    fn ensure(&mut self, cnt: usize) -> Result<()> {
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	404	    pub(crate) fn read(&mut self, cnt: usize) -> Result<&[u8]> {
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	422	    pub(crate) fn read_vec(&mut self, cnt: usize) -> Result<Vec<u8>> {
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	457	            let read_len = (cnt - data.len()).min(Self::REFILL_SIZE);
 offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	48	    pub(crate) fn len(&self) -> u64 {
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	513	    /// Check a count before using it to size a parser-owned collection.
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	535	    pub(crate) fn reserve_vec<T>(&self, values: &mut Vec<T>, count: usize) -> Result<()> {
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	572	    pub(crate) fn check_recursion_depth(depth: usize) -> Result<()> {
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	584	    pub(crate) fn peek(&mut self, cnt: usize) -> Result<&[u8]> {
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	602	    pub(crate) fn advance(&mut self, cnt: usize) -> Result<()> {
-offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	640	pub(crate) fn reserve_collection<T>(values: &mut Vec<T>, additional: usize) -> Result<()> {
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	538	    /// Check a count before using it to size a parser-owned collection.
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	560	    pub(crate) fn reserve_vec<T>(&self, values: &mut Vec<T>, count: usize) -> Result<()> {
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	597	    pub(crate) fn check_recursion_depth(depth: usize) -> Result<()> {
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	609	    pub(crate) fn peek(&mut self, cnt: usize) -> Result<&[u8]> {
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	627	    pub(crate) fn advance(&mut self, cnt: usize) -> Result<()> {
+offset-size-arithmetic	libclamav_rust/onenote_parser/src/reader.rs	665	pub(crate) fn reserve_collection<T>(values: &mut Vec<T>, additional: usize) -> Result<()> {
 offset-size-arithmetic	libclamav_rust/onenote_parser/src/shared/multi_byte.rs	40	    let length = usize::try_from(length >> 1).map_err(|_| ErrorKind::CollectionLimit {
 offset-size-arithmetic	libclamav_rust/onenote_parser/src/utils.rs	14	fn utf16_to_string_bounded(data: &[u8], max_bytes: usize) -> Result<String> {
 offset-size-arithmetic	libclamav_rust/onenote_parser/src/utils.rs	23	    reserve_collection(&mut units, data.len() / 2)?;
