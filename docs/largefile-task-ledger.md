@@ -6307,3 +6307,13 @@ manifest SHA-256 was
 This revalidates the R05 oracle tooling but does not claim full traversal or
 qualification. The temporary corpus was removed after verification. Receipt:
 `docs/largefile-task-receipts/R05-boundary-corpus-revalidation-2026-09-20.md`.
+
+R03 Sonic1 transfer reconciliation (2026-09-20): read-only reconciliation
+found 173 historical host/profile transfers, including some newly completed
+small legacy uploads, but no complete checksum-bound transfer of the current
+candidate. The only candidate-looking item is an older 2,131,060-byte patch
+in `ready_to_verify` without an expected SHA-256; its companion failed before
+write, and an interrupted `matcher.c` upload targets the stale September 15
+tree. None was applied or resumed. Small-transfer success therefore does not
+clear current-source staging or qualify Sonic1. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-transfer-reconciliation-2026-09-20.md`.
