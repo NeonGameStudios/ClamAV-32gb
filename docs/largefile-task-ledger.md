@@ -6220,3 +6220,18 @@ the complete native dependencies and Rust/Rustc/Cargo 1.97.1, but only against
 the stale dirty source mount; current-source qualification remains blocked.
 No software was installed or downloaded. Receipt:
 `docs/largefile-task-receipts/R03-local-build-boundary-2026-09-20.md`.
+
+R13 Sonic1 fully materialized exact-size PCRE resource diagnostic
+(2026-09-20): a current-source-bound Release `clamscan` read and matched an
+exact fully allocated 32-GiB regular file. The report recorded
+`DETECTION_TERMINATED`, `root_size=logical_bytes=contiguous_bytes=34359738368`,
+`Data read: 32.00 GiB`, and the expected `PcreTail.UNOFFICIAL` alert. The
+independent process-tree recorder retained 1,573 samples with RSS
+`33641056 KiB`, PSS `33638056 KiB`, VAS `33691832 KiB`, zero process swap,
+zero temporary bytes, zero OOM events/kills, PCRE RSS `33641056 KiB`, and
+post-PCRE RSS `86624 KiB`. The fully materialized allocation and evidence
+hashes are retained in the receipt. This is stronger than the sparse PCRE
+diagnostic, but the positive detection ends before deep parsing; Sonic1 also
+has only 24 GiB free disk and active host swap with approximately 1.97 GiB in
+use, so no capability was promoted and R05/R11/R13/R15 remain open. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-materialized-exact-pcre-resource-2026-09-20.md`.

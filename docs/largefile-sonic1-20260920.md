@@ -150,3 +150,22 @@ parse phase. It therefore does not promote `matcher:pcre` or clear the
 materialized-input, deep-parse, production-CVD/service, sanitizer, fanotify,
 or final release gates. Receipt:
 `docs/largefile-task-receipts/R13-sonic1-exact-size-pcre-resource-2026-09-20.md`.
+
+## Fully materialized exact-size PCRE diagnostic
+
+After recovering temporary disk headroom, Sonic1 ran the same positive PCRE
+control against a fully allocated exact 32-GiB regular file. The fixture was
+verified at `34359738368` logical bytes and `34359779328` allocated bytes,
+with `SEEK_HOLE` at EOF and the retained `TAILMARK` suffix. The Release scan
+read `32.00 GiB` in 190.732 seconds and reported the expected
+`PcreTail.UNOFFICIAL` detection with `DETECTION_TERMINATED`.
+
+The resource sidecar retained 1,573 process-tree samples: RSS
+`33641056 KiB`, PSS `33638056 KiB`, VAS `33691832 KiB`, PCRE RSS
+`33641056 KiB`, post-PCRE RSS `86624 KiB`, zero process swap, zero temporary
+bytes, and zero OOM events/kills. This is valid materialized-input evidence,
+but it still stops before deep parsing and does not qualify the matcher or the
+overall matrix. Sonic1's host has 24 GiB free disk and an active 8-GiB swap
+device with approximately 1.97 GiB used, so the no-swap and 68-GiB staging
+release prerequisites remain unsatisfied. Receipt:
+`docs/largefile-task-receipts/R13-sonic1-materialized-exact-pcre-resource-2026-09-20.md`.
