@@ -6286,3 +6286,13 @@ trees, and the MCP current-source upload remains blocked by the previously
 recorded `file_write_limit_exceeded` lifecycle boundary. No capability was
 promoted. Receipt:
 `docs/largefile-task-receipts/R03-sonic1-no-swap-runner-prep-2026-09-20.md`.
+
+R07 Sonic1 format-8 availability audit (2026-09-20): a fresh read-only host
+inventory found no `clang`, `gcc`, `clambc`, or `llvm-link`, and no independent
+`.cbc`, `.bc`, `.ll`, or format-8 module under the bounded temporary-tree
+search. Python is present, but it cannot supply the required compatible
+format-8 compiler or the interpreter-plus-JIT artifact. The previously
+recorded stale-container `clambc` smoke remains development-only and lacks
+LLVM/JIT. No software was installed, downloaded, transferred, or promoted.
+Receipt:
+`docs/largefile-task-receipts/R07-sonic1-format8-availability-2026-09-20.md`.
