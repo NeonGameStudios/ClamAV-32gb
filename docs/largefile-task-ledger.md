@@ -6274,3 +6274,15 @@ is ARM64 parser-library development evidence only; no capability was promoted
 and full ClamAV-linked, certified x86-64, materialized, sanitizer, service,
 production-CVD, fanotify, and release gates remain open. Receipt:
 `docs/largefile-task-receipts/R06-onenote-spool-owner-identity-2026-09-20.md`.
+
+R03 Sonic1 no-swap runner preparation (2026-09-20): using the authorized
+`sonic1-camera-key` profile, the runner was verified as Linux x86-64 with 12
+CPUs, approximately 58 GiB available RAM, and approximately 88 GiB free disk.
+The active 8-GiB `/swap.img` had approximately 2 GiB in use; `swapoff
+/swap.img` completed with exit 0, and fresh checks reported zero configured or
+used swap. This clears the host no-swap prerequisite but does not qualify the
+candidate: the available Docker containers still bind stale or damaged source
+trees, and the MCP current-source upload remains blocked by the previously
+recorded `file_write_limit_exceeded` lifecycle boundary. No capability was
+promoted. Receipt:
+`docs/largefile-task-receipts/R03-sonic1-no-swap-runner-prep-2026-09-20.md`.
