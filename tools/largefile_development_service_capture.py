@@ -59,6 +59,7 @@ DETECTION_SIGNATURE = "LargeFile.R04.Service.Detection"
 DETECTION_MARKER = b"SERVICE-R04-DIRECT-DETECTION"
 DETECTION_PREFIX = b"service-r04-prefix:"
 DEVELOPMENT_LOGICAL_SCAN_LIMIT = "64G"
+UNIX_SOCKET_PATH_BYTES = 108 if sys.platform.startswith("linux") else 104
 REPORT_NUMERIC_FIELDS = (
     "logical_bytes", "matcher_bytes", "contiguous_bytes", "temporary_bytes",
     "files_scanned", "max_recursion_depth", "elapsed_ms", "parser_operations",
@@ -68,6 +69,18 @@ REPORT_NUMERIC_FIELDS = (
 
 def fail(message: str) -> None:
     raise ValueError(message)
+
+
+def validate_socket_path(path: Path) -> None:
+    """Reject a socket name that bind(2) would silently truncate."""
+    encoded = os.fsencode(path)
+    if not path.is_absolute() or b"\0" in encoded or \
+            len(encoded) >= UNIX_SOCKET_PATH_BYTES:
+        fail(
+            f"private service AF_UNIX socket path is too long "
+            f"({len(encoded)} bytes; maximum {UNIX_SOCKET_PATH_BYTES - 1}); "
+            "use a shorter disk-backed TMPDIR"
+        )
 
 
 def resolve_cvd_certs_dir(source_root: Path, supplied: Path | None) -> Path:
@@ -221,6 +234,7 @@ def start_daemon(
     pid_path: Path,
     log_path: Path,
 ) -> subprocess.Popen:
+    validate_socket_path(socket_path)
     with log_path.open("w", encoding="utf-8") as log:
         process = subprocess.Popen(
             [str(clamd), f"--config-file={config}"],
@@ -504,6 +518,9 @@ def make_record(
         "reason": report.get("reason") or f"structured report {completion}",
         "alert_signature": signature,
         "alert_offset": offset,
+        "alert_offset_scope": "root-input" if offset != "-" else "none",
+        "alert_offset_source": "structured-report" if offset != "-" else "none",
+        "alert_offset_evidence": report_rel if offset != "-" else "-",
         **numeric,
         "sanitizer": "development",
         "resource_phase": (
@@ -598,7 +615,8 @@ def capture(
     build_hash = sha256(build_identity)
     del source_hash, build_hash
     records: list[dict[str, str]] = []
-    native_temp = Path(tempfile.mkdtemp(prefix="clamav-r04-service-"))
+    # AF_UNIX sun_path is short; preserve room for clamd-{outcome}.sock.
+    native_temp = Path(tempfile.mkdtemp(prefix="r04-"))
     try:
         groups = (
             ("detection", detection_fixture, detection_db_src, "CL_TYPE_TEXT_ASCII", False),

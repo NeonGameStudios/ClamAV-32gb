@@ -2948,6 +2948,7 @@ static void assert_library_exact_edge_result(
     const char *api,
     uint64_t file_size,
     uint64_t marker_offset,
+    size_t marker_size,
     cl_error_t status,
     cl_verdict_t verdict,
     uint64_t scanned,
@@ -2958,6 +2959,9 @@ static void assert_library_exact_edge_result(
     cl_scan_report_limits_t limits;
     cl_scan_completion_t completion;
     cl_error_t report_status;
+    uint64_t alert_offset = 0;
+    bool alert_offset_present = false;
+    const char *file_type = NULL;
 
     /* The current public *_ex2 implementation preserves CL_VIRUS for a
      * strong indicator. The separate verdict/report fields remain the
@@ -2974,10 +2978,18 @@ static void assert_library_exact_edge_result(
     ck_assert_int_eq(completion, CL_SCAN_COMPLETION_DETECTION_TERMINATED);
     ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
     ck_assert_int_eq(cl_scan_report_get_limits(report, &limits), CL_SUCCESS);
+    ck_assert_int_eq(cl_scan_report_get_last_alert_offset(
+                         report, &alert_offset, &alert_offset_present),
+                     CL_SUCCESS);
+    ck_assert(alert_offset_present);
+    ck_assert_uint_eq(alert_offset, marker_offset);
+    ck_assert_int_eq(cl_scan_report_get_file_type(report, &file_type), CL_SUCCESS);
+    ck_assert_ptr_nonnull(file_type);
+    ck_assert_str_eq(file_type, "CL_TYPE_BINARY_DATA");
     ck_assert_uint_eq(metrics.root_size, file_size);
     ck_assert_uint_ge(metrics.matcher_bytes, file_size);
-    ck_assert_uint_ge(scanned, marker_offset + sizeof("CLAMAV-LF-32G-EDGE") - 1);
-    ck_assert_msg(metrics.logical_bytes >= marker_offset + sizeof("CLAMAV-LF-32G-EDGE") - 1,
+    ck_assert_uint_ge(scanned, marker_offset + marker_size);
+    ck_assert_msg(metrics.logical_bytes >= marker_offset + marker_size,
                   "%s stopped before the exact-tail marker: " STDu64,
                   api,
                   metrics.logical_bytes);
@@ -2991,10 +3003,10 @@ static void assert_library_exact_edge_result(
 START_TEST(test_library_exact_32g_tail_detection)
 {
     static const uint64_t file_size       = UINT64_C(32) * 1024 * 1024 * 1024;
-    static const uint64_t marker_offset   = file_size - 64;
-    static const char marker[]            = "CLAMAV-LF-32G-EDGE";
+    static const char marker[]            = "EDGE-LATE-MARKER";
+    static const uint64_t marker_offset   = file_size - (sizeof(marker) - 1U);
     static const char signature[]         =
-        "LargeFile.Library.32G:0:EOF-64:434c414d41562d4c462d3332472d45444745\n";
+        "LargeFile.Library.32G:0:EOF-16:454447452d4c4154452d4d41524b4552\n";
     struct cl_engine *engine;
     struct cl_scan_options options;
     cl_scan_report_t *report = NULL;
@@ -3009,9 +3021,15 @@ START_TEST(test_library_exact_32g_tail_detection)
     int fd = -1;
     int sigfd = -1;
     cl_fmap_t *map = NULL;
+    struct stat fixture_stat;
+    const char *fixture_path;
+    char observed_marker[sizeof(marker) - 1];
 
     ck_assert_msg(getenv("CLAMAV_LARGEFILE_QUALIFY") != NULL,
                   "the exact-32-GiB test requires CLAMAV_LARGEFILE_QUALIFY=1");
+    fixture_path = getenv("CLAMAV_LARGEFILE_FIXTURE");
+    ck_assert_msg(fixture_path != NULL && fixture_path[0] == '/',
+                  "the exact-32-GiB test requires an absolute materialized fixture path");
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
 
     ck_assert_int_eq(snprintf(signature_path, sizeof(signature_path), "%s/largefile-library-edge.ndb", tmpdir),
@@ -3041,10 +3059,18 @@ START_TEST(test_library_exact_32g_tail_detection)
     ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
     ck_assert_int_eq(cli_unlink(signature_path), 0);
 
-    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
-    ck_assert_int_eq(ftruncate(fd, (off_t)file_size), 0);
-    ck_assert_int_eq(lseek(fd, (off_t)marker_offset, SEEK_SET), (off_t)marker_offset);
-    ck_assert_int_eq(write(fd, marker, sizeof(marker) - 1), (ssize_t)(sizeof(marker) - 1));
+    path = strdup(fixture_path);
+    ck_assert_ptr_nonnull(path);
+    fd = open(path, O_RDONLY | O_BINARY);
+    ck_assert_int_ge(fd, 0);
+    ck_assert_int_eq(fstat(fd, &fixture_stat), 0);
+    ck_assert_msg(S_ISREG(fixture_stat.st_mode), "qualification fixture is not a regular file");
+    ck_assert_uint_eq((uint64_t)fixture_stat.st_size, file_size);
+    ck_assert_uint_ge((uint64_t)fixture_stat.st_blocks * 512U, file_size);
+    ck_assert_uint_eq((uint64_t)lseek(fd, 0, SEEK_HOLE), file_size);
+    ck_assert_int_eq(pread(fd, observed_marker, sizeof(observed_marker), (off_t)marker_offset),
+                     (ssize_t)sizeof(observed_marker));
+    ck_assert_mem_eq(observed_marker, marker, sizeof(marker) - 1U);
     ck_assert_int_eq(close(fd), 0);
     fd = -1;
 
@@ -3054,6 +3080,7 @@ START_TEST(test_library_exact_32g_tail_detection)
                              engine, &options, NULL, NULL, NULL, NULL,
                              NULL, NULL, &report);
     assert_library_exact_edge_result("cl_scanfile_ex2", file_size, marker_offset,
+                                     sizeof(marker) - 1U,
                                      status, verdict, scanned, last_alert, report);
 
     cl_scan_report_free(report);
@@ -3070,6 +3097,7 @@ START_TEST(test_library_exact_32g_tail_detection)
     ck_assert_int_eq(close(fd), 0);
     fd = -1;
     assert_library_exact_edge_result("cl_scandesc_ex2", file_size, marker_offset,
+                                     sizeof(marker) - 1U,
                                      status, verdict, scanned, last_alert, report);
 
     cl_scan_report_free(report);
@@ -3090,11 +3118,24 @@ START_TEST(test_library_exact_32g_tail_detection)
     ck_assert_int_eq(close(fd), 0);
     fd = -1;
     assert_library_exact_edge_result("cl_scanmap_ex2", file_size, marker_offset,
+                                     sizeof(marker) - 1U,
                                      status, verdict, scanned, last_alert, report);
 
     cl_scan_report_free(report);
     cl_engine_free(engine);
-    cli_unlink(path);
+
+    fd = open(path, O_RDONLY | O_BINARY);
+    ck_assert_int_ge(fd, 0);
+    {
+        struct stat fixture_after;
+        ck_assert_int_eq(fstat(fd, &fixture_after), 0);
+        ck_assert_msg(fixture_after.st_dev == fixture_stat.st_dev &&
+                          fixture_after.st_ino == fixture_stat.st_ino &&
+                          fixture_after.st_size == fixture_stat.st_size &&
+                          fixture_after.st_mtime == fixture_stat.st_mtime,
+                      "qualification fixture identity or metadata changed during scanning");
+    }
+    ck_assert_int_eq(close(fd), 0);
     free(path);
 }
 END_TEST
@@ -3321,6 +3362,146 @@ START_TEST(test_scan_report_detection_precedes_incomplete_state)
     ck_assert_int_eq(completion, CL_SCAN_COMPLETION_DETECTION_TERMINATED);
     ck_assert_int_eq(cl_scan_report_get_verdict(report, &verdict), CL_SUCCESS);
     ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    cl_scan_report_free(report);
+}
+END_TEST
+
+START_TEST(test_scan_report_limit_heuristics_are_incomplete_not_detections)
+{
+    static const struct {
+        cl_error_t status;
+        const char *alert;
+    } limits[] = {
+        {CL_EMAXSIZE, "Heuristics.Limits.Exceeded.MaxScanSize"},
+        {CL_EMAXFILES, "Heuristics.Limits.Exceeded.MaxFiles"},
+        {CL_EMAXREC, "Heuristics.Limits.Exceeded.MaxRecursion"},
+        {CL_ETIMEOUT, "Heuristics.Limits.Exceeded.MaxScanTime"},
+    };
+    size_t i;
+
+    for (i = 0; i < sizeof(limits) / sizeof(limits[0]); i++) {
+        cl_scan_report_t *report = NULL;
+        cl_scan_completion_t completion;
+        cl_error_t report_status;
+        cl_verdict_t report_verdict;
+        cli_ctx ctx;
+
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.scan_incomplete        = true;
+        ctx.limit_exceeded         = true;
+        ctx.limit_exceeded_result  = limits[i].status;
+        ctx.scan_incomplete_reason = limits[i].alert;
+
+        ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+        ck_assert_ptr_nonnull(report);
+        cli_scan_report_finish(report, &ctx, limits[i].status,
+                               CL_VERDICT_POTENTIALLY_UNWANTED, limits[i].alert);
+        ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+        ck_assert_int_eq(completion, CL_SCAN_COMPLETION_LIMIT_INCOMPLETE);
+        ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+        ck_assert_int_eq(report_status, limits[i].status);
+        ck_assert_int_eq(cl_scan_report_get_verdict(report, &report_verdict), CL_SUCCESS);
+        ck_assert_int_eq(report_verdict, CL_VERDICT_NOTHING_FOUND);
+        cl_scan_report_free(report);
+    }
+
+    /* The direct-file size-limit path can reach report finalization with a
+     * successful legacy status and only the sticky limit context set. It
+     * must still fail closed instead of publishing the limit heuristic as a
+     * malware detection. */
+    {
+        cl_scan_report_t *report = NULL;
+        cl_scan_completion_t completion;
+        cl_error_t report_status;
+        cl_verdict_t report_verdict;
+        cli_ctx ctx;
+
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.scan_incomplete        = true;
+        ctx.limit_exceeded         = true;
+        ctx.limit_exceeded_result  = CL_EMAXSIZE;
+        ctx.scan_incomplete_reason = "Heuristics.Limits.Exceeded.MaxFileSize";
+
+        ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+        ck_assert_ptr_nonnull(report);
+        cli_scan_report_finish(report, &ctx, CL_SUCCESS,
+                               CL_VERDICT_POTENTIALLY_UNWANTED,
+                               "Heuristics.Limits.Exceeded.MaxFileSize");
+        ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+        ck_assert_int_eq(completion, CL_SCAN_COMPLETION_LIMIT_INCOMPLETE);
+        ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+        ck_assert_int_eq(report_status, CL_EMAXSIZE);
+        ck_assert_int_eq(cl_scan_report_get_verdict(report, &report_verdict), CL_SUCCESS);
+        ck_assert_int_eq(report_verdict, CL_VERDICT_NOTHING_FOUND);
+        cl_scan_report_free(report);
+    }
+}
+END_TEST
+
+START_TEST(test_scan_report_promotes_enabled_exceeds_max_detection)
+{
+    static const char limit_alert[] = "Heuristics.Limits.Exceeded.MaxFileSize";
+    cl_scan_report_t *report = NULL;
+    cl_scan_completion_t completion;
+    cl_error_t status;
+    cl_verdict_t verdict;
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.scan_incomplete        = true;
+    ctx.limit_exceeded         = true;
+    ctx.limit_exceeded_result  = CL_EMAXSIZE;
+    ctx.scan_incomplete_reason = limit_alert;
+
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+    ck_assert_ptr_nonnull(report);
+    cli_scan_report_finish(report, &ctx, CL_EMAXSIZE,
+                           CL_VERDICT_POTENTIALLY_UNWANTED, limit_alert);
+    ck_assert_int_eq(report->completion, CL_SCAN_COMPLETION_LIMIT_INCOMPLETE);
+    ck_assert(cli_scan_report_promote_exceeds_max(report, NULL, true));
+    ck_assert_int_eq(cl_scan_report_get_status(report, &status), CL_SUCCESS);
+    ck_assert_int_eq(status, CL_SUCCESS);
+    ck_assert_int_eq(cl_scan_report_get_verdict(report, &verdict), CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_POTENTIALLY_UNWANTED);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_DETECTION_TERMINATED);
+    ck_assert_str_eq(report->reason, limit_alert);
+    ck_assert_str_eq(report->last_alert, limit_alert);
+    ck_assert(!report->last_alert_offset_valid);
+    ck_assert(!cli_scan_report_promote_exceeds_max(report, limit_alert, true));
+    cl_scan_report_free(report);
+
+    report = NULL;
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+    ck_assert_ptr_nonnull(report);
+    cli_scan_report_finish(report, &ctx, CL_EMAXSIZE,
+                           CL_VERDICT_POTENTIALLY_UNWANTED, limit_alert);
+    ck_assert(!cli_scan_report_promote_exceeds_max(report, NULL, false));
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_LIMIT_INCOMPLETE);
+    ck_assert(!cli_scan_report_promote_exceeds_max(report, "Unrelated.Alert", true));
+    cl_scan_report_free(report);
+}
+END_TEST
+
+START_TEST(test_scan_report_detection_remains_authoritative_over_timeout)
+{
+    cl_scan_report_t *report = NULL;
+    cl_scan_completion_t completion;
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.scan_incomplete        = true;
+    ctx.limit_exceeded         = true;
+    ctx.limit_exceeded_result  = CL_ETIMEOUT;
+    ctx.scan_incomplete_reason = "Heuristics.Limits.Exceeded.MaxScanTime";
+
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+    ck_assert_ptr_nonnull(report);
+    cli_scan_report_finish(report, &ctx, CL_VIRUS, CL_VERDICT_POTENTIALLY_UNWANTED,
+                           "Test.PotentiallyUnwanted");
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_DETECTION_TERMINATED);
     cl_scan_report_free(report);
 }
 END_TEST
@@ -4511,10 +4692,11 @@ START_TEST(test_cl_cvdverify)
     ck_assert_msg(cvdcertsdir != NULL, "CVD_CERTS_DIR not set");
 
     // The legacy signed fixture has no TAR end-of-archive block. Its detached
-    // signature is valid, but the strict archive loader must reject it.
+    // signature and every .info-listed member are valid, so the trusted
+    // signed-official loader accepts this historical production representation.
     testfile = SRCDIR "/input/freshclam_testfiles/test-1.cvd";
     ret      = cl_cvdverify_ex(testfile, cvdcertsdir, 0);
-    ck_assert_msg(CL_EMALFDB == ret, "cl_cvdverify_ex should have rejected the truncated archive: %s -- %s", testfile, cl_strerror(ret));
+    ck_assert_msg(CL_SUCCESS == ret, "cl_cvdverify_ex should have accepted the authenticated legacy archive: %s -- %s", testfile, cl_strerror(ret));
 
     // Can't verify a cvd that doesn't exist
     testfile = SRCDIR "/input/freshclam_testfiles/test-na.cvd";
@@ -4550,6 +4732,30 @@ START_TEST(test_cl_cvdverify)
     // Now verify the modified cvd
     ret = cl_cvdverify_ex(newtestfile, cvdcertsdir, 0);
     ck_assert_msg(CL_EVERIFY == ret, "cl_cvdverify_ex should have failed for: %s -- %s", newtestfile, cl_strerror(ret));
+}
+END_TEST
+
+START_TEST(test_unsigned_cvd_load_rejects_missing_end_marker)
+{
+    const char *fixture = SRCDIR "/input/freshclam_testfiles/test-1.cvd";
+    char cud_path[PATH_MAX];
+    struct cl_engine *engine;
+    unsigned int sigs = 0;
+    cl_error_t ret;
+
+    ck_assert_int_lt(snprintf(cud_path, sizeof(cud_path), "%s/missing-end-marker.cud", tmpdir),
+                     (int)sizeof(cud_path));
+    ck_assert_int_eq(cli_filecopy(fixture, cud_path), 0);
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ret = cl_load(cud_path, engine, &sigs, CL_DB_STDOPT | CL_DB_UNSIGNED);
+    ck_assert_msg(CL_EMALFDB == ret,
+                  "unsigned CUD load should reject the missing end marker: %s -- %s",
+                  cud_path, cl_strerror(ret));
+
+    cl_engine_free(engine);
+    ck_assert_int_eq(unlink(cud_path), 0);
 }
 END_TEST
 
@@ -5971,6 +6177,92 @@ START_TEST(test_virus_indicator_append_boundaries_are_fail_visible)
     ctx.recursion_stack_size = 1;
     ctx.recursion_level      = 1;
     ck_assert_int_eq(cli_append_potentially_unwanted(&ctx, "Boundary.Test"), CL_ENULLARG);
+}
+END_TEST
+
+START_TEST(test_nested_indicator_offsets_are_root_relative_only_for_shared_fmaps)
+{
+    static const uint8_t root_input[] = "ROOT!child-data!tail";
+    static const uint8_t transformed_input[] = "child-data";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    cl_scan_report_t *report = NULL;
+    fmap_t *root_map;
+    fmap_t *child_map;
+    uint64_t match_offset = 2;
+    uint64_t alert_offset = 0;
+    bool alert_offset_present = false;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+
+    root_map = cl_fmap_open_memory(root_input, sizeof(root_input) - 1U);
+    ck_assert_ptr_nonnull(root_map);
+    child_map = fmap_duplicate(root_map, 5, sizeof(transformed_input) - 1U,
+                               "shared-backing-child");
+    ck_assert_ptr_nonnull(child_map);
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+    ck_assert_ptr_nonnull(report);
+
+    layers[0].fmap = root_map;
+    layers[1].fmap = child_map;
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    ctx.recursion_level      = 1;
+    ctx.report               = report;
+    cli_scan_report_note_match_offset(report, match_offset);
+
+    ck_assert_int_eq(cli_append_virus(&ctx, "Nested.Offset"), CL_VIRUS);
+    cli_scan_report_finish(report, &ctx, CL_VIRUS,
+                           CL_VERDICT_STRONG_INDICATOR, "Nested.Offset");
+    ck_assert_int_eq(cl_scan_report_get_last_alert_offset(
+                         report, &alert_offset, &alert_offset_present),
+                     CL_SUCCESS);
+    ck_assert(alert_offset_present);
+    ck_assert_uint_eq(alert_offset, 7);
+
+    free_test_layer_evidence(layers, 2);
+    cl_scan_report_free(report);
+    free_duplicate_fmap(child_map);
+
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    report = NULL;
+    child_map = cl_fmap_open_memory(transformed_input,
+                                    sizeof(transformed_input) - 1U);
+    ck_assert_ptr_nonnull(child_map);
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+    ck_assert_ptr_nonnull(report);
+
+    layers[0].fmap = root_map;
+    layers[1].fmap = child_map;
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    ctx.recursion_level      = 1;
+    ctx.report               = report;
+    cli_scan_report_note_match_offset(report, match_offset);
+
+    ck_assert_int_eq(cli_append_virus(&ctx, "Nested.Offset"), CL_VIRUS);
+    cli_scan_report_finish(report, &ctx, CL_VIRUS,
+                           CL_VERDICT_STRONG_INDICATOR, "Nested.Offset");
+    alert_offset_present = true;
+    ck_assert_int_eq(cl_scan_report_get_last_alert_offset(
+                         report, &alert_offset, &alert_offset_present),
+                     CL_SUCCESS);
+    ck_assert(!alert_offset_present);
+
+    free_test_layer_evidence(layers, 2);
+    cl_scan_report_free(report);
+    cl_fmap_close(child_map);
+    cl_fmap_close(root_map);
 }
 END_TEST
 
@@ -8427,6 +8719,70 @@ START_TEST(test_raw_matcher_hash_initialization_failure_is_fail_visible)
 }
 END_TEST
 #endif
+
+START_TEST(test_pe_section_table_bytes_are_not_an_overlay)
+{
+    static const uint8_t trailer[] = "appended-overlay";
+    char file_path[PATH_MAX];
+    FILE *input;
+    long file_length;
+    size_t source_length;
+    uint8_t *data;
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    struct cli_exe_info peinfo;
+    fmap_t *map;
+    size_t variant;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/clamav_hdb_scanfiles/clam.exe", OBJDIR);
+    input = fopen(file_path, "rb");
+    ck_assert_msg(input != NULL, "fopen(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(fseek(input, 0, SEEK_END), 0);
+    file_length = ftell(input);
+    ck_assert_msg(file_length > 0 && file_length < 4096,
+                  "embedded PE control has an unexpected size: %ld", file_length);
+    source_length = (size_t)file_length;
+    ck_assert_int_eq(fseek(input, 0, SEEK_SET), 0);
+    data = malloc(source_length + sizeof(trailer) - 1U);
+    ck_assert_ptr_nonnull(data);
+    ck_assert_uint_eq(fread(data, 1, source_length, input), source_length);
+    ck_assert_int_eq(fclose(input), 0);
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+
+    for (variant = 0; variant < 2; variant++) {
+        size_t total_length = source_length;
+
+        if (variant != 0) {
+            memcpy(data + source_length, trailer, sizeof(trailer) - 1U);
+            total_length += sizeof(trailer) - 1U;
+        }
+        map = cl_fmap_open_memory(data, total_length);
+        ck_assert_ptr_nonnull(map);
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.engine            = engine;
+        ctx.dconf             = engine->dconf;
+        ctx.options           = &options;
+        ctx.fmap              = map;
+        ctx.this_layer_tmpdir = tmpdir;
+        cli_exe_info_init(&peinfo, 0);
+        ck_assert_int_eq(cli_peheader(&ctx, &peinfo, CLI_PEHEADER_OPT_NONE), CL_SUCCESS);
+        ck_assert_uint_eq(peinfo.overlay_start, source_length);
+        ck_assert_uint_eq(peinfo.overlay_size, total_length - source_length);
+        ck_assert(!ctx.scan_incomplete);
+        cli_exe_info_destroy(&peinfo);
+        cl_fmap_close(map);
+    }
+
+    cl_engine_free(engine);
+    free(data);
+}
+END_TEST
 
 START_TEST(test_pe_overlay_range_preserves_native_size)
 {
@@ -50900,9 +51256,13 @@ START_TEST(test_nested_fmap_ranges_and_force_to_disk_are_fail_visible)
     struct cl_engine engine; struct cli_dconf dconf;
     struct cl_scan_options options;
     cli_scan_layer_t layer;
+    cli_scan_layer_t file_layers[2];
     cli_ctx ctx;
     cl_fmap_t *map;
+    cl_fmap_t *file_map = NULL;
     cl_error_t ret;
+    int fd = -1;
+    char *filepath = NULL;
 
     memset(&state, 0, sizeof(state));
     memset(state.data, 0x5a, sizeof(state.data));
@@ -50970,6 +51330,40 @@ START_TEST(test_nested_fmap_ranges_and_force_to_disk_are_fail_visible)
     ck_assert_uint_eq(state.successful_reads, 0);
 
     cl_fmap_close(map);
+
+    /* An fd-backed nested map is already disk-backed. FORCE_TO_DISK must not
+     * reserve and copy the same bytes to a second temporary file. */
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &filepath, &fd), CL_SUCCESS);
+    ck_assert_int_eq(cli_writen(fd, state.data, sizeof(state.data)), (ssize_t)sizeof(state.data));
+    file_map = fmap_new(fd, 0, sizeof(state.data), NULL, filepath);
+    ck_assert_ptr_nonnull(file_map);
+    ck_assert(file_map->handle_is_fd);
+
+    memset(file_layers, 0, sizeof(file_layers));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = &engine;
+    ctx.dconf                = &dconf;
+    ctx.options              = &options;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = file_layers;
+    ctx.recursion_stack_size = 2;
+    ctx.fmap                 = file_map;
+    file_layers[0].type      = CL_TYPE_ANY;
+    file_layers[0].size      = file_map->len;
+    file_layers[0].fmap      = file_map;
+
+    engine.maxtemporarysize = sizeof(state.data) - 1U;
+    ret = cli_magic_scan_nested_fmap_type(file_map, 0, sizeof(state.data), &ctx,
+                                          CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+    ck_assert_msg(ret != CL_ERESOURCE,
+                  "already file-backed nested map should not reserve a duplicate temp file (ret=%d)", ret);
+    ck_assert_uint_eq(ctx.temporary_peak, 0);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+
+    fmap_free(file_map);
+    close(fd);
+    ck_assert_int_eq(cli_unlink(filepath), 0);
+    free(filepath);
 }
 END_TEST
 
@@ -61083,6 +61477,157 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     }
     cl_fmap_close(map);
 
+    /* ECMA-167 permits an unrecorded sector to terminate a populated
+     * descriptor-sequence extent. It must still reach the child marker. */
+    {
+        size_t terminator_offset = base + (8 * VOLUME_DESCRIPTOR_SIZE);
+
+        memset(data + terminator_offset, 0, VOLUME_DESCRIPTOR_SIZE);
+        map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+        ck_assert_ptr_nonnull(map);
+        test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+        ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+        ck_assert_int_eq(ret, CL_VIRUS);
+        ck_assert_str_eq(cli_get_last_virus_str(&ctx), "Udf.File.Marker.UNOFFICIAL");
+        ck_assert(!ctx.scan_incomplete);
+        ck_assert(!map->dont_cache_flag);
+        if (layers[0].evidence != NULL) {
+            evidence_free(layers[0].evidence);
+            layers[0].evidence = NULL;
+        }
+        cl_fmap_close(map);
+
+        /* A nonzero byte makes the sector malformed, not unrecorded. */
+        data[terminator_offset + 100] = 1;
+        map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+        ck_assert_ptr_nonnull(map);
+        test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+        ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+        ck_assert_int_eq(ret, CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF descriptor tag version is unsupported");
+        ck_assert(map->dont_cache_flag);
+        cl_fmap_close(map);
+
+        memset(data + terminator_offset, 0, VOLUME_DESCRIPTOR_SIZE);
+        test_udf_put_le16(data + terminator_offset + offsetof(DescriptorTag, tagId),
+                          UDF_TEST_TERMINATING);
+        test_udf_finalize_tag(data + terminator_offset, sizeof(TerminatingDescriptor),
+                              (uint32_t)(terminator_offset / VOLUME_DESCRIPTOR_SIZE));
+    }
+
+    /* The reserve sequence is usable when the entire declared main extent is
+     * blank. Its descriptors retain their own sector locations and CRCs. */
+    {
+        static const size_t descriptor_sizes[] = {
+            sizeof(PrimaryVolumeDescriptor),
+            sizeof(ImplementationUseVolumeDescriptor),
+            sizeof(LogicalVolumeDescriptor),
+            sizeof(PartitionDescriptor),
+            sizeof(UnallocatedSpaceDescriptor),
+            sizeof(TerminatingDescriptor),
+        };
+        const uint32_t reserve_sector = 64;
+        size_t descriptor;
+
+        for (descriptor = 0; descriptor < sizeof(descriptor_sizes) / sizeof(descriptor_sizes[0]); descriptor++) {
+            uint8_t *reserve_block = data + (reserve_sector + descriptor) * VOLUME_DESCRIPTOR_SIZE;
+
+            memcpy(reserve_block, data + (19 + descriptor) * VOLUME_DESCRIPTOR_SIZE,
+                   VOLUME_DESCRIPTOR_SIZE);
+            test_udf_finalize_tag(reserve_block, descriptor_sizes[descriptor],
+                                  reserve_sector + (uint32_t)descriptor);
+        }
+        test_udf_put_le32(data + anchor_offset +
+                              offsetof(AnchorVolumeDescriptorPointer, reserveVolumeDescriptorSequence) +
+                              offsetof(extent_ad, extentLength),
+                          6U * VOLUME_DESCRIPTOR_SIZE);
+        test_udf_put_le32(data + anchor_offset +
+                              offsetof(AnchorVolumeDescriptorPointer, reserveVolumeDescriptorSequence) +
+                              offsetof(extent_ad, extentLocation),
+                          reserve_sector);
+        test_udf_finalize_tag(data + anchor_offset, sizeof(AnchorVolumeDescriptorPointer), 256);
+        memset(data + 19 * VOLUME_DESCRIPTOR_SIZE, 0, 6U * VOLUME_DESCRIPTOR_SIZE);
+
+        map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+        ck_assert_ptr_nonnull(map);
+        test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+        ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+        ck_assert_int_eq(ret, CL_VIRUS);
+        ck_assert_str_eq(cli_get_last_virus_str(&ctx), "Udf.File.Marker.UNOFFICIAL");
+        ck_assert(!ctx.scan_incomplete);
+        ck_assert(!map->dont_cache_flag);
+        if (layers[0].evidence != NULL) {
+            evidence_free(layers[0].evidence);
+            layers[0].evidence = NULL;
+        }
+        cl_fmap_close(map);
+
+        /* A confirmed main descriptor with a bad checksum must not be
+         * bypassed by the otherwise valid reserve sequence. */
+        memcpy(data + 19 * VOLUME_DESCRIPTOR_SIZE,
+               data + reserve_sector * VOLUME_DESCRIPTOR_SIZE, VOLUME_DESCRIPTOR_SIZE);
+        test_udf_finalize_tag(data + 19 * VOLUME_DESCRIPTOR_SIZE,
+                              descriptor_sizes[0], 19);
+        data[19 * VOLUME_DESCRIPTOR_SIZE + offsetof(DescriptorTag, checksum)] ^= 1U;
+        map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+        ck_assert_ptr_nonnull(map);
+        test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+        ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+        ck_assert_int_eq(ret, CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF descriptor tag checksum is invalid");
+        ck_assert(map->dont_cache_flag);
+        cl_fmap_close(map);
+
+        memset(data + 19 * VOLUME_DESCRIPTOR_SIZE, 0, VOLUME_DESCRIPTOR_SIZE);
+        memcpy(data + 20 * VOLUME_DESCRIPTOR_SIZE,
+               data + reserve_sector * VOLUME_DESCRIPTOR_SIZE, VOLUME_DESCRIPTOR_SIZE);
+        test_udf_finalize_tag(data + 20 * VOLUME_DESCRIPTOR_SIZE,
+                              descriptor_sizes[0], 20);
+        map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+        ck_assert_ptr_nonnull(map);
+        test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+        ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+        ck_assert_int_eq(ret, CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason,
+                         "UDF descriptor sequence mixes empty and populated blocks");
+        ck_assert(map->dont_cache_flag);
+        cl_fmap_close(map);
+        memset(data + 20 * VOLUME_DESCRIPTOR_SIZE, 0, VOLUME_DESCRIPTOR_SIZE);
+
+        data[reserve_sector * VOLUME_DESCRIPTOR_SIZE + offsetof(DescriptorTag, checksum)] ^= 1U;
+        map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+        ck_assert_ptr_nonnull(map);
+        test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+        ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+        ck_assert_int_eq(ret, CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF descriptor tag checksum is invalid");
+        ck_assert(map->dont_cache_flag);
+        cl_fmap_close(map);
+
+        /* Restore the main sequence for the existing anchored tree cases. */
+        for (descriptor = 0; descriptor < sizeof(descriptor_sizes) / sizeof(descriptor_sizes[0]); descriptor++) {
+            uint8_t *main_block = data + (19 + descriptor) * VOLUME_DESCRIPTOR_SIZE;
+
+            memcpy(main_block, data + (reserve_sector + descriptor) * VOLUME_DESCRIPTOR_SIZE,
+                   VOLUME_DESCRIPTOR_SIZE);
+            test_udf_finalize_tag(main_block, descriptor_sizes[descriptor],
+                                  19 + (uint32_t)descriptor);
+        }
+        memset(data + reserve_sector * VOLUME_DESCRIPTOR_SIZE, 0,
+               6U * VOLUME_DESCRIPTOR_SIZE);
+        test_udf_put_le32(data + anchor_offset +
+                              offsetof(AnchorVolumeDescriptorPointer, reserveVolumeDescriptorSequence) +
+                              offsetof(extent_ad, extentLength), 0);
+        test_udf_put_le32(data + anchor_offset +
+                              offsetof(AnchorVolumeDescriptorPointer, reserveVolumeDescriptorSequence) +
+                              offsetof(extent_ad, extentLocation), 0);
+        test_udf_finalize_tag(data + anchor_offset, sizeof(AnchorVolumeDescriptorPointer), 256);
+    }
+
     /* A modern EFE whose fixed header plus extended-attribute area exceeds
      * the logical block must fail before any variable data is consumed. */
     {
@@ -67979,6 +68524,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cvd, test_cl_load);
     tcase_add_test(tc_cvd, test_cl_load_rejects_null_arguments);
+    tcase_add_test(tc_cvd, test_unsigned_cvd_load_rejects_missing_end_marker);
     tcase_add_test(tc_cvd, test_cvd_skipped_member_is_consumed);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cvd, test_signature_database_hash_update_failure_is_fail_visible);
@@ -69259,6 +69805,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_scan_report_json_preserves_unsigned_boundaries);
     tcase_add_test(tc_cl, test_scan_report_counters_saturate);
     tcase_add_test(tc_cl, test_scan_report_detection_precedes_incomplete_state);
+    tcase_add_test(tc_cl, test_scan_report_limit_heuristics_are_incomplete_not_detections);
+    tcase_add_test(tc_cl, test_scan_report_promotes_enabled_exceeds_max_detection);
+    tcase_add_test(tc_cl, test_scan_report_detection_remains_authoritative_over_timeout);
     tcase_add_test(tc_cl, test_scan_report_unsupported_encryption_is_not_malformed);
     tcase_add_test(tc_cl, test_scan_report_unsupported_decoder_statuses_are_unsupported);
     tcase_add_test(tc_cl, test_scan_report_break_is_application_abort);
@@ -69297,6 +69846,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_alert_callback_evidence_removal_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_callback_dispatch_without_engine_is_fail_visible);
     tcase_add_test(tc_cl, test_virus_indicator_append_boundaries_are_fail_visible);
+    tcase_add_test(tc_cl, test_nested_indicator_offsets_are_root_relative_only_for_shared_fmaps);
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_cl, test_json_array_add_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_json_object_add_failure_is_fail_visible);
@@ -70126,6 +70676,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_raw_matcher_hash_initialization_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl_scan, test_pe_overlay_range_preserves_native_size);
+    tcase_add_test(tc_cl_scan, test_pe_section_table_bytes_are_not_an_overlay);
 
     suite_add_tcase(s, tc_fmap_api);
     tcase_add_test(tc_fmap_api, test_fmap_assorted_api);

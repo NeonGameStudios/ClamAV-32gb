@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -16,9 +17,15 @@ class ZipLateMemberTests(unittest.TestCase):
         self.oracle = fixture.build_oracle(self.path)
 
     def test_oracle_binds_late_member_and_marker_offset(self):
-        self.assertEqual(self.oracle["version"], 1)
+        self.assertEqual(self.oracle["version"], 2)
         self.assertEqual(self.oracle["target_member"], fixture.TARGET_MEMBER)
         self.assertGreater(self.oracle["marker_file_offset"], fixture.PREFIX_SIZE)
+        expected_target = b"T" * fixture.TARGET_PREFIX_SIZE + fixture.MARKER + b"\n"
+        self.assertEqual(self.oracle["target_member_size"], len(expected_target))
+        self.assertEqual(
+            self.oracle["target_member_md5"],
+            hashlib.md5(expected_target, usedforsecurity=False).hexdigest(),
+        )
         self.assertEqual(
             fixture.validate_oracle(self.path, json.loads(json.dumps(self.oracle))),
             self.oracle,
@@ -46,6 +53,28 @@ class ZipLateMemberTests(unittest.TestCase):
         self.assertGreater(oracle["marker_file_offset"], prefix_size)
         self.assertEqual(oracle["fixture_size"], custom.stat().st_size)
         self.assertEqual(fixture.validate_oracle(custom, oracle), oracle)
+
+    def test_exact_outer_size_accounts_for_zip64_headers_and_end_records(self):
+        outer_size = 32 * 1024 ** 3
+        prefix_size = fixture.prefix_size_for_outer_size(outer_size)
+        target_size = fixture.TARGET_PREFIX_SIZE + len(fixture.MARKER) + 1
+        self.assertEqual(prefix_size, 34_359_705_207)
+        self.assertGreaterEqual(prefix_size, fixture.UINT32_MAX)
+        self.assertEqual(
+            prefix_size + target_size
+            + fixture.LOCAL.size + len(fixture.PREFIX_MEMBER) + fixture.ZIP64_LOCAL_EXTRA_SIZE
+            + fixture.LOCAL.size + len(fixture.TARGET_MEMBER)
+            + fixture.CENTRAL.size + len(fixture.PREFIX_MEMBER)
+            + fixture.ZIP64_CENTRAL_SIZES_EXTRA_SIZE
+            + fixture.CENTRAL.size + len(fixture.TARGET_MEMBER)
+            + fixture.ZIP64_CENTRAL_OFFSET_EXTRA_SIZE
+            + fixture.ZIP64_EOCD.size + fixture.ZIP64_LOCATOR.size + fixture.EOCD.size,
+            outer_size,
+        )
+
+    def test_exact_outer_size_rejects_layout_that_cannot_use_zip64(self):
+        with self.assertRaisesRegex(ValueError, "too small for the fully ZIP64"):
+            fixture.prefix_size_for_outer_size(1024 ** 3)
 
     def test_zip64_directory_metadata_is_parsed(self):
         original = self.path.read_bytes()
@@ -83,6 +112,7 @@ class ZipLateMemberTests(unittest.TestCase):
             "target_member",
             "target_member_data_offset",
             "target_member_size",
+            "target_member_md5",
             "marker",
             "marker_member_offset",
             "marker_file_offset",

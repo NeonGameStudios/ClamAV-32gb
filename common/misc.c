@@ -450,8 +450,7 @@ int match_regex(const char *filename, const char *pattern)
         snprintf(fname, 511, "%s" PATHSEP, filename);
         fname[512] = 0;
     } else {
-        strncpy(fname, filename, 513);
-        fname[512] = '\0';
+        (void)cli_strlcpy(fname, filename, sizeof(fname));
     }
 
     match = (cli_regexec(&reg, fname, 0, NULL, 0) == REG_NOMATCH) ? 0 : 1;

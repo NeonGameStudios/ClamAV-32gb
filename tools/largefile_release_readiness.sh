@@ -296,6 +296,7 @@ verify_qualified_evidence()
                 --records "$acceptance_records" \
                 --check-records \
                 --evidence-root "$evidence_directory" \
+                --expected-source-sha256 "$expected_hash" \
                 --require-capability "$capability_kind" "$capability_id" >/dev/null || {
                 echo "qualified release evidence lacks required cases for ${capability_kind}:${capability_id}" >&2
                 return 1

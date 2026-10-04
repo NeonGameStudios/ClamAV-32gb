@@ -85,7 +85,7 @@ class RuntimeAcceptanceCaseProducerTests(unittest.TestCase):
 
         report = {
             "version": 1, "status": 1, "verdict": 2,
-            "completion": "DETECTION_TERMINATED", "file_type": "CL_TYPE_DATA",
+            "completion": "DETECTION_TERMINATED", "file_type": "CL_TYPE_BINARY_DATA",
             "root_size": 1, "logical_bytes": 1, "matcher_bytes": 1,
             "contiguous_bytes": 0, "temporary_bytes": 0, "files_scanned": 1,
             "max_recursion_depth": 0, "elapsed_ms": 1, "parser_operations": 1,
@@ -103,7 +103,7 @@ class RuntimeAcceptanceCaseProducerTests(unittest.TestCase):
                 "signature Synthetic.Detection matched at 0\n", encoding="utf-8")
         limit_report = {
             "version": 1, "status": 24, "verdict": 0,
-            "completion": "LIMIT_INCOMPLETE", "file_type": "CL_TYPE_DATA",
+            "completion": "LIMIT_INCOMPLETE", "file_type": "CL_TYPE_BINARY_DATA",
             "root_size": 1, "logical_bytes": 0, "matcher_bytes": 0,
             "contiguous_bytes": 0, "temporary_bytes": 0, "files_scanned": 0,
             "max_recursion_depth": 0, "elapsed_ms": 1, "parser_operations": 0,
@@ -120,7 +120,7 @@ class RuntimeAcceptanceCaseProducerTests(unittest.TestCase):
             (self.out / path).write_text("MaxFileSize exceeded\n", encoding="utf-8")
         clean_report = {
             "version": 1, "status": 0, "verdict": 0,
-            "completion": "COMPLETE", "file_type": "CL_TYPE_DATA",
+            "completion": "COMPLETE", "file_type": "CL_TYPE_BINARY_DATA",
             "root_size": 1, "logical_bytes": 1, "matcher_bytes": 1,
             "contiguous_bytes": 1, "temporary_bytes": 0, "files_scanned": 1,
             "max_recursion_depth": 0, "elapsed_ms": 1, "parser_operations": 1,

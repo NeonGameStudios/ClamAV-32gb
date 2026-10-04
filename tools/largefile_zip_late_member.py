@@ -27,6 +27,46 @@ ZIP64_LOCATOR = struct.Struct("<4sIQI")
 ZIP64_EOCD = struct.Struct("<4sQ2H2I4Q")
 UINT16_MAX = (1 << 16) - 1
 UINT32_MAX = (1 << 32) - 1
+ZIP64_LOCAL_EXTRA_SIZE = 4 + 16
+ZIP64_CENTRAL_SIZES_EXTRA_SIZE = 4 + 16
+ZIP64_CENTRAL_OFFSET_EXTRA_SIZE = 4 + 8
+
+
+def prefix_size_for_outer_size(outer_size: int,
+                               target_prefix_size: int = TARGET_PREFIX_SIZE) -> int:
+    """Return the stored prefix length for an exact-size ZIP64 late-member file.
+
+    This layout is deliberately for one large stored prefix and one small late
+    target. At the supported sizes the prefix requires ZIP64 sizes, the target
+    local-header offset requires ZIP64, and the central directory requires a
+    ZIP64 end record. Derive those bytes from the record structs and names so
+    the payload can be materialized to an exact outer-file boundary.
+    """
+    if outer_size < 0 or target_prefix_size < 0:
+        fail("fixture sizes cannot be negative")
+    target_size = target_prefix_size + len(MARKER) + 1
+    if target_size > zipfile.ZIP64_LIMIT:
+        fail("exact-size ZIP64 fixture requires a small late target member")
+
+    prefix_name_size = len(PREFIX_MEMBER.encode("ascii"))
+    target_name_size = len(TARGET_MEMBER.encode("ascii"))
+    fixed_metadata_size = (
+        LOCAL.size + prefix_name_size + ZIP64_LOCAL_EXTRA_SIZE
+        + LOCAL.size + target_name_size
+        + CENTRAL.size + prefix_name_size + ZIP64_CENTRAL_SIZES_EXTRA_SIZE
+        + CENTRAL.size + target_name_size + ZIP64_CENTRAL_OFFSET_EXTRA_SIZE
+        + ZIP64_EOCD.size + ZIP64_LOCATOR.size + EOCD.size
+    )
+    prefix_size = outer_size - target_size - fixed_metadata_size
+    if prefix_size < UINT32_MAX:
+        fail("exact outer size is too small for the fully ZIP64 late-member layout")
+
+    # Guard the assumptions which make the metadata overhead above exact.
+    target_local_offset = LOCAL.size + prefix_name_size + ZIP64_LOCAL_EXTRA_SIZE + prefix_size
+    directory_offset = target_local_offset + LOCAL.size + target_name_size + target_size
+    if target_local_offset <= zipfile.ZIP64_LIMIT or directory_offset <= zipfile.ZIP64_LIMIT:
+        fail("exact outer size does not require ZIP64 target and directory offsets")
+    return prefix_size
 
 
 def fail(message: str) -> None:
@@ -334,6 +374,7 @@ def build_oracle(path: Path) -> dict:
             fail("ZIP target member data exceeds its declared range")
 
         crc_value = 0
+        target_md5 = hashlib.md5(usedforsecurity=False)
         marker_offsets = []
         carry = b""
         payload_offset = 0
@@ -341,6 +382,7 @@ def build_oracle(path: Path) -> dict:
             length = min(WRITE_CHUNK_SIZE, target["compressed_size"] - payload_offset)
             chunk = _read_at(stream, data_start + payload_offset, length)
             crc_value = binascii.crc32(chunk, crc_value) & 0xFFFFFFFF
+            target_md5.update(chunk)
             for index in range(len(chunk) - len(MARKER) + 1):
                 if chunk[index:index + len(MARKER)] == MARKER:
                     marker_offsets.append(payload_offset + index)
@@ -356,12 +398,13 @@ def build_oracle(path: Path) -> dict:
             fail("ZIP target member does not contain exactly one marker")
         marker_offset = marker_offsets[0]
     return {
-        "version": 1,
+        "version": 2,
         "fixture_sha256": sha256(path),
         "fixture_size": file_size,
         "target_member": TARGET_MEMBER,
         "target_member_data_offset": data_start,
         "target_member_size": target["uncompressed_size"],
+        "target_member_md5": target_md5.hexdigest(),
         "marker": MARKER.decode("ascii"),
         "marker_member_offset": marker_offset,
         "marker_file_offset": data_start + marker_offset,
@@ -380,12 +423,23 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("fixture", type=Path)
     parser.add_argument("--oracle", type=Path)
-    parser.add_argument("--prefix-size", type=int, default=PREFIX_SIZE)
+    size_group = parser.add_mutually_exclusive_group()
+    size_group.add_argument("--prefix-size", type=int)
+    size_group.add_argument(
+        "--outer-size", type=int,
+        help="materialize a ZIP with this exact outer-file size using ZIP64 metadata",
+    )
     parser.add_argument("--target-prefix-size", type=int, default=TARGET_PREFIX_SIZE)
     args = parser.parse_args(argv)
     try:
-        build_fixture(args.fixture, args.prefix_size, args.target_prefix_size)
+        if args.outer_size is not None:
+            prefix_size = prefix_size_for_outer_size(args.outer_size, args.target_prefix_size)
+        else:
+            prefix_size = PREFIX_SIZE if args.prefix_size is None else args.prefix_size
+        build_fixture(args.fixture, prefix_size, args.target_prefix_size)
         oracle = build_oracle(args.fixture)
+        if args.outer_size is not None and oracle["fixture_size"] != args.outer_size:
+            fail("generated ZIP does not match the requested exact outer size")
         if args.oracle:
             args.oracle.write_text(json.dumps(oracle, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         print(json.dumps(oracle, sort_keys=True))

@@ -1075,8 +1075,10 @@ START_TEST(test_largefile_cgroup_membership_and_ancestor_headroom)
     WRITE_CGROUP_FIXTURE(mount, "memory.current", "0\n");
     WRITE_CGROUP_FIXTURE(parent, "memory.max", "1000\n");
     WRITE_CGROUP_FIXTURE(parent, "memory.current", "100\n");
+    WRITE_CGROUP_FIXTURE(parent, "memory.stat", "inactive_file 80\n");
     WRITE_CGROUP_FIXTURE(leaf, "memory.max", "800\n");
     WRITE_CGROUP_FIXTURE(leaf, "memory.current", "50\n");
+    WRITE_CGROUP_FIXTURE(leaf, "memory.stat", "inactive_file 40\n");
     write_cgroup_fixture_file(proc_cgroup, "0::/parent/leaf\n");
     ck_assert_int_lt(
         snprintf(
@@ -1103,7 +1105,7 @@ START_TEST(test_largefile_cgroup_membership_and_ancestor_headroom)
             proc_cgroup, proc_mountinfo, &headroom, &bounded),
         1);
     ck_assert_int_eq(bounded, 1);
-    ck_assert_msg(headroom == 750, "unexpected cgroup v2 headroom: %llu", (unsigned long long)headroom);
+    ck_assert_msg(headroom == 790, "unexpected cgroup v2 headroom with inactive file cache: %llu", (unsigned long long)headroom);
 
     ck_assert_int_lt(snprintf(alternate, sizeof(alternate), "%s/alternate", root), (int)sizeof(alternate));
     ck_assert_int_lt(snprintf(alternate_leaf, sizeof(alternate_leaf), "%s/leaf", alternate), (int)sizeof(alternate_leaf));
@@ -1156,7 +1158,7 @@ START_TEST(test_largefile_cgroup_membership_and_ancestor_headroom)
             proc_cgroup, proc_mountinfo, &headroom, &bounded),
         1);
     ck_assert_int_eq(bounded, 1);
-    ck_assert_msg(headroom == 900, "unexpected inherited cgroup v2 headroom: %llu", (unsigned long long)headroom);
+    ck_assert_msg(headroom == 980, "unexpected inherited cgroup v2 headroom with inactive file cache: %llu", (unsigned long long)headroom);
 
     WRITE_CGROUP_FIXTURE(leaf, "memory.max", "40\n");
     ck_assert_int_eq(
@@ -1164,7 +1166,23 @@ START_TEST(test_largefile_cgroup_membership_and_ancestor_headroom)
             proc_cgroup, proc_mountinfo, &headroom, &bounded),
         1);
     ck_assert_int_eq(bounded, 1);
-    ck_assert_msg(headroom == 0, "unexpected exhausted cgroup v2 headroom: %llu", (unsigned long long)headroom);
+    ck_assert_msg(headroom == 30, "unexpected cgroup v2 headroom after reclaimable inactive file cache: %llu", (unsigned long long)headroom);
+
+    WRITE_CGROUP_FIXTURE(leaf, "memory.stat", "inactive_file 1000\n");
+    ck_assert_int_eq(
+        clamd_largefile_cgroup_headroom_from_files(
+            proc_cgroup, proc_mountinfo, &headroom, &bounded),
+        1);
+    ck_assert_int_eq(bounded, 1);
+    ck_assert_msg(headroom == 40, "inactive file cache was not clamped to current usage: %llu", (unsigned long long)headroom);
+    WRITE_CGROUP_FIXTURE(leaf, "memory.stat", "inactive_file malformed\n");
+    ck_assert_int_eq(
+        clamd_largefile_cgroup_headroom_from_files(
+            proc_cgroup, proc_mountinfo, &headroom, &bounded),
+        1);
+    ck_assert_int_eq(bounded, 1);
+    ck_assert_msg(headroom == 0, "malformed inactive file stat did not preserve conservative headroom: %llu", (unsigned long long)headroom);
+    WRITE_CGROUP_FIXTURE(leaf, "memory.stat", "inactive_file 40\n");
 
     ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.current", leaf), (int)sizeof(path));
     ck_assert_int_eq(unlink(path), 0);
@@ -1177,8 +1195,10 @@ START_TEST(test_largefile_cgroup_membership_and_ancestor_headroom)
     WRITE_CGROUP_FIXTURE(mount, "memory.usage_in_bytes", "0\n");
     WRITE_CGROUP_FIXTURE(parent, "memory.limit_in_bytes", "1000\n");
     WRITE_CGROUP_FIXTURE(parent, "memory.usage_in_bytes", "100\n");
+    WRITE_CGROUP_FIXTURE(parent, "memory.stat", "total_inactive_file 80\n");
     WRITE_CGROUP_FIXTURE(leaf, "memory.limit_in_bytes", "800\n");
     WRITE_CGROUP_FIXTURE(leaf, "memory.usage_in_bytes", "50\n");
+    WRITE_CGROUP_FIXTURE(leaf, "memory.stat", "total_inactive_file 40\n");
     write_cgroup_fixture_file(proc_cgroup, "5:cpu,memory:/parent/leaf\n");
     ck_assert_int_lt(
         snprintf(
@@ -1193,7 +1213,7 @@ START_TEST(test_largefile_cgroup_membership_and_ancestor_headroom)
             proc_cgroup, proc_mountinfo, &headroom, &bounded),
         1);
     ck_assert_int_eq(bounded, 1);
-    ck_assert_msg(headroom == 750, "unexpected cgroup v1 headroom: %llu", (unsigned long long)headroom);
+    ck_assert_msg(headroom == 790, "unexpected cgroup v1 headroom with total inactive file cache: %llu", (unsigned long long)headroom);
 
     ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.max", leaf), (int)sizeof(path));
     ck_assert_int_eq(unlink(path), 0);
@@ -1221,7 +1241,7 @@ START_TEST(test_largefile_cgroup_membership_and_ancestor_headroom)
             proc_cgroup, proc_mountinfo, &headroom, &bounded),
         1);
     ck_assert_int_eq(bounded, 1);
-    ck_assert_msg(headroom == 750, "hybrid cgroup ignored v1 memory headroom: %llu", (unsigned long long)headroom);
+    ck_assert_msg(headroom == 790, "hybrid cgroup ignored v1 memory headroom or reclaimable cache: %llu", (unsigned long long)headroom);
 
     ck_assert_int_lt(
         snprintf(
@@ -1238,7 +1258,7 @@ START_TEST(test_largefile_cgroup_membership_and_ancestor_headroom)
             proc_cgroup, proc_mountinfo, &headroom, &bounded),
         1);
     ck_assert_int_eq(bounded, 1);
-    ck_assert_msg(headroom == 750, "hybrid cgroup without matching v2 mount ignored v1 memory headroom: %llu", (unsigned long long)headroom);
+    ck_assert_msg(headroom == 790, "hybrid cgroup without matching v2 mount ignored v1 memory headroom or reclaimable cache: %llu", (unsigned long long)headroom);
 
     ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.limit_in_bytes", leaf), (int)sizeof(path));
     ck_assert_int_eq(unlink(path), 0);
@@ -1251,6 +1271,10 @@ START_TEST(test_largefile_cgroup_membership_and_ancestor_headroom)
     ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.limit_in_bytes", mount), (int)sizeof(path));
     ck_assert_int_eq(unlink(path), 0);
     ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.usage_in_bytes", mount), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.stat", leaf), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.stat", parent), (int)sizeof(path));
     ck_assert_int_eq(unlink(path), 0);
 
     ck_assert_int_eq(unlink(proc_cgroup), 0);

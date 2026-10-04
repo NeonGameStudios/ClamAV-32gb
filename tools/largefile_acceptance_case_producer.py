@@ -110,9 +110,12 @@ def read_summary(out: Path) -> dict[str, str]:
 
 def load_inputs(out: Path) -> dict[str, dict]:
     path = require_file(out / "provenance/service-inputs-before.json", "service input evidence")
+    after = require_file(out / "provenance/service-inputs-after.json", "service input after evidence")
     record = acceptance_cases.load_json(
         path.read_text(encoding="utf-8"), f"service input evidence: {path}"
     )
+    if path.read_bytes() != after.read_bytes():
+        fail("service input allocation/content evidence changed during qualification")
     if not isinstance(record, dict):
         fail(f"service input evidence has an invalid schema: {path}")
     if record.get("version") != 1 or set(record.get("inputs", {})) != workload_check.ROLES:
@@ -250,6 +253,7 @@ def record_from_workload(
         "provenance/service-build-identity.txt",
         "provenance/CMakeCache.txt",
         "provenance/service-inputs-before.json",
+        "provenance/service-inputs-after.json",
         "provenance/qualification-oracle.tsv",
         f"provenance/database-manifest-{database_role}-before.txt",
     ]
@@ -271,6 +275,9 @@ def record_from_workload(
         "reason": reason,
         "alert_signature": signature,
         "alert_offset": offset,
+        "alert_offset_scope": "root-input" if offset != "-" else "none",
+        "alert_offset_source": "structured-report" if offset != "-" else "none",
+        "alert_offset_evidence": report_name if offset != "-" else "-",
         **{field: str(report[field]) for field in acceptance_cases.RECORD_HEADER
            if field in REPORT_NUMERIC_FIELDS},
         "sanitizer": "release",

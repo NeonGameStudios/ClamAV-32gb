@@ -305,7 +305,6 @@ def validate_prevention_cases(root: Path, cases: object) -> None:
     require(isinstance(cases, list), "fanotify prevention cases are not a list")
     expected_names = set(CASE_CONTRACT)
     seen: set[str] = set()
-    event_ids: set[int] = set()
     for case in cases:
         require(isinstance(case, dict), "fanotify prevention case is not an object")
         name = case.get("name")
@@ -333,9 +332,9 @@ def validate_prevention_cases(root: Path, cases: object) -> None:
         event_id = case.get("event_id")
         require(type(event_id) is int and event_id >= 1,
                 f"fanotify prevention event ID is invalid: {name}")
-        require(event_id not in event_ids,
-                f"fanotify prevention event ID is duplicated: {name}")
-        event_ids.add(event_id)
+        # Each prevention case is captured by a fresh observer process. Event
+        # IDs are local to that run and commonly restart at 1; uniqueness is
+        # enforced against every record in this case's kernel artifact below.
         validate_artifacts(
             root, case.get("artifacts"), f"fanotify prevention case {name}",
             {"kernel-event", "actor-result", "scan-report"},

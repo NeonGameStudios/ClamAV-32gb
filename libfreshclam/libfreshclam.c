@@ -610,8 +610,7 @@ fc_error_t fc_dns_query_update_info(
      * Only throw a warning if the Version Warning Flag was set,
      * and this is not a beta, release candidate, or development version.
      */
-    strncpy(version_string, get_version(), sizeof(version_string));
-    version_string[31] = 0;
+    (void)cli_strlcpy(version_string, get_version(), sizeof(version_string));
 
     if (vwarning) {
         if (!strstr(version_string, "devel") &&

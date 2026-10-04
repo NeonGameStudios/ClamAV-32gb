@@ -21,7 +21,7 @@ class ResultChecks(unittest.TestCase):
 
     def row(self, status=1, completion="DETECTION_TERMINATED", signature="Expected.Marker"):
         return (512, "0" * 64, status, completion, signature,
-                "123" if signature != "-" else "-", "CL_TYPE_DATA")
+                "123" if signature != "-" else "-", "CL_TYPE_BINARY_DATA")
 
     def oracle(self, row):
         path = self.root / "oracle.tsv"
@@ -202,6 +202,16 @@ class ResultChecks(unittest.TestCase):
     def test_typed_report_log_can_use_bare_found_after_report_binding(self):
         report = self.report(self.row())
         self.log.write_text("input: FOUND\n")
+        checker.validate_report_log(self.log, "typed-report", report)
+
+    def test_typed_report_log_allows_signature_before_found(self):
+        report = self.report(self.row())
+        self.log.write_text("input: Expected.Marker.UNOFFICIAL FOUND\n")
+        checker.validate_report_log(self.log, "typed-report", report)
+
+    def test_typed_report_log_allows_empty_no_summary_log(self):
+        report = self.report(self.row(0, "COMPLETE", "-"))
+        self.log.write_text("")
         checker.validate_report_log(self.log, "typed-report", report)
 
     def test_typed_report_log_does_not_replace_exact_report_binding(self):

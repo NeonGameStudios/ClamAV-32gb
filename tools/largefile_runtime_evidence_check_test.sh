@@ -47,7 +47,7 @@ sh "$root/tools/largefile_boundary_corpus.sh" "$out/corpus" >/dev/null
 hash=$(printf '%064d' 0)
 printf '%064d  synthetic.c\n' 0 > "$out/provenance/source-manifest.txt"
 cp "$out/provenance/source-manifest.txt" "$out/provenance/build-source-manifest.txt"
-printf 'kind\tid\tcase_id\tsource_manifest_sha256\tbuild_identity_sha256\tconfig_sha256\tplatform\tfixture_role\tfixture_sha256\toracle_sha256\tdatabase_sha256\texit_code\tverdict\tcompletion\treason\talert_signature\talert_offset\tlogical_bytes\tmatcher_bytes\tcontiguous_bytes\ttemporary_bytes\tfiles_scanned\tmax_recursion_depth\telapsed_ms\tparser_operations\tdetector_operations\tskipped_operations\tsanitizer\tresource_phase\thealth\tcleanup\tartifacts\n' > "$out/provenance/acceptance-cases.tsv"
+printf 'kind\tid\tcase_id\tsource_manifest_sha256\tbuild_identity_sha256\tconfig_sha256\tplatform\tfixture_role\tfixture_sha256\toracle_sha256\tdatabase_sha256\texit_code\tverdict\tcompletion\treason\talert_signature\talert_offset\talert_offset_scope\talert_offset_source\talert_offset_evidence\tlogical_bytes\tmatcher_bytes\tcontiguous_bytes\ttemporary_bytes\tfiles_scanned\tmax_recursion_depth\telapsed_ms\tparser_operations\tdetector_operations\tskipped_operations\tsanitizer\tresource_phase\thealth\tcleanup\tartifacts\n' > "$out/provenance/acceptance-cases.tsv"
 printf 'label\tkind\tid\tinput\tlog\treport\texpected_size\texpected_exit\texpected_completion\texpected_signature\texpected_offset\n' > "$out/provenance/runtime-acceptance-oracle.tsv"
 printf 'label\tstatus\n' > "$out/provenance/runtime-process-status.tsv"
 source_manifest_hash=$(sha256sum "$out/provenance/source-manifest.txt" | awk '{ print $1 }')

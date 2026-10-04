@@ -37,13 +37,14 @@ class InputPolicyTests(unittest.TestCase):
         self.input.write_bytes(self.data)
         self.digest = hashlib.sha256(self.data).hexdigest()
 
-    def oracle(self, edge_size=checker.EXACT_EDGE_BYTES, materialized_size=None):
+    def oracle(self, edge_size=checker.EXACT_EDGE_BYTES, materialized_size=None,
+               file_type="CL_TYPE_BINARY_DATA"):
         sizes = {role: len(self.data) for role in checker.INPUT_ROLES}
         sizes["edge"] = edge_size
         if materialized_size is not None:
             sizes["materialized"] = materialized_size
         return {
-            role: (sizes[role], self.digest, 0, "COMPLETE", "-", "-", "CL_TYPE_DATA")
+            role: (sizes[role], self.digest, 0, "COMPLETE", "-", "-", file_type)
             for role in checker.INPUT_ROLES
         }
 
@@ -72,6 +73,19 @@ class InputPolicyTests(unittest.TestCase):
                     checker.load_oracle(self.write_oracle(edge_size=size))
         oracle = checker.load_oracle(self.write_oracle())
         self.assertEqual(oracle["edge"][0], 34359738368)
+
+    def test_oracle_rejects_file_type_not_emitted_by_candidate(self):
+        with self.assertRaisesRegex(RuntimeError, "unknown report file type.*CL_TYPE_DATA"):
+            checker.load_oracle(self.write_oracle(file_type="CL_TYPE_DATA"))
+
+    def test_input_preflight_rejects_unknown_file_type_before_inputs(self):
+        oracle = self.write_oracle(file_type="CL_TYPE_DATA")
+        command = [sys.executable, "-B", str(Path(checker.__file__).resolve()),
+                   "--check-inputs", str(oracle), *([str(self.input)] * 4)]
+        result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("unknown report file type for production: CL_TYPE_DATA", result.stderr)
+        self.assertEqual(result.stdout, "")
 
     def test_materialized_must_be_nonempty(self):
         with self.assertRaisesRegex(RuntimeError, "materialized input must be nonempty"):
@@ -125,7 +139,7 @@ class InputPolicyTests(unittest.TestCase):
         log = self.root / "legacy.log"
         log.write_text("protocol_mode=CONTSCAN\nfixture: OK\n", encoding="utf-8")
         edge_oracle = (
-            checker.EXACT_EDGE_BYTES, self.digest, 0, "COMPLETE", "-", "-", "CL_TYPE_DATA"
+            checker.EXACT_EDGE_BYTES, self.digest, 0, "COMPLETE", "-", "-", "CL_TYPE_BINARY_DATA"
         )
         checker.validate_legacy_log(log, "edge_contscan", edge_oracle, "CONTSCAN")
 
@@ -144,7 +158,7 @@ class InputPolicyTests(unittest.TestCase):
         self.assertEqual(expected["edge_contscan"], ("legacy", "edge", False))
         edge_oracle = (
             checker.EXACT_EDGE_BYTES, self.digest, 1, "DETECTION_TERMINATED",
-            "Legacy.Detection", "7", "CL_TYPE_DATA"
+            "Legacy.Detection", "7", "CL_TYPE_BINARY_DATA"
         )
         log = self.root / "legacy-detection.log"
         log.write_text(

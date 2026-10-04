@@ -31,7 +31,12 @@ if [ "$1" = '/proc/[0-9]*/status' ] && [ ! -e "$1" ]; then
     exit 3
 fi
 
-awk -v roots="$roots" '
+for status_file in /proc/[0-9]*/status; do
+    [ -r "$status_file" ] || continue
+    # Processes can exit after the glob is expanded. Ignore that expected
+    # churn instead of letting awk fail while opening a vanished path.
+    cat "$status_file" 2>/dev/null || true
+done | awk -v roots="$roots" '
 function emit() {
     if (pid ~ /^[0-9]+$/ && ppid ~ /^[0-9]+$/ && rss ~ /^[0-9]+$/) {
         parent[pid] = ppid
@@ -39,10 +44,8 @@ function emit() {
     }
 }
 
-FNR == 1 {
-    if (NR != 1) {
-        emit()
-    }
+$1 == "Name:" {
+    emit()
     pid = ""
     ppid = ""
     rss = ""
@@ -91,4 +94,4 @@ END {
     }
     printf "%d\t%d\t%s\n", total, selected_count, selected_list
 }
-' /proc/[0-9]*/status
+'

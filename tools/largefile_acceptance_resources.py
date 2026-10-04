@@ -181,8 +181,33 @@ def validate(
     }
     if len(cases) != len(records):
         fail("acceptance case records duplicate a case")
-    path = (resources_path or evidence_root / RESOURCE_PATH).resolve()
     root = evidence_root.resolve()
+    case_roots = acceptance_cases.case_evidence_roots(root, records)
+    if (root / acceptance_cases.CASE_ROOT_PATH).exists():
+        if resources_path is not None:
+            fail("case-rooted resource verification cannot override a sidecar path")
+        all_rows: list[dict[str, str]] = []
+        sidecar_hashes: dict[tuple[str, str, str], str] = {}
+        for case_root in sorted(set(case_roots.values())):
+            path = acceptance_cases.safe_evidence_file(
+                case_root, RESOURCE_PATH, "case-rooted acceptance resource records",
+            )
+            rows = read_resources(path)
+            expected = {key for key, value in case_roots.items() if value == case_root}
+            actual = {(row["kind"], row["id"], row["case_id"]) for row in rows}
+            if len(actual) != len(rows) or actual != expected:
+                fail(f"case-rooted resource sidecar does not cover its mapped cases: {case_root}")
+            digest = sha256(path)
+            sidecar_hashes.update({key: digest for key in actual})
+            all_rows.extend(rows)
+        validate_resource_rows(all_rows, cases, required_capabilities)
+        for key, case in cases.items():
+            if resource_marker(case["resource_phase"]) != sidecar_hashes[key]:
+                fail(f"acceptance case does not bind the resource-record hash: {':'.join(key)}")
+            if RESOURCE_PATH not in case["artifacts"].split(","):
+                fail(f"acceptance case does not retain {RESOURCE_PATH}: {':'.join(key)}")
+        return len(all_rows)
+    path = (resources_path or evidence_root / RESOURCE_PATH).resolve()
     try:
         path.relative_to(root)
     except ValueError as error:

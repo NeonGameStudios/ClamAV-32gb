@@ -37,6 +37,9 @@ class AcceptanceResourceTests(unittest.TestCase):
             "reason": "complete",
             "alert_signature": "-",
             "alert_offset": "-",
+            "alert_offset_scope": "none",
+            "alert_offset_source": "none",
+            "alert_offset_evidence": "-",
             "resource_phase": (
                 "rss<=33554432;pcre<=41943040;post-pcre<12582912;"
                 "temporary<=68719476736"

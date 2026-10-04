@@ -354,6 +354,9 @@ def record_for(
         ),
         "alert_signature": report.get("last_alert") or "-",
         "alert_offset": str(report["last_alert_offset"]) if report.get("last_alert_offset") is not None else "-",
+        "alert_offset_scope": "root-input" if report.get("last_alert_offset") is not None else "none",
+        "alert_offset_source": "structured-report" if report.get("last_alert_offset") is not None else "none",
+        "alert_offset_evidence": row["report"] if report.get("last_alert_offset") is not None else "-",
         **{field: str(report[field]) for field in REPORT_NUMERIC_FIELDS},
         "sanitizer": sanitizer,
         "resource_phase": (

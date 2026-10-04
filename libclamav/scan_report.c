@@ -466,7 +466,7 @@ void cli_scan_report_finish(
     if ((NULL != ctx) && ctx->scan_incomplete &&
         (status == CL_SUCCESS || status == CL_VERIFIED) &&
         (verdict != CL_VERDICT_STRONG_INDICATOR) &&
-        (verdict != CL_VERDICT_POTENTIALLY_UNWANTED)) {
+        ((verdict != CL_VERDICT_POTENTIALLY_UNWANTED) || ctx->limit_exceeded)) {
         if ((ctx->limit_exceeded_result != CL_SUCCESS) &&
             (ctx->limit_exceeded_result != CL_VERIFIED))
             status = ctx->limit_exceeded_result;
@@ -483,6 +483,18 @@ void cli_scan_report_finish(
         else
             status = CL_ERROR;
     }
+
+    /* Limit heuristics use the potentially-unwanted verdict too. Keep the
+     * structured verdict consistent with LIMIT_INCOMPLETE; real PUA
+     * signatures retain CL_VIRUS and remain detections. */
+    if ((verdict == CL_VERDICT_POTENTIALLY_UNWANTED) &&
+        ((status == CL_EMAXSIZE) ||
+         (status == CL_EMAXFILES) ||
+         (status == CL_EMAXREC) ||
+         (status == CL_ETIMEOUT) ||
+         ((NULL != ctx) && ctx->scan_incomplete && ctx->limit_exceeded &&
+          (status != CL_VIRUS))))
+        verdict = CL_VERDICT_NOTHING_FOUND;
 
     report->status  = status;
     report->verdict = verdict;
@@ -539,7 +551,6 @@ void cli_scan_report_finish(
      * parser/resource classification while the caller unwinds the remaining
      * bookkeeping. */
     if ((verdict == CL_VERDICT_STRONG_INDICATOR) ||
-        (verdict == CL_VERDICT_POTENTIALLY_UNWANTED) ||
         (status == CL_VIRUS)) {
         report->completion = CL_SCAN_COMPLETION_DETECTION_TERMINATED;
     } else if ((status == CL_EMAXSIZE) ||
@@ -547,6 +558,12 @@ void cli_scan_report_finish(
                (status == CL_EMAXREC) ||
                (status == CL_ETIMEOUT)) {
         report->completion = CL_SCAN_COMPLETION_LIMIT_INCOMPLETE;
+    } else if (verdict == CL_VERDICT_POTENTIALLY_UNWANTED) {
+        /* Limit heuristics use the potentially-unwanted verdict too, but the
+         * legacy API maps those alerts back to their specific limit status.
+         * Actual PUA signatures retain CL_VIRUS and are handled by the
+         * authoritative status branch above. */
+        report->completion = CL_SCAN_COMPLETION_DETECTION_TERMINATED;
     } else if (status == CL_ERESOURCE) {
         report->completion = CL_SCAN_COMPLETION_RESOURCE_FAILURE;
     } else if ((status == CL_BREAK) || ((NULL != ctx) && ctx->abort_scan)) {

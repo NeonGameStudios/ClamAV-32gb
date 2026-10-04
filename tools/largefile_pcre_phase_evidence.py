@@ -10,24 +10,34 @@ proof document.
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
+import os
 from pathlib import Path, PurePosixPath
 import re
+import stat
 import sys
 
 import largefile_acceptance_cases as acceptance_cases
+import largefile_acceptance_resources as acceptance_resources
 
 HASH_RE = re.compile(r"[0-9a-f]{64}\Z")
 PCRE_RSS_BUDGET_KB = 41943040
 POST_PCRE_RSS_BUDGET_KB = 12582912
-PHASES = ("before-pcre", "pcre", "post-pcre-before-deep-parse", "deep-parse")
-IDENTITY_FIELDS = ("source_manifest", "build_identity", "config")
+EXACT_SIZE_BYTES = 32 * 1024 * 1024 * 1024
+DETECTION_PHASES = ("before-pcre", "pcre", "post-pcre-before-deep-parse")
+CONTINUATION_PHASES = DETECTION_PHASES + ("deep-parse",)
+TRACE_PHASES = CONTINUATION_PHASES + ("complete",)
+IDENTITY_FIELDS = ("source_manifest", "build_identity")
 RUNTIME_MARKER_RE = re.compile(
-    r"largefile_pcre_phase: phase=(?P<phase>[^ ]+) "
+    r"(?:LibClamAV debug: )?largefile_pcre_phase: phase=(?P<phase>[^ ]+) "
     r"object_id=(?P<object_id>[0-9]+) "
     r"recursion_level=(?P<recursion_level>[0-9]+)"
     r"(?: subject_bytes=(?P<subject_bytes>[0-9]+))? "
     r"subject_released=(?P<subject_released>[01])\Z"
+)
+PCRE_MATCH_RE = re.compile(
+    r"(?:LibClamAV debug: )?cli_pcre_scanbuf: located regex match @ (?P<offset>[0-9]+)\Z"
 )
 
 
@@ -79,42 +89,76 @@ def validate_identity(root: Path, identity: object, expected_source: str) -> Non
         if field == "source_manifest":
             require(expected == expected_source,
                     "PCRE source manifest hash is not the proof binding")
+        elif field == "build_identity":
+            cache = path.read_text(encoding="utf-8").splitlines()
+            wanted = {
+                "CLAMAV_SOURCE_COMMIT": expected_source,
+                "CLAMAV_SOURCE_MANIFEST_SHA256": expected_source,
+            }
+            for key, value in wanted.items():
+                rows = [line for line in cache if line.startswith(key + ":INTERNAL=")]
+                require(len(rows) == 1 and rows[0].split("=", 1)[1] == value,
+                        f"PCRE build identity does not bind {key} to source")
 
 
-def validate_artifacts(root: Path, artifacts: object) -> None:
-    required_roles = {"fixture", "rss-samples", "scan-report", "process-log"}
+def validate_artifacts(root: Path, artifacts: object) -> dict[str, tuple[Path, str]]:
+    required_roles = {"fixture", "scanner-binary"}
+    for run in ("detection", "continuation"):
+        required_roles.update({f"{run}-config", f"{run}-database",
+                               f"{run}-rss-samples", f"{run}-scan-report",
+                               f"{run}-process-log", f"{run}-resource-row",
+                               f"{run}-phase-events"})
     require(isinstance(artifacts, list) and artifacts,
             "PCRE proof has no retained artifacts")
     seen_paths: set[str] = set()
-    seen_roles: set[str] = set()
+    verified: dict[str, tuple[Path, str]] = {}
     for artifact in artifacts:
         require(isinstance(artifact, dict), "PCRE proof has an invalid artifact")
         path_text = artifact.get("path")
         role = artifact.get("role")
         require(isinstance(path_text, str) and path_text not in seen_paths,
                 "PCRE proof has a duplicate or invalid artifact path")
-        require(isinstance(role, str) and role not in seen_roles,
+        require(isinstance(role, str) and role not in verified,
                 "PCRE proof has a duplicate or invalid artifact role")
         seen_paths.add(path_text)
-        seen_roles.add(role)
-        path = relative_file(root, path_text, "PCRE artifact")
+        if role == "fixture" and path_text.startswith("/"):
+            path = Path(path_text)
+            require(path.is_file() and not path.is_symlink() and
+                    stat.S_ISREG(path.stat().st_mode),
+                    "PCRE fixture is missing, symlinked, or not a regular file")
+        else:
+            path = relative_file(root, path_text, "PCRE artifact")
         expected = artifact.get("sha256")
         require(isinstance(expected, str) and HASH_RE.fullmatch(expected),
                 f"PCRE artifact hash is invalid: {role}")
         require(digest(path) == expected,
                 f"PCRE artifact hash does not verify: {role}")
-    require(required_roles <= seen_roles,
+        verified[role] = (path, expected)
+    require(required_roles <= verified.keys(),
             "PCRE proof lacks required retained artifacts: "
-            f"{sorted(required_roles - seen_roles)}")
+            f"{sorted(required_roles - verified.keys())}")
+    require(verified["detection-database"][1] != verified["continuation-database"][1],
+            "PCRE detection and continuation databases must be distinct")
+    return verified
 
 
-def validate_runtime_markers(root: Path, artifacts: object) -> None:
-    require(isinstance(artifacts, list), "PCRE proof artifacts are invalid")
-    process_logs = [artifact for artifact in artifacts
-                    if isinstance(artifact, dict) and artifact.get("role") == "process-log"]
-    require(len(process_logs) == 1, "PCRE proof must have one process-log artifact")
-    process_log = relative_file(root, process_logs[0].get("path"),
-                                "PCRE process-log artifact")
+def validate_fixture(path: Path) -> None:
+    stat = path.stat()
+    require(stat.st_size == EXACT_SIZE_BYTES,
+            "PCRE fixture is not an exact 32-GiB file")
+    require(stat.st_blocks * 512 >= EXACT_SIZE_BYTES,
+            "PCRE fixture is not fully allocated")
+    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_CLOEXEC", 0))
+    try:
+        require(os.lseek(descriptor, 0, os.SEEK_DATA) == 0 and
+                os.lseek(descriptor, 0, os.SEEK_HOLE) == EXACT_SIZE_BYTES,
+                "PCRE fixture has a sparse extent")
+    finally:
+        os.close(descriptor)
+
+
+def validate_runtime_markers(process_log: Path, phases: tuple[str, ...],
+                             run: str) -> None:
     lines = process_log.read_text(encoding="utf-8").splitlines()
     grouped: dict[tuple[int, int], list[tuple[int, str, int | None, bool]]] = {}
     for index, line in enumerate(lines):
@@ -133,7 +177,7 @@ def validate_runtime_markers(root: Path, artifacts: object) -> None:
     for events in grouped.values():
         selected: list[tuple[int, str, int | None, bool]] = []
         previous_position = -1
-        for phase in PHASES:
+        for phase in phases:
             candidate = next(
                 (event for event in events
                  if event[0] > previous_position and event[1] == phase),
@@ -144,15 +188,25 @@ def validate_runtime_markers(root: Path, artifacts: object) -> None:
                 break
             selected.append(candidate)
             previous_position = candidate[0]
-        if len(selected) == len(PHASES):
-            before, pcre, post, deep = selected
+        if len(selected) == len(phases):
+            before, pcre, post = selected[:3]
             subject_bytes = [event[2] for event in (before, pcre, post)]
-            if (None not in subject_bytes and len(set(subject_bytes)) == 1 and
-                    not before[3] and not pcre[3] and post[3] and deep[3] and
-                    [event[0] for event in selected] == sorted(event[0] for event in selected)):
+            valid = (subject_bytes == [EXACT_SIZE_BYTES] * 3 and
+                     not before[3] and not pcre[3] and post[3])
+            if run == "continuation":
+                valid = valid and selected[3][3]
+            if valid:
                 return
 
-    require(False, "PCRE process log lacks a valid object-bound runtime marker sequence or markers are out of order")
+    require(False, f"PCRE {run} process log lacks a valid object-bound runtime marker sequence or markers are out of order")
+
+
+def validate_match_offset(process_log: Path, subject: dict) -> None:
+    offsets = [int(match.group("offset"))
+               for line in process_log.read_text(encoding="utf-8").splitlines()
+               if (match := PCRE_MATCH_RE.fullmatch(line))]
+    require(subject["expected_offset"] in offsets,
+            "PCRE detection process log lacks the exact-tail regex match offset")
 
 
 def integer(value: object, label: str, minimum: int = 0) -> int:
@@ -173,7 +227,9 @@ def validate_subject(subject: object) -> None:
             "PCRE subject expected signature is missing")
     require(subject.get("detected_signature") == expected_signature,
             "PCRE subject did not prove the exact expected signature")
-    integer(subject.get("expected_offset"), "expected offset")
+    expected_offset = integer(subject.get("expected_offset"), "expected offset")
+    require(EXACT_SIZE_BYTES - 1024 * 1024 <= expected_offset < EXACT_SIZE_BYTES,
+            "PCRE expected offset is not at the exact tail")
     require(subject.get("detected_offset") == subject.get("expected_offset"),
             "PCRE subject did not prove the exact expected offset")
     require(subject.get("completion") == "DETECTION_TERMINATED" and
@@ -181,54 +237,214 @@ def validate_subject(subject: object) -> None:
             "PCRE subject did not prove a detection-terminated result")
 
 
-def validate_process_tree(process_tree: object) -> None:
-    require(isinstance(process_tree, dict), "PCRE process-tree evidence is invalid")
-    integer(process_tree.get("root_pid"), "root PID", 1)
-    sampled_pids = process_tree.get("sampled_pids")
-    require(isinstance(sampled_pids, list) and sampled_pids and
-            all(type(pid) is int and pid >= 1 for pid in sampled_pids),
-            "PCRE sampled PID set is invalid")
-    require(process_tree.get("sample_source") == "procfs-tree",
-            "PCRE samples are not identified as process-tree RSS")
-    require(isinstance(process_tree.get("sampler"), str) and
-            process_tree["sampler"].startswith("/"),
-            "PCRE sampler identity is missing")
+def validate_continuation(continuation: object, subject: dict) -> None:
+    require(isinstance(continuation, dict), "PCRE continuation proof is invalid")
+    require(continuation.get("case_id") == "matcher:pcre:full-subject-release",
+            "PCRE continuation has the wrong case ID")
+    require(continuation.get("fixture_sha256") == subject.get("fixture_sha256"),
+            "PCRE continuation does not use the detection fixture")
+    require(continuation.get("completion") == "COMPLETE" and
+            continuation.get("exit_code") == 0,
+            "PCRE continuation did not complete cleanly")
 
 
-def validate_samples(samples: object) -> None:
-    require(isinstance(samples, list) and samples,
-            "PCRE proof has no RSS samples")
-    seen_sequences: set[int] = set()
+SAMPLE_HEADER = (
+    "sequence", "timestamp_ns", "phase", "rss_kb", "tree_rss_kb",
+    "process_count", "root_pid", "sampled_pids",
+)
+
+
+def decimal(value: str, label: str, minimum: int = 0) -> int:
+    require(bool(re.fullmatch(r"[0-9]+", value)), f"PCRE {label} is invalid")
+    result = int(value)
+    require(result >= minimum, f"PCRE {label} is invalid")
+    return result
+
+
+def validate_one_samples(path: Path, phases: tuple[str, ...], run: str) -> dict[str, int]:
+    with path.open("r", encoding="utf-8", newline="") as stream:
+        rows = list(csv.reader(stream, delimiter="\t"))
+    require(bool(rows) and tuple(rows[0]) == SAMPLE_HEADER,
+            f"PCRE {run} raw RSS trace has the wrong header")
+    require(len(rows) > 1, f"PCRE {run} proof has no RSS samples")
     seen_phases: set[str] = set()
     previous_sequence = 0
     previous_timestamp = 0
-    for sample in samples:
-        require(isinstance(sample, dict), "PCRE RSS sample is not an object")
-        sequence = integer(sample.get("sequence"), "sample sequence", 1)
-        timestamp = integer(sample.get("timestamp_ns"), "sample timestamp", 1)
-        require(sequence not in seen_sequences and sequence > previous_sequence,
+    previous_phase_index = 0
+    root_pid = 0
+    peaks = {"rss_peak_kb": 0, "pcre_rss_peak_kb": 0,
+             "post_pcre_rss_peak_kb": 0}
+    for fields in rows[1:]:
+        require(len(fields) == len(SAMPLE_HEADER),
+                f"PCRE {run} raw RSS trace has a malformed row")
+        sample = dict(zip(SAMPLE_HEADER, fields))
+        sequence = decimal(sample["sequence"], "sample sequence", 1)
+        timestamp = decimal(sample["timestamp_ns"], "sample timestamp", 1)
+        require(sequence == previous_sequence + 1,
                 "PCRE RSS sample sequence is not strictly ordered")
         require(timestamp > previous_timestamp,
                 "PCRE RSS sample timestamps are not strictly ordered")
         phase = sample.get("phase")
-        require(isinstance(phase, str) and phase in PHASES,
+        require(phase in TRACE_PHASES,
                 "PCRE RSS sample has an unknown phase")
-        rss = integer(sample.get("rss_kb"), "RSS")
-        tree_rss = integer(sample.get("tree_rss_kb"), "tree RSS")
+        phase_index = TRACE_PHASES.index(phase)
+        require(phase_index >= previous_phase_index,
+                "PCRE RSS sample phases are out of order")
+        rss = decimal(sample["rss_kb"], "RSS")
+        tree_rss = decimal(sample["tree_rss_kb"], "tree RSS")
         require(tree_rss >= rss,
                 "PCRE tree RSS is smaller than the process RSS")
+        count = decimal(sample["process_count"], "process count", 1)
+        sample_root = decimal(sample["root_pid"], "root PID", 1)
+        pids = [decimal(pid, "sampled PID", 1)
+                for pid in sample["sampled_pids"].split(",")]
+        require(len(pids) == count and len(set(pids)) == count and
+                sample_root in pids,
+                "PCRE process-tree PID trace is inconsistent")
+        if root_pid == 0:
+            root_pid = sample_root
+        require(sample_root == root_pid,
+                "PCRE process-tree root PID changes within one run")
+        peaks["rss_peak_kb"] = max(peaks["rss_peak_kb"], tree_rss)
         if phase == "pcre":
+            peaks["pcre_rss_peak_kb"] = max(peaks["pcre_rss_peak_kb"], tree_rss)
             require(tree_rss <= PCRE_RSS_BUDGET_KB,
                     "PCRE phase tree RSS exceeds the 40 GiB budget")
         if phase == "post-pcre-before-deep-parse":
+            peaks["post_pcre_rss_peak_kb"] = max(
+                peaks["post_pcre_rss_peak_kb"], tree_rss)
             require(tree_rss < POST_PCRE_RSS_BUDGET_KB,
                     "post-PCRE tree RSS does not fall below the 12 GiB budget")
-        seen_sequences.add(sequence)
         seen_phases.add(phase)
         previous_sequence = sequence
         previous_timestamp = timestamp
-    require(seen_phases == set(PHASES),
-            "PCRE RSS samples do not cover every required phase")
+        previous_phase_index = phase_index
+    require(set(phases) <= seen_phases,
+            f"PCRE {run} RSS samples do not cover every required phase")
+    return {**peaks, "root_pid": root_pid, "sample_count": len(rows) - 1,
+            "first_timestamp_ns": decimal(rows[1][1], "first timestamp", 1),
+            "last_timestamp_ns": previous_timestamp}
+
+
+def validate_samples(artifacts: dict[str, tuple[Path, str]]) -> dict[str, dict[str, int]]:
+    results = {}
+    for run, phases in (("detection", DETECTION_PHASES),
+                        ("continuation", CONTINUATION_PHASES)):
+        results[run] = validate_one_samples(
+            artifacts[f"{run}-rss-samples"][0], phases, run)
+    require(results["detection"]["root_pid"] != results["continuation"]["root_pid"],
+            "PCRE detection and continuation must be distinct processes")
+    require(results["detection"]["last_timestamp_ns"] <
+            results["continuation"]["first_timestamp_ns"],
+            "PCRE detection and continuation trace times overlap")
+    return results
+
+
+def validate_configs(artifacts: dict[str, tuple[Path, str]],
+                     identity: dict, source_hash: str) -> dict[str, dict]:
+    configs = {}
+    fixture = artifacts["fixture"][0]
+    for run, case_id in (("detection", "matcher:pcre:full-subject-tail"),
+                         ("continuation", "matcher:pcre:full-subject-release")):
+        config = acceptance_cases.load_json(
+            artifacts[f"{run}-config"][0].read_text(encoding="utf-8"),
+            f"PCRE {run} config")
+        require(isinstance(config, dict) and config.get("case_id") == case_id,
+                f"PCRE {run} configuration has the wrong case ID")
+        require(config.get("source_manifest_sha256") == source_hash and
+                config.get("build_identity_sha256") ==
+                identity["build_identity"]["sha256"],
+                f"PCRE {run} configuration does not bind source and build")
+        require(config.get("scanner_sha256") == artifacts["scanner-binary"][1] and
+                config.get("database_sha256") == artifacts[f"{run}-database"][1] and
+                config.get("fixture_sha256") == artifacts["fixture"][1],
+                f"PCRE {run} configuration does not bind scanner, database and fixture")
+        for field, expected in (("fixture", fixture),
+                                ("database", artifacts[f"{run}-database"][0])):
+            raw = config.get(field)
+            require(isinstance(raw, str) and Path(raw).is_absolute() and
+                    Path(raw).resolve() == expected.resolve(),
+                    f"PCRE {run} configuration has the wrong {field} path")
+        scanner = config.get("scanner")
+        require(isinstance(scanner, str) and Path(scanner).is_absolute() and
+                Path(scanner).is_file() and not Path(scanner).is_symlink() and
+                digest(Path(scanner)) == artifacts["scanner-binary"][1],
+                f"PCRE {run} scanner binary does not match retained artifact")
+        args = config.get("args")
+        require(isinstance(args, list) and all(isinstance(arg, str) for arg in args)
+                and args and args[-1] == config["fixture"] and
+                f"--database={config['database']}" in args and
+                "--debug" in args and "--allmatch" in args and
+                "--max-filesize=32G" in args and
+                "--max-contiguous-size=32G" in args and
+                "--pcre-max-filesize=32G" in args,
+                f"PCRE {run} command arguments do not prove the exact-size scan")
+        configs[run] = config
+    return configs
+
+
+def validate_resource_rows(artifacts: dict[str, tuple[Path, str]],
+                           samples: dict[str, dict[str, int]],
+                           source_hash: str, build_hash: str,
+                           platform: str) -> None:
+    for run, case in (("detection", "full-subject-tail"),
+                      ("continuation", "full-subject-release")):
+        rows = acceptance_resources.read_resources(
+            artifacts[f"{run}-resource-row"][0])
+        require(len(rows) == 1, f"PCRE {run} resource sidecar is not one row")
+        row = rows[0]
+        require((row["kind"], row["id"], row["case_id"]) ==
+                ("matcher", "pcre", case),
+                f"PCRE {run} resource sidecar has the wrong case")
+        require(row["source_manifest_sha256"] == source_hash and
+                row["build_identity_sha256"] == build_hash and
+                row["config_sha256"] == artifacts[f"{run}-config"][1] and
+                row["platform"] == platform,
+                f"PCRE {run} resource sidecar does not bind source, build, config and platform")
+        require(row["sample_source"] == "procfs-process-tree",
+                f"PCRE {run} resource sidecar is not procfs-tree sampling")
+        acceptance_resources.validate_resource_rows(
+            [row], {(row["kind"], row["id"], row["case_id"]): row})
+        for field in ("sample_count", "rss_peak_kb", "pcre_rss_peak_kb",
+                      "post_pcre_rss_peak_kb"):
+            require(decimal(row[field], field) == samples[run][field],
+                    f"PCRE {run} resource {field} differs from raw RSS trace")
+
+
+def validate_phase_events(artifacts: dict[str, tuple[Path, str]]) -> None:
+    for run in ("detection", "continuation"):
+        events = artifacts[f"{run}-phase-events"][0].read_text(
+            encoding="utf-8").splitlines()
+        allowed = (["pcre-start", "post-pcre", "complete"],
+                   ["pcre-start", "post-pcre", "deep-parse", "complete"])
+        require(events in (allowed if run == "detection" else allowed[1:]),
+                f"PCRE {run} phase rendezvous is missing or out of order")
+
+
+def validate_reports(subject: dict, continuation: dict,
+                     artifacts: dict[str, tuple[Path, str]],
+                     configs: dict[str, dict]) -> None:
+    for run, expected in (("detection", subject), ("continuation", continuation)):
+        lines = artifacts[f"{run}-scan-report"][0].read_text(encoding="utf-8").splitlines()
+        require(len(lines) == 1, f"PCRE {run} must retain exactly one scan report")
+        report = acceptance_cases.load_json(lines[0], f"PCRE {run} scan report")
+        require(isinstance(report, dict) and
+                report.get("completion") == expected["completion"] and
+                report.get("target") == configs[run]["fixture"] and
+                report.get("root_size") == EXACT_SIZE_BYTES and
+                type(report.get("contiguous_bytes")) is int and
+                report["contiguous_bytes"] == EXACT_SIZE_BYTES and
+                report.get("skipped_operations") == 0,
+                f"PCRE {run} report does not prove a full exact-size subject")
+        if run == "detection":
+            require(report.get("last_alert") == subject["expected_signature"] and
+                    report.get("status") == 0 and report.get("verdict") == 2,
+                    "PCRE detection report lacks exact expected alert")
+        else:
+            require(report.get("status") == 0 and report.get("verdict") == 0 and
+                    not report.get("last_alert") and
+                    report.get("skipped_operations") == 0,
+                    "PCRE continuation report is not clean and complete")
 
 
 def validate_transition(transition: object) -> None:
@@ -251,7 +467,7 @@ def validate(proof_path: Path, evidence_root: Path | None = None) -> dict:
         "PCRE phase evidence proof",
     )
     require(isinstance(document, dict), "PCRE phase evidence proof is not an object")
-    require(document.get("proof_format_version") == 1 and
+    require(document.get("proof_format_version") == 2 and
             document.get("evidence_type") == "pcre-rss-phases" and
             document.get("qualification_result") == "pass",
             "PCRE phase evidence proof format is invalid")
@@ -268,13 +484,28 @@ def validate(proof_path: Path, evidence_root: Path | None = None) -> dict:
             budgets.get("pcre_rss_budget_kb") == PCRE_RSS_BUDGET_KB and
             budgets.get("post_pcre_rss_budget_kb") == POST_PCRE_RSS_BUDGET_KB,
             "PCRE phase evidence budgets do not match PLAN.md")
-    validate_identity(root, document.get("identity"), source_hash)
-    validate_subject(document.get("subject"))
-    validate_process_tree(document.get("process_tree"))
-    validate_samples(document.get("samples"))
+    artifacts = validate_artifacts(root, document.get("artifacts"))
+    validate_fixture(artifacts["fixture"][0])
+    identity = document.get("identity")
+    validate_identity(root, identity, source_hash)
+    subject = document.get("subject")
+    validate_subject(subject)
+    require(subject["fixture_sha256"] == artifacts["fixture"][1],
+            "PCRE subject fixture hash does not bind retained fixture")
+    continuation = document.get("continuation")
+    validate_continuation(continuation, subject)
+    configs = validate_configs(artifacts, identity, source_hash)
+    validate_reports(subject, continuation, artifacts, configs)
+    samples = validate_samples(artifacts)
+    validate_resource_rows(artifacts, samples, source_hash,
+                           identity["build_identity"]["sha256"],
+                           document["platform"])
+    validate_phase_events(artifacts)
     validate_transition(document.get("transition"))
-    validate_artifacts(root, document.get("artifacts"))
-    validate_runtime_markers(root, document.get("artifacts"))
+    for run, phases in (("detection", DETECTION_PHASES),
+                        ("continuation", CONTINUATION_PHASES)):
+        validate_runtime_markers(artifacts[f"{run}-process-log"][0], phases, run)
+    validate_match_offset(artifacts["detection-process-log"][0], subject)
     return document
 
 

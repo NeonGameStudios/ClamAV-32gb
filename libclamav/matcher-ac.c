@@ -852,18 +852,38 @@ static int cli_ac_parse_uint(const char *start, const char *end, unsigned int *v
     return 1;
 }
 
+static const char *cli_ac_skip_lsig_space(const char *cursor, const char *end)
+{
+    while (cursor < end && isspace((unsigned char)*cursor))
+        cursor++;
+
+    return cursor;
+}
+
 /*
  * In parse_only mode this function returns -1 on error or the max subsig id
  */
 int cli_ac_chklsig(const char *expr, const char *end, uint32_t *lsigcnt, unsigned int *cnt, uint64_t *ids, unsigned int parse_only)
 {
-    size_t i, len = end - expr, pth = 0, opoff = 0, op1off = 0, val;
+    size_t i, len, pth = 0, opoff = 0, op1off = 0, val;
     size_t blkend = 0, modoff = 0;
     unsigned int id, modval1 = 0, modval2 = 0, lcnt = 0, rcnt = 0, tcnt;
     uint64_t lids = 0, rids = 0, tids;
     int ret, lval, rval;
     char op = 0, op1 = 0, mod = 0, blkmod = 0;
-    const char *lstart = expr, *lend = NULL, *rstart = NULL, *rend = end, *pt;
+    const char *lstart, *lend = NULL, *rstart = NULL, *rend, *pt;
+
+    expr = cli_ac_skip_lsig_space(expr, end);
+    while (end > expr && isspace((unsigned char)end[-1]))
+        end--;
+    if (expr == end) {
+        cli_errmsg("cli_ac_chklsig: Can't parse empty expression\n");
+        return -1;
+    }
+
+    len    = end - expr;
+    lstart = expr;
+    rend   = end;
 
     for (i = 0; i < len; i++) {
         switch (expr[i]) {
@@ -902,22 +922,29 @@ int cli_ac_chklsig(const char *expr, const char *end, uint32_t *lsigcnt, unsigne
             break;
 
         if (op1 && !pth) {
-            blkend = i;
-            if (i + 1 < len && (expr[i + 1] == '>' || expr[i + 1] == '<' || expr[i + 1] == '=')) {
-                blkmod = expr[i + 1];
+            const char *modifier;
 
-                if (!cli_ac_parse_uint(&expr[i + 2], end, &modval1, &pt)) {
-                    cli_errmsg("chklexpr: Syntax error: Missing number after '%c'\n", expr[i + 1]);
+            blkend = i;
+            modifier = cli_ac_skip_lsig_space(&expr[i + 1], end);
+            if (modifier < end && (*modifier == '>' || *modifier == '<' || *modifier == '=')) {
+                blkmod = *modifier;
+
+                pt = cli_ac_skip_lsig_space(modifier + 1, end);
+                if (!cli_ac_parse_uint(pt, end, &modval1, &pt)) {
+                    cli_errmsg("chklexpr: Syntax error: Missing number after '%c'\n", *modifier);
                     return -1;
                 }
 
+                pt = cli_ac_skip_lsig_space(pt, end);
                 if (pt < end && *pt == ',') {
-                    if (!cli_ac_parse_uint(pt + 1, end, &modval2, &pt)) {
+                    pt = cli_ac_skip_lsig_space(pt + 1, end);
+                    if (!cli_ac_parse_uint(pt, end, &modval2, &pt)) {
                         cli_errmsg("chklexpr: Syntax error: Missing number after ','\n");
                         return -1;
                     }
                 }
 
+                pt = cli_ac_skip_lsig_space(pt, end);
                 i = (size_t)(pt - expr) - 1;
             }
 
@@ -937,8 +964,13 @@ int cli_ac_chklsig(const char *expr, const char *end, uint32_t *lsigcnt, unsigne
         if (expr[0] == '(')
             return cli_ac_chklsig(++expr, --end, lsigcnt, cnt, ids, parse_only);
 
-        if (!cli_ac_parse_uint(expr, end, &id, &pt) ||
-            (pt != end && (!mod || pt != expr + modoff))) {
+        if (!cli_ac_parse_uint(expr, end, &id, &pt)) {
+            cli_errmsg("cli_ac_chklsig: Can't parse %s\n", expr);
+            return -1;
+        }
+
+        pt = cli_ac_skip_lsig_space(pt, end);
+        if (pt != end && (!mod || pt != expr + modoff)) {
             cli_errmsg("cli_ac_chklsig: Can't parse %s\n", expr);
             return -1;
         }
@@ -954,9 +986,21 @@ int cli_ac_chklsig(const char *expr, const char *end, uint32_t *lsigcnt, unsigne
             val = lsigcnt[id];
 
         if (mod) {
-            pt  = expr + modoff + 1;
-            if (!cli_ac_parse_uint(pt, end, &modval1, &pt) || pt != end) {
+            pt = cli_ac_skip_lsig_space(expr + modoff + 1, end);
+            if (!cli_ac_parse_uint(pt, end, &modval1, &pt)) {
                 cli_errmsg("chklexpr: Syntax error: Missing number after '%c'\n", mod);
+                return -1;
+            }
+            pt = cli_ac_skip_lsig_space(pt, end);
+            if (pt < end && *pt == ',') {
+                pt = cli_ac_skip_lsig_space(pt + 1, end);
+                if (!cli_ac_parse_uint(pt, end, &modval2, &pt)) {
+                    cli_errmsg("chklexpr: Syntax error: Missing number after ','\n");
+                    return -1;
+                }
+            }
+            if (pt != end) {
+                cli_errmsg("cli_ac_chklsig: Can't parse %s\n", expr);
                 return -1;
             }
 
@@ -1085,10 +1129,12 @@ int cli_ac_chklsig(const char *expr, const char *end, uint32_t *lsigcnt, unsigne
             }
 
             if (modval2) {
+                uint64_t distinct_ids = tids;
+
                 val = 0;
-                while (tids) {
-                    val += tids & (uint64_t)1;
-                    tids >>= 1;
+                while (distinct_ids) {
+                    val += distinct_ids & (uint64_t)1;
+                    distinct_ids >>= 1;
                 }
 
                 if (val < modval2)
@@ -1096,6 +1142,7 @@ int cli_ac_chklsig(const char *expr, const char *end, uint32_t *lsigcnt, unsigne
             }
 
             *cnt += tcnt;
+            *ids |= tids;
             return 1;
         }
     }

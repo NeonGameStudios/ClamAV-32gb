@@ -70,11 +70,17 @@ static pthread_t probe_th;
 
 static int cpool_addunix(char *path)
 {
+    size_t path_len;
     struct sockaddr_un *srv;
     struct CP_ENTRY *cpe = &cp->pool[cp->entries - 1];
 
     if (!cli_is_abspath(path)) {
         logg(LOGG_ERROR, "Unix clamd socket must be an absolute path\n");
+        return 1;
+    }
+    path_len = strlen(path);
+    if (path_len >= sizeof(srv->sun_path)) {
+        logg(LOGG_ERROR, "Unix clamd socket path is too long\n");
         return 1;
     }
     if (!(srv = (struct sockaddr_un *)malloc(sizeof(*srv)))) {
@@ -83,8 +89,7 @@ static int cpool_addunix(char *path)
     }
 
     srv->sun_family = AF_UNIX;
-    strncpy(srv->sun_path, path, sizeof(srv->sun_path));
-    srv->sun_path[sizeof(srv->sun_path) - 1] = '\0';
+    memcpy(srv->sun_path, path, path_len + 1);
     cpe->type                                = 0;
     cpe->dead                                = 1;
     cpe->local                               = 1;

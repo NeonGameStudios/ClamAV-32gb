@@ -196,6 +196,31 @@ static cl_error_t cli_tgzload_skip(int comp, struct cli_dbio *dbio, off_t off,
     return CL_SUCCESS;
 }
 
+static int cli_tgzload_dbinfo_complete(const struct cli_dbinfo *dbinfo)
+{
+    const struct cli_dbinfo *db;
+
+    if (!dbinfo)
+        return 0;
+
+    for (db = dbinfo; db; db = db->next) {
+        if (!db->loaded)
+            return 0;
+    }
+
+    return 1;
+}
+
+static int cli_tgzload_may_accept_missing_eoa(unsigned int options, const struct cli_dbinfo *dbinfo)
+{
+    const unsigned int trusted_mode = CL_DB_SIGNED | CL_DB_OFFICIAL;
+
+    if ((options & trusted_mode) != trusted_mode || (options & CL_DB_UNSIGNED))
+        return 0;
+
+    return cli_tgzload_dbinfo_complete(dbinfo);
+}
+
 static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, struct cli_dbinfo *dbinfo, void *sign_verifier)
 {
     char osize[13], name[101];
@@ -297,6 +322,16 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
             } else if (ferror(dbio->fs)) {
                 return cli_tgzload_fail(compr, dbio, fdd, CL_EREAD);
             }
+            if (cli_tgzload_may_accept_missing_eoa(options, dbinfo)) {
+                /* Some signed production CVDs end at the gzip stream boundary
+                 * without an explicit tar end-of-archive block.  All members
+                 * declared by .info have already passed their size and hash
+                 * checks, so accept that representation only in the trusted
+                 * signed-official loader mode. Unsigned, incomplete, unlisted,
+                 * and empty archives retain the fail-closed path. */
+                cli_dbgmsg("cli_tgzload: End of stream after all listed members; accepting missing end-of-archive block\n");
+                return cli_tgzload_cleanup(compr, dbio, fdd);
+            }
             cli_errmsg("cli_tgzload: Missing end-of-archive block\n");
             return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
         }
@@ -331,7 +366,7 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
             break;
         }
 
-        strncpy(name, block, 100);
+        memcpy(name, block, 100);
         name[100] = '\0';
 
         if (strchr(name, '/')) {
@@ -353,7 +388,7 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
                 return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
         }
 
-        strncpy(osize, block + 124, 12);
+        memcpy(osize, block + 124, 12);
         osize[12] = '\0';
 
         if (!cli_cvd_parse_octal_size(osize, &size)) {

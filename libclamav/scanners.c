@@ -11139,7 +11139,7 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
         return ret;
     }
 
-    if (ctx->engine->engine_options & ENGINE_OPTIONS_FORCE_TO_DISK) {
+    if ((ctx->engine->engine_options & ENGINE_OPTIONS_FORCE_TO_DISK) && !map->handle_is_fd) {
         /*
          * Force to disk!
          *
@@ -11215,10 +11215,15 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
         free(tempfile);
     } else {
         /*
-         * Not forced to disk.
+         * Either force-to-disk is disabled, or the nested fmap is already
+         * backed by a file descriptor. In the latter case, duplicating the
+         * same range to another temporary file would consume disk quota
+         * without making the nested scan any more disk-backed.
          *
-         * Just use nested map by scanning given fmap at offset + length.
+         * Scan the nested range as a view of the existing fmap.
          */
+        if (ctx->engine->engine_options & ENGINE_OPTIONS_FORCE_TO_DISK)
+            cli_dbgmsg("cli_magic_scan_nested_fmap_type: nested fmap is already file-backed; skipping redundant temporary copy\n");
         ret = magic_scan_nested_fmap_type(map, offset, length, ctx, type, name, attributes);
     }
     return ret;

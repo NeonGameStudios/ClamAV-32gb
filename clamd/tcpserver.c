@@ -159,8 +159,11 @@ int tcpserver(int **lsockets, unsigned int *nlsockets, char *ipaddr, const struc
         }
 #else
         if (ipaddr) {
-            strncpy(host, ipaddr, sizeof(host));
-            host[sizeof(host) - 1] = '\0';
+            size_t ipaddr_len = strlen(ipaddr);
+            if (ipaddr_len >= sizeof(host))
+                ipaddr_len = sizeof(host) - 1;
+            memcpy(host, ipaddr, ipaddr_len);
+            host[ipaddr_len] = '\0';
         } else
             host[0] = '\0';
         snprintf(serv, sizeof(serv), "%u", (unsigned int)(optget(opts, "TCPSocket")->numarg));

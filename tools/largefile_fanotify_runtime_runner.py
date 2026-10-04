@@ -110,6 +110,7 @@ def write_config(
         "MaxThreads 1",
         "MaxQueue 2",
         f"MaxFileSize {args.max_file_size}",
+        f"OnAccessMaxFileSize {args.max_file_size}",
         f"MaxScanSize {args.max_scan_size}",
         f"MaxTemporarySize {args.max_temporary_size}",
         f"MaxScanTime {args.max_scan_time}",
@@ -186,7 +187,7 @@ def stop_process(process: subprocess.Popen | None, name: str) -> dict[str, objec
     if was_alive:
         process.send_signal(signal.SIGTERM)
         try:
-            process.wait(timeout=10)
+            process.wait(timeout=30)
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait(timeout=10)
@@ -249,6 +250,111 @@ def load_json_lines(path: Path, label: str) -> list[dict[str, object]]:
     if not rows:
         fail(f"{label} is empty")
     return rows
+
+
+def monitoring_report_timeout_seconds(max_scan_time: str) -> float:
+    try:
+        milliseconds = int(max_scan_time)
+    except (TypeError, ValueError) as error:
+        raise RunnerError(
+            "monitoring-only requires MaxScanTime as a positive integer in milliseconds"
+        ) from error
+    if milliseconds <= 0:
+        fail("monitoring-only requires a finite positive MaxScanTime")
+    return milliseconds / 1000 + 30.0
+
+
+def wait_for_monitoring_report(
+    path: Path,
+    fixture: Path,
+    case_name: str,
+    fixture_sha256: str,
+    timeout_seconds: float,
+    *,
+    clamd_process: subprocess.Popen | None = None,
+    clamonacc_process: subprocess.Popen | None = None,
+    clamd_log: Path | None = None,
+    clamonacc_log: Path | None = None,
+    poll_interval: float = 0.25,
+) -> dict[str, object]:
+    expected_completion, _exit_code, _decision, _response = case_binder.expected_case(case_name)
+    if timeout_seconds <= 0 or poll_interval <= 0:
+        fail("monitoring-only report wait and poll intervals must be positive")
+    deadline = time.monotonic() + timeout_seconds
+    observed: list[tuple[object, object]] = []
+    last_parse_error: str | None = None
+
+    while True:
+        for label, process, log_path in (
+            ("clamd", clamd_process, clamd_log),
+            ("clamonacc", clamonacc_process, clamonacc_log),
+        ):
+            if process is not None and process.poll() is not None:
+                detail = ""
+                if log_path is not None and log_path.is_file():
+                    detail = log_path.read_text(
+                        encoding="utf-8", errors="replace"
+                    )[-4096:].strip()
+                suffix = f"; log tail: {detail}" if detail else ""
+                fail(
+                    f"{label} exited before the monitoring-only scan report "
+                    f"completed with status {process.returncode}{suffix}"
+                )
+
+        if path.is_symlink():
+            fail(f"monitoring-only scan report is symlinked: {path}")
+        if path.is_file():
+            try:
+                lines = path.read_text(encoding="utf-8").splitlines()
+            except FileNotFoundError:
+                lines = []
+            for number, line in enumerate(lines, 1):
+                if not line.strip():
+                    continue
+                try:
+                    report = json.loads(line)
+                except json.JSONDecodeError as error:
+                    # clamonacc may still be writing the terminal JSONL record.
+                    last_parse_error = f"line {number}: {error}"
+                    continue
+                if not isinstance(report, dict) or report.get("target") != str(fixture):
+                    continue
+                if report.get("clamonacc_event_id") != 0:
+                    fail("monitoring-only scan report has a permission-event ID")
+                completion = report.get("completion")
+                observed.append((completion, report.get("root_size")))
+                if completion != expected_completion:
+                    fail(
+                        "monitoring-only scan report outcome does not match "
+                        f"case {case_name}: expected {expected_completion}, got {completion!r}"
+                    )
+                try:
+                    case_binder.validate_raw_report(
+                        report, case_name, fixture_sha256, 0,
+                        expected_completion, "monitoring-only clamonacc report",
+                    )
+                except ValueError as error:
+                    fail(f"monitoring-only clamonacc report is invalid: {error}")
+                expected_size = fixture.stat().st_size
+                if report["root_size"] != expected_size:
+                    fail(
+                        "monitoring-only scan report root size does not match "
+                        f"the fixture: expected {expected_size}, got {report['root_size']}"
+                    )
+                return dict(report)
+
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        time.sleep(min(poll_interval, remaining))
+
+    detail = f"; target reports observed: {observed}" if observed else ""
+    if last_parse_error:
+        detail += f"; last incomplete JSON record: {last_parse_error}"
+    fail(
+        f"timed out after {timeout_seconds:.1f}s waiting for a structured "
+        f"monitoring-only {expected_completion} report for {fixture}{detail}"
+    )
 
 
 def select_permission_event_id(path: Path) -> int:
@@ -378,7 +484,31 @@ def run_case(args: argparse.Namespace) -> dict[str, object]:
                 if observer_status != 0:
                     fail(f"fanotify observer exited with status {observer_status}")
             if actor_process is not None:
-                actor_process.wait(timeout=args.actor_timeout + 10)
+                actor_status = actor_process.wait(timeout=args.actor_timeout + 10)
+                if actor_status != 0:
+                    fail(f"monitoring actor exited with status {actor_status}")
+                if args.monitoring_only:
+                    report_timeout = monitoring_report_timeout_seconds(args.max_scan_time)
+                    health["monitoring_report_timeout_seconds"] = report_timeout
+                    report_wait_started = time.monotonic()
+                    health["monitoring_report_state"] = "waiting"
+                    try:
+                        wait_for_monitoring_report(
+                            report_path, fixture, args.case_name, fixture_hash,
+                            report_timeout, clamd_process=clamd_process,
+                            clamonacc_process=clamonacc_process,
+                            clamd_log=clamd_log, clamonacc_log=clamonacc_log,
+                        )
+                    except RunnerError:
+                        health["monitoring_report_state"] = "failed"
+                        health["monitoring_report_wait_seconds"] = round(
+                            time.monotonic() - report_wait_started, 3
+                        )
+                        raise
+                    health["monitoring_report_state"] = "complete"
+                    health["monitoring_report_wait_seconds"] = round(
+                        time.monotonic() - report_wait_started, 3
+                    )
             time.sleep(1.0)
             ping(socket_path)
             health["clamd_pre_cleanup_pong"] = True

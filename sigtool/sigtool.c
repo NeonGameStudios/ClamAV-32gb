@@ -78,6 +78,21 @@ char *g_cvdcertsdir = NULL;
 short recursion = 0, bell = 0;
 short printinfected = 0, printclean = 1;
 
+static int copy_bounded_path(char *destination, size_t capacity, const char *source)
+{
+    size_t source_len;
+
+    if (destination == NULL || capacity == 0 || source == NULL)
+        return -1;
+
+    source_len = strlen(source);
+    if (source_len >= capacity)
+        return -1;
+
+    memcpy(destination, source, source_len + 1);
+    return 0;
+}
+
 static const struct dblist_s {
     const char *ext;
     unsigned int count;
@@ -344,11 +359,13 @@ static int fuzzy_img_file(char *filename)
 
     int target_fd                   = -1;
     FFIError *fuzzy_hash_calc_error = NULL;
-    uint8_t *mem                    = NULL;
+    fmap_t *map                     = NULL;
+    struct cl_engine *engine        = NULL;
+    cli_ctx ctx                     = {0};
 
     image_fuzzy_hash_t hash = {0};
     STATBUF st;
-    ssize_t bytes_read;
+    cl_error_t result;
 
     if ((target_fd = open(filename, O_RDONLY)) == -1) {
         char err[128];
@@ -362,26 +379,31 @@ static int fuzzy_img_file(char *filename)
         goto done;
     }
 
-    if (NULL == (mem = malloc((size_t)st.st_size))) {
-        mprintf(LOGG_ERROR, "%s: Malloc failed, buffer size: %zu\n", basename(filename), (size_t)st.st_size);
+    if (st.st_size <= 0 || (uint64_t)st.st_size > SIZE_MAX) {
+        mprintf(LOGG_ERROR, "%s: Image size is empty or cannot be represented\n", basename(filename));
         goto done;
     }
 
-    bytes_read = read(target_fd, mem, (size_t)st.st_size);
-    if (bytes_read == -1) {
-        char err[128];
-        mprintf(LOGG_ERROR, "%s: Failed to read file: %s\n", basename(filename), cli_strerror(errno, err, sizeof(err)));
-        goto done;
-    }
-    if (bytes_read < (ssize_t)st.st_size) {
-        mprintf(LOGG_ERROR, "%s: Read fewer bytes than expected. The file may have been modified while attempting to process it.\n", basename(filename));
+    map = fmap_new(target_fd, 0, (size_t)st.st_size, filename, filename);
+    if (NULL == map) {
+        mprintf(LOGG_ERROR, "%s: Failed to create a bounded file map\n", basename(filename));
         goto done;
     }
 
-    if (!fuzzy_hash_calculate_image(mem, (size_t)st.st_size, hash.hash, 8, &fuzzy_hash_calc_error)) {
-        mprintf(LOGG_ERROR, "%s: Failed to calculate image fuzzy hash: %s\n",
+    engine = cl_engine_new();
+    if (NULL == engine) {
+        mprintf(LOGG_ERROR, "%s: Failed to create a resource-accounting engine\n", basename(filename));
+        goto done;
+    }
+    ctx.engine = engine;
+    ctx.fmap   = map;
+
+    result = fuzzy_hash_calculate_image_fmap(map, &ctx, hash.hash, sizeof(hash.hash), &fuzzy_hash_calc_error);
+    if (result != CL_SUCCESS) {
+        mprintf(LOGG_ERROR, "%s: Failed to calculate image fuzzy hash (%s): %s\n",
                 basename(filename),
-                ffierror_fmt(fuzzy_hash_calc_error));
+                cl_strerror(result),
+                fuzzy_hash_calc_error ? ffierror_fmt(fuzzy_hash_calc_error) : "no decoder diagnostic");
         goto done;
     }
 
@@ -394,10 +416,11 @@ static int fuzzy_img_file(char *filename)
     status = 0;
 
 done:
+    if (NULL != map)
+        fmap_free(map);
 
-    if (NULL != mem) {
-        free(mem);
-    }
+    if (NULL != engine)
+        cl_engine_free(engine);
 
     if (NULL != fuzzy_hash_calc_error) {
         ffierror_free(fuzzy_hash_calc_error);
@@ -1334,8 +1357,11 @@ static int build(const struct optstruct *opts)
     /* try to read cvd header of current database */
     if (opts->filename) {
         if (cli_strbcasestr(opts->filename[0], ".cvd") || cli_strbcasestr(opts->filename[0], ".cld") || cli_strbcasestr(opts->filename[0], ".cud")) {
-            strncpy(olddb, opts->filename[0], sizeof(olddb));
-            olddb[sizeof(olddb) - 1] = '\0';
+            if (copy_bounded_path(olddb, sizeof(olddb), opts->filename[0]) != 0) {
+                mprintf(LOGG_ERROR, "build: Existing database path is too long\n");
+                FREE_LS(dblist2);
+                return -1;
+            }
         } else {
             mprintf(LOGG_ERROR, "build: Not a CVD/CLD/CUD file\n");
             FREE_LS(dblist2);
@@ -1610,8 +1636,13 @@ static int build(const struct optstruct *opts)
         unlink(newcvd);
         return -1;
     }
-    strncpy(olddb, pt, sizeof(olddb));
-    olddb[sizeof(olddb) - 1] = '\0';
+    if (copy_bounded_path(olddb, sizeof(olddb), pt) != 0) {
+        mprintf(LOGG_ERROR, "build: Temporary database path is too long\n");
+        removeTempDir(opts, pt);
+        free(pt);
+        unlink(newcvd);
+        return -1;
+    }
     free(pt);
 
     if (!(pt = createTempDir(opts))) {
@@ -1688,8 +1719,10 @@ static int unpack(const struct optstruct *opts)
         free(dbdir);
 
     } else {
-        strncpy(name, optget(opts, "unpack")->strarg, sizeof(name));
-        name[sizeof(name) - 1] = '\0';
+        if (copy_bounded_path(name, sizeof(name), optget(opts, "unpack")->strarg) != 0) {
+            mprintf(LOGG_ERROR, "unpack: Database path is missing or too long\n");
+            return -1;
+        }
     }
 
     certs_directory = optget(opts, "cvdcertsdir")->strarg;

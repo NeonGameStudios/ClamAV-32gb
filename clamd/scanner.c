@@ -494,6 +494,11 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
             NULL,
             NULL,
             &report);
+        if ((NULL != scandata->options) &&
+            cli_scan_report_promote_exceeds_max(
+                report, virname,
+                0 != (scandata->options->heuristic & CL_SCAN_HEURISTIC_EXCEEDS_MAX)))
+            report_status = CL_VIRUS;
         record_status = record_structured_scan_report(scandata->conn, report);
         if (record_status != CL_SUCCESS) {
             ret                               = CL_EMEM;
@@ -724,6 +729,11 @@ cl_error_t scanfd(
             NULL,
             stream ? conn->stream_bytes : 0,
             &report);
+        if ((NULL != options) &&
+            cli_scan_report_promote_exceeds_max(
+                report, virname,
+                0 != (options->heuristic & CL_SCAN_HEURISTIC_EXCEEDS_MAX)))
+            report_status = CL_VIRUS;
         record_status = record_structured_scan_report(conn, report);
         if (record_status != CL_SUCCESS) {
             ret                     = CL_EMEM;

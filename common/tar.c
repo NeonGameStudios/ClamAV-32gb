@@ -56,6 +56,7 @@ struct tar_header {
 int tar_addfile(int fd, gzFile gzs, const char *file)
 {
     int s, bytes;
+    size_t name_len;
     struct tar_header hdr;
     STATBUF sb;
     unsigned char buff[FILEBUFF], *pt;
@@ -70,8 +71,10 @@ int tar_addfile(int fd, gzFile gzs, const char *file)
     }
 
     memset(&hdr, 0, TARBLK);
-    strncpy(hdr.name, file, 100);
-    hdr.name[99] = '\0';
+    name_len = strlen(file);
+    if (name_len >= sizeof(hdr.name))
+        name_len = sizeof(hdr.name) - 1;
+    memcpy(hdr.name, file, name_len);
     snprintf(hdr.size, 12, "%o", (unsigned int)sb.st_size);
     pt = (unsigned char *)&hdr;
     for (i = 0; i < TARBLK; i++)

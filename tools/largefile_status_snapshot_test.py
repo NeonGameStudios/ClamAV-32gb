@@ -295,8 +295,8 @@ class SnapshotTests(unittest.TestCase):
         )
         entries = manifest.read_text(encoding="utf-8").splitlines()
         self.assertEqual(
-            [line.rsplit("  ", 1)[1] for line in entries],
-            ["runtime.c", "tools/largefile_source_manifest.sh"],
+            {line.rsplit("  ", 1)[1] for line in entries},
+            {"runtime.c", "tools/largefile_source_manifest.sh"},
         )
 
 

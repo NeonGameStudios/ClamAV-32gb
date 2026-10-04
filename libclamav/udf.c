@@ -45,7 +45,7 @@ typedef enum {
     EXTENDED_FILE_ENTRY_DESCRIPTOR              = 266
 } tag_identifier;
 
-static tag_identifier getDescriptorTagId(DescriptorTag *tag)
+static tag_identifier getDescriptorTagId(const DescriptorTag *tag)
 {
     return le16_to_host(tag->tagId);
 }
@@ -1419,6 +1419,11 @@ static cl_error_t udf_scan_anchor_volume(cli_ctx *ctx, const size_t offset)
     uint64_t sequence_length64;
     uint32_t main_location;
     uint32_t main_length;
+    extent_ad main_sequence;
+    extent_ad reserve_sequence;
+    bool use_reserve = false;
+    bool saw_empty_block;
+    bool saw_descriptor;
     bool have_pvd = false;
     bool have_pd  = false;
     bool have_lvd = false;
@@ -1453,16 +1458,31 @@ static cl_error_t udf_scan_anchor_volume(cli_ctx *ctx, const size_t offset)
     if (ret != CL_SUCCESS)
         return ret;
 
-    main_length   = le32_to_host(((AnchorVolumeDescriptorPointer *)block)->mainVolumeDescriptorSequence.extentLength);
-    main_location = le32_to_host(((AnchorVolumeDescriptorPointer *)block)->mainVolumeDescriptorSequence.extentLocation);
+    memcpy(&main_sequence,
+           &((AnchorVolumeDescriptorPointer *)block)->mainVolumeDescriptorSequence,
+           sizeof(main_sequence));
+    memcpy(&reserve_sequence,
+           &((AnchorVolumeDescriptorPointer *)block)->reserveVolumeDescriptorSequence,
+           sizeof(reserve_sequence));
+
+select_sequence:
+    if (use_reserve) {
+        main_length = le32_to_host(reserve_sequence.extentLength);
+        main_location = le32_to_host(reserve_sequence.extentLocation);
+    } else {
+        main_length = le32_to_host(main_sequence.extentLength);
+        main_location = le32_to_host(main_sequence.extentLocation);
+    }
     main_extent_type = main_length >> 30;
     main_length &= UINT32_C(0x3fffffff);
     if (main_extent_type != 0) {
-        cli_mark_scan_incomplete(ctx, "UDF main descriptor sequence extent type is unsupported");
+        cli_mark_scan_incomplete(ctx, use_reserve ? "UDF reserve descriptor sequence extent type is unsupported" :
+                                                    "UDF main descriptor sequence extent type is unsupported");
         return CL_EUNPACK;
     }
     if (main_length == 0 || main_length % VOLUME_DESCRIPTOR_SIZE != 0) {
-        cli_mark_scan_incomplete(ctx, "UDF main descriptor sequence extent is invalid");
+        cli_mark_scan_incomplete(ctx, use_reserve ? "UDF reserve descriptor sequence extent is invalid" :
+                                                    "UDF main descriptor sequence extent is invalid");
         return CL_EPARSE;
     }
 
@@ -1471,24 +1491,52 @@ static cl_error_t udf_scan_anchor_volume(cli_ctx *ctx, const size_t offset)
     if (sequence_offset64 > SIZE_MAX || sequence_length64 > SIZE_MAX ||
         sequence_offset64 > ctx->fmap->len ||
         sequence_length64 > (uint64_t)ctx->fmap->len - sequence_offset64) {
-        cli_mark_scan_incomplete(ctx, "UDF main descriptor sequence is outside the input map");
+        cli_mark_scan_incomplete(ctx, use_reserve ? "UDF reserve descriptor sequence is outside the input map" :
+                                                    "UDF main descriptor sequence is outside the input map");
         return CL_EPARSE;
     }
     sequence_offset = (size_t)sequence_offset64;
     sequence_length = (size_t)sequence_length64;
     end             = sequence_offset + sequence_length;
+    saw_empty_block = false;
+    saw_descriptor  = false;
 
     for (cursor = sequence_offset; cursor < end; cursor += VOLUME_DESCRIPTOR_SIZE) {
         tag_identifier tag_id;
+        size_t byte;
 
-        ret = udf_checktimelimit(ctx, "UDF main descriptor sequence traversal reached the configured time limit");
+        ret = udf_checktimelimit(ctx, use_reserve ? "UDF reserve descriptor sequence traversal reached the configured time limit" :
+                                                    "UDF main descriptor sequence traversal reached the configured time limit");
         if (ret != CL_SUCCESS)
             return ret;
 
         ret = udf_copy_descriptor_block(ctx, cursor, block,
-                                        "UDF main descriptor sequence could not be read completely");
+                                        use_reserve ? "UDF reserve descriptor sequence could not be read completely" :
+                                                      "UDF main descriptor sequence could not be read completely");
         if (ret != CL_SUCCESS)
             return ret;
+
+        /* ECMA-167 3/8.4.2 permits an unrecorded sector to terminate a
+         * populated extent. Only a wholly blank main extent can select the
+         * reserve; a later populated descriptor must not be laundered through
+         * that fallback. */
+        if (getDescriptorTagId((const DescriptorTag *)block) == INVALID_DESCRIPTOR) {
+            for (byte = 0; byte < VOLUME_DESCRIPTOR_SIZE && block[byte] == 0; byte++) {
+            }
+            if (byte == VOLUME_DESCRIPTOR_SIZE) {
+                if (saw_descriptor) {
+                    have_terminator = true;
+                    break;
+                }
+                saw_empty_block = true;
+                continue;
+            }
+        }
+        if (saw_empty_block) {
+            cli_mark_scan_incomplete(ctx, "UDF descriptor sequence mixes empty and populated blocks");
+            return CL_EPARSE;
+        }
+        saw_descriptor = true;
 
         ret = udf_validate_descriptor_tag(ctx, (const DescriptorTag *)block,
                                           VOLUME_DESCRIPTOR_SIZE, cursor, true);
@@ -1559,6 +1607,15 @@ static cl_error_t udf_scan_anchor_volume(cli_ctx *ctx, const size_t offset)
                 cli_mark_scan_incomplete(ctx, "UDF main descriptor sequence contains an unsupported descriptor");
                 return CL_EUNPACK;
         }
+    }
+
+    if (!saw_descriptor && saw_empty_block) {
+        if (use_reserve) {
+            cli_mark_scan_incomplete(ctx, "UDF reserve descriptor sequence is empty");
+            return CL_EPARSE;
+        }
+        use_reserve = true;
+        goto select_sequence;
     }
 
     if (!have_terminator) {

@@ -13,10 +13,11 @@ trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 # Production has no synthetic-size CLI or environment override. Its unchanged
 # entry point is checked below to ensure these tiny fixtures cannot qualify.
 control_root=$tmp/control-source
-mkdir -p "$control_root/tools" "$control_root/docs"
+mkdir -p "$control_root/tools" "$control_root/docs" "$control_root/libclamav"
 control_root=$(CDPATH= cd -- "$control_root" && pwd)
 cp "$root/tools/largefile_service_evidence_check.sh" "$root/tools/largefile_service_oversize.py" "$control_root/tools/"
 cp "$root/tools/largefile_service_workload_check.py" "$root/tools/largefile_acceptance_cases.py" "$control_root/tools/"
+cp "$root/libclamav/filetypes.c" "$control_root/libclamav/"
 cp "$root/docs/largefile-capabilities.tsv" "$root/docs/largefile-capability-case-map.tsv" "$control_root/docs/"
 python3 "$root/tools/largefile_service_workload_check_test.py"
 python3 "$root/tools/largefile_service_result_check_test.py"
@@ -144,10 +145,10 @@ qualification_oracle=$out/provenance/qualification-oracle.tsv
 printf 'role\texpected_size\texpected_sha256\texpected_exit\texpected_completion\texpected_signature\texpected_offset\texpected_type\n' > "$qualification_oracle"
 for role in production materialized expansion edge; do
     if [ "$role" = edge ]; then
-        printf '%s\t%s\t%s\t1\tDETECTION_TERMINATED\tSynthetic.Detection\t123\tCL_TYPE_DATA\n' \
+        printf '%s\t%s\t%s\t1\tDETECTION_TERMINATED\tSynthetic.Detection\t123\tCL_TYPE_BINARY_DATA\n' \
             "$role" "$workload_size" "$workload_hash" >> "$qualification_oracle"
     else
-        printf '%s\t%s\t%s\t0\tCOMPLETE\t-\t-\tCL_TYPE_DATA\n' \
+        printf '%s\t%s\t%s\t0\tCOMPLETE\t-\t-\tCL_TYPE_BINARY_DATA\n' \
             "$role" "$workload_size" "$workload_hash" >> "$qualification_oracle"
     fi
 done
@@ -168,9 +169,9 @@ cp "$out/provenance/service-inputs-before.json" "$out/provenance/service-inputs-
 workload_results=$out/provenance/service-workload-results.tsv
 printf 'label\tkind\trole\tinput\tlog\treport\tstatus\tcheck_offset\n' > "$workload_results"
 acceptance_records=$out/provenance/acceptance-cases.tsv
-printf 'kind\tid\tcase_id\tsource_manifest_sha256\tbuild_identity_sha256\tconfig_sha256\tplatform\tfixture_role\tfixture_sha256\toracle_sha256\tdatabase_sha256\texit_code\tverdict\tcompletion\treason\talert_signature\talert_offset\tlogical_bytes\tmatcher_bytes\tcontiguous_bytes\ttemporary_bytes\tfiles_scanned\tmax_recursion_depth\telapsed_ms\tparser_operations\tdetector_operations\tskipped_operations\tsanitizer\tresource_phase\thealth\tcleanup\tartifacts\n' > "$acceptance_records"
-clean_report_json=$(printf '{"version":1,"completion":"COMPLETE","file_type":"CL_TYPE_DATA","status":0,"verdict":0,"root_size":%s,"logical_bytes":%s,"max_scan_size":68719476736,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
-detection_report_json=$(printf '{"version":1,"completion":"DETECTION_TERMINATED","file_type":"CL_TYPE_DATA","status":0,"verdict":2,"last_alert":"Synthetic.Detection","last_alert_offset":123,"root_size":%s,"logical_bytes":%s,"max_scan_size":68719476736,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
+printf 'kind\tid\tcase_id\tsource_manifest_sha256\tbuild_identity_sha256\tconfig_sha256\tplatform\tfixture_role\tfixture_sha256\toracle_sha256\tdatabase_sha256\texit_code\tverdict\tcompletion\treason\talert_signature\talert_offset\talert_offset_scope\talert_offset_source\talert_offset_evidence\tlogical_bytes\tmatcher_bytes\tcontiguous_bytes\ttemporary_bytes\tfiles_scanned\tmax_recursion_depth\telapsed_ms\tparser_operations\tdetector_operations\tskipped_operations\tsanitizer\tresource_phase\thealth\tcleanup\tartifacts\n' > "$acceptance_records"
+clean_report_json=$(printf '{"version":1,"completion":"COMPLETE","file_type":"CL_TYPE_BINARY_DATA","status":0,"verdict":0,"root_size":%s,"logical_bytes":%s,"max_scan_size":68719476736,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
+detection_report_json=$(printf '{"version":1,"completion":"DETECTION_TERMINATED","file_type":"CL_TYPE_BINARY_DATA","status":0,"verdict":2,"last_alert":"Synthetic.Detection","last_alert_offset":123,"root_size":%s,"logical_bytes":%s,"max_scan_size":68719476736,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
 report_json=$clean_report_json
 workload_labels='production_cvd_scanreport production_cvd_contscanreport production_cvd_multiscanreport production_cvd_allmatchscan production_cvd_fildesreport production_cvd_instreamreport production-clamscan clamd-serial-queue-1 clamd-serial-queue-2 production_cvd production_cvd_fildes production_cvd_instream materialized_warm materialized_cold parser_expansion edge-clamscan edge-clamscan-stdin edge-clamdscan-stdin edge-clamdscan-multiscan edge-clamdscan-stream-multiscan edge-clamdscan-fdpass-multiscan edge_contscan edge_multiscan edge_allmatch edge_fildes edge_instream clamd-parallel-client-1 clamd-parallel-client-2'
 for label in $workload_labels; do
@@ -637,8 +638,8 @@ import sys
 source, destination = map(Path, sys.argv[1:])
 contents = source.read_text(encoding="utf-8")
 contents = contents.replace(
-    "\tCOMPLETE\t-\t-\tCL_TYPE_DATA",
-    "\tCOMPLETE\t-\t1\tCL_TYPE_DATA",
+    "\tCOMPLETE\t-\t-\tCL_TYPE_BINARY_DATA",
+    "\tCOMPLETE\t-\t1\tCL_TYPE_BINARY_DATA",
     1,
 )
 destination.write_text(contents, encoding="utf-8")

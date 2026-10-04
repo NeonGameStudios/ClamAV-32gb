@@ -55,6 +55,7 @@
 #include "others.h"
 #include "matcher-ac.h"
 #include "matcher-pcre.h"
+#include "scan_report.h"
 #include "str.h"
 #include "readdb.h"
 #include "default.h"
@@ -344,14 +345,53 @@ static int write_structured_scan_report(const struct optstruct *opts, const cl_s
  * completed. The library keeps legacy return-code behavior for callers, so
  * the CLI must explicitly enforce the structured completion contract before
  * printing or counting an OK result. */
-static void enforce_structured_completion(const cl_scan_report_t *report, cl_error_t *status)
+static bool structured_report_has_visible_limit_alert(const cl_scan_report_t *report)
+{
+    static const char prefix[] = "Heuristics.Limits.Exceeded.";
+    const char *last_alert      = NULL;
+
+    return (NULL != report) &&
+           (CL_SUCCESS == cl_scan_report_get_last_alert(report, &last_alert)) &&
+           (NULL != last_alert) &&
+           (0 == strncmp(last_alert, prefix, sizeof(prefix) - 1));
+}
+
+static bool alert_exceeds_max_enabled(const struct cl_scan_options *options)
+{
+    return (NULL != options) &&
+           (0 != (options->heuristic & CL_SCAN_HEURISTIC_EXCEEDS_MAX));
+}
+
+static void enforce_structured_completion(cl_scan_report_t *report,
+                                          cl_error_t *status,
+                                          cl_verdict_t *verdict,
+                                          bool alert_exceeds_max)
 {
     cl_scan_completion_t completion;
     cl_error_t report_status;
 
-    if ((NULL == report) || (NULL == status))
+    if (NULL == report)
         return;
-    if (cl_scan_report_get_completion(report, &completion) != CL_SUCCESS ||
+
+    if (cli_scan_report_promote_exceeds_max(report, NULL, alert_exceeds_max)) {
+        if (NULL != status)
+            *status = CL_VIRUS;
+        if (NULL != verdict)
+            *verdict = CL_VERDICT_POTENTIALLY_UNWANTED;
+    }
+
+    if (cl_scan_report_get_completion(report, &completion) != CL_SUCCESS)
+        return;
+
+    /* Without an enabled, reportable AlertExceedsMax policy detection, an
+     * unrelated PUA must not hide the incomplete scan or suppress exit 2. */
+    if ((completion == CL_SCAN_COMPLETION_LIMIT_INCOMPLETE) &&
+        (NULL != verdict) &&
+        (*verdict == CL_VERDICT_POTENTIALLY_UNWANTED) &&
+        (!alert_exceeds_max || !structured_report_has_visible_limit_alert(report)))
+        *verdict = CL_VERDICT_NOTHING_FOUND;
+
+    if ((NULL == status) ||
         completion == CL_SCAN_COMPLETION_COMPLETE ||
         completion == CL_SCAN_COMPLETION_DETECTION_TERMINATED)
         return;
@@ -401,7 +441,7 @@ static int write_input_failure_report(
                                       CL_VERDICT_NOTHING_FOUND, NULL,
                                       &report) != 0)
         result = -1;
-    enforce_structured_completion(report, &status);
+    enforce_structured_completion(report, &status, NULL, false);
     if (write_structured_scan_report(opts, report) != 0)
         result = -1;
     cl_scan_report_free(report);
@@ -618,7 +658,8 @@ static void scanfile(const char *filename, struct cl_engine *engine, const struc
         file_type_out,
         &report);
 
-    enforce_structured_completion(report, &ret);
+    enforce_structured_completion(report, &ret, &verdict,
+                                  alert_exceeds_max_enabled(options));
 
     switch (verdict) {
         case CL_VERDICT_NOTHING_FOUND: {
@@ -718,7 +759,8 @@ done:
 
     if (ensure_structured_scan_report(opts, engine, filename, ret, verdict, alert_name, &report) != 0)
         info.errors++;
-    enforce_structured_completion(report, &ret);
+    enforce_structured_completion(report, &ret, &verdict,
+                                  alert_exceeds_max_enabled(options));
     if (write_structured_scan_report(opts, report) != 0)
         info.errors++;
 
@@ -1108,10 +1150,12 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
                     file_type_out,
                     staged_size,
                     &report);
-                enforce_structured_completion(report, &ret);
+                enforce_structured_completion(report, &ret, &verdict,
+                                              alert_exceeds_max_enabled(options));
                 if (ensure_structured_scan_report(opts, engine, "stdin", ret, verdict, alert_name, &report) != 0)
                     info.errors++;
-                enforce_structured_completion(report, &ret);
+                enforce_structured_completion(report, &ret, &verdict,
+                                              alert_exceeds_max_enabled(options));
                 if (write_structured_scan_report(opts, report) != 0)
                     info.errors++;
                 cl_scan_report_free(report);
@@ -1206,10 +1250,12 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
         fsize,
         &report);
 
-    enforce_structured_completion(report, &ret);
+    enforce_structured_completion(report, &ret, &verdict,
+                                  alert_exceeds_max_enabled(options));
     if (ensure_structured_scan_report(opts, engine, "stdin", ret, verdict, alert_name, &report) != 0)
         info.errors++;
-    enforce_structured_completion(report, &ret);
+    enforce_structured_completion(report, &ret, &verdict,
+                                  alert_exceeds_max_enabled(options));
     if (write_structured_scan_report(opts, report) != 0)
         info.errors++;
 
@@ -1697,10 +1743,35 @@ static int scan_files(struct cl_engine *engine, const struct optstruct *opts, st
     return ret;
 }
 
+static int append_pua_category(char **buffer, size_t *used, const char *category)
+{
+    char *resized;
+    size_t category_len, required;
+
+    if (buffer == NULL || used == NULL || category == NULL)
+        return -1;
+
+    category_len = strlen(category);
+    if (*used > SIZE_MAX - 3 || category_len > SIZE_MAX - *used - 3)
+        return -1;
+
+    required = *used + category_len + 3;
+    resized  = realloc(*buffer, required);
+    if (resized == NULL)
+        return -1;
+
+    resized[*used] = '.';
+    memcpy(resized + *used + 1, category, category_len);
+    *used += category_len + 1;
+    resized[*used] = '\0';
+    *buffer        = resized;
+    return 0;
+}
+
 int scanmanager(const struct optstruct *opts)
 {
     int ret = 0;
-    int i;
+    size_t i;
     struct cl_scan_options options;
     unsigned int dboptions = 0, dirlnk = 1, filelnk = 1;
     struct cl_engine *engine = NULL;
@@ -1796,21 +1867,20 @@ int scanmanager(const struct optstruct *opts)
             dboptions |= CL_DB_PUA_EXCLUDE;
             i = 0;
             while (opt) {
-                if (!(pua_cats = realloc(pua_cats, i + strlen(opt->strarg) + 3))) {
-                    logg(LOGG_ERROR, "Can't allocate memory for pua_cats\n");
-
+                if (append_pua_category(&pua_cats, &i, opt->strarg) != 0) {
+                    logg(LOGG_ERROR, "Can't allocate or represent PUA categories\n");
+                    free(pua_cats);
                     ret = 2;
                     goto done;
                 }
-
-                sprintf(pua_cats + i, ".%s", opt->strarg);
-                i += strlen(opt->strarg) + 1;
-                pua_cats[i] = 0;
-
                 opt = opt->nextarg;
             }
-            pua_cats[i]     = '.';
-            pua_cats[i + 1] = 0;
+            if (append_pua_category(&pua_cats, &i, "") != 0) {
+                logg(LOGG_ERROR, "Can't terminate PUA categories\n");
+                free(pua_cats);
+                ret = 2;
+                goto done;
+            }
         }
 
         if ((opt = optget(opts, "include-pua"))->enabled) {
@@ -1825,21 +1895,20 @@ int scanmanager(const struct optstruct *opts)
             dboptions |= CL_DB_PUA_INCLUDE;
             i = 0;
             while (opt) {
-                if (!(pua_cats = realloc(pua_cats, i + strlen(opt->strarg) + 3))) {
-                    logg(LOGG_ERROR, "Can't allocate memory for pua_cats\n");
+                if (append_pua_category(&pua_cats, &i, opt->strarg) != 0) {
+                    logg(LOGG_ERROR, "Can't allocate or represent PUA categories\n");
+                    free(pua_cats);
                     ret = 2;
                     goto done;
                 }
-
-                sprintf(pua_cats + i, ".%s", opt->strarg);
-                i += strlen(opt->strarg) + 1;
-                pua_cats[i] = 0;
-
                 opt = opt->nextarg;
             }
-
-            pua_cats[i]     = '.';
-            pua_cats[i + 1] = 0;
+            if (append_pua_category(&pua_cats, &i, "") != 0) {
+                logg(LOGG_ERROR, "Can't terminate PUA categories\n");
+                free(pua_cats);
+                ret = 2;
+                goto done;
+            }
         }
 
         if (pua_cats) {

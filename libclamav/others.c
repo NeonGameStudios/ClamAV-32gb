@@ -100,6 +100,7 @@ void (*cli_unrar_close)(void *hArchive);
 int have_rar             = 0;
 static int is_rar_inited = 0;
 
+#ifndef UNRAR_LINKED
 #define PASTE2(a, b) a #b
 #define PASTE(a, b) PASTE2(a, b)
 
@@ -305,6 +306,7 @@ static void *get_module_function(void *handle, const char *name)
     return procAddress;
 }
 #endif // !_WIN32
+#endif // !UNRAR_LINKED
 
 static void rarload(void)
 {
@@ -2053,6 +2055,49 @@ done:
     return status;
 }
 
+/* Translate a matcher offset into the coordinate space of the original scan
+ * input only when both layers are views of the same fmap backing source.
+ * Extracted, decompressed, normalized, and otherwise materialized child maps
+ * have independent backing owners and intentionally retain no root offset. */
+static bool cli_scan_match_offset_to_root(
+    const cli_ctx *ctx,
+    uint64_t match_offset,
+    uint64_t *root_offset_out)
+{
+    const fmap_t *root_fmap;
+    const fmap_t *current_fmap;
+    size_t relative_offset;
+
+    if ((NULL == ctx) || (NULL == root_offset_out) ||
+        (NULL == ctx->recursion_stack) ||
+        (ctx->recursion_stack_size == 0) ||
+        (ctx->recursion_level >= ctx->recursion_stack_size))
+        return false;
+
+    root_fmap    = ctx->recursion_stack[0].fmap;
+    current_fmap = ctx->recursion_stack[ctx->recursion_level].fmap;
+    if ((NULL == root_fmap) || (NULL == current_fmap))
+        return false;
+
+    if (current_fmap != root_fmap &&
+        ((NULL == root_fmap->aging_owner) ||
+         (root_fmap->aging_owner != current_fmap->aging_owner)))
+        return false;
+
+    if ((current_fmap->nested_offset < root_fmap->nested_offset) ||
+        (match_offset >= (uint64_t)current_fmap->len))
+        return false;
+
+    relative_offset = current_fmap->nested_offset - root_fmap->nested_offset;
+    if ((relative_offset > root_fmap->len) ||
+        (current_fmap->len > root_fmap->len - relative_offset) ||
+        ((uint64_t)relative_offset > UINT64_MAX - match_offset))
+        return false;
+
+    *root_offset_out = (uint64_t)relative_offset + match_offset;
+    return true;
+}
+
 /**
  * @brief Add an indicator to the scan evidence.
  *
@@ -2082,7 +2127,8 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
 
     if (NULL != ctx->report)
         has_match_offset = cli_scan_report_take_match_offset(ctx->report, &match_offset);
-    if ((NULL == ctx->recursion_stack) || (ctx->recursion_level != 0))
+    if (has_match_offset &&
+        !cli_scan_match_offset_to_root(ctx, match_offset, &match_offset))
         has_match_offset = false;
 
     if (NULL == ctx->recursion_stack[ctx->recursion_level].evidence) {

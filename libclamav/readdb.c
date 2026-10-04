@@ -2645,11 +2645,18 @@ static int cli_loadftm(FILE *fs, struct cl_engine *engine, unsigned int options,
 
     while (1) {
         if (internal) {
+            size_t internal_len;
+
             options |= CL_DB_OFFICIAL;
             if (!ftypes_int[line])
                 break;
-            strncpy(buffer, ftypes_int[line], sizeof(buffer));
-            buffer[sizeof(buffer) - 1] = '\0';
+            internal_len = strlen(ftypes_int[line]);
+            if (internal_len >= sizeof(buffer)) {
+                cli_errmsg("cli_loadftm: Built-in filetype definition exceeds the parser buffer\n");
+                ret = CL_EMALFDB;
+                break;
+            }
+            memcpy(buffer, ftypes_int[line], internal_len + 1);
         } else {
             if (!cli_dbgets(buffer, FILEBUFF, fs, dbio))
                 break;

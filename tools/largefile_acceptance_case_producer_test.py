@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import csv
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -44,24 +45,26 @@ class AcceptanceCaseProducerTests(unittest.TestCase):
             "pcre_rss_budget_kb=41943040\n"
             "post_pcre_rss_budget_kb=12582912\n"
             "service_temp_budget_bytes=68719476736\n", encoding="utf-8")
-        oracle_hash = "a" * 64
+        oracle_hash = hashlib.sha256(b"x").hexdigest()
         (self.out / "provenance/qualification-oracle.tsv").write_text(
             "role\texpected_size\texpected_sha256\texpected_exit\t"
             "expected_completion\texpected_signature\texpected_offset\texpected_type\n"
             + "\n".join([
-                f"production\t1\t{oracle_hash}\t1\tDETECTION_TERMINATED\tSynthetic.Detection\t0\tCL_TYPE_DATA",
-                f"materialized\t1\t{oracle_hash}\t1\tDETECTION_TERMINATED\tSynthetic.Detection\t0\tCL_TYPE_DATA",
-                f"expansion\t1\t{oracle_hash}\t1\tDETECTION_TERMINATED\tSynthetic.Detection\t0\tCL_TYPE_DATA",
-                f"edge\t34359738368\t{oracle_hash}\t1\tDETECTION_TERMINATED\tSynthetic.Detection\t0\tCL_TYPE_DATA",
+                f"production\t1\t{oracle_hash}\t1\tDETECTION_TERMINATED\tSynthetic.Detection\t0\tCL_TYPE_BINARY_DATA",
+                f"materialized\t1\t{oracle_hash}\t1\tDETECTION_TERMINATED\tSynthetic.Detection\t0\tCL_TYPE_BINARY_DATA",
+                f"expansion\t1\t{oracle_hash}\t1\tDETECTION_TERMINATED\tSynthetic.Detection\t0\tCL_TYPE_BINARY_DATA",
+                f"edge\t34359738368\t{oracle_hash}\t1\tDETECTION_TERMINATED\tSynthetic.Detection\t0\tCL_TYPE_BINARY_DATA",
             ]) + "\n", encoding="utf-8")
         self.fixture = self.root / "fixture.bin"
         self.fixture.write_bytes(b"x")
         inputs = {role: {"input": str(self.fixture), "size": 1,
-                         "sha256": oracle_hash, "allocated_bytes": 512,
+                         "sha256": oracle_hash, "allocated_bytes": self.fixture.stat().st_blocks * 512,
                          "first_hole": None}
                   for role in ("production", "materialized", "expansion", "edge")}
         (self.out / "provenance/service-inputs-before.json").write_text(
             json.dumps({"version": 1, "inputs": inputs}), encoding="utf-8")
+        (self.out / "provenance/service-inputs-after.json").write_bytes(
+            (self.out / "provenance/service-inputs-before.json").read_bytes())
         (self.out / "provenance/service-workload-results.tsv").write_text(
             "label\tkind\trole\tinput\tlog\treport\tstatus\tcheck_offset\n"
             f"production-clamscan\tcli\tproduction\t{self.fixture}\tlogs/production.log\t"
@@ -71,7 +74,7 @@ class AcceptanceCaseProducerTests(unittest.TestCase):
             "signature Synthetic.Detection matched at 0\n", encoding="utf-8")
         report = {
             "version": 1, "status": 0, "verdict": 2,
-            "completion": "DETECTION_TERMINATED", "file_type": "CL_TYPE_DATA",
+            "completion": "DETECTION_TERMINATED", "file_type": "CL_TYPE_BINARY_DATA",
             "root_size": 1, "logical_bytes": 1, "matcher_bytes": 1,
             "contiguous_bytes": 0, "temporary_bytes": 0, "files_scanned": 1,
             "max_recursion_depth": 0, "elapsed_ms": 1, "parser_operations": 1,
@@ -96,7 +99,8 @@ class AcceptanceCaseProducerTests(unittest.TestCase):
         with (self.out / "provenance/acceptance-cases.tsv").open(newline="", encoding="utf-8") as stream:
             rows = list(csv.DictReader(stream, delimiter="\t"))
         self.assertEqual(rows[0]["case_id"], "clamscan:file:detection-edge")
-        self.assertEqual(rows[0]["fixture_sha256"], "a" * 64)
+        self.assertEqual(rows[0]["fixture_sha256"], acceptance_cases.sha256(self.fixture))
+        self.assertIn("provenance/service-inputs-after.json", rows[0]["artifacts"].split(","))
         self.assertEqual(rows[0]["alert_offset"], "0")
         self.assertEqual(rows[0]["build_identity_sha256"], producer.sha256(self.out / "provenance/service-build-identity.txt"))
 
@@ -168,6 +172,15 @@ class AcceptanceCaseProducerTests(unittest.TestCase):
         path = self.out / "provenance/service-inputs-before.json"
         path.write_text('{"version": 1, "version": 1, "inputs": {}}\n', encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "duplicate JSON key: version"):
+            producer.produce(self.out, self.manifest, self.mapping)
+
+    def test_service_input_after_identity_is_required_and_unchanged(self):
+        path = self.out / "provenance/service-inputs-after.json"
+        path.write_text('{"version":1,"inputs":{}}', encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "changed during qualification"):
+            producer.produce(self.out, self.manifest, self.mapping)
+        path.unlink()
+        with self.assertRaisesRegex(ValueError, "service input after evidence is missing"):
             producer.produce(self.out, self.manifest, self.mapping)
 
     def test_workload_schema_rejects_rows_with_wrong_column_count(self):

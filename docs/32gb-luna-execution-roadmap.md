@@ -134,11 +134,11 @@ When the runner is unavailable, work on R01/R02/R04, fixture generation and boun
 
 **Entry points:** PLAN.md, `largefile_runtime_gate.sh`, `largefile_runtime_evidence_check.sh`, `largefile_release_readiness.sh`, `largefile_service_qualification.sh`, `largefile_service_workload_check.py`, `clamdscan/client.c` and report client handling.
 
-**Gap A:** runtime producer/verifier/readiness currently hard-code 33,554,432 KiB RSS (32 GiB), while PLAN.md permits 40 GiB during full-subject PCRE and requires <12 GiB afterward. Document whether this is an intentional stricter subset gate or an incompatible full-PCRE gate. Implement explicit workload/phase budgets in both producer and independent verifier; preserve a stricter subcase where valid. Do not change a number merely to fit a failing scan.
+**Gap A — contract resolved; live PCRE proof remains R13:** the runtime gate's fixed 33,554,432-KiB (32-GiB) whole-workload ceiling is an intentionally stricter subcase, not a replacement for PLAN.md's 40-GiB PCRE-phase ceiling and <12-GiB post-PCRE limit. The producer records all three values and identifies the stricter contract; the independent runtime verifier rejects missing or altered values. When PCRE is promoted, release readiness separately requires the retained process-tree phase samples, subject-release transition, and exact-tail proof. Keep this distinction explicit; do not relax the whole-workload subcase to make a scan pass.
 
-**Gap B (live checks depend on R03):** exact-name validation expects `input: Signature FOUND`, but some report frontends emit only `input: FOUND`. Before R03, inspect source and add format controls only. After R03, capture the actual outputs from a freshly built daemon/client; never use the stale daemon to finish this card. Preserve exact structured alert/offset binding and define where console-name proof is required. Either emit a truthful exact signature for that frontend or use an explicitly typed structured-report evidence path; a bare FOUND substring must never substitute for exact detection proof.
+**Gap B — source controls done; live checks depend on R03:** source inspection confirms direct ClamScan emits `target: signature FOUND` and the clamdscan client may emit `target: FOUND`; clean and incomplete outcomes have distinct `OK`/`INCOMPLETE` forms. The typed structured-report path now checks its exact report binding and accepts only the expected terminal text outcome, while ordinary detection logs still require the exact signature (and offset where specified). Synthetic controls cover these forms. After R03, capture authentic outputs from freshly built daemon/client binaries; never use the stale daemon to finish this card. A bare `FOUND` must never substitute for exact structured alert/offset proof.
 
-**Done:** authentic clean, exact detection, limit and error outputs pass/fail as specified; unrelated heuristics, wrong names/offsets, partial scans and missed memory phases fail. Add producer/post-run parity regression controls.
+**Done:** source-level RSS contract and log-format controls are implemented. R02 remains open until authentic clean, exact detection, limit and error outputs pass/fail against freshly built daemon/client binaries and producer/post-run parity is verified; unrelated heuristics, wrong names/offsets, partial scans and missed memory phases must fail.
 
 ### R03 — Establish the certified build and reusable runner
 
@@ -166,7 +166,7 @@ A case record must bind capability and case IDs, source/build/config/platform, i
 
 ### R05 — Finish fixture/oracle tools and prove the new oversized probe live
 
-**Entry points:** `largefile_boundary_corpus.sh`, existing `largefile_*_fixture.py` tools, `largefile_service_oversize.py`, workload checker, `unit_tests/milter_protocol_test.py`.
+**Entry points:** `largefile_boundary_corpus.sh`, existing `largefile_*_fixture.py` tools, `largefile_binary_literal_oracle.py`, `largefile_service_oversize.py`, workload checker, `unit_tests/milter_protocol_test.py`.
 
 The coordinator selects the first family and approves full-size resource scheduling. Establish structural validity independently of the scanner: retain format-spec-derived generator assertions and an independent parser/inspection oracle where available, with hashes and expected member layout. If validity cannot be established, the fixture is not an acceptance control.
 
@@ -178,6 +178,8 @@ The sparse probe is exactly 32 GiB + 1 and tests metadata admission only. Retain
 
 **Done:** reproducible fixture/oracle hashes, controls that catch truncation/partial extraction, and a genuine current-source live probe report. Full-size family evidence remains a later milestone.
 
+**2026-10-03 evidence slice:** the current v4 candidate also passed the exact 32-GiB fully materialized raw-library late-marker test through `cl_scanfile_ex2`, `cl_scandesc_ex2`, and `cl_scanmap_ex2` in Release and C ASan/UBSan. This closes only those API edge cases; it does not replace full parser, ClamScan/ClamD ingress, production-database, or release qualification. See `docs/largefile-task-receipts/R05-sonic1-alertreport-v4-2026-10-03.md`.
+
 ### R06 — Complete reader-backed modern OneNote
 
 **Entry points:** `libclamav_rust/src/onenote.rs`, `scanners.rs`, `fmap.rs`; relevant Rust tests and C FFI/report tests. Existing C TCases include `rust_onenote` and `onenote`; inspect their registration in `unit_tests/check_clamav.c` before filtering. Read the current modern parser dependency/API before designing changes.
@@ -187,6 +189,8 @@ The sparse probe is exactly 32 GiB + 1 and tests metadata admission only. Retain
 Preserve legacy fallback semantics: full OneNote magic with no valid legacy record remains confirmed incomplete/non-cacheable, not clean. Do not just raise the whole-buffer cap or use a giant Vec/mmap as an alleged streaming implementation. Keep format-defined widths distinct from containing-file offsets.
 
 **Done:** valid modern input beyond the former cap completes, late child content is detected at the independently expected offset, short reads/truncation/overflows/quota failures stay incomplete and non-cacheable, and reservations/spools are released. Full materialized edge qualification is still required under R12.
+
+**2026-10-03 evidence slice:** an exact-size, fully materialized modern OneNote clean-control/late-child pair passed on the current v4 candidate in Release and C ASan/UBSan. The late marker was independently placed at EOF-18,955; all four runs reported the same full fixture SHA-256, and no sanitizer, OOM, swap, or post-run spool residue was observed. This proves one parser-family completion/detection slice only; malformed/truncated inputs, short reads, resource/fault paths, Rust sanitizer coverage, other formats and ingress paths, production databases, and the R12 matrix remain open. See `docs/largefile-task-receipts/R06-sonic1-exact32g-onenote-v4-parity-2026-10-03.md`.
 
 ### R07 — Qualify independent bytecode format 8
 
@@ -245,6 +249,8 @@ Run it on R03's frozen candidate through applicable library/CLI/daemon/client mo
 Execute every R04 case, grouping shared genuine runs where justified. Every parser dispatch branch needs a 32-GiB outer-coordinate fixture; every implementation family also needs a fully materialized exact-edge case. Use smaller homologous fixtures for exhaustive malformed/fault states. Include exact-tail native/hash/logical/YARA/PCRE/bytecode-v2 and nested member/attachment/embedded-PE markers.
 
 Record warm/cold cache behavior, complete valid controls separately from expected incomplete cases, production database hashes, Release and sanitizer results and daemon health after each case. Missing features/tests or sanitizer skips are blockers. Diagnose and fix any failing implementation, rebuild coherently, invalidate affected stale evidence and rerun against the final candidate.
+
+For independent literal-presence/absence oracles on newline-free full-size raw fixtures, read bounded blocks with a `needle_length - 1` overlap and verify the total bytes read. Do not use line-oriented `grep -a` on a 32-GiB fixture: the Sonic1 2026-09-28 control attempt grew until the kernel OOM-killed `grep` (see `R12-sonic1-v3-clean-exact-2026-09-29.md`). Keep that failed diagnostic distinct from the subsequent clean scan evidence.
 
 **Done:** no required capability/case is absent. Unit-test quantity, sparse scans and historical ARM64 logs do not meet this milestone.
 

@@ -1299,6 +1299,36 @@ START_TEST(test_logical_expression_trailing_data_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_logical_expression_whitespace_is_accepted)
+{
+    static char logic[] = "0 & 1 > 200";
+
+    ck_assert_int_eq(cli_ac_chklsig(logic, logic + strlen(logic), NULL, NULL, NULL, 1), 1);
+}
+END_TEST
+
+START_TEST(test_logical_expression_undocumented_offset_prefix_is_rejected)
+{
+    static char logic[] = "0:0&((1>20&2>10&3)|(4))";
+
+    ck_assert_int_eq(cli_ac_chklsig(logic, logic + strlen(logic), NULL, NULL, NULL, 1), -1);
+}
+END_TEST
+
+START_TEST(test_logical_expression_chained_block_modifiers_are_accepted)
+{
+    static char logic[] = "1>3,3&(2|3|4|5)>1,2&(6|7|8|9|10|11)>2,3";
+    uint32_t counts[] = {0, 4, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0};
+    unsigned int count = 0;
+    uint64_t ids = 0;
+
+    ck_assert_int_eq(cli_ac_chklsig(logic, logic + strlen(logic), NULL, NULL, NULL, 1), 11);
+    ck_assert_int_eq(cli_ac_chklsig(logic, logic + strlen(logic), counts, &count, &ids, 0), 1);
+    ck_assert_uint_eq(count, 9);
+    ck_assert_uint_eq(ids, (uint64_t)0x1ce);
+}
+END_TEST
+
 START_TEST(test_logical_expression_chained_modifier_is_fail_visible)
 {
     static char logic[] = "0>1>2";
@@ -2993,6 +3023,9 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_logical_malformed_definition_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_out_of_range_expression_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_expression_trailing_data_is_fail_visible);
+    tcase_add_test(tc_matchers, test_logical_expression_whitespace_is_accepted);
+    tcase_add_test(tc_matchers, test_logical_expression_undocumented_offset_prefix_is_rejected);
+    tcase_add_test(tc_matchers, test_logical_expression_chained_block_modifiers_are_accepted);
     tcase_add_test(tc_matchers, test_logical_expression_chained_modifier_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_subsignature_bounds_are_fail_visible);
     tcase_add_test(tc_matchers, test_logical_oversized_definition_is_fail_visible);

@@ -578,6 +578,49 @@ static int path_file_state(const char *path)
     return -1;
 }
 
+/* cgroup current usage includes file cache. Count only inactive file pages
+ * as immediately reclaimable; active pages, anonymous memory, tmpfs/shmem,
+ * and kernel memory remain charged against the cgroup limit. cgroup v1 uses
+ * total_inactive_file for the hierarchical value corresponding to the
+ * hierarchical usage counter. If stat data is unavailable, return zero and
+ * retain the conservative raw-current calculation. */
+static uint64_t cgroup_inactive_file_bytes(const char *directory, int unified)
+{
+    char path[LARGEFILE_PATH_BUFFER];
+    char line[256];
+    char key[64];
+    const char *wanted = unified ? "inactive_file" : "total_inactive_file";
+    uint64_t bytes = 0;
+    FILE *stream;
+    int written;
+
+    if (NULL == directory)
+        return 0;
+
+    written = snprintf(path, sizeof(path), "%s/memory.stat", directory);
+    if ((written < 0) || ((size_t)written >= sizeof(path)) ||
+        (path_file_state(path) != 1))
+        return 0;
+
+    stream = fopen(path, "r");
+    if (NULL == stream)
+        return 0;
+
+    while (fgets(line, sizeof(line), stream) != NULL) {
+        uint64_t parsed;
+
+        if ((sscanf(line, "%63s %" SCNu64, key, &parsed) == 2) &&
+            (0 == strcmp(key, wanted))) {
+            bytes = parsed;
+            break;
+        }
+    }
+
+    if (fclose(stream) != 0)
+        return 0;
+    return bytes;
+}
+
 static int cgroup_hierarchy_headroom(
     const char *membership_path,
     const char *mount_point,
@@ -643,7 +686,17 @@ static int cgroup_hierarchy_headroom(
                 current_unlimited)
                 return 0;
             if (!limit_unlimited) {
-                uint64_t available = (current >= limit) ? 0 : limit - current;
+                uint64_t inactive_file = cgroup_inactive_file_bytes(directory, unified);
+                uint64_t charged = current;
+                uint64_t available;
+
+                /* memory.current includes reclaimable inactive file cache.
+                 * Clamp the stat value because cgroup counters may be sampled
+                 * while accounting is changing. */
+                if (inactive_file > charged)
+                    inactive_file = charged;
+                charged -= inactive_file;
+                available = (charged >= limit) ? 0 : limit - charged;
 
                 if (!finite || (available < minimum))
                     minimum = available;

@@ -187,18 +187,19 @@ static cl_error_t cli_pe_cleanup_temp(cli_ctx *ctx, int *fd, char **tempfile,
         }                                         \
     } while (0)
 
-#define CLI_UNPTEMP(NAME, FREEME)                                                                     \
+#define CLI_UNPTEMP_SIZE(NAME, SIZE, FREEME)                                                          \
     do {                                                                                                \
         cl_error_t temp_status = CL_SUCCESS;                                                          \
-        if (dsize != 0) {                                                                              \
-            temp_status = cli_scan_reserve_temporary(ctx, (uint64_t)dsize);                            \
+        uint64_t temp_size = (uint64_t)(SIZE);                                                         \
+        if (temp_size != 0) {                                                                          \
+            temp_status = cli_scan_reserve_temporary(ctx, temp_size);                                   \
             if (temp_status != CL_SUCCESS) {                                                          \
                 cli_mark_scan_incomplete(ctx, NAME ": unpacked output exceeds temporary storage limits"); \
                 cli_exe_info_destroy(peinfo);                                                         \
                 cli_multifree FREEME;                                                                 \
                 return temp_status;                                                                   \
             }                                                                                         \
-            temporary_reserved = (uint64_t)dsize;                                                     \
+            temporary_reserved = temp_size;                                                            \
         }                                                                                              \
         if (!(tempfile = cli_gentemp(ctx->this_layer_tmpdir))) {                                      \
             cli_mark_scan_incomplete(ctx, NAME ": unpacked output temporary file could not be created"); \
@@ -217,6 +218,8 @@ static cl_error_t cli_pe_cleanup_temp(cli_ctx *ctx, int *fd, char **tempfile,
             return CL_ECREAT;                                                                         \
         }                                                                                              \
     } while (0)
+
+#define CLI_UNPTEMP(NAME, FREEME) CLI_UNPTEMP_SIZE(NAME, dsize, FREEME)
 
 #define FSGCASE(NAME, FREESEC)                            \
     case 0: /* Unpacked and NOT rebuilt */                \
@@ -4872,6 +4875,7 @@ int cli_scanpe(cli_ctx *ctx)
 
         uint32_t ecx = 0;
         int16_t offset;
+        size_t yc_code_window_offset;
 
         /* yC 1.3 */
         if (!memcmp(epbuff, "\x55\x8B\xEC\x53\x56\x57\x60\xE8\x00\x00\x00\x00\x5D\x81\xED", 15) &&
@@ -4908,26 +4912,18 @@ int cli_scanpe(cli_ctx *ctx)
 
         if (ecx > 0x800 && ecx < 0x2000 &&
             !memcmp(epbuff + 0x63 + offset, "\xaa\xe2\xcc", 3) &&
-            (fsize >= peinfo->sections[peinfo->nsections - 1].raw + 0xC6 + ecx + offset)) {
+            cli_yc_adjusted_window_offset(peinfo->sections[peinfo->nsections - 1].raw,
+                                          offset, fsize, 0xc6 + (size_t)ecx,
+                                          &yc_code_window_offset) == 0) {
 
             size_t num_alerts;
-            char *spinned;
+            cl_error_t ycs_limit_status = cli_checklimits("cli_scanpe: yC", ctx, fsize, 0, 0);
 
-            CLI_UNPSIZELIMITS("cli_scanpe: yC", fsize);
-
-            if ((spinned = (char *)cli_max_malloc(fsize)) == NULL) {
-                cli_errmsg("cli_scanpe: yC: Unable to allocate memory for spinned %lu\n", (unsigned long)fsize);
-                cli_mark_scan_incomplete(ctx, "yC contiguous working buffer could not be allocated");
+            if (ycs_limit_status != CL_CLEAN) {
+                if (ycs_limit_status != CL_ERESOURCE)
+                    cli_mark_scan_incomplete(ctx, "yC output exceeded configured scan limits");
                 cli_exe_info_destroy(peinfo);
-                return CL_EMEM;
-            }
-
-            if (fmap_readn(map, spinned, 0, fsize) != fsize) {
-                cli_dbgmsg("cli_scanpe: yC: Can't read %lu bytes\n", (unsigned long)fsize);
-                cli_mark_scan_incomplete(ctx, "yC input could not be read completely");
-                free(spinned);
-                cli_exe_info_destroy(peinfo);
-                return CL_EREAD;
+                return ycs_limit_status;
             }
 
             if (pe_json != NULL)
@@ -4937,8 +4933,8 @@ int cli_scanpe(cli_ctx *ctx)
             num_alerts = evidence_num_alerts(ctx->this_layer_evidence);
 
             cli_dbgmsg("%d,%d,%d,%d\n", peinfo->nsections - 1, peinfo->e_lfanew, ecx, offset);
-            CLI_UNPTEMP("cli_scanpe: yC", (spinned, 0));
-            CLI_UNPRESULTS("cli_scanpe: yC", (yc_decrypt(ctx, spinned, fsize, peinfo->sections, peinfo->nsections - 1, peinfo->e_lfanew, ndesc, ecx, offset)), 0, (spinned, 0));
+            CLI_UNPTEMP_SIZE("cli_scanpe: yC", fsize, (NULL, NULL));
+            CLI_UNPRESULTS("cli_scanpe: yC", (yc_decrypt(ctx, map, fsize, peinfo->sections, peinfo->nsections - 1, peinfo->e_lfanew, ndesc, &temporary_reserved, ecx, offset)), 0, (NULL, NULL));
 
             // Unpacking may have added new alerts if the bounds-check failed.
             // Compare number of alerts now with number of alerts before unpacking/scanning.
@@ -6290,6 +6286,20 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     if (CL_SUCCESS != ret) {
         cli_mark_scan_incomplete(ctx, "PE overlay offset is outside the mapped file");
         goto done;
+    }
+    /* Section raw coordinates can overlap the section-header table in a
+     * malformed but still scannable PE.  Those already-read header bytes are
+     * not an overlay: handing them to an optional embedded parser can turn a
+     * weak false candidate into a sticky incomplete result.  Keep a genuine
+     * appended overlay visible after the table. */
+    if (at < peinfo->offset || at - peinfo->offset > fsize) {
+        cli_mark_scan_incomplete(ctx, "PE section header range is outside the mapped file");
+        ret = CL_EPARSE;
+        goto done;
+    }
+    if (peinfo->overlay_start < at - peinfo->offset) {
+        peinfo->overlay_start = at - peinfo->offset;
+        peinfo->overlay_size  = fsize - peinfo->overlay_start;
     }
 
     // NOTE: For DLLs the entrypoint is likely to be zero

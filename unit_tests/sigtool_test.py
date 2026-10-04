@@ -10,6 +10,7 @@ import platform
 import shutil
 import subprocess
 import sys
+import threading
 import time
 import unittest
 
@@ -331,3 +332,52 @@ class TC(testcase.TestCase):
         # Check that the new CUD file was created, and that the '.cud.script' file was created.
         assert (TC.path_tmp / 'test.cud').exists()
         assert (TC.path_tmp / 'test-7.script').exists()
+
+    def test_sigtool_06_fuzzy_image_hash(self):
+        self.step_name('sigtool uses the scanner fuzzy-image decoder for a known PNG')
+
+        command = '{valgrind} {valgrind_args} {sigtool} --fuzzy-img {image}'.format(
+            valgrind=TC.valgrind, valgrind_args=TC.valgrind_args,
+            sigtool=TC.sigtool, image=TC.path_source / 'logo.png',
+        )
+        output = self.execute_command(command)
+
+        assert output.ec == 0
+        self.verify_output(output.out, expected=['logo.png: af2ad01ed42993c7'])
+
+    def test_sigtool_07_fuzzy_image_hash_has_no_whole_input_allocation(self):
+        self.step_name('sigtool image hash does not allocate the encoded file length')
+        if operating_system != 'linux' or TC.valgrind != '':
+            self.skipTest('requires Linux per-child RSS without a Valgrind wrapper')
+
+        image = TC.path_tmp / 'fuzzy-padded.png'
+        shutil.copyfile(TC.path_source / 'logo.png', image)
+        with image.open('r+b') as stream:
+            # Unit-only sparse padding: the PNG decoder stops at IEND, while
+            # a whole-input malloc/read would still make 256 MiB resident.
+            stream.truncate(256 * 1024 * 1024)
+        assert image.stat().st_size == 256 * 1024 * 1024
+
+        child = subprocess.Popen(
+            [str(TC.sigtool),
+             '--cvdcertsdir={}'.format(TC.path_source / 'unit_tests' / 'input' / 'signing' / 'verify'),
+             '--fuzzy-img', str(image)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+        timer = threading.Timer(30, child.kill)
+        timer.start()
+        try:
+            _, wait_status, usage = os.wait4(child.pid, 0)
+        finally:
+            timer.cancel()
+        child.returncode = os.waitstatus_to_exitcode(wait_status)
+        stdout = child.stdout.read().decode()
+        stderr = child.stderr.read().decode()
+        child.stdout.close()
+        child.stderr.close()
+
+        assert child.returncode == 0, stderr
+        assert 'fuzzy-padded.png: af2ad01ed42993c7' in stdout
+        # ru_maxrss is KiB on Linux. A 128-MiB threshold separates the
+        # bounded reader from the former 256-MiB malloc/read implementation.
+        assert usage.ru_maxrss < 128 * 1024, usage.ru_maxrss

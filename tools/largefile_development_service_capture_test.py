@@ -4,12 +4,28 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import largefile_acceptance_cases as acceptance_cases
 import largefile_development_service_capture as capture
 
 
 class DevelopmentServiceCaptureTests(unittest.TestCase):
+    def test_private_service_socket_path_rejects_truncation_before_start(self):
+        with mock.patch.object(capture, "UNIX_SOCKET_PATH_BYTES", 108):
+            capture.validate_socket_path(Path("/" + "x" * 106))
+            overlong = Path("/" + "x" * 107)
+            with self.assertRaisesRegex(ValueError, "AF_UNIX socket path is too long"):
+                capture.validate_socket_path(overlong)
+            with tempfile.TemporaryDirectory(prefix="service-socket-test-") as temp:
+                with mock.patch.object(capture.subprocess, "Popen") as process:
+                    with self.assertRaisesRegex(ValueError, "shorter disk-backed TMPDIR"):
+                        capture.start_daemon(
+                            Path("/nonexistent/clamd"), Path("/nonexistent/clamd.conf"),
+                            overlong, Path(temp) / "clamd.pid", Path(temp) / "clamd.log",
+                        )
+                    process.assert_not_called()
+
     def test_cvd_cert_directory_defaults_to_repository_test_ca(self):
         with tempfile.TemporaryDirectory(prefix="largefile-service-certs-") as temp:
             source_root = Path(temp)
@@ -93,6 +109,7 @@ class DevelopmentServiceCaptureTests(unittest.TestCase):
                 "last_alert_offset": 0,
                 **{field: 1 for field in capture.REPORT_NUMERIC_FIELDS},
             }
+            report_path.write_text(json.dumps(report) + "\n", encoding="utf-8")
             manifest = root / "manifest.tsv"
             with manifest.open("w", newline="", encoding="utf-8") as stream:
                 writer = csv.writer(stream, delimiter="\t", lineterminator="\n")

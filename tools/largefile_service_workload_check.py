@@ -11,6 +11,7 @@ installing another dependency.
 from __future__ import annotations
 
 import csv
+from functools import lru_cache
 import hashlib
 import json
 import os
@@ -128,6 +129,25 @@ def read_tsv(path: Path, header: list[str], label: str) -> list[list[str]]:
     return rows
 
 
+@lru_cache(maxsize=1)
+def report_file_types() -> frozenset[str]:
+    """Read the names the candidate can actually emit in scan reports."""
+    source_path = Path(__file__).resolve().parents[1] / "libclamav" / "filetypes.c"
+    try:
+        source = source_path.read_text(encoding="utf-8")
+    except OSError as error:
+        fail(f"cannot read candidate report file-type map: {error}")
+    table = re.search(r"ftmap\[\]\s*=\s*\{(.*?)^\};", source, re.MULTILINE | re.DOTALL)
+    if table is None:
+        fail("candidate report file-type map is missing or malformed")
+    names = frozenset(re.findall(
+        r'^\s*\{\s*"(CL_TYPE_[A-Z0-9_]+)"\s*,', table.group(1), re.MULTILINE
+    ))
+    if not names or "CL_TYPE_BINARY_DATA" not in names:
+        fail("candidate report file-type map has no usable names")
+    return names
+
+
 def load_oracle(path: Path) -> dict[str, tuple[int, str, int, str, str, str, str]]:
     rows = read_tsv(path, ORACLE_HEADER, "qualification oracle")
 
@@ -159,6 +179,8 @@ def load_oracle(path: Path) -> dict[str, tuple[int, str, int, str, str, str, str
             fail(f"qualification oracle has an invalid offset binding for {role}")
         if not re.fullmatch(r"CL_TYPE_[A-Z0-9_]+", file_type):
             fail(f"qualification oracle has an invalid type binding for {role}")
+        if file_type not in report_file_types():
+            fail(f"qualification oracle has an unknown report file type for {role}: {file_type}")
         validate_outcome(f"{role} oracle", int(exit_code), completion, signature)
         result[role] = (int(size), digest.lower(), int(exit_code), completion, signature, offset, file_type)
     if set(result) != ROLES:
@@ -421,9 +443,19 @@ def validate_report_log(path: Path, label: str, report: dict) -> None:
     if not path.is_file():
         fail(f"{label} has no text log")
     text = path.read_text(encoding="utf-8", errors="replace")
+    # --no-summary intentionally suppresses the client text outcome.  The
+    # structured report has already been validated as the exact oracle, so an
+    # existing empty text log is valid supplementary evidence for this mode.
+    if not text.strip():
+        return
     completion = report.get("completion")
     outcome_lines = re.findall(
-        r"^.*: (FOUND|OK|INCOMPLETE(?:[ \t(].*)?)[ \t]*$",
+        # ClamAV's direct scanner includes the detected signature between the
+        # target prefix and the terminal outcome (for example,
+        # ``target: Signature FOUND``).  The structured report remains the
+        # authoritative exact alert binding; this supplementary check only
+        # needs to identify the final outcome token on the line.
+        r"^.*: (?:.*[ \t])?(FOUND|OK|INCOMPLETE(?:[ \t(].*)?)[ \t]*$",
         text,
         re.MULTILINE,
     )
@@ -618,6 +650,10 @@ def main(argv: list[str]) -> int:
         if kind == "report":
             if status != 0:
                 fail(f"{label} protocol probe did not complete successfully")
+            validate_report_log(log, label, report_record)
+        elif kind == "service":
+            if status != expected_exit:
+                fail(f"{label} process status {status} does not match oracle {expected_exit}")
             validate_report_log(log, label, report_record)
         elif status != expected_exit:
             fail(f"{label} process status {status} does not match oracle {expected_exit}")

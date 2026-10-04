@@ -19,14 +19,14 @@ class LegacyClamdProtocolTests(unittest.TestCase):
         self.input.write_bytes(b"legacy fixture")
         digest = protocol.read_input_digest(self.input)[1]
         self.clean = (
-            self.input.stat().st_size, digest, 0, "COMPLETE", "-", "-", "CL_TYPE_DATA"
+            self.input.stat().st_size, digest, 0, "COMPLETE", "-", "-", "CL_TYPE_BINARY_DATA"
         )
         self.detection = (
             self.input.stat().st_size, digest, 1, "DETECTION_TERMINATED",
-            "Legacy.Detection", "7", "CL_TYPE_DATA"
+            "Legacy.Detection", "7", "CL_TYPE_BINARY_DATA"
         )
         self.limit = (
-            self.input.stat().st_size, digest, 2, "LIMIT_INCOMPLETE", "-", "-", "CL_TYPE_DATA"
+            self.input.stat().st_size, digest, 2, "LIMIT_INCOMPLETE", "-", "-", "CL_TYPE_BINARY_DATA"
         )
 
     def test_path_request_has_exact_legacy_wire(self):
@@ -82,6 +82,11 @@ class LegacyClamdProtocolTests(unittest.TestCase):
         )
         with self.assertRaises(RuntimeError):
             protocol.validate_reply("fixture: OK\n", "scan", self.limit)
+
+    def test_process_status_follows_bound_oracle(self):
+        self.assertEqual(protocol.process_status(self.clean), 0)
+        self.assertEqual(protocol.process_status(self.detection), 1)
+        self.assertEqual(protocol.process_status(self.limit), 2)
 
     def test_receive_reply_stops_after_complete_line(self):
         client, server = socket.socketpair()

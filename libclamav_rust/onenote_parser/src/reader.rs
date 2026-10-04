@@ -91,7 +91,7 @@ pub(crate) struct ReaderSpool {
     #[cfg(unix)]
     owner_identity: (u64, u64),
     #[cfg(unix)]
-    owner_file: Option<File>,
+    owner_path: PathBuf,
 }
 
 impl ReaderSpool {
@@ -106,6 +106,8 @@ impl ReaderSpool {
         for _ in 0..16 {
             let id = NEXT_SPOOL_ID.fetch_add(1, Ordering::Relaxed);
             let path = directory.join(format!("onenote-parser-{}-{}.blob", process, id));
+            #[cfg(unix)]
+            let owner_path = directory.join(format!("onenote-parser-{}-{}.owner", process, id));
             let mut options = OpenOptions::new();
             options.write(true).read(true).create_new(true);
             #[cfg(unix)]
@@ -121,17 +123,23 @@ impl ReaderSpool {
                     #[cfg(unix)]
                     let owner_identity = {
                         use std::os::unix::fs::MetadataExt;
-
-                        let metadata = file.metadata()?;
-                        (metadata.dev() as u64, metadata.ino() as u64)
-                    };
-                    let owner_file = match file.try_clone() {
-                        Ok(owner_file) => owner_file,
-                        Err(error) => {
-                            let _ = std::fs::remove_file(&path);
-                            return Err(error);
+                        match file.metadata() {
+                            Ok(metadata) => (metadata.dev() as u64, metadata.ino() as u64),
+                            Err(error) => {
+                                let _ = std::fs::remove_file(&path);
+                                return Err(error);
+                            }
                         }
                     };
+
+                    #[cfg(unix)]
+                    if let Err(error) = std::fs::hard_link(&path, &owner_path) {
+                        let _ = std::fs::remove_file(&path);
+                        if error.kind() == io::ErrorKind::AlreadyExists {
+                            continue;
+                        }
+                        return Err(error);
+                    }
 
                     return Ok(Self {
                         file: Some(file),
@@ -141,7 +149,7 @@ impl ReaderSpool {
                         #[cfg(unix)]
                         owner_identity,
                         #[cfg(unix)]
-                        owner_file: Some(owner_file),
+                        owner_path,
                     });
                 }
                 Err(error) if error.kind() == io::ErrorKind::AlreadyExists => continue,
@@ -172,7 +180,7 @@ impl ReaderSpool {
             use std::os::unix::fs::MetadataExt;
 
             let reader_metadata = file.metadata()?;
-            let (owner_dev, owner_ino) = self.owner_file_identity()?;
+            let (owner_dev, owner_ino) = self.owner_marker_identity()?;
             if owner_dev != reader_metadata.dev() as u64
                 || owner_ino != reader_metadata.ino() as u64
             {
@@ -195,21 +203,23 @@ impl ReaderSpool {
         use std::os::unix::fs::MetadataExt;
 
         let path_metadata = std::fs::symlink_metadata(&self.path)?;
-        let (owner_dev, owner_ino) = self.owner_file_identity()?;
+        let (owner_dev, owner_ino) = self.owner_marker_identity()?;
         Ok(owner_dev == path_metadata.dev() as u64 && owner_ino == path_metadata.ino() as u64)
     }
 
     #[cfg(unix)]
-    fn owner_file_identity(&self) -> io::Result<(u64, u64)> {
+    fn owner_marker_identity(&self) -> io::Result<(u64, u64)> {
         use std::os::unix::fs::MetadataExt;
 
-        match &self.owner_file {
-            Some(owner_file) => {
-                let metadata = owner_file.metadata()?;
-                Ok((metadata.dev() as u64, metadata.ino() as u64))
-            }
-            None => Ok(self.owner_identity),
+        let metadata = std::fs::symlink_metadata(&self.owner_path)?;
+        let identity = (metadata.dev() as u64, metadata.ino() as u64);
+        if identity != self.owner_identity {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "OneNote parser spool owner marker was replaced",
+            ));
         }
+        Ok(identity)
     }
 
     fn note_cleanup_failure(&self) {
@@ -226,10 +236,17 @@ impl Drop for ReaderSpool {
         }
         #[cfg(unix)]
         {
-            // Never unlink a pathname that was replaced after the owner file
-            // was created. `symlink_metadata` deliberately does not follow a
-            // replacement symlink, and the identity check also protects
-            // against replacing the path with an unrelated regular file.
+            // Never unlink a pathname that was replaced after the owner
+            // marker was created. The same-directory hard link keeps the
+            // original inode alive without retaining one descriptor per
+            // parser blob. `symlink_metadata` deliberately does not follow a
+            // replacement symlink, and the identity checks protect against
+            // replacing either marker with an unrelated file.
+            let owner_marker_valid = self.owner_marker_identity().is_ok();
+            if !owner_marker_valid {
+                self.note_cleanup_failure();
+                return;
+            }
             match self.path_is_owned() {
                 Ok(true) => match std::fs::remove_file(&self.path) {
                     Ok(()) => {}
@@ -237,6 +254,11 @@ impl Drop for ReaderSpool {
                     Err(_) => self.note_cleanup_failure(),
                 },
                 Ok(false) => {}
+                Err(_) => self.note_cleanup_failure(),
+            }
+            match std::fs::remove_file(&self.owner_path) {
+                Ok(()) => {}
+                Err(error) if error.kind() == io::ErrorKind::NotFound => {}
                 Err(_) => self.note_cleanup_failure(),
             }
         }
@@ -1081,7 +1103,7 @@ mod tests {
             length: 0,
             budget: Some(budget.clone()),
             owner_identity: (0, 0),
-            owner_file: None,
+            owner_path: PathBuf::from("/tmp/onenote-parser-missing-owner"),
         });
 
         assert_eq!(budget.cleanup_failures.get(), 1);

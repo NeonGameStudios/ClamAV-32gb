@@ -149,8 +149,7 @@ struct cli_environment {
 #define MAKE_VERSION(a, b, c, d) ((a << 24) | (b << 16) | (c << 8) | d)
 #define INIT_STRFIELD(field, value)                           \
     do {                                                      \
-        strncpy((char *)(field), (value), sizeof(field) - 1); \
-        (field)[sizeof(field) - 1] = 0;                       \
+        (void)cli_strlcpy((char *)(field), (value), sizeof(field)); \
     } while (0)
 #endif
 

@@ -164,6 +164,9 @@ target_compile_definitions(check_clamav PUBLIC OBJDIR="${OBJDIR}" SRCDIR="${SRCD
 # before it reaches any library assertions.
 add_dependencies(check_clamav tgt_clamd_test_inputs)
 add_dependencies(check_clamav tgt_largefile_onenote_late_fixture)
+# The AutoIt map and corpus cases read generated EA05/EA06 fixtures too.
+# Their ALL target is not built when check_clamav is requested directly.
+add_dependencies(check_clamav tgt_largefile_autoit_fixtures)
 
 # Exercise the decompressor-construction failure contract with the exact
 # external call sites used by libclamav. GNU ld's --wrap is deliberately
@@ -722,6 +725,9 @@ add_test(NAME largefile_service_evidence_check
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 add_test(NAME largefile_acceptance_case_schema
     COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_acceptance_cases_test.py"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME largefile_binary_literal_oracle
+    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_binary_literal_oracle_test.py"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 add_test(NAME largefile_acceptance_case_resources
     COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_acceptance_resources_test.py"

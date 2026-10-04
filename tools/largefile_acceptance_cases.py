@@ -15,8 +15,10 @@ import argparse
 import csv
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import stat
 import sys
 
 MANIFEST_HEADER = ["kind", "id", "status", "source", "evidence_or_required_work"]
@@ -25,11 +27,14 @@ RECORD_HEADER = [
     "kind", "id", "case_id", "source_manifest_sha256", "build_identity_sha256",
     "config_sha256", "platform", "fixture_role", "fixture_sha256", "oracle_sha256",
     "database_sha256", "exit_code", "verdict", "completion", "reason",
-    "alert_signature", "alert_offset", "logical_bytes", "matcher_bytes",
+    "alert_signature", "alert_offset", "alert_offset_scope",
+    "alert_offset_source", "alert_offset_evidence", "logical_bytes", "matcher_bytes",
     "contiguous_bytes", "temporary_bytes", "files_scanned", "max_recursion_depth",
     "elapsed_ms", "parser_operations", "detector_operations", "skipped_operations",
     "sanitizer", "resource_phase", "health", "cleanup", "artifacts",
 ]
+CASE_ROOT_HEADER = ["kind", "id", "case_id", "relative_root"]
+CASE_ROOT_PATH = "provenance/case-evidence-roots.tsv"
 
 HASH_RE = re.compile(r"[0-9a-f]{64}\Z")
 CASE_ID_RE = re.compile(r"[a-z0-9_-]+:[^\t,]+:[a-z0-9_-]+\Z")
@@ -71,7 +76,9 @@ CASE_COMPLETION_CONTRACTS = {
     # On-access permission has additional fail-closed outcomes beyond the
     # common ingress trio; R13 verifies these with real fanotify events.
     "resource-edge": {"RESOURCE_FAILURE"},
-    "timeout-edge": {"APPLICATION_ABORT"},
+    # A configured MaxScanTime deadline is a limit result; APPLICATION_ABORT
+    # is reserved for explicit cancellation without a configured limit.
+    "timeout-edge": {"LIMIT_INCOMPLETE"},
     "parser-edge": {"MALFORMED_CONFIRMED"},
     "valid-complete": {"COMPLETE"},
     "late-detection": {"DETECTION_TERMINATED"},
@@ -199,6 +206,206 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def verify_service_fixture(
+    identity: dict, expected_sha256: str, role: str,
+    label: str = "service input",
+) -> None:
+    """Rehash an actual bound input, not just its retained JSON label."""
+    source = identity.get("input")
+    expected_size = identity.get("size")
+    expected_allocated = identity.get("allocated_bytes")
+    expected_hole = identity.get("first_hole")
+    if not isinstance(source, str) or not source or not Path(source).is_absolute() or \
+            ".." in Path(source).parts or type(expected_size) is not int or expected_size < 0 or \
+            not isinstance(identity.get("sha256"), str) or \
+            not HASH_RE.fullmatch(identity["sha256"]) or \
+            identity["sha256"] != expected_sha256 or \
+            (expected_allocated is not None and
+             (type(expected_allocated) is not int or expected_allocated < 0)) or \
+            (expected_hole is not None and
+             (type(expected_hole) is not int or expected_hole < 0)):
+        fail(f"{label} identity evidence is malformed for {role}")
+    path = Path(source)
+    # The final input must not be a symlink. Ancestor aliases such as macOS
+    # /var -> /private/var are valid when the opened file is content-verified.
+    if path.is_symlink():
+        fail(f"{label} fixture is symlinked for {role}: {path}")
+    if not path.is_file():
+        fail(f"{label} fixture is missing or not a file for {role}: {path}")
+    if expected_size >= 32 * 1024 * 1024 * 1024 and \
+            (expected_allocated is None or expected_allocated < expected_size or
+             expected_hole != expected_size):
+        fail(f"{label} fixture lacks materialized exact-edge evidence for {role}")
+
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+    with os.fdopen(os.open(path, flags), "rb") as stream:
+        before = os.fstat(stream.fileno())
+        if not stat.S_ISREG(before.st_mode) or before.st_size != expected_size:
+            fail(f"{label} fixture size/type changed for {role}")
+        allocated = before.st_blocks * 512
+        if expected_allocated is not None and allocated != expected_allocated:
+            fail(f"{label} fixture allocation changed for {role}")
+        if expected_hole is not None:
+            try:
+                first_hole = os.lseek(stream.fileno(), 0, os.SEEK_HOLE)
+            except OSError as error:
+                raise ValueError(f"{label} fixture hole check failed for {role}") from error
+            if first_hole != expected_hole:
+                fail(f"{label} fixture hole layout changed for {role}")
+            stream.seek(0)
+        digest = hashlib.sha256()
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+        after = os.fstat(stream.fileno())
+        path_after = os.stat(path, follow_symlinks=False)
+    stable_fields = ("st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns", "st_blocks")
+    if any(getattr(before, field) != getattr(after, field) or
+           getattr(before, field) != getattr(path_after, field)
+           for field in stable_fields):
+        fail(f"{label} fixture changed during verification for {role}")
+    if digest.hexdigest() != expected_sha256:
+        fail(f"{label} fixture content does not match its recorded SHA-256 for {role}")
+
+
+def verify_direct_scan_artifacts(
+    row: dict[str, str], identity: dict, artifact_names: set[str], root: Path,
+    line_number: int,
+) -> None:
+    """Bind a copy-free direct-file record to its actual report and scan log."""
+    report_name = "scan-report.jsonl"
+    log_name = "provenance/scan.log"
+    if report_name not in artifact_names or log_name not in artifact_names:
+        fail(f"direct scan record lacks its report or scan log at line {line_number}")
+    report_path = safe_evidence_file(root, report_name, "direct scan report")
+    log_path = safe_evidence_file(root, log_name, "direct scan log")
+    reports = [line for line in report_path.read_text(encoding="utf-8").splitlines()
+               if line.strip()]
+    if len(reports) != 1:
+        fail(f"direct scan report is not exactly one object at line {line_number}")
+    report = load_json_object(reports[0], "direct scan report")
+    oracle_path = safe_evidence_file(root, "provenance/direct-oracle.json", "direct scan oracle")
+    if "provenance/direct-oracle.json" not in artifact_names:
+        fail(f"direct scan record does not retain its independent oracle at line {line_number}")
+    oracle = load_json_object(oracle_path.read_text(encoding="utf-8"), "direct scan oracle")
+    if oracle.get("case_id") != row["case_id"] or \
+            oracle.get("alert_signature", "-") != row["alert_signature"] or \
+            oracle.get("alert_offset") != (
+                int(row["alert_offset"]) if row["completion"] == "DETECTION_TERMINATED" else None
+            ) or oracle.get("alert_offset_scope") != row["alert_offset_scope"] or \
+            sha256(oracle_path) != row["oracle_sha256"]:
+        fail(f"direct scan record offset binding differs from its independent oracle at line {line_number}")
+    source = identity["input"]
+    if row["sanitizer"] != "development":
+        expected_size = 32 * 1024 * 1024 * 1024
+        if row["completion"] == "LIMIT_INCOMPLETE":
+            expected_size += 1
+        if identity["size"] != expected_size:
+            fail(f"direct scan release case lacks the exact edge size at line {line_number}")
+    if type(report.get("version")) is not int or report["version"] != 1 or \
+            report.get("target") != source or \
+            type(report.get("root_size")) is not int or \
+            report["root_size"] != identity["size"] or \
+            report.get("completion") != row["completion"]:
+        fail(f"direct scan report does not bind its input/outcome at line {line_number}")
+    for field in (
+        "logical_bytes", "matcher_bytes", "contiguous_bytes", "temporary_bytes",
+        "files_scanned", "max_recursion_depth", "elapsed_ms",
+        "parser_operations", "detector_operations", "skipped_operations",
+    ):
+        if type(report.get(field)) is not int or report[field] != int(row[field]):
+            fail(f"direct scan report {field} differs from its case at line {line_number}")
+    completion = row["completion"]
+    status = report.get("status")
+    verdict = report.get("verdict")
+    if type(status) is not int or type(verdict) is not int:
+        fail(f"direct scan report has invalid status/verdict at line {line_number}")
+    if completion == "COMPLETE":
+        valid_outcome = status == 0 and verdict in (0, 1) and \
+            report.get("last_alert") in (None, "") and \
+            report.get("last_alert_offset") is None and \
+            report["logical_bytes"] == identity["size"] and \
+            report["files_scanned"] > 0 and report["skipped_operations"] == 0
+    elif completion == "DETECTION_TERMINATED":
+        valid_outcome = status in (0, 1) and verdict in (2, 3) and \
+            report.get("last_alert") == row["alert_signature"]
+        if row["alert_offset_scope"] == "root-input":
+            valid_outcome = valid_outcome and \
+                row["alert_offset_source"] == "structured-report" and \
+                row["alert_offset_evidence"] == report_name and \
+                report.get("last_alert_offset") == int(row["alert_offset"])
+        elif row["alert_offset_scope"] == "nested-member":
+            valid_outcome = valid_outcome and \
+                row["alert_offset_source"] == "matcher-debug-log" and \
+                row["alert_offset_evidence"] == log_name and \
+                report.get("last_alert_offset") is None
+            escaped = re.escape(row["alert_signature"])
+            if not row["alert_signature"].endswith(".UNOFFICIAL"):
+                escaped += r"(?:\.UNOFFICIAL)?"
+            trace = rf"(?:^|[ \t])signature {escaped} matched at {re.escape(row['alert_offset'])}(?=[ \t\r\n]|$)"
+            log = log_path.read_text(encoding="utf-8", errors="replace")
+            valid_outcome = valid_outcome and re.search(trace, log) is not None
+        else:
+            valid_outcome = False
+    else:
+        if completion != "LIMIT_INCOMPLETE" or \
+                row["reason"] != "Heuristics.Limits.Exceeded.MaxFileSize":
+            fail(f"direct scan case has an unsupported limit reason at line {line_number}")
+        valid_outcome = status != 0 and \
+            verdict in (0, 1) and report.get("reason") == row["reason"] and \
+            report.get("last_alert") in (None, "") and \
+            report.get("last_alert_offset") is None and \
+            report["logical_bytes"] == 0 and report["matcher_bytes"] == 0 and \
+            report["parser_operations"] == 0 and report["skipped_operations"] > 0 and \
+            report.get("max_file_size") == 32 * 1024 * 1024 * 1024
+    if not valid_outcome:
+        fail(f"direct scan report contradicts its case at line {line_number}")
+    log = log_path.read_text(encoding="utf-8", errors="replace")
+    if completion != "LIMIT_INCOMPLETE" and \
+            f"{source} FileHash: {row['fixture_sha256']} (sha2-256)" not in log:
+        fail(f"direct scan log lacks the exact input hash at line {line_number}")
+    if completion == "COMPLETE" and f"{source}: OK" not in log:
+        fail(f"direct scan log lacks clean completion at line {line_number}")
+    if completion == "DETECTION_TERMINATED" and \
+            f"{source}: {row['alert_signature']} FOUND" not in log:
+        fail(f"direct scan log lacks the exact detection at line {line_number}")
+    if completion == "LIMIT_INCOMPLETE" and \
+            "MaxFileSize" not in log and "max file size" not in log.lower():
+        fail(f"direct scan log lacks the size-limit diagnostic at line {line_number}")
+
+
+def verify_alert_offset_artifact(
+    row: dict[str, str], root: Path, line_number: int,
+) -> None:
+    """Recheck the explicitly scoped offset source retained by a case."""
+    path = safe_evidence_file(
+        root, row["alert_offset_evidence"],
+        f"acceptance record offset evidence at line {line_number}",
+    )
+    if row["alert_offset_scope"] == "root-input":
+        if row["alert_offset_source"] != "structured-report":
+            fail(f"root-input offset is not sourced from a structured report at line {line_number}")
+        reports = [line for line in path.read_text(encoding="utf-8").splitlines()
+                   if line.strip()]
+        if len(reports) != 1:
+            fail(f"root-input offset report is not exactly one object at line {line_number}")
+        report = load_json_object(reports[0], "root-input offset report")
+        if report.get("completion") != "DETECTION_TERMINATED" or \
+                report.get("last_alert") != row["alert_signature"] or \
+                report.get("last_alert_offset") != int(row["alert_offset"]):
+            fail(f"root-input offset report contradicts its acceptance record at line {line_number}")
+        return
+
+    if row["alert_offset_scope"] != "nested-member" or \
+            row["alert_offset_source"] != "matcher-debug-log":
+        fail(f"acceptance record has an unsupported offset scope/source at line {line_number}")
+    escaped = re.escape(row["alert_signature"])
+    if not row["alert_signature"].endswith(".UNOFFICIAL"):
+        escaped += r"(?:\.UNOFFICIAL)?"
+    trace = rf"(?:^|[ \t])signature {escaped} matched at {re.escape(row['alert_offset'])}(?=[ \t\r\n]|$)"
+    if re.search(trace, path.read_text(encoding="utf-8", errors="replace")) is None:
+        fail(f"nested-member matcher log lacks the exact signature offset at line {line_number}")
+
+
 def safe_evidence_file(root: Path, value: str, label: str) -> Path:
     """Resolve a retained evidence file without following a symlink path."""
     if not value or value.startswith("/"):
@@ -249,6 +456,47 @@ def read_tsv(path: Path, header: list[str]) -> list[dict[str, str]]:
     except OSError as error:
         fail(f"cannot read {path}: {error}")
     return rows
+
+
+def case_evidence_roots(
+    evidence_root: Path, records: list[dict[str, str]],
+) -> dict[tuple[str, str, str], Path]:
+    """Route each row to a retained case directory within one evidence root.
+
+    A missing map preserves the original single-root format. A present map
+    must cover exactly the records being verified; no absolute, parent, or
+    symlinked path may redirect verification to another evidence bundle.
+    """
+    root = evidence_root.resolve()
+    manifest = root / CASE_ROOT_PATH
+    keys = {(row["kind"], row["id"], row["case_id"]) for row in records}
+    if manifest.is_symlink():
+        fail("case evidence root map is symlinked")
+    if not manifest.exists():
+        return {key: root for key in keys}
+    manifest = safe_evidence_file(root, CASE_ROOT_PATH, "case evidence root map")
+    mapped: dict[tuple[str, str, str], Path] = {}
+    for row in read_tsv(manifest, CASE_ROOT_HEADER):
+        key = (row["kind"], row["id"], row["case_id"])
+        if key in mapped:
+            fail(f"case evidence root map duplicates a case: {':'.join(key)}")
+        if key not in keys:
+            fail(f"case evidence root map has an unknown case: {':'.join(key)}")
+        relative = Path(row["relative_root"])
+        if relative.is_absolute() or any(part in ("..", "") for part in relative.parts):
+            fail(f"case evidence root map has an unsafe directory: {row['relative_root']}")
+        current = root
+        for part in relative.parts:
+            current /= part
+            if current.is_symlink():
+                fail(f"case evidence root map is symlinked: {row['relative_root']}")
+        case_root = current.resolve()
+        if not case_root.is_dir():
+            fail(f"case evidence root map directory is missing: {row['relative_root']}")
+        mapped[key] = case_root
+    if set(mapped) != keys:
+        fail(f"case evidence root map is missing cases: {sorted(keys - set(mapped))}")
+    return mapped
 
 
 def validate_service_lifecycle(path: Path, label: str) -> None:
@@ -344,13 +592,18 @@ def validate_records(
     required_capability: tuple[str, str] | None = None,
     evidence_root: Path | None = None,
     required_capabilities: tuple[tuple[str, str], ...] = (),
+    expected_source_sha256: str | None = None,
 ) -> int:
+    if expected_source_sha256 is not None and not HASH_RE.fullmatch(expected_source_sha256):
+        fail("acceptance records have an invalid expected source manifest SHA-256")
     rows = read_tsv(records_path, RECORD_HEADER)
+    roots = case_evidence_roots(evidence_root, rows) if evidence_root is not None else {}
     required = {
         (row["kind"], row["id"]): set(row["required_case_ids"].split(","))
         for row in mapping
     }
     seen: set[tuple[str, str, str]] = set()
+    verified_service_roles: dict[tuple[Path, str], str] = {}
     completions = {
         "COMPLETE": ("0", {"CLEAN", "TRUSTED"}),
         "DETECTION_TERMINATED": ("1", {"DETECTED", "MALWARE"}),
@@ -379,6 +632,9 @@ def validate_records(
                       "fixture_sha256", "oracle_sha256", "database_sha256"):
             if not HASH_RE.fullmatch(row[field]):
                 fail(f"acceptance record has an invalid {field} at line {line_number}")
+        if expected_source_sha256 is not None and \
+                row["source_manifest_sha256"] != expected_source_sha256:
+            fail(f"acceptance record source does not match the final candidate at line {line_number}")
         for field in numeric_fields:
             if not NONNEGATIVE_RE.fullmatch(row[field]):
                 fail(f"acceptance record has an invalid {field} at line {line_number}")
@@ -405,8 +661,16 @@ def validate_records(
         if completion == "DETECTION_TERMINATED":
             if row["alert_signature"] == "-" or not NONNEGATIVE_RE.fullmatch(row["alert_offset"]):
                 fail(f"detection case lacks an exact alert binding at line {line_number}")
+            if (row["alert_offset_scope"], row["alert_offset_source"]) not in {
+                ("root-input", "structured-report"),
+                ("nested-member", "matcher-debug-log"),
+            } or row["alert_offset_evidence"] in {"", "-"}:
+                fail(f"detection case lacks explicit offset scope/source evidence at line {line_number}")
         elif row["alert_signature"] != "-" or row["alert_offset"] != "-":
             fail(f"non-detection case carries an alert binding at line {line_number}")
+        elif (row["alert_offset_scope"], row["alert_offset_source"],
+              row["alert_offset_evidence"]) != ("none", "none", "-"):
+            fail(f"non-detection case carries offset scope/source evidence at line {line_number}")
         if row["skipped_operations"] != "0" and completion == "COMPLETE":
             fail(f"complete case has skipped operations at line {line_number}")
         if row["sanitizer"] not in {
@@ -418,6 +682,8 @@ def validate_records(
             fail(f"acceptance record lacks health/cleanup/artifact evidence at line {line_number}")
         if not row["platform"] or not row["fixture_role"] or not row["resource_phase"] or not row["reason"]:
             fail(f"acceptance record lacks required contextual evidence at line {line_number}")
+        if row["fixture_role"] == "-":
+            fail(f"acceptance record lacks a fixture role at line {line_number}")
         resource_phases = parse_resource_phases(row["resource_phase"], line_number)
         has_release_budget = {"rss", "temporary"}.issubset(resource_phases)
         has_development_budget = {"max-file", "max-temp"}.issubset(resource_phases)
@@ -430,13 +696,19 @@ def validate_records(
                 not {"pcre", "post-pcre"}.issubset(resource_phases):
             fail(f"acceptance record lacks PCRE resource phases at line {line_number}")
         if evidence_root is not None:
-            root = evidence_root.resolve()
+            root = roots[case_key]
             artifact_paths: list[Path] = []
-            for artifact in row["artifacts"].split(","):
+            artifact_names = row["artifacts"].split(",")
+            for artifact in artifact_names:
                 path = safe_evidence_file(
                     root, artifact, f"acceptance record artifact at line {line_number}"
                 )
                 artifact_paths.append(path)
+            if completion == "DETECTION_TERMINATED" and \
+                    row["alert_offset_evidence"] not in artifact_names:
+                fail(f"acceptance record offset evidence is not a retained artifact at line {line_number}")
+            if completion == "DETECTION_TERMINATED":
+                verify_alert_offset_artifact(row, root, line_number)
             lifecycle_names = [
                 artifact for artifact in row["artifacts"].split(",")
                 if artifact.startswith("provenance/service-lifecycle-")
@@ -448,11 +720,6 @@ def validate_records(
                     f"at line {line_number}"
                 )
             if lifecycle_bound:
-                if row["fixture_role"] == "-":
-                    fail(
-                        f"lifecycle-bound acceptance record lacks a service fixture role "
-                        f"at line {line_number}"
-                    )
                 if len(lifecycle_names) != 1:
                     fail(
                         f"acceptance record must bind exactly one lifecycle artifact "
@@ -474,7 +741,17 @@ def validate_records(
                         f"at line {line_number}"
                     )
             inputs_path = root / "provenance/service-inputs-before.json"
-            fixture_bound = row["fixture_role"] == "-"
+            after_inputs_path = root / "provenance/service-inputs-after.json"
+            direct_inputs_path = root / "provenance/direct-inputs-before.json"
+            direct_after_path = root / "provenance/direct-inputs-after.json"
+            direct_present = (
+                direct_inputs_path.exists() or direct_inputs_path.is_symlink() or
+                direct_after_path.exists() or direct_after_path.is_symlink()
+            )
+            fixture_bound = False
+            if (inputs_path.exists() or after_inputs_path.exists()) and \
+                    direct_present:
+                fail(f"acceptance record has ambiguous service/direct input evidence at line {line_number}")
             if lifecycle_bound and not inputs_path.is_file():
                 fail(
                     f"lifecycle-bound acceptance record lacks service input identity evidence "
@@ -484,6 +761,11 @@ def validate_records(
                 if inputs_path not in artifact_paths:
                     fail(
                         f"acceptance record does not retain service input identity evidence "
+                        f"at line {line_number}"
+                    )
+                if after_inputs_path not in artifact_paths:
+                    fail(
+                        f"acceptance record does not retain service input after evidence "
                         f"at line {line_number}"
                     )
                 try:
@@ -498,6 +780,11 @@ def validate_records(
                         service_inputs.get("version") != 1 or \
                         not isinstance(service_inputs.get("inputs"), dict):
                     fail("service input identity evidence is malformed")
+                if inputs_path.read_bytes() != after_inputs_path.read_bytes():
+                    fail(
+                        f"service input allocation/content evidence changed during qualification "
+                        f"at line {line_number}"
+                    )
                 inputs = service_inputs["inputs"]
                 identity = inputs.get(row["fixture_role"])
                 if not isinstance(identity, dict) or identity.get("sha256") != row["fixture_sha256"]:
@@ -505,9 +792,45 @@ def validate_records(
                         f"acceptance record fixture hash does not match service input evidence "
                         f"at line {line_number}"
                     )
+                role = row["fixture_role"]
+                scoped_role = (root, role)
+                if scoped_role not in verified_service_roles:
+                    verify_service_fixture(identity, row["fixture_sha256"], role)
+                    verified_service_roles[scoped_role] = row["fixture_sha256"]
+                elif verified_service_roles[scoped_role] != row["fixture_sha256"]:
+                    fail(f"service input fixture role has conflicting hashes at line {line_number}")
                 fixture_bound = True
-            if row["fixture_role"] != "-" and not fixture_bound and \
-                    row["fixture_sha256"] not in artifact_hashes:
+            if direct_present:
+                if key != ("clamscan", "file"):
+                    fail(f"direct input identity is only valid for clamscan:file at line {line_number}")
+                if not direct_inputs_path.is_file() or not direct_after_path.is_file():
+                    fail(f"direct input identity requires before and after evidence at line {line_number}")
+                if direct_inputs_path not in artifact_paths or direct_after_path not in artifact_paths:
+                    fail(f"direct input identity is not retained by the case at line {line_number}")
+                if direct_inputs_path.read_bytes() != direct_after_path.read_bytes():
+                    fail(f"direct input identity changed during qualification at line {line_number}")
+                direct_inputs = load_json_object(
+                    direct_inputs_path.read_text(encoding="utf-8"),
+                    "direct input identity evidence",
+                )
+                identities = direct_inputs.get("inputs")
+                role = row["fixture_role"]
+                if type(direct_inputs.get("version")) is not int or \
+                        direct_inputs["version"] != 1 or \
+                        not isinstance(identities, dict) or set(identities) != {role}:
+                    fail(f"direct input identity evidence is malformed at line {line_number}")
+                identity = identities[role]
+                if not isinstance(identity, dict) or \
+                        identity.get("sha256") != row["fixture_sha256"] or \
+                        not isinstance(identity.get("input"), str) or \
+                        type(identity.get("size")) is not int:
+                    fail(f"direct input identity does not match its case at line {line_number}")
+                verify_direct_scan_artifacts(row, identity, set(artifact_names), root, line_number)
+                verify_service_fixture(
+                    identity, row["fixture_sha256"], role, label="direct input",
+                )
+                fixture_bound = True
+            if not fixture_bound and row["fixture_sha256"] not in artifact_hashes:
                 # Runtime/parser evidence may not have service-input JSON, but
                 # it still must retain the exact fixture or an equivalent
                 # immutable fixture artifact. A bare 64-hex label is not a
@@ -565,6 +888,10 @@ def main(argv: list[str] | None = None) -> int:
         "--require-r09", action="store_true",
         help="require all focused R09 behavior/failure case pairs",
     )
+    parser.add_argument(
+        "--expected-source-sha256",
+        help="require every case to use the source manifest selected by the release gate",
+    )
     args = parser.parse_args(argv)
     try:
         if args.write_map:
@@ -580,6 +907,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.records, mapping,
                 evidence_root=args.evidence_root,
                 required_capabilities=required_capabilities,
+                expected_source_sha256=args.expected_source_sha256,
             )
             if args.check_records else None
         )

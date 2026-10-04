@@ -29,10 +29,13 @@ class FanotifyEvidenceTests(unittest.TestCase):
         }.items():
             (self.root / "provenance" / name).write_text(content, encoding="utf-8")
         for index, name in enumerate(checker.CASE_CONTRACT, start=1):
+            # The runtime runner starts a fresh observer for each case, so
+            # per-run event IDs legitimately repeat across case artifacts.
+            event_id = 1
             fixture_hash = hashlib.sha256(name.encode()).hexdigest()
             (self.root / "logs" / f"events-{name}.jsonl").write_text(
                 json.dumps({
-                    "event_id": index,
+                    "event_id": event_id,
                     "event_kind": "FAN_OPEN_PERM",
                     "target": True,
                     "fixture_sha256": fixture_hash,
@@ -59,7 +62,7 @@ class FanotifyEvidenceTests(unittest.TestCase):
                 json.dumps({
                     "case_name": name,
                     "fixture_sha256": fixture_hash,
-                    "event_id": index,
+                    "event_id": event_id,
                     "opened": name == "clean",
                     "observed_action": "allow" if name == "clean" else "deny",
                     "actor_uid": 1000,
@@ -74,7 +77,7 @@ class FanotifyEvidenceTests(unittest.TestCase):
                 "evidence_type": "on-access-scan",
                 "case_name": name,
                 "fixture_sha256": fixture_hash,
-                "clamonacc_event_id": index,
+                "clamonacc_event_id": event_id,
                 "scan_exit_code": exit_code,
                 "completion": completion,
                 "status": 0 if name in {"clean", "detection"} else 1,
@@ -144,14 +147,13 @@ class FanotifyEvidenceTests(unittest.TestCase):
             path = self.root / "provenance" / filename
             identity[field] = {"path": f"provenance/{filename}", "sha256": checker.digest(path)}
         prevention = []
-        for index, (name, (completion, exit_code, decision, response)) in enumerate(
-                checker.CASE_CONTRACT.items(), start=1):
+        for name, (completion, exit_code, decision, response) in checker.CASE_CONTRACT.items():
             prevention.append({
                 "name": name,
                 "case_id": f"on-access:permission:{name}-edge",
                 "fixture_sha256": hashlib.sha256(name.encode()).hexdigest(),
                 "kernel_event": "FAN_OPEN_PERM",
-                "event_id": index,
+                "event_id": 1,
                 "scan_completion": completion,
                 "scan_exit_code": exit_code,
                 "permission_decision": decision,

@@ -6317,3 +6317,50 @@ write, and an interrupted `matcher.c` upload targets the stale September 15
 tree. None was applied or resumed. Small-transfer success therefore does not
 clear current-source staging or qualify Sonic1. Receipt:
 `docs/largefile-task-receipts/R03-sonic1-transfer-reconciliation-2026-09-20.md`.
+
+R05 Sonic1 AlertExceedsMax structured FILDESREPORT repair (2026-10-02): the
+current-source Release build passed on the isolated x86-64 runner. A fresh
+checksum-bound handoff fixed the earlier scalar-status guard; strict alerts-on
+and alerts-off 32-GiB-plus-one sparse descriptor probes now both pass, along
+with the combined evidence verifier. The alerts-on report is
+`DETECTION_TERMINATED` with the exact MaxFileSize policy alert; alerts-off
+remains `LIMIT_INCOMPLETE`. Both fixtures had zero allocated bytes, stable
+metadata, clean removal, and PONG health checks. This is private-database
+service behavior only; production-CVD, materialized scans, sanitizer/resource
+coverage, other ingress modes, and final release readiness remain open. No
+capability was promoted. Receipt:
+`docs/largefile-task-receipts/R05-sonic1-alert-exceeds-max-structured-fildes-2026-10-02.md`.
+
+R05 Sonic1 structured MaxFileSize reporting revalidation (2026-10-03): the
+freshly built v4 ClamScan now agrees between its CLI result and structured
+report for a fully materialized 32-GiB-plus-one input; the alerts-off and
+alerts-on ClamD `FILDESREPORT` sparse controls also pass with PONG health and
+zero allocated fixture bytes. The focused libclamav report-promotion test
+passed. The exact Rust/Cargo inputs matched the prior build, so the pinned
+offline-unavailable Rust archive/header were reused while C sources and
+targets were freshly rebuilt. A fresh C ASan/UBSan build also passed the focused
+libclamav API test and the materialized ClamScan plus sparse ClamD boundary
+pairs without sanitizer diagnostics; the reused Rust archive was not
+instrumented. This remains a targeted boundary result, not full R05 or release
+qualification. Receipt:
+`docs/largefile-task-receipts/R05-sonic1-alertreport-v4-2026-10-03.md`.
+
+R05 exact materialized raw-library API edge parity (2026-10-03): Release and
+C ASan/UBSan each passed the registered exact-32-GiB late-marker test through
+`cl_scanfile_ex2`, `cl_scandesc_ex2`, and `cl_scanmap_ex2`. The fully allocated
+fixture's pre/post SHA-256 matched, and the C sanitizer run had no diagnostics,
+OOM, or swap. This closes only these raw-library API edge cases; parser
+traversal, complete ingress parity, production-CVD behavior, and release
+readiness remain open. Receipt:
+`docs/largefile-task-receipts/R05-sonic1-alertreport-v4-2026-10-03.md`.
+
+R06/R12 current-source exact-materialized OneNote v4 parity (2026-10-03): the
+52,297-byte structurally reviewed source generated an exact 32-GiB fully
+allocated OneNote with an independently placed late MZ marker at EOF-18,955.
+Release and C ASan/UBSan clean controls completed, and all four builds/cases
+detected the expected late child; full fixture hashes matched before/after and
+in scanner logs. Resource sampling recorded no swap, OOM, sanitizer report, or
+remaining per-case spool. This is one parser-family slice only: fault/limit
+paths, other formats and ingress paths, production CVDs, Rust sanitizer
+coverage, and overall release qualification remain open. Receipt:
+`docs/largefile-task-receipts/R06-sonic1-exact32g-onenote-v4-parity-2026-10-03.md`.

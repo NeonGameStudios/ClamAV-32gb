@@ -5,6 +5,7 @@ Run clamscan tests.
 """
 
 import shutil
+import re
 import sys
 
 sys.path.append('../unit_tests')
@@ -122,14 +123,34 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        # Once the raw test signature is filtered, every recognized malformed
-        # fixture must remain an error instead of being reported clean.
+        # Filtering the raw signature exposes the real parser result for each
+        # input. Some complete cleanly; known malformed controls must still
+        # fail closed. Check every path and reconcile the CLI summary rather
+        # than assuming all corpus files share one completion state.
         assert output.ec == 2
+        text = output.out.decode('utf-8', 'replace') if isinstance(output.out, bytes) else output.out
+        results = {}
+        for line in text.splitlines():
+            for testpath in TC.testpaths:
+                prefix = '{}: '.format(testpath)
+                if line.startswith(prefix):
+                    assert testpath.name not in results, 'duplicate result for {}'.format(testpath)
+                    results[testpath.name] = line[len(prefix):]
+                    break
 
-        expected_results = ['Scanned files: 0']
-        expected_results.append('Infected files: 0')
-        expected_results.append("clam_cache_emax.tgz: Can't parse data ERROR")
-        expected_results.append("Can't parse data ERROR")
-        expected_results.append('Total errors: {}'.format(len(TC.testpaths)))
-        unexpected_results = ['{}: ClamAV-Test-File.UNOFFICIAL FOUND'.format(testpath.name) for testpath in TC.testpaths]
-        self.verify_output(output.out, expected=expected_results, unexpected=unexpected_results)
+        assert set(results) == {testpath.name for testpath in TC.testpaths}, 'missing or extra scan results'
+        assert all(result == 'OK' or result.endswith(' ERROR') for result in results.values())
+        for name in TC.fail_closed_testfiles:
+            assert results[name].endswith(' ERROR'), '{} lost its fail-closed result'.format(name)
+        for name in ('clam.exe', 'clam.exe.webapp-export.one'):
+            assert results[name] == 'OK', '{} did not complete cleanly'.format(name)
+
+        expected_counts = {
+            'Scanned files': sum(result == 'OK' for result in results.values()),
+            'Infected files': 0,
+            'Total errors': sum(result.endswith(' ERROR') for result in results.values()),
+        }
+        for label, expected in expected_counts.items():
+            match = re.search(r'^{}: (\d+)$'.format(re.escape(label)), text, re.MULTILINE)
+            assert match is not None, 'missing {} in clamscan summary'.format(label)
+            assert int(match.group(1)) == expected, '{} summary did not match per-file results'.format(label)

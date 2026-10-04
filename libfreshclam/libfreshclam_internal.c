@@ -609,7 +609,7 @@ static fc_error_t create_curl_handle(
     }
 
     if (g_userAgent) {
-        strncpy(userAgent, g_userAgent, sizeof(userAgent));
+        (void)cli_strlcpy(userAgent, g_userAgent, sizeof(userAgent));
     } else {
         /*
          * Use a randomly generated UUID in the User-Agent
@@ -881,7 +881,7 @@ static fc_error_t remote_cvdhead(
 
     long http_code = 0;
 
-    if (NULL == cvd) {
+    if ((NULL == cvdfile) || (NULL == server) || (NULL == cvd)) {
         logg(LOGG_ERROR, "remote_cvdhead: Invalid arguments.\n");
         goto done;
     }
@@ -897,6 +897,11 @@ static fc_error_t remote_cvdhead(
      */
     urlLen = strlen(server) + strlen("/") + strlen(cvdfile);
     url    = malloc(urlLen + 1);
+    if (url == NULL) {
+        logg(LOGG_ERROR, "remote_cvdhead: Failed to allocate CVD header URL.\n");
+        status = FC_EMEM;
+        goto done;
+    }
     snprintf(url, urlLen + 1, "%s/%s", server, cvdfile);
 
     logg(LOGG_INFO, "Trying to retrieve CVD header from %s\n", url);
@@ -1484,9 +1489,17 @@ static fc_error_t getcvd(
     size_t sign_filenameLen = 0;
     char *sign_file_url     = NULL;
     size_t sign_file_urlLen = 0;
+    size_t cvdfile_len      = 0;
 
-    if ((NULL == cvdfile) || (NULL == tmpfile) || (NULL == server)) {
+    if ((NULL == database) || (NULL == cvdfile) || (NULL == tmpfile) || (NULL == server)) {
         logg(LOGG_ERROR, "getcvd: Invalid arguments.\n");
+        goto done;
+    }
+
+    cvdfile_len = strlen(cvdfile);
+    if (cvdfile_len < 4) {
+        logg(LOGG_ERROR, "getcvd: Database filename is missing a valid extension.\n");
+        status = FC_EBADCVD;
         goto done;
     }
 
@@ -1496,6 +1509,11 @@ static fc_error_t getcvd(
 
     urlLen = strlen(server) + strlen("/") + strlen(cvdfile);
     url    = malloc(urlLen + 1);
+    if (url == NULL) {
+        logg(LOGG_ERROR, "getcvd: Failed to allocate database URL.\n");
+        status = FC_EMEM;
+        goto done;
+    }
     snprintf(url, urlLen + 1, "%s/%s", server, cvdfile);
 
     ret = downloadFile(url, tmpfile, 1, logerr, 0, ifModifiedSince);
@@ -1510,7 +1528,7 @@ static fc_error_t getcvd(
     }
 
     // grab the extension from the cvdfile
-    strncpy(extension, cvdfile + strlen(cvdfile) - 4, 4);
+    memcpy(extension, cvdfile + cvdfile_len - 4, 4);
 
     // set the cvd type based on the extension
     if (0 == strncmp(extension, ".cvd", 4)) {
@@ -1535,16 +1553,31 @@ static fc_error_t getcvd(
         // sign-file = database + "-" + version + ".sign"
         sign_filenameLen = strlen(database) + strlen("-") + 10 + strlen(".cvd") + strlen(".sign");
         sign_filename    = malloc(sign_filenameLen + 1);
+        if (sign_filename == NULL) {
+            logg(LOGG_ERROR, "getcvd: Failed to allocate signature filename.\n");
+            status = FC_EMEM;
+            goto done;
+        }
         snprintf(sign_filename, sign_filenameLen + 1, "%s-%u%s.sign", database, cvd->version, extension);
 
         // sign-file-url = server + "/" + sign_filename
         sign_file_urlLen = strlen(server) + strlen("/") + strlen(sign_filename);
         sign_file_url    = malloc(sign_file_urlLen + 1);
+        if (sign_file_url == NULL) {
+            logg(LOGG_ERROR, "getcvd: Failed to allocate signature URL.\n");
+            status = FC_EMEM;
+            goto done;
+        }
         snprintf(sign_file_url, sign_file_urlLen + 1, "%s/%s", server, sign_filename);
 
         // sign-file-tempfilename = g_tempDirectory + sign_filename
         tmpsignfileLen = strlen(g_tempDirectory) + strlen(PATHSEP) + strlen(sign_filename);
         tmpsignfile    = malloc(tmpsignfileLen + 1);
+        if (tmpsignfile == NULL) {
+            logg(LOGG_ERROR, "getcvd: Failed to allocate temporary signature filename.\n");
+            status = FC_EMEM;
+            goto done;
+        }
         snprintf(tmpsignfile, tmpsignfileLen + 1, "%s" PATHSEP "%s", g_tempDirectory, sign_filename);
 
         ret = downloadFile(sign_file_url, tmpsignfile, 1, logerr, 1, 0);

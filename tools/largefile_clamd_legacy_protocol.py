@@ -151,6 +151,11 @@ def validate_reply(
     fail(f"{mode} oracle has unsupported legacy completion {expected_completion}")
 
 
+def process_status(oracle: tuple[int, str, int, str, str, str, str]) -> int:
+    """Return the scan-process status required by the bound oracle."""
+    return oracle[2]
+
+
 def main(argv: list[str]) -> int:
     if len(argv) not in (5, 6):
         print(
@@ -181,7 +186,7 @@ def main(argv: list[str]) -> int:
     print(f"protocol_mode={mode.upper()}")
     print(f"reply={reply.rstrip()}")
     print(reply, end="" if reply.endswith("\n") else "\n")
-    return 0
+    return process_status(oracle)
 
 
 if __name__ == "__main__":

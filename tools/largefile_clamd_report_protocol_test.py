@@ -39,10 +39,10 @@ class FildesReportProtocolTests(unittest.TestCase):
         placeholder = "0" * 64
         rows = [
             ["production", self.input.stat().st_size, digest, 1, "DETECTION_TERMINATED",
-             self.signature, self.marker_offset, "CL_TYPE_DATA"],
-            ["materialized", 1, placeholder, 0, "COMPLETE", "-", "-", "CL_TYPE_DATA"],
-            ["expansion", 1, placeholder, 0, "COMPLETE", "-", "-", "CL_TYPE_DATA"],
-            ["edge", 34359738368, placeholder, 0, "COMPLETE", "-", "-", "CL_TYPE_DATA"],
+             self.signature, self.marker_offset, "CL_TYPE_BINARY_DATA"],
+            ["materialized", 1, placeholder, 0, "COMPLETE", "-", "-", "CL_TYPE_BINARY_DATA"],
+            ["expansion", 1, placeholder, 0, "COMPLETE", "-", "-", "CL_TYPE_BINARY_DATA"],
+            ["edge", 34359738368, placeholder, 0, "COMPLETE", "-", "-", "CL_TYPE_BINARY_DATA"],
         ]
         with self.oracle.open("w", newline="", encoding="utf-8") as stream:
             writer = csv.writer(stream, delimiter="\t", lineterminator="\n")
@@ -81,7 +81,7 @@ class FildesReportProtocolTests(unittest.TestCase):
                         "status": 1,
                         "verdict": 2,
                         "completion": "DETECTION_TERMINATED",
-                        "file_type": "CL_TYPE_DATA",
+                        "file_type": "CL_TYPE_BINARY_DATA",
                         "root_size": self.input.stat().st_size,
                         "logical_bytes": self.input.stat().st_size,
                         "max_scan_size": protocol.MAX_LOGICAL_BYTES,

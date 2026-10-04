@@ -91,8 +91,11 @@ static int isremote(const struct optstruct *opts)
     if ((opt = optget(clamdopts, "LocalSocket"))->enabled) {
         memset((void *)&nixsock, 0, sizeof(nixsock));
         nixsock.sun_family = AF_UNIX;
-        strncpy(nixsock.sun_path, opt->strarg, sizeof(nixsock.sun_path));
-        nixsock.sun_path[sizeof(nixsock.sun_path) - 1] = '\0';
+        if (opt->strarg == NULL || strlen(opt->strarg) >= sizeof(nixsock.sun_path)) {
+            logg(LOGG_ERROR, "LocalSocket path is missing or too long\n");
+            return -1;
+        }
+        memcpy(nixsock.sun_path, opt->strarg, strlen(opt->strarg) + 1);
         return 0;
     }
 #endif

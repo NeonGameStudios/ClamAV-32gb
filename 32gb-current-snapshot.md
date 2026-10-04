@@ -38,8 +38,8 @@ See [PLAN.md](PLAN.md), [audit1.md](audit1.md), and [32gb-status-summary.md](32g
 
 ## Snapshot provenance
 
-- Capability manifest SHA-256: `e40b486d31c945d41c5e72b02792d455335b66a2d82b69ea13313f1ba11a5627`
-- Readiness gate SHA-256: `983aaa45924a611f108a9e2e44d282ace52256ef3e8a693ec09c0317d9cf96dc`
+- Capability manifest SHA-256: `5062a0331793dab328413ef7d3f78c2d55903afa1fbb9dce2bdb54ee5a344571`
+- Readiness gate SHA-256: `6af96a53db535a4a2579dc1665da398efeb87076e1ef887393a84d5fed125ef2`
 - Unsupported allowlist SHA-256: `105b9437c8027ba18ab7deb78e97a883566ed112b65c61def4f3458e01d82b33`
 - This tracked dashboard intentionally excludes Git HEAD; source/build identity belongs to external run provenance.
 - Freshness compares this generated text and the inputs above; it does not certify the entire source tree or external evidence.

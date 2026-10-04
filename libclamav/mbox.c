@@ -1900,6 +1900,12 @@ parseEmailHeader(message *m, const char *line, const table_t *rfc821, cli_ctx *c
     const char *separator;
     char *cmd, *copy, tokenseparator[2];
 
+    if (line == NULL) {
+        cli_dbgmsg("parseEmailHeader: header line is missing\n");
+        cli_mark_scan_incomplete(ctx, "MIME header line is unavailable");
+        return -1;
+    }
+
     cli_dbgmsg("parseEmailHeader '%s'\n", line);
 
     /*

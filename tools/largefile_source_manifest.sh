@@ -64,6 +64,13 @@ if [ "$is_git_checkout" = yes ]; then
             32gb-current-snapshot.md|docs/largefile-task-ledger.md|docs/largefile-task-receipts/*|pcre-scale-development-*/*|provenance/*|evidence/*|largefile-evidence-*/*)
                 continue
                 ;;
+            __pycache__/*|*/__pycache__/*|*/.pytest_cache/*|.pytest_cache/*|*.pyc|*.pyo)
+                # Python preflight helpers may materialize bytecode in the
+                # audited tree.  It is generated from the source and can
+                # embed an extraction-specific path, so it must not alter
+                # the immutable source identity.
+                continue
+                ;;
         esac
         file="$root/$relative"
         [ "$file" = "$output" ] && continue
@@ -85,6 +92,13 @@ else
         -not -path "$root/provenance/*" \
         -not -path "$root/evidence/*" \
         -not -path "$root/largefile-evidence-*/*" \
+        -not -path "$root/32gb-current-snapshot.md" \
+        -not -path "$root/docs/largefile-task-ledger.md" \
+        -not -path "$root/docs/largefile-task-receipts/*" \
+        -not -path '*/__pycache__/*' \
+        -not -path '*/.pytest_cache/*' \
+        -not -name '*.pyc' \
+        -not -name '*.pyo' \
         -not -name '*.tar.gz' \
         -not -name 'libnull.a' \
         -print | LC_ALL=C sort | while IFS= read -r file; do

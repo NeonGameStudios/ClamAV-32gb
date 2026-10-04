@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "clamav.h"
 
@@ -37,6 +38,37 @@ struct cl_scan_report {
     bool has_result;
     bool string_allocation_failed;
 };
+
+/* The library report retains configured-limit failures as incomplete. A
+ * command-line/service front end may opt into treating the specific
+ * AlertExceedsMax heuristic as a policy detection. Keep the limit reason and
+ * skipped-work counters, but normalize the report's terminal classification
+ * before that front end serializes it. */
+static inline bool cli_scan_report_promote_exceeds_max(
+    cl_scan_report_t *report,
+    const char *alert_name,
+    bool alert_exceeds_max)
+{
+    static const char limit_alert_prefix[] = "Heuristics.Limits.Exceeded.";
+
+    if (NULL == report)
+        return false;
+    if (NULL == alert_name)
+        alert_name = report->last_alert;
+
+    if (!alert_exceeds_max || (NULL == alert_name) ||
+        (report->status == CL_SUCCESS) ||
+        (report->completion != CL_SCAN_COMPLETION_LIMIT_INCOMPLETE) ||
+        (0 != strncmp(alert_name, limit_alert_prefix,
+                      sizeof(limit_alert_prefix) - 1)))
+        return false;
+
+    report->status                  = CL_SUCCESS;
+    report->verdict                 = CL_VERDICT_POTENTIALLY_UNWANTED;
+    report->completion              = CL_SCAN_COMPLETION_DETECTION_TERMINATED;
+    report->last_alert_offset_valid = false;
+    return true;
+}
 
 cl_error_t cli_scan_report_create(
     cl_scan_report_t **report_out,

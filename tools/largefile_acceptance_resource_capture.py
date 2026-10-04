@@ -3,7 +3,9 @@
 
 The wrapped command is sampled while it is alive.  RSS/PSS/VAS, swap, faults,
 I/O, OOM counters, and temporary-tree size come from separate fail-closed
-samplers; no budget value is copied into the result.  A PCRE-aware command may
+samplers; no budget value is copied into the result. Temporary-tree size sums
+apparent regular-file sizes by unique device/inode, so hard-link owner markers
+do not duplicate a spool's usage. A PCRE-aware command may
 write the phase protocol named by ``CLAMAV_LARGEFILE_RESOURCE_PHASE_FILE``:
 ``pcre-start``, ``post-pcre``, and ``complete``.  PCRE rows are rejected
 unless both phase peaks were actually sampled.
@@ -26,7 +28,6 @@ import subprocess
 import sys
 import threading
 import time
-from queue import Empty, Queue
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import largefile_acceptance_resources as resources
@@ -55,6 +56,10 @@ class CaptureError(ValueError):
     """A fail-closed capture error."""
 
 
+class ProcessRootDisappeared(CaptureError):
+    """The selected process exited while an external procfs sampler ran."""
+
+
 def fail(message: str) -> None:
     raise CaptureError(message)
 
@@ -80,27 +85,60 @@ def require_artifact(root: Path, raw: Path, label: str) -> Path:
 
 
 def temporary_size(path: Path) -> int:
-    if path.is_symlink() or not path.is_dir():
-        fail(f"temporary root is missing, not a directory, or symlinked: {path}")
-    total = 0
-    try:
-        entries = list(os.scandir(path))
-    except OSError as error:
-        raise CaptureError(f"cannot enumerate temporary root {path}: {error}") from error
-    for entry in entries:
-        entry_path = Path(entry.path)
-        if entry.is_symlink():
-            fail(f"temporary tree contains a symlink: {entry_path}")
-        if entry.is_dir(follow_symlinks=False):
-            total += temporary_size(entry_path)
-        elif entry.is_file(follow_symlinks=False):
+    # Parser spools may have same-directory hard-link owner markers. Count
+    # each inode once: the two pathnames occupy one logical temporary file,
+    # while unrelated copies must both count. Keep the largest size observed
+    # for an inode in case it grows while the tree is being sampled.
+    class TreeChanged(Exception):
+        """A parser removed an entry while this snapshot was being taken."""
+
+    def visit(directory: Path, inode_sizes: dict[tuple[int, int], int]) -> None:
+        if directory.is_symlink():
+            fail(f"temporary tree contains a symlink: {directory}")
+        if not directory.is_dir():
+            if directory == path:
+                fail(f"temporary root is missing or not a directory: {directory}")
+            raise TreeChanged
+        try:
+            entries = list(os.scandir(directory))
+        except FileNotFoundError as error:
+            if directory == path:
+                raise CaptureError(f"temporary root disappeared: {directory}") from error
+            raise TreeChanged from error
+        except OSError as error:
+            raise CaptureError(f"cannot enumerate temporary root {directory}: {error}") from error
+        for entry in entries:
+            entry_path = Path(entry.path)
             try:
-                total += entry.stat(follow_symlinks=False).st_size
+                metadata = entry.stat(follow_symlinks=False)
+            except FileNotFoundError as error:
+                raise TreeChanged from error
             except OSError as error:
-                raise CaptureError(f"cannot stat temporary file {entry_path}: {error}") from error
-        else:
-            fail(f"temporary tree contains an unsupported entry: {entry_path}")
-    return total
+                raise CaptureError(f"cannot stat temporary entry {entry_path}: {error}") from error
+            if stat.S_ISLNK(metadata.st_mode):
+                fail(f"temporary tree contains a symlink: {entry_path}")
+            if stat.S_ISDIR(metadata.st_mode):
+                visit(entry_path, inode_sizes)
+            elif stat.S_ISREG(metadata.st_mode):
+                identity = (metadata.st_dev, metadata.st_ino)
+                inode_sizes[identity] = max(inode_sizes.get(identity, 0), metadata.st_size)
+            else:
+                fail(f"temporary tree contains an unsupported entry: {entry_path}")
+
+    # A clean parser may unlink spools while scandir's snapshot is being
+    # stat'ed. Never publish a partial sum: restart the entire snapshot and
+    # fail closed if the tree cannot be observed consistently after five tries.
+    for attempt in range(5):
+        inode_sizes: dict[tuple[int, int], int] = {}
+        try:
+            visit(path, inode_sizes)
+        except TreeChanged:
+            if attempt == 4:
+                fail("temporary tree changed during five snapshot attempts")
+            time.sleep(0.001)
+            continue
+        return sum(inode_sizes.values())
+    raise AssertionError("unreachable temporary tree snapshot state")
 
 
 def run_sampler(tool: Path, pid: int, include_root: bool = False) -> list[str]:
@@ -120,6 +158,10 @@ def run_sampler(tool: Path, pid: int, include_root: bool = False) -> list[str]:
         raise CaptureError(f"resource sampler could not run: {tool}: {error}") from error
     if result.returncode != 0:
         detail = result.stderr.strip() or "sampler returned no diagnostic"
+        if detail == f"requested process root disappeared from procfs: {pid}":
+            raise ProcessRootDisappeared(
+                f"resource sampler failed: {tool.name}: {detail}"
+            )
         raise CaptureError(f"resource sampler failed: {tool.name}: {detail}")
     lines = result.stdout.splitlines()
     if len(lines) != 1:
@@ -127,11 +169,31 @@ def run_sampler(tool: Path, pid: int, include_root: bool = False) -> list[str]:
     return lines[0].split("\t")
 
 
-def metric_sample(pid: int) -> dict[str, int]:
+def sampler_failure_raced_exit(process: subprocess.Popen, error: CaptureError) -> bool:
+    if process.poll() is not None:
+        return True
+    if not isinstance(error, ProcessRootDisappeared):
+        return False
+    # A concurrent phase watcher may hold Popen's waitpid lock while poll()
+    # returns None, even though the selected PID has already disappeared.
+    # Only a confirmed child exit permits dropping this final failed sample.
+    try:
+        process.wait(timeout=0.25)
+    except subprocess.TimeoutExpired:
+        return False
+    return True
+
+
+def metric_sample(pid: int) -> dict[str, int | str]:
     fields = run_sampler(METRICS_TOOL, pid, include_root=True)
     if len(fields) != 12 or any(not value.isdigit() for value in fields[:11]):
         fail("process-tree resource sampler returned an invalid metric row")
-    return dict(zip(
+    pids = fields[11].split(",")
+    if (not pids or any(not item.isdigit() or int(item) < 1 for item in pids)
+            or len(pids) != len(set(pids)) or len(pids) != int(fields[10])
+            or str(pid) not in pids):
+        fail("process-tree resource sampler returned an invalid PID set")
+    result = dict(zip(
         (
             "root_rss_kb", "rss_kb", "pss_kb", "vas_kb", "swap_kb",
             "minor_faults", "major_faults", "read_bytes", "write_bytes",
@@ -139,6 +201,9 @@ def metric_sample(pid: int) -> dict[str, int]:
         ),
         (int(value) for value in fields[:11]),
     ))
+    result["root_pid"] = pid
+    result["sampled_pids"] = ",".join(pids)
+    return result
 
 
 def append_sample_trace(
@@ -148,18 +213,26 @@ def append_sample_trace(
     rss_kb: int,
     tree_rss_kb: int,
     process_count: int,
+    root_pid: int,
+    sampled_pids: str,
 ) -> None:
     """Write one ordered, timestamped process-tree sample."""
     if sequence < 1 or phase not in {
         "before-pcre", "pcre", "post-pcre-before-deep-parse", "deep-parse",
+        "complete",
     }:
         fail("sample trace has an invalid sequence or phase")
-    if rss_kb < 0 or tree_rss_kb < rss_kb or process_count < 1:
+    pids = sampled_pids.split(",")
+    if (rss_kb < 0 or tree_rss_kb < rss_kb or process_count < 1
+            or root_pid < 1 or len(pids) != process_count
+            or len(set(pids)) != len(pids)
+            or any(not pid.isdigit() or int(pid) < 1 for pid in pids)
+            or str(root_pid) not in pids):
         fail("sample trace has invalid resource values")
     try:
         stream.write(
             f"{sequence}\t{time.time_ns()}\t{phase}\t{rss_kb}\t"
-            f"{tree_rss_kb}\t{process_count}\n"
+            f"{tree_rss_kb}\t{process_count}\t{root_pid}\t{sampled_pids}\n"
         )
         stream.flush()
     except (AttributeError, OSError) as error:
@@ -316,12 +389,12 @@ def record_sample_measurement(
             "pcre": "pcre",
             "post-pcre": "post-pcre-before-deep-parse",
             "deep-parse": "deep-parse",
+            "complete": "complete",
         }.get(state)
-        # ``complete`` is a terminal wrapper event, not an application
-        # phase.  In particular, a detection may terminate before parser
-        # dispatch, so mapping completion to ``deep-parse`` would fabricate
-        # the phase that R13 requires the application to emit and the
-        # independent sampler to observe.
+        # ``complete`` remains a distinct terminal label; it must never be
+        # promoted to ``deep-parse`` for a detection that stopped early.  Keep
+        # its sample in the raw trace so sample_count and RSS peaks remain
+        # recomputable even if completion is observed while the child lives.
         if sample_phase is None:
             return current
         append_sample_trace(
@@ -331,6 +404,8 @@ def record_sample_measurement(
             metric["root_rss_kb"],
             metric["rss_kb"],
             metric["process_count"],
+            metric["root_pid"],
+            metric["sampled_pids"],
         )
     return current
 
@@ -389,7 +464,6 @@ def phase_event_measurement(
     event: str,
     pid: int,
     baseline_oom: dict[str, str | int],
-    ack_file: Path,
 ) -> tuple[str, dict[str, int], dict[str, str | int], int] | None:
     """Take the metric snapshot for a phase event without sharing sampler state."""
     label = PHASE_SAMPLE_LABELS.get(event)
@@ -414,7 +488,6 @@ def phase_event_measurement(
         dict(baseline_oom),
         0,
     )
-    write_phase_ack(ack_file, event)
     return measurement
 
 
@@ -440,40 +513,15 @@ def write_phase_ack(path: Path, event: str) -> None:
         raise CaptureError(f"cannot write phase acknowledgement {path}: {error}") from error
 
 
-def drain_phase_measurements(
-    measurements: Queue[tuple[str, dict[str, int], dict[str, str | int], int]],
-    baseline_oom: dict[str, str | int],
-    current: dict[str, int],
-    phase_peaks: dict[str, int | None],
-    sample_trace: object | None,
-    sample_lock: threading.Lock,
-) -> None:
-    """Merge event snapshots after the watcher has sampled them independently."""
-    while True:
-        try:
-            state, metric, oom, temporary_bytes = measurements.get_nowait()
-        except Empty:
-            return
-        with sample_lock:
-            record_sample_measurement(
-                metric,
-                oom,
-                temporary_bytes,
-                state,
-                baseline_oom,
-                current,
-                phase_peaks,
-                sample_trace,
-            )
-            current["sample_count"] = int(current["sample_count"]) + 1
-
-
 def watch_phase_events(
     process: subprocess.Popen[object],
     phase_file: Path,
     temporary_root: Path,
     baseline_oom: dict[str, str | int],
-    measurements: Queue[tuple[str, dict[str, int], dict[str, str | int], int]],
+    current: dict[str, int | str],
+    phase_peaks: dict[str, int | None],
+    sample_trace: object | None,
+    sample_lock: threading.Lock,
     ack_file: Path,
     stop: threading.Event,
     errors: list[CaptureError],
@@ -490,7 +538,7 @@ def watch_phase_events(
             for event in new_events:
                 try:
                     measurement = phase_event_measurement(
-                        event, process.pid, baseline_oom, ack_file
+                        event, process.pid, baseline_oom
                     )
                 except CaptureError as error:
                     # Do not strand the scanner at an opt-in rendezvous when
@@ -504,7 +552,34 @@ def watch_phase_events(
                     errors.append(error)
                     return
                 if measurement is not None:
-                    measurements.put(measurement)
+                    state, metric, oom, temporary_bytes = measurement
+                    try:
+                        # Serialize and append the independent boundary sample
+                        # before releasing the application rendezvous. Otherwise
+                        # a regular sample can observe deep parsing and be
+                        # appended before this earlier post-PCRE measurement.
+                        with sample_lock:
+                            record_sample_measurement(
+                                metric,
+                                oom,
+                                temporary_bytes,
+                                state,
+                                baseline_oom,
+                                current,
+                                phase_peaks,
+                                sample_trace,
+                            )
+                            current["sample_count"] = (
+                                int(current["sample_count"]) + 1
+                            )
+                            write_phase_ack(ack_file, event)
+                    except CaptureError as error:
+                        try:
+                            write_phase_ack(ack_file, event)
+                        except CaptureError as ack_error:
+                            errors.append(ack_error)
+                        errors.append(error)
+                        return
         except CaptureError as error:
             errors.append(error)
             return
@@ -616,7 +691,8 @@ def capture(args: argparse.Namespace) -> int:
         sample_trace.parent.mkdir(parents=True, exist_ok=True)
         sample_trace_stream = sample_trace.open("w", encoding="utf-8")
         sample_trace_stream.write(
-            "sequence\ttimestamp_ns\tphase\trss_kb\ttree_rss_kb\tprocess_count\n"
+            "sequence\ttimestamp_ns\tphase\trss_kb\ttree_rss_kb\t"
+            "process_count\troot_pid\tsampled_pids\n"
         )
         sample_trace_stream.flush()
 
@@ -666,9 +742,6 @@ def capture(args: argparse.Namespace) -> int:
     last_error = "no successful process-tree sample"
     sampling_error: CaptureError | None = None
     sample_lock = threading.Lock()
-    phase_measurements: Queue[
-        tuple[str, dict[str, int], dict[str, str | int], int]
-    ] = Queue()
     phase_watch_stop = threading.Event()
     phase_watch_errors: list[CaptureError] = []
     phase_watch_thread: threading.Thread | None = None
@@ -683,7 +756,8 @@ def capture(args: argparse.Namespace) -> int:
                         target=watch_phase_events,
                         args=(
                             process, phase_file, temporary_root, baseline_oom,
-                            phase_measurements, phase_ack_file,
+                            current, phase_peaks, sample_trace_stream, sample_lock,
+                            phase_ack_file,
                             phase_watch_stop, phase_watch_errors,
                         ),
                         name="largefile-phase-watch",
@@ -699,10 +773,6 @@ def capture(args: argparse.Namespace) -> int:
                             baseline_oom, current, phase_peaks, sample_trace_stream,
                         )
                         current["sample_count"] = int(current["sample_count"]) + 1
-                    drain_phase_measurements(
-                        phase_measurements, baseline_oom, current, phase_peaks,
-                        sample_trace_stream, sample_lock,
-                    )
                     next_regular_sample = now + args.sample_interval_ms / 1000
             except CaptureError as error:
                 last_error = str(error)
@@ -712,7 +782,7 @@ def capture(args: argparse.Namespace) -> int:
                 # an incomplete resource trace. A failure racing process exit
                 # is tolerated here and is handled by the no-sample check
                 # below.
-                if process.poll() is None:
+                if not sampler_failure_raced_exit(process, error):
                     sampling_error = error
                     terminate_child(process)
                     break
@@ -743,11 +813,6 @@ def capture(args: argparse.Namespace) -> int:
             phase_watch_errors.append(
                 CaptureError("phase event sampler did not stop after command exit")
             )
-    if baseline_oom is not None:
-        drain_phase_measurements(
-            phase_measurements, baseline_oom, current, phase_peaks,
-            sample_trace_stream, sample_lock,
-        )
     cleanup_phase_ack()
     if phase_watch_errors and sampling_error is None:
         sampling_error = phase_watch_errors[0]
