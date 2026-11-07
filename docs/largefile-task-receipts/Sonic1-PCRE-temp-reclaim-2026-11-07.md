@@ -48,4 +48,18 @@ Read-only preflight at 2026-11-07:
 
 ## Cleanup action and verification
 
-After this record is confirmed present on GitHub, re-stat both exact candidate paths and require the recorded sizes, one hard link each, and matching current SHA-256 values. Remove only those two paths. Then verify both paths are absent and re-read df for the root, qualification, and PCRE-scratch filesystems. Preserve the mismatched and unverified files above regardless of remaining space. Record the observed post-cleanup values in this audit; do not claim the expected reclaimed amount until df confirms it.
+The pre-deletion record was confirmed present on GitHub. Immediately before deletion, both exact targets re-statted at the recorded sizes, inodes, and one link each; their SHA-256 values had just been reverified. Only those two paths were removed. Post-deletion checks confirmed both absent, confirmed the mismatched and unverified files remain, and measured the free-space change recorded below.
+
+## Post-cleanup verification
+
+Only the two named temporary files were deleted. A subsequent stat returned “No such file or directory” for both. The comparison file clamav-55bb1795d1f97331f1d2a9f7ae6e0dda.tmp remains present at 34,359,705,207 bytes, and the unverified clamav-a8b831843671860acab51b23a77168d5.tmp remains present at 24,107,155,456 bytes. The retained source ZIP was not changed and its current SHA-256 was verified above.
+
+Post-cleanup df results:
+
+- Root available: 2,302,058,496 bytes.
+- Qualification available: 71,141,838,848 bytes.
+- PCRE scratch available: 283,004,928 bytes.
+- Qualification available space increased from 2,422,419,456 to 71,141,838,848 bytes, an observed increase of 68,719,419,392 bytes.
+
+No build or scan ran as part of this cleanup. Sonic1's next Stored-positive rung can now be prepared independently. R28's reviewed reserve policy allows a 896-MiB member with a 64-MiB reserve (960 MiB minimum scanner tmpfs availability) under the existing 1-GiB scanner tmpfs; this is a planning calculation only and still requires a separately frozen runner, fresh preflight, and the existing stop controls before execution.
+
